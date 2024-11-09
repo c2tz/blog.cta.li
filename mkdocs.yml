@@ -1,7 +1,7 @@
 # Project information
 site_author: c2tz
 site_description: Blog, notes et docs de c2tz
-site_name: "c2tz.li"
+site_name: "blog.cta.li"
 site_url: ""
 edit_uri: edit/main/docs/
 
@@ -116,8 +116,8 @@ markdown_extensions:
   - pymdownx.tilde
 
 # Repository information
-repo_name: c2tz/c2tz.li
-repo_url: https://github.com/c2tz/c2tz.li
+repo_name: c2tz/blog.cta.li
+repo_url: https://github.com/c2tz/blog.cta.li
 
 # Page tree
 nav:
@@ -133,7 +133,7 @@ plugins:
       fallback_to_build_date: true
   - glightbox
   - git-committers:
-      repository: c2tz/c2tz.li
+      repository: c2tz/blog.cta.li
       branch: main
       token: !ENV MKDOCS_GIT_COMMITTERS_APIKEY
   - blog:

@@ -13,3 +13,7 @@ hide:
 ---
 
 # Customiser la page de son profil GitHub
+
+Lorem Ipsum
+
+<!-- more -->

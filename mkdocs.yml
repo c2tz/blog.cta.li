@@ -1,6 +1,6 @@
 # Project information
 site_author: c2tz
-site_description: Blog, notes et docs de c2tz
+site_description: Blog, notes et docs de c2tz.
 site_name: "blog.cta.li"
 site_url: ""
 edit_uri: edit/main/docs/
@@ -194,4 +194,4 @@ extra:
     - icon: fontawesome/solid/earth-europe
       link: https://www.example.com/
       
-copyright: Aucun droit réservé - c2tz <br> Fait avec <a href="https://squidfunk.github.io/mkdocs-material" rel="noreferrer noopener">Mkdocs </a> et propulsé par <a href="https://github.com/" rel="noreferrer noopener">GitHub Pages</a>  
+copyright: Aucun droit réservé - c2tz <br> Fait avec <a href="https://squidfunk.github.io/mkdocs-material" rel="noreferrer noopener">Material for MkDocs </a> et propulsé par <a href="https://github.com/" rel="noreferrer noopener">GitHub Pages</a>  

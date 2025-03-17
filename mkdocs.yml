@@ -21,24 +21,9 @@ theme:
     annotation: material/arrow-right-circle
   # Color
   palette:
-    - media: "(prefers-color-scheme)"
-      toggle:
-        icon: material/brightness-7
-        name: "Passer en mode: Clair"
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: white
-      accent: black
-      toggle:
-        icon: material/brightness-4
-        name: "Passer en mode: Sombre"
-    - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: custom
       accent: black
-      toggle:
-        icon: material/brightness-auto
-        name: "Passer en mode: Automatique"
   watch:
     - includes
   # Feature

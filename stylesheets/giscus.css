@@ -41,7 +41,7 @@ main {
   --color-btn-active-bg: #90caf9;
   --color-btn-active-border: rgba(var(--primary-default), 1);
   --color-btn-selected-bg: #90caf9;
-  --color-btn-primary-text: #111111;
+  --color-btn-primary-text: #000000;
   --color-btn-primary-bg: #90caf9;
   --color-btn-primary-border: #90caf9;
   --color-btn-primary-shadow: 0 1px 0 rgb(27 31 36 / 10%);
@@ -60,10 +60,10 @@ main {
   --color-fg-default: #fafafa;
   --color-fg-muted: #fafafa;
   --color-fg-subtle: #fafafa;
-  --color-canvas-default: #111111;
-  --color-canvas-overlay: #111111;
-  --color-canvas-inset: #111111;
-  --color-canvas-subtle: #111111;
+  --color-canvas-default: #000000;
+  --color-canvas-overlay: #000000;
+  --color-canvas-inset: #000000;
+  --color-canvas-subtle: #000000;
   --color-border-default: #90caf9;
   --color-border-muted: rgb(254 206 0 / 20%);
   --color-neutral-muted: rgb(0 109 217 / 20%);

@@ -26,8 +26,8 @@
     var palette = __md_get("__palette")
     if (palette && typeof palette.color === "object") {
       var theme = palette.color.scheme === "slate"
-        ? "/stylesheets/giscus.css"
-        : "/stylesheets/giscus_dark.css"
+        ? "https://blog.cta.li/stylesheets/giscus.css"
+        : "https://blog.cta.li/stylesheets/giscus_dark.css"
 
       // Instruct Giscus to set theme
       giscus.setAttribute("data-theme", theme) 
@@ -40,8 +40,8 @@
         var palette = __md_get("__palette")
         if (palette && typeof palette.color === "object") {
           var theme = palette.color.scheme === "slate"
-            ? "/stylesheets/giscus.css"
-            : "/stylesheets/giscus_dark.css"
+            ? "https://blog.cta.li/stylesheets/giscus.css"
+            : "https://blog.cta.li/stylesheets/giscus_dark.css"
 
           // Instruct Giscus to change theme
           var frame = document.querySelector(".giscus-frame")

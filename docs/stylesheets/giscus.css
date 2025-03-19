@@ -92,5 +92,13 @@ main .pagination-loader-container {
 }
 
 main .gsc-loading-image {
-  background-image: url("https://img.itch.zone/aW1nLzg5MzU1NzIuZ2lm/original/NLEAzH.gif");
+  background-image: url("https://blog.cta.li/assets/szs-ldg.gif");
+}
+
+main .gsc-comment-box-textarea-extras {
+  display: none;
+}
+
+main .btn-primary {
+  box-shadow: none;
 }

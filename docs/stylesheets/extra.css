@@ -87,18 +87,6 @@
     color: #cacaca;
   }
 
-  main .gsc-loading-image {
-    background-image: url("https://img.itch.zone/aW1nLzg5MzU1NzIuZ2lm/original/NLEAzH.gif");
-  }
-  
-  main .gsc-comment-box-textarea-extras {
-    display: none;
-  }
-
-  main .btn-primary {
-    box-shadow: none;
-  }
-
   /* custom css for dark theme */
   [data-md-color-scheme="slate"] 
   {

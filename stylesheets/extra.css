@@ -91,8 +91,12 @@
     background-image: url("https://img.itch.zone/aW1nLzg5MzU1NzIuZ2lm/original/NLEAzH.gif");
   }
   
-  .gsc-comment-box-textarea-extras {
+  main .gsc-comment-box-textarea-extras {
     display: none;
+  }
+
+  main .btn-primary {
+    box-shadow: none;
   }
 
   /* custom css for dark theme */

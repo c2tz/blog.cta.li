@@ -90,6 +90,10 @@
   main .gsc-loading-image {
     background-image: url("https://img.itch.zone/aW1nLzg5MzU1NzIuZ2lm/original/NLEAzH.gif");
   }
+  
+  .gsc-comment-box-textarea-extras {
+    display: none;
+  }
 
   /* custom css for dark theme */
   [data-md-color-scheme="slate"] 

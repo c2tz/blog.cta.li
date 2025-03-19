@@ -102,3 +102,15 @@ main .gsc-comment-box-textarea-extras {
 main .btn-primary {
   box-shadow: none;
 }
+
+.gsc-comment-box {
+  border: solid 1px #90caf9;
+}
+
+.gsc-comment-box:not(.gsc-comment-box-is-reply) {
+  border-width: 0;
+}
+
+.gsc-comment-box-textarea {
+  border-style: unset;
+}

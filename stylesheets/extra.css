@@ -87,6 +87,15 @@
     color: #cacaca;
   }
 
+  .linenodiv a:hover {
+    color: #90caf9;
+    text-decoration: none;
+  }
+
+  .md-typeset .md-content__button {
+    color: #cacaca;
+  }
+
   /* custom css for mkdocs dark theme */
   [data-md-color-scheme="slate"] 
   {
@@ -109,7 +118,6 @@
     --md-code-hl-special-color: #f06090;
     --md-code-hl-function-color: #c973d9;
     --md-code-hl-constant-color: #9383e2;
-    --md-code-hl-keyword-color: #90caf9;
     --md-code-hl-string-color: #2fb170;
     --md-code-hl-name-color: var(--md-code-fg-color);
     --md-code-hl-operator-color: var(--md-default-fg-color--light);

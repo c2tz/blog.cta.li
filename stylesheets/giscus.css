@@ -88,11 +88,11 @@ main {
 }
 
 main .pagination-loader-container {
-  background-image: url("https://github.com/images/modules/pulls/progressive-disclosure-line-dark.svg");
+  background-image: url("../https:/github.com/images/modules/pulls/progressive-disclosure-line-dark.svg");
 }
 
 main .gsc-loading-image {
-  background-image: url("https://blog.cta.li/assets/szs-ldg.gif");
+  background-image: url("../assets/external/blog.cta.li/assets/szs-ldg.gif");
 }
 
 main .gsc-comment-box-textarea-extras {

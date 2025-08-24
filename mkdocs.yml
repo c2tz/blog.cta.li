@@ -1,7 +1,7 @@
 # Project information
 site_author: c2tz
 site_description: Blog, notes et docs de c2tz.
-site_name: "blog.cta.li"
+site_name: "Blog de c2tz"
 site_url: ""
 edit_uri: edit/main/docs/
 
@@ -14,10 +14,12 @@ theme:
   logo: assets/logo.png
   favicon: assets/favicon.png
   font:
+    # desactiver les polices et overide le block font avec mon fichier .woff2
+    #false
     text: Roboto
     code: Roboto Mono
   icon:
-    repo: fontawesome/brands/github
+    repo: simple/github
     annotation: material/arrow-right-circle
   # Color
   palette:
@@ -29,11 +31,11 @@ theme:
   # Feature
   features:
     - announce.dismiss
-    - content.action.edit
-    - content.action.view
-    # - content.code.annotate
+    # - content.action.edit
+    # - content.action.view
+    - content.code.annotate
     - content.code.copy
-    # - content.code.select
+    - content.code.select
     # - content.tabs.link
     # - content.tooltips
     # - header.autohide
@@ -65,7 +67,7 @@ markdown_extensions:
   - md_in_html
   - toc:
       permalink: ''
-      permalink_title: Lien permanent
+      permalink_title: Permalien
   - pymdownx.arithmatex:
       generic: true
   - pymdownx.betterem:
@@ -80,6 +82,7 @@ markdown_extensions:
       anchor_linenums: true
       line_spans: __span
       pygments_lang_class: true
+      linenums_style: pymdownx-inline
   - pymdownx.superfences
   - pymdownx.inlinehilite
   - pymdownx.keys
@@ -87,7 +90,7 @@ markdown_extensions:
       normalize_issue_symbols: true
       repo_url_shorthand: true
       user: c2tz
-      repo: c2tz.li
+      repo: blog.cta.li
   - pymdownx.mark
   - pymdownx.smartsymbols
   - pymdownx.snippets:
@@ -111,11 +114,13 @@ nav:
 # Plugins
 plugins:
   - git-revision-date-localized:
-      enable_creation_date: true
+      enable_creation_date: false
       timezone: Europe/Paris
       type: timeago
       locale: fr
       fallback_to_build_date: true
+  - privacy:
+      enabled: !ENV [CI, false]
   - glightbox
   - git-committers:
       repository: c2tz/blog.cta.li
@@ -133,6 +138,8 @@ plugins:
           case: lower
   - search:
       separator: '[\s\u200b\-_,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
+  - minify:
+      minify_html: true
 
 # Custom
 extra_css:
@@ -164,19 +171,19 @@ extra:
   #    J'utilise des cookies pour améliorer votre expérience sur ce site (formulaire, commentaire...) mais aussi à des fins d'analyse. Vous pouvez Acceptez ou choisir ceux que vous voulez. Bonne visite ! 🚗
   generator: false
   social:
+    - icon: simple/bluesky
+      link: https://bsky.app/profile/c2tz.bsky.social
     - icon: fontawesome/brands/github
       link: https://github.com/c2tz
-    - icon: simple/bluesky
-      link: https://bsky.app/profile/97.pm
     - icon: simple/matrix
-      link: https://www.example.com/
-    - icon: simple/strava
-      link: https://www.example.com/
-    - icon: simple/mastodon
-      link: https://crb.re/
-    - icon: simple/peertube
-      link: https://97.pm/
+      link: https://matrix.to/#/@c2tz:matrix.org
+    - icon: simple/youtube
+      link: https://youtube.com/@c2tz
     - icon: fontawesome/solid/earth-europe
-      link: https://www.example.com/
+      link: https://cta.li/
+    - icon: simple/protonmail
+      link: mailto:ctailliez@cta.li
+    - icon: simple/keeweb
+      link: https://iez.cta.li/publickey.ctailliez@cta.li-5ddcb7b94817b035c31f8e538d74276dafc53cad.asc
       
-copyright: Aucun droit réservé - c2tz <br> Fait avec <a href="https://squidfunk.github.io/mkdocs-material" rel="noreferrer noopener">Material for MkDocs </a> et propulsé par <a href="https://github.com/" rel="noreferrer noopener">GitHub Pages</a>  
+copyright: Aucun droit réservé - c2tz <br> Fait avec <a href="https://squidfunk.github.io/mkdocs-material" target="_blank" rel="noreferrer noopener">Material for MkDocs </a> et propulsé par <a href="https://github.com/" target="_blank" rel="noreferrer noopener">GitHub Pages</a>  

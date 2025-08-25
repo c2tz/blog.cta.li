@@ -145,3 +145,121 @@
     --md-shadow-z3: 0 0.2rem 0.5rem #0006, 0 0 0.05rem #00000059;
     color-scheme: dark;
   }
+
+  /* custom css for giscus */
+  main {
+  --primary-default: 00, 00, 00;
+  --bg-default: 00, 00, 00;
+  --color-prettylights-syntax-comment: #8b949e;
+  --color-prettylights-syntax-constant: #79c0ff;
+  --color-prettylights-syntax-entity: #d2a8ff;
+  --color-prettylights-syntax-storage-modifier-import: #c9d1d9;
+  --color-prettylights-syntax-entity-tag: #7ee787;
+  --color-prettylights-syntax-keyword: #ff7b72;
+  --color-prettylights-syntax-string: #a5d6ff;
+  --color-prettylights-syntax-variable: #ffa657;
+  --color-prettylights-syntax-brackethighlighter-unmatched: #f85149;
+  --color-prettylights-syntax-invalid-illegal-text: #f0f6fc;
+  --color-prettylights-syntax-invalid-illegal-bg: #8e1519;
+  --color-prettylights-syntax-carriage-return-text: #f0f6fc;
+  --color-prettylights-syntax-carriage-return-bg: #b62324;
+  --color-prettylights-syntax-string-regexp: #7ee787;
+  --color-prettylights-syntax-markup-list: #f2cc60;
+  --color-prettylights-syntax-markup-heading: #1f6feb;
+  --color-prettylights-syntax-markup-italic: #c9d1d9;
+  --color-prettylights-syntax-markup-bold: #c9d1d9;
+  --color-prettylights-syntax-markup-deleted-text: #ffdcd7;
+  --color-prettylights-syntax-markup-deleted-bg: #67060c;
+  --color-prettylights-syntax-markup-inserted-text: #aff5b4;
+  --color-prettylights-syntax-markup-inserted-bg: #033a16;
+  --color-prettylights-syntax-markup-changed-text: #ffdfb6;
+  --color-prettylights-syntax-markup-changed-bg: #5a1e02;
+  --color-prettylights-syntax-markup-ignored-text: #c9d1d9;
+  --color-prettylights-syntax-markup-ignored-bg: #1158c7;
+  --color-prettylights-syntax-meta-diff-range: #d2a8ff;
+  --color-prettylights-syntax-brackethighlighter-angle: #8b949e;
+  --color-prettylights-syntax-sublimelinter-gutter-mark: #484f58;
+  --color-prettylights-syntax-constant-other-reference-link: #a5d6ff;
+  --color-btn-text: rgb(235 235 245 / 86%);
+  --color-btn-bg: rgba(var(--bg-default), 1);
+  --color-btn-border: rgba(var(--bg-default), 1);
+  --color-btn-shadow: 0 1px 0 rgba(var(--bg-default), 1);
+  --color-btn-inset-shadow: inset 0 1px 0 rgba(var(--bg-default), 1);
+  --color-btn-hover-bg: #90caf9;
+  --color-btn-hover-border: rgba(var(--bg-default), 0.5);
+  --color-btn-active-bg: #90caf9;
+  --color-btn-active-border: rgba(var(--primary-default), 1);
+  --color-btn-selected-bg: #90caf9;
+  --color-btn-primary-text: #000000;
+  --color-btn-primary-bg: #90caf9;
+  --color-btn-primary-border: #90caf9;
+  --color-btn-primary-shadow: 0 1px 0 rgb(27 31 36 / 10%);
+  --color-btn-primary-inset-shadow: inset 0 1px 0 hsl(0deg 0% 100% / 3%);
+  --color-btn-primary-hover-bg: #90caf9;
+  --color-btn-primary-hover-border: #90caf9;
+  --color-btn-primary-selected-bg: #90caf9;
+  --color-btn-primary-selected-shadow: inset 0 1px 0 rgb(0 45 17 / 20%);
+  --color-btn-primary-disabled-text: rgb(255 255 255 / 80%);
+  --color-btn-primary-disabled-bg: rgba(var(--primary-default), 0.5);
+  --color-btn-primary-disabled-border: rgba(var(--primary-default), 0.5);
+  --color-action-list-item-default-hover-bg: rgb(177 186 196 / 12%);
+  --color-segmented-control-bg: #333;
+  --color-segmented-control-button-bg: #333;
+  --color-segmented-control-button-selected-border: #90caf9;
+  --color-fg-default: #fafafa;
+  --color-fg-muted: #fafafa;
+  --color-fg-subtle: #fafafa;
+  --color-canvas-default: #000000;
+  --color-canvas-overlay: #000000;
+  --color-canvas-inset: #000000;
+  --color-canvas-subtle: #000000;
+  --color-border-default: #90caf9;
+  --color-border-muted: rgb(254 206 0 / 20%);
+  --color-neutral-muted: rgb(0 109 217 / 20%);
+  --color-accent-fg: #90caf9;
+  --color-accent-emphasis: rgba(var(--primary-default), 0.95);
+  --color-accent-muted: #90caf9;
+  --color-accent-subtle: rgba(var(--primary-default), 0.1);
+  --color-success-fg: #3fb950;
+  --color-attention-fg: #d29922;
+  --color-attention-muted: rgb(187 128 9 / 40%);
+  --color-attention-subtle: rgb(187 128 9 / 15%);
+  --color-danger-fg: #f85149;
+  --color-danger-muted: rgb(248 81 73 / 40%);
+  --color-danger-subtle: rgb(235 11 0 / 10%);
+  --color-primer-shadow-inset: 0 1px 0 rgba(var(--bg-default), 1), inset 0 1px 0 rgba(var(--bg-default), 1);
+  --color-scale-gray-7: rgb(0 0 250);
+  --color-scale-blue-8: rgb(0 236 158 / 15%);
+
+  /*! Extensions from @primer/css/alerts/flash.scss */
+  /* --color-social-reaction-bg-hover: var(--color-scale-gray-7); */
+  --color-social-reaction-bg-reacted-hover: var(--color-scale-blue-8);
+}
+
+main .pagination-loader-container {
+  background-image: url("../https:/github.com/images/modules/pulls/progressive-disclosure-line-dark.svg");
+}
+
+main .gsc-loading-image {
+  background-image: url("../assets/external/blog.cta.li/assets/szs-ldg.gif");
+}
+
+main .gsc-comment-box-textarea-extras {
+  display: none;
+}
+
+main .btn-primary {
+  box-shadow: none;
+}
+
+.gsc-comment-box {
+  border: solid 1px #90caf9;
+}
+
+.gsc-comment-box:not(.gsc-comment-box-is-reply) {
+  border-width: 0;
+}
+
+.gsc-comment-box-textarea {
+  border-style: unset;
+}

@@ -10,7 +10,7 @@ authors:
 Code blocks and examples are an essential part of technical project
 documentation. Material for MkDocs provides different ways to set up syntax
 highlighting for code blocks, either during build time using [Pygments] or
-during runtime using a JavaScript syntax highlighter. <!-- more -->
+during runtime using a JavaScript syntax highlighter. <!-- more --> 
 
   [Pygments]: https://pygments.org
 

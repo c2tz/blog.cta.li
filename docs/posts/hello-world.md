@@ -18,7 +18,7 @@ during runtime using a JavaScript syntax highlighter. <!-- more -->
 
 This configuration enables syntax highlighting on code blocks and inline code
 blocks, and allows to include source code directly from other files. Add the
-following lines to `mkdocs.yml`:
+following lines to `mkdocs.yml`: 
 
 ``` yaml
 markdown_extensions:

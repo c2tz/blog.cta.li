@@ -1,0 +1,127 @@
+site_author: c2tz
+site_description: Blog, notes et docs de c2tz.
+site_name: "Blog de c2tz"
+repo_url: https://github.com/c2tz/blog.cta.li
+repo_name: c2tz/blog.cta.li code
+site_url: https://blog.cta.li
+edit_uri: edit/main/docs/
+theme:
+  name: material
+  language: fr
+  logo: assets/logo.png
+  favicon: assets/favicon.png
+  features:
+    - content.action.view
+    - content.action.edit
+    - content.code.annotate
+    - content.code.copy
+    - content.code.select
+    - navigation.indexes
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.progress
+    - navigation.sections
+    - search.highlight
+    - search.share
+    - search.suggest
+    - toc.follow
+  icon:
+    repo: material/eye-arrow-right
+
+
+
+plugins:
+  - blog:
+      blog_dir: .
+      authors_profiles: true
+      authors_profiles_name: Auteurs
+      authors_profiles_url_format: "{slug}"
+      authors_profiles_pagination: false
+      authors_profiles_toc: true
+      blog_toc: true
+      archive: false
+      post_date_format: medium
+      post_url_format: "{slug}"
+      # post_url_date_format: dd/MM/yyyy
+  - git-revision-date-localized:
+      enable_creation_date: true
+      fallback_to_build_date: true
+  - git-committers:
+      repository: c2tz/blog.cta.li
+      branch: main
+      token: !ENV MKDOCS_GIT_COMMITTERS_APIKEY
+  - minify:
+      minify_html: true
+      minify_js: true
+      minify_css: true
+      htmlmin_opts:
+          remove_comments: true
+      cache_safe: true
+  - optimize:
+      optimize_png_speed: 1
+  - privacy
+  - search:
+      lang: fr
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: ''
+      permalink_title: Permalien
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji 
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      use_pygments: true
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+      linenums_style: pymdownx-inline
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      normalize_issue_symbols: true
+      repo_url_shorthand: true
+      user: c2tz
+      repo: blog.cta.li
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      auto_append:
+        - includes/abbreviations.md
+  - pymdownx.tasklist:
+      custom_checkbox: true
+      clickable_checkbox: true
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tilde
+
+extra:
+  generator: false
+  social:
+    - icon: simple/bluesky
+      link: https://bsky.app/profile/c2tz.bsky.social
+    - icon: fontawesome/brands/github
+      link: https://github.com/c2tz
+    - icon: simple/matrix
+      link: https://matrix.to/#/@c2tz:matrix.org
+    - icon: simple/youtube
+      link: https://youtube.com/@c2tz
+    - icon: fontawesome/solid/earth-europe
+      link: https://cta.li/
+    - icon: simple/protonmail
+      link: mailto:ctailliez@cta.li
+    - icon: simple/keeweb
+      link: https://iez.cta.li/publickey.ctailliez@cta.li-5ddcb7b94817b035c31f8e538d74276dafc53cad.

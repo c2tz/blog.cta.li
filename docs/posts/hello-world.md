@@ -135,7 +135,7 @@ theme:
 Code annotations offer a comfortable and friendly way to attach arbitrary
 content to specific sections of code blocks by adding numeric markers in block
 and inline comments in the language of the code block. Add the following to
-`mkdocs.yml` to enable them globally:
+`mkdocs.yml` to enable them globally: 
 
 ``` yaml
 theme:

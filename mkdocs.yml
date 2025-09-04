@@ -1,68 +1,63 @@
+# Project information
 site_author: c2tz
 site_description: Blog, notes et docs de c2tz.
 site_name: "Blog de c2tz"
-repo_url: https://github.com/c2tz/blog.cta.li
-repo_name: c2tz/blog.cta.li code
-site_url: https://blog.cta.li
+site_url: "https://blog.cta.li/"
 edit_uri: edit/main/docs/
+
+# Configuration
 theme:
-  name: material
+  custom_dir: custom
+  direction: ltr
   language: fr
+  name: material
   logo: assets/logo.png
   favicon: assets/favicon.png
+  font:
+    # desactiver les polices et overide le block font avec mon fichier .woff2
+    #false
+    text: Roboto
+    code: Roboto Mono
+  icon:
+    repo: simple/github
+    annotation: material/arrow-right-circle
+  # Color
+  palette:
+      scheme: slate
+      primary: custom
+      accent: black
+  watch:
+    - includes
+  # Feature
   features:
-    - content.action.view
-    - content.action.edit
+    - announce.dismiss
+    # - content.action.edit
+    # - content.action.view
     - content.code.annotate
     - content.code.copy
     - content.code.select
-    - navigation.indexes
+    # - content.tabs.link
+    # - content.tooltips
+    - header.autohide
+    # - navigation.expand
+    # - navigation.footer
+    # - navigation.indexes
     - navigation.instant
-    - navigation.instant.prefetch
-    - navigation.instant.progress
+    # - navigation.instant.prefetch
+    # - navigation.instant.progress
+    # - navigation.prune
     - navigation.sections
+    # - navigation.tabs
+    # - navigation.tabs.sticky
+    # - navigation.top
+    # - navigation.tracking
     - search.highlight
     - search.share
     - search.suggest
     - toc.follow
-  icon:
-    repo: material/eye-arrow-right
-
-
-
-plugins:
-  - blog:
-      blog_dir: .
-      authors_profiles: true
-      authors_profiles_name: Auteurs
-      authors_profiles_url_format: "{slug}"
-      authors_profiles_pagination: false
-      authors_profiles_toc: true
-      blog_toc: true
-      archive: false
-      post_date_format: medium
-      post_url_format: "{slug}"
-      # post_url_date_format: dd/MM/yyyy
-  - git-revision-date-localized:
-      enable_creation_date: true
-      fallback_to_build_date: true
-  - git-committers:
-      repository: c2tz/blog.cta.li
-      branch: main
-      token: !ENV MKDOCS_GIT_COMMITTERS_APIKEY
-  - minify:
-      minify_html: true
-      minify_js: true
-      minify_css: true
-      htmlmin_opts:
-          remove_comments: true
-      cache_safe: true
-  - optimize:
-      optimize_png_speed: 1
-  - privacy
-  - search:
-      lang: fr
-
+    # - toc.integrate
+  
+# Extensions
 markdown_extensions:
   - abbr
   - admonition
@@ -108,6 +103,54 @@ markdown_extensions:
       alternate_style: true
   - pymdownx.tilde
 
+# Repository information
+repo_name: c2tz/blog.cta.li
+repo_url: https://github.com/c2tz/blog.cta.li
+
+# Page tree
+nav:
+  - Blog: index.md
+
+# Plugins
+plugins:
+  - git-revision-date-localized:
+      enable_creation_date: true
+      timezone: Europe/Paris
+      type: timeago
+      locale: fr
+      fallback_to_build_date: true
+  - privacy:
+      enabled: !ENV [CI, false]
+  - glightbox
+  - git-committers:
+      repository: c2tz/blog.cta.li
+      branch: main
+      token: !ENV MKDOCS_GIT_COMMITTERS_APIKEY
+  - blog:
+      blog_dir: .
+      blog_toc: false
+      post_date_format: full
+      post_excerpt: required
+      post_readtime: true
+      post_readtime_words_per_minute: 250
+      post_slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+  - rss:
+      match_path: "blog/posts/.*"
+      date_from_meta:
+        as_creation: date.created
+        as_update: date.updated
+  - search:
+      separator: '[\s\u200b\-_,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
+  - minify:
+      minify_html: true
+
+# Custom
+extra_css:
+  - stylesheets/extra.css
+
+# Footer
 extra:
   generator: false
   social:
@@ -124,4 +167,6 @@ extra:
     - icon: simple/protonmail
       link: mailto:ctailliez@cta.li
     - icon: simple/keeweb
-      link: https://iez.cta.li/publickey.ctailliez@cta.li-5ddcb7b94817b035c31f8e538d74276dafc53cad.
+      link: https://iez.cta.li/publickey.ctailliez@cta.li-5ddcb7b94817b035c31f8e538d74276dafc53cad.asc
+      
+copyright: Aucun droit réservé - c2tz <br> Fait avec <a href="https://squidfunk.github.io/mkdocs-material" target="_blank" rel="noreferrer noopener">Material for MkDocs </a> et propulsé par <a href="https://github.com/" target="_blank" rel="noreferrer noopener">GitHub Pages</a>  

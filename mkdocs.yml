@@ -59,7 +59,7 @@ theme:
     - navigation.instant
     - navigation.instant.progress
     - navigation.instant.prefetch
-    - navigation.instant.preview
+    # - navigation.instant.preview
   
 # Extensions
 markdown_extensions:

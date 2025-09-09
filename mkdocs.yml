@@ -56,6 +56,10 @@ theme:
     - search.suggest
     - toc.follow
     # - toc.integrate
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.instant.prefetch
+    - navigation.instant.preview
   
 # Extensions
 markdown_extensions:
@@ -148,6 +152,10 @@ plugins:
       minify_html: true
       minify_css: true
       minify_js: true
+  - privacy:
+      enabled: !ENV [CI, false]
+      links_attr_map:
+        target: _blank
 
 # Custom
 extra_css:

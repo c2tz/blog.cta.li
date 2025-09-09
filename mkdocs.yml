@@ -134,6 +134,9 @@ plugins:
       post_slugify: !!python/object/apply:pymdownx.slugs.slugify
         kwds:
           case: lower
+  - optimize:
+      enabled: !ENV [CI, false]
+      optimize_png_speed: 10
   - rss:
       match_path: "blog/posts/.*"
       date_from_meta:

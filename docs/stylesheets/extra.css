@@ -62,8 +62,18 @@
   border-top-color: #222;
 }
 
+.md-code__nav {
+  background-color: #19191921;
+  backdrop-filter: blur(1px);
+}
+
+:hover > .md-code__nav {
+    background-color: #19191921;
+    backdrop-filter: blur(1px);
+}
+
 .md-dialog {
-  background-color: #90caf9;
+  background-color: var(--md-default-fg-color);
 }
 
 div.md-copyright>div.md-copyright__highlight>a {
@@ -81,6 +91,17 @@ div.md-copyright>div.md-copyright__highlight>a {
 
 .md-typeset .md-content__button {
   color: #cacaca;
+}
+
+.md-typeset .footnote {
+  color: #cacaca;
+  font-size: .64rem;
+}
+
+.md-typeset .tabbed-labels--linked > label > a {
+  display: block;
+  padding: .78125em 1.25em .625em;
+  text-decoration: none;
 }
 
 /* custom css for mkdocs dark theme */

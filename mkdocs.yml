@@ -141,27 +141,10 @@ plugins:
         as_update: date.updated
   - search:
       separator: '[\s\u200b\-_,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
-  - social
   - minify:
       minify_html: true
       minify_css: true
       minify_js: true
-
-    # CI=true mkdocs build
-  - group:
-      enabled: !ENV CI
-      plugins:
-        - git-revision-date-localized
-        - git-committers
-  
-  # INSIDERS=true mkdocs build
-  - group:
-      enabled: !ENV INSIDERS
-      plugins:
-        - privacy:
-            enabled: !ENV [CI, false]
-        - optimize:
-            enabled: !ENV [CI, false]
 
 # Custom
 extra_css:

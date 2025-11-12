@@ -1,0 +1,16 @@
+---
+import { SITE_TITLE } from "@/consts";
+---
+
+<footer class="text-gray-500 font-extralight pb-8 flex flex-col justify-center md:flex-row md:justify-between space-y-2 md:space-y-0">
+  <span>Copyright (c) {new Date().getFullYear()} {SITE_TITLE}</span>
+  <span class="flex space-x-2">
+      <a href="https://github.com/lhr0909/astro-etch"
+        class="hover:text-blue-500"
+        target="_blank"
+        rel="noopener"
+      >
+        GitHub
+      </a>
+  </span>
+</footer>

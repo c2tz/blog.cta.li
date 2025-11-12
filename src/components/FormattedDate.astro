@@ -1,0 +1,11 @@
+---
+interface Props {
+  date: Date;
+}
+
+const { date } = Astro.props as Props;
+---
+
+<time class="text-gray-500 text-sm font-mono" datetime={date.toISOString()}>
+  {date.toISOString().split("T")[0]}
+</time>

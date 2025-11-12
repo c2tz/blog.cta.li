@@ -1,0 +1,34 @@
+{
+  "name": "astro-commit",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^4.0.3",
+    "@astrojs/react": "^4.1.2",
+    "@astrojs/rss": "^4.0.10",
+    "@astrojs/sitemap": "^3.2.1",
+    "@astrojs/tailwind": "^5.1.4",
+    "@tailwindcss/typography": "^0.5.15",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "astro": "^5.1.1",
+    "astro-seo": "^0.8.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "satori-astro": "^0.3.0",
+    "satori-html": "^0.3.2",
+    "sharp": "^0.33.5",
+    "tailwindcss": "^3.4.17"
+  },
+  "packageManager": "pnpm@9.15.1",
+  "volta": {
+    "node": "20.18.1",
+    "pnpm": "9.15.1"
+  }
+}

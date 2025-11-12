@@ -1,0 +1,50 @@
+---
+import FormattedDate from "@/components/FormattedDate.astro";
+import Layout from "@/layouts/Layout.astro";
+import { getCollection } from "astro:content";
+
+export async function getStaticPaths() {
+  const allPosts = (await getCollection("blog")).sort(
+    (b, a) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf()
+  );
+
+  const uniqueTags = [
+    ...new Set(
+      allPosts
+        .flatMap((post) => post.data.tags)
+        .filter((tag) => tag !== undefined)
+    ),
+  ];
+
+  return uniqueTags.map((tag) => {
+    const filteredPosts = allPosts.filter(
+      (post) => post.data.tags && post.data.tags.includes(tag)
+    );
+    return {
+      params: { tag },
+      props: { posts: filteredPosts },
+    };
+  });
+}
+
+const { tag } = Astro.params;
+const { posts } = Astro.props;
+---
+
+<Layout title={`Posts with Tag "${tag}"`}>
+  <Fragment slot="content">
+    <h1 class="text-2xl font-medium">Posts with Tag "{tag}"</h1>
+    <ul>
+      {
+        posts.map((post) => (
+          <li class="flex space-x-2 items-baseline">
+            <span class="text-gray-500 text-xs md:text-sm">
+                <FormattedDate date={post.data.pubDate} />
+            </span>
+            <a href={`/posts/${post.id}/`} class="text-blue-500 md:text-lg">{post.data.title}</a>
+          </li>
+        ))
+      }
+    </ul>
+  </Fragment>
+</Layout>

@@ -1,0 +1,56 @@
+---
+import { SEO, type Props as SEOProps } from 'astro-seo';
+
+import { SITE_DESCRIPTION, SITE_TITLE } from "@/consts";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+
+interface Props extends SEOProps {
+  locale?: string;
+}
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const { locale = "en" } = Astro.props as Props;
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <SEO
+      titleTemplate={`%s - ${SITE_TITLE}`}
+      titleDefault={SITE_TITLE}
+      description={SITE_DESCRIPTION}
+      charset="utf-8"
+      canonical={canonicalURL}
+      {...Astro.props}
+      extend={{
+        meta: [
+          { name: "viewport", content: "width=device-width,initial-scale=1" },
+          { name: "generator", content: Astro.generator },
+          ...(Astro.props.extend?.meta ?? []),
+        ],
+        link: [
+          ...(Astro.props.extend?.link ?? []),
+          { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+          {
+            rel: "alternate",
+            type: "application/rss+xml",
+            title: SITE_TITLE,
+            href: `${Astro.site}rss.xml`,
+          },
+          { rel: "sitemap", href: "/sitemap-index.xml" },
+        ],
+      }}
+    />
+    <slot name="head" />
+  </head>
+  <body
+    class="bg-white text-slate-900 leading-normal tracking-normal w-4/5 md:max-w-3xl mx-auto"
+  >
+    <main class="container flex flex-col space-y-4 min-h-screen">
+      <Header />
+      <slot name="content" />
+      <Footer />
+    </main>
+  </body>
+</html>

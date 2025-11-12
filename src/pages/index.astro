@@ -36,19 +36,29 @@ const uniqueTags = [
     <Prose>
       <Content />
     </Prose>
-    <div class="flex flex-col space-y-2">
-      <h1 class="text-2xl font-medium">Blog Posts</h1>
-      <ul class="flex flex-col space-y-4 md:space-y-0">
-        {
-          posts.map((post) => (
-            <li class="flex flex-col space-x-0 md:flex-row md:space-x-2 md:items-baseline">
-              <FormattedDate date={post.data.pubDate} />
-              <a href={`/posts/${post.id}/`} class="text-blue-500 md:text-lg hover:underline">{post.data.title}</a>
-            </li>
-          ))
-        }
-      </ul>
-    </div>
+<div class="flex flex-col space-y-2">
+  <!-- h2 stylé exactement comme dans le Markdown -->
+  <div class="prose prose-slate md:prose-lg dark:prose-invert">
+    <h2 id="blog-posts">Blog Posts</h2>
+  </div>
+
+  <!-- le reste n’hérite pas des styles typography -->
+  <ul class="not-prose flex flex-col space-y-4 md:space-y-0">
+    {
+      posts.map((post) => (
+        <li class="flex flex-col space-x-0 md:flex-row md:space-x-2 md:items-baseline">
+          <FormattedDate date={post.data.pubDate} />
+          <a
+            href={`/posts/${post.id}/`}
+            class="text-[#1565c0] dark:text-[#90caf9] md:text-lg hover:underline"
+          >
+            {post.data.title}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</div>
     <div class="flex flex-col space-y-2">
       <h2 class="text-xl font-medium tracking-tight">Tags</h2>
       <ul class="flex flex-col space-x-0 space-y-1 md:flex-row md:space-x-2 md:space-y-0 md:flex-wrap">

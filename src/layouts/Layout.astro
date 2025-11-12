@@ -44,13 +44,11 @@ const { locale = "fr" } = Astro.props as Props;
     />
     <slot name="head" />
   </head>
-  <body
-  class="bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 leading-normal tracking-normal w-4/5 md:max-w-3xl mx-auto"
->
-    <main class="container flex flex-col space-y-4 min-h-screen">
-      <Header />
-      <slot name="content" />
-      <Footer />
-    </main>
-  </body>
+<body class="bg-white text-slate-900 dark:bg-black dark:text-slate-100 leading-normal tracking-normal w-4/5 md:max-w-3xl mx-auto [&_a]:text-[#1565c0] dark:[&_a]:text-[#90caf9]">
+  <main class="container flex flex-col space-y-4 min-h-screen">
+    <Header />
+    <slot name="content" />
+    <Footer />
+  </main>
+</body>
 </html>

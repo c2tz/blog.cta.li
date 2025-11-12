@@ -2,15 +2,22 @@
 import { SITE_TITLE } from "../consts";
 ---
 
-<nav class="mt-8 mb-4 flex flex-col md:flex-row md:justify-between">
+<nav
+  class="mt-8 mb-4 flex flex-col md:flex-row md:justify-between
+         [&_.header-link]:text-black dark:[&_.header-link]:text-white
+         [&_.header-link:hover]:underline"
+>
   <h2 class="text-lg font-medium">
-    <a href="/" class="hover:underline inline-block">
+    <a href="/" class="header-link inline-block">
       {SITE_TITLE}
     </a>
   </h2>
-  <!-- <div class="leading-8 inline-block">
-    <a href="/posts" class="text-blue-500">
+
+  <!--
+  <div class="leading-8 inline-block">
+    <a href="/posts" class="header-link">
       Blog Posts
     </a>
-  </div> -->
+  </div>
+  -->
 </nav>

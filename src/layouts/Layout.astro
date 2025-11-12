@@ -30,6 +30,7 @@ const { locale = "fr" } = Astro.props as Props;
           ...(Astro.props.extend?.meta ?? []),
         ],
         link: [
+          { rel: "preload", as: "font", href: "/fonts/roboto-v30-flex-latin.woff2", type: "font/woff2", crossorigin: "" },
           ...(Astro.props.extend?.link ?? []),
           { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
           {
@@ -42,13 +43,49 @@ const { locale = "fr" } = Astro.props as Props;
         ],
       }}
     />
+    <style is:global>
+      /* Roboto Flex : police principale (locale) */
+      @font-face {
+        font-family: 'Roboto Flex';
+        font-style: normal;
+        font-weight: 100 900;
+        font-display: swap;
+        src: url('/fonts/roboto-v30-flex-latin.woff2') format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+      :root {
+        font-family: 'Roboto Flex', system-ui, -apple-system, BlinkMacSystemFont,
+          'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      }
+
+      /* Roboto Mono : monospace (hébergé Google Fonts, latin) */
+      @font-face {
+        font-family: 'Roboto Mono';
+        font-style: normal;
+        font-weight: 100 700;
+        font-display: swap;
+        src: url('https://fonts.gstatic.com/s/robotomono/v31/L0x5DF4xlVMF-BfR8bXMIjhLq3-cXbKD.woff2') format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122;
+      }
+      @font-face {
+        font-family: 'Roboto Mono';
+        font-style: italic;
+        font-weight: 100 700;
+        font-display: swap;
+        src: url('https://fonts.gstatic.com/s/robotomono/v31/L0x7DF4xlVMF-BfR8bXMIjhOm32WWpCBC10.woff2') format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122;
+      }
+      code, pre, kbd, samp {
+        font-family: 'Roboto Mono', monospace;
+      }
+    </style>
     <slot name="head" />
   </head>
-<body class="bg-white text-slate-900 dark:bg-black dark:text-slate-100 leading-normal tracking-normal w-4/5 md:max-w-3xl mx-auto [&_a]:text-[#1565c0] dark:[&_a]:text-[#90caf9]">
-  <main class="container flex flex-col space-y-4 min-h-screen">
-    <Header />
-    <slot name="content" />
-    <Footer />
-  </main>
-</body>
+  <body class="bg-white text-slate-900 dark:bg-black dark:text-slate-100 leading-normal tracking-normal w-4/5 md:max-w-3xl mx-auto [&_a]:text-[#1565c0] dark:[&_a]:text-[#90caf9]">
+    <main class="container flex flex-col space-y-4 min-h-screen">
+      <Header />
+      <slot name="content" />
+      <Footer />
+    </main>
+  </body>
 </html>

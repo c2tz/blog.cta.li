@@ -1,7 +1,7 @@
 ---
 import { SEO, type Props as SEOProps } from 'astro-seo';
 
-import { SITE_DESCRIPTION, SITE_TITLE } from "@/consts";
+import { SITE_DESCRIPTION, SITE_TITLE, SITE_TAB_TITLE } from "@/consts";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
 
@@ -10,7 +10,7 @@ interface Props extends SEOProps {
 }
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
-const { locale = "en" } = Astro.props as Props;
+const { locale = "fr" } = Astro.props as Props;
 ---
 
 <!doctype html>
@@ -18,7 +18,7 @@ const { locale = "en" } = Astro.props as Props;
   <head>
     <SEO
       titleTemplate={`%s - ${SITE_TITLE}`}
-      titleDefault={SITE_TITLE}
+      titleDefault={SITE_TAB_TITLE}
       description={SITE_DESCRIPTION}
       charset="utf-8"
       canonical={canonicalURL}
@@ -35,7 +35,7 @@ const { locale = "en" } = Astro.props as Props;
           {
             rel: "alternate",
             type: "application/rss+xml",
-            title: SITE_TITLE,
+            title: SITE_TAB_TITLE,
             href: `${Astro.site}rss.xml`,
           },
           { rel: "sitemap", href: "/sitemap-index.xml" },

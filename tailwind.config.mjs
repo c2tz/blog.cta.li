@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'media', // active le mode sombre automatique selon le système
   content: ['./src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}'],
   theme: {
     extend: {
@@ -29,19 +30,6 @@ export default {
                 borderRadius: 0,
               },
             },
-            // ':where(blockquote p:first-of-type):not(:where([class~="not-prose"] *))::before': {
-            //   content: "''",
-            // },
-            // ':where(blockquote p:last-of-type):not(:where([class~="not-prose"] *))::after': {
-            //   content: "''",
-            // },
-            // blockquote: {
-            //   margin: theme("spacing.0"),
-            //   p: {
-            //     margin: theme("spacing.0"),
-            //     padding: theme("spacing.2"),
-            //   },
-            // },
           },
         },
       }),

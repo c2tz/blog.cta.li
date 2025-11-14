@@ -16,6 +16,9 @@
 
 #### `develop` branch :
 <!-- COMMITS_DEVELOP:START -->
+- [`59d6ee7`](https://github.com/c2tz/ct-blog.cta.li/commit/59d6ee780a8520b84d7e4f4510dd64d117d37133) — fix(ci): correct README update workflow script
+- [`a284b2f`](https://github.com/c2tz/ct-blog.cta.li/commit/a284b2f114c6e10bde314226482bdaa06d79fa20) — feat(ci): add workflow to update README with recent commits
+- [`2d33aff`](https://github.com/c2tz/ct-blog.cta.li/commit/2d33aff2c576bacdba1e41735081f3f3fc82a6ac) — feat: enhance README with tech stack and milestones
 <!-- COMMITS_DEVELOP:END -->
 
 #### `prod` branch :

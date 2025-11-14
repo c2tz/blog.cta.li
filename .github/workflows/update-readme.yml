@@ -1,9 +1,9 @@
-name: Update README with last commits
+name: Update README with recent commits
 
 on:
   schedule:
-    - cron: "0 5 * * *"  # tous les jours à 05:00 UTC
-  workflow_dispatch:
+    - cron: "0 5 * * *"  # Runs every day at 05:00 UTC
+  workflow_dispatch:      # Allows manual execution
   push:
     branches:
       - develop
@@ -17,15 +17,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      - name: Update README commits sections
+      - name: Update README sections with recent commits
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -34,29 +34,29 @@ jobs:
           const fs = require("fs");
           const path = require("path");
 
-          const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-          const REPO = process.env.GITHUB_REPOSITORY; // ex: "c2tz/ct-blog.cta.li"
+          const TOKEN = process.env.GITHUB_TOKEN;
+          const REPO = process.env.GITHUB_REPOSITORY;
 
-          if (!GITHUB_TOKEN) {
-            console.error("GITHUB_TOKEN manquant");
+          if (!TOKEN) {
+            console.error("Missing GITHUB_TOKEN");
             process.exit(1);
           }
 
           if (!REPO) {
-            console.error("GITHUB_REPOSITORY manquant");
+            console.error("Missing GITHUB_REPOSITORY");
             process.exit(1);
           }
 
-          const parts = REPO.split("/");
-          const owner = parts[0];
-          const repo = parts[1];
+          const [owner, repo] = REPO.split("/");
 
+          // Branches to process
           const BRANCHES = [
             { name: "develop", marker: "COMMITS_DEVELOP" },
             { name: "main", marker: "COMMITS_MAIN" },
           ];
 
-          async function fetchCommits(branch, perPage = 3) {
+          // Fetch last X commits from a branch
+          async function fetchCommits(branch, count = 5) {
             const url =
               "https://api.github.com/repos/" +
               owner +
@@ -65,22 +65,18 @@ jobs:
               "/commits?sha=" +
               encodeURIComponent(branch) +
               "&per_page=" +
-              perPage;
+              count;
 
             const res = await fetch(url, {
               headers: {
-                Authorization: "Bearer " + GITHUB_TOKEN,
-                "User-Agent": "github-actions-update-readme",
+                Authorization: "Bearer " + TOKEN,
+                "User-Agent": "github-actions",
                 Accept: "application/vnd.github+json",
               },
             });
 
             if (!res.ok) {
-              console.error(
-                "Erreur API GitHub pour " + branch + ":",
-                res.status,
-                await res.text()
-              );
+              console.error("GitHub API error for branch " + branch + ":", res.status);
               return [];
             }
 
@@ -88,54 +84,42 @@ jobs:
             return Array.isArray(data) ? data : [];
           }
 
-          function formatCommitsMarkdown(commits) {
-            if (!commits.length) {
-              return "_Aucun commit trouvé._";
-            }
+          // Format commit list in Markdown
+          function formatCommits(commits) {
+            if (!commits.length) return "_No commits found._";
 
             return commits
               .map((c) => {
-                const sha = (c.sha || "").slice(0, 7);
-                const url = c.html_url || "";
-                const message =
-                  (c.commit && c.commit.message
-                    ? c.commit.message.split("\n")[0]
-                    : "(sans message)");
-                return "- [`" + sha + "`](" + url + ") — " + message;
+                const sha = c.sha.slice(0, 7);
+                const url = c.html_url;
+                const msg = c.commit.message.split("\n")[0];
+                return "- [`" + sha + "`](" + url + ") — " + msg;
               })
               .join("\n");
           }
 
+          // Replace content between markers
           function updateSection(content, marker, newSection) {
             const regex = new RegExp(
               "(<!-- " + marker + ":START -->)([\\s\\S]*?)(<!-- " + marker + ":END -->)",
               "m"
             );
-
-            if (!regex.test(content)) {
-              console.error("Balises pour " + marker + " introuvables dans README.md");
-              return content;
-            }
-
             return content.replace(regex, "$1\n" + newSection + "\n$3");
           }
 
           async function main() {
-            const readmePath = path.join(process.cwd(), "README.md");
-            let readme = fs.readFileSync(readmePath, "utf8");
+            const readmeFile = path.join(process.cwd(), "README.md");
+            let readme = fs.readFileSync(readmeFile, "utf8");
 
-            for (const cfg of BRANCHES) {
-              const branchName = cfg.name;
-              const marker = cfg.marker;
-
-              console.log("Récupération des commits pour " + branchName + "...");
-              const commits = await fetchCommits(branchName, 3);
-              const sectionMd = formatCommitsMarkdown(commits);
-              readme = updateSection(readme, marker, sectionMd);
+            // Process each branch
+            for (const entry of BRANCHES) {
+              const commits = await fetchCommits(entry.name, 5);
+              const md = formatCommits(commits);
+              readme = updateSection(readme, entry.marker, md);
             }
 
-            fs.writeFileSync(readmePath, readme);
-            console.log("README.md mis à jour.");
+            fs.writeFileSync(readmeFile, readme);
+            console.log("README updated successfully.");
           }
 
           main().catch((err) => {
@@ -144,14 +128,14 @@ jobs:
           });
           EOF
 
-      - name: Commit changes
+      - name: Commit changes if any
         run: |
           if git diff --quiet; then
-            echo "Aucun changement à committer."
+            echo "No changes detected."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add README.md
-          git commit -m "chore: update last commits in README"
+          git commit -m "chore(ci): update README with recent commits"
           git push

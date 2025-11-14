@@ -35,8 +35,19 @@ import { SITE_TITLE } from "@/consts";
 
   <!-- Ligne d’info -->
   <div class="mt-4 text-sm font-extralight text-[#616161] dark:text-[#9b9b9b]">
-    <span>MIT License {new Date().getFullYear()} {SITE_TITLE}</span>
+    <span>
+      <a
+        href="https://raw.githubusercontent.com/c2tz/ct-blog.cta.li/f82f66a1b4cbca57899d2bdf827e99001e37dda9/LICENSE"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="footer-link"
+      >MIT License</a> {new Date().getFullYear()}
+      —
+      <a href="/" class="footer-link">{SITE_TITLE}</a>
+    </span>
+
     <span class="mx-2">•</span>
+
     <span>
       Votre IP : <strong id="client-ip">Chargement…</strong>
       (<span id="client-country">–</span>)

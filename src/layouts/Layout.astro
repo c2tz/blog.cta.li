@@ -44,7 +44,6 @@ const { locale = "fr" } = Astro.props as Props;
       }}
     />
     <style is:global>
-      /* Roboto Flex : police principale (locale) */
       @font-face {
         font-family: 'Roboto Flex';
         font-style: normal;
@@ -58,7 +57,6 @@ const { locale = "fr" } = Astro.props as Props;
           'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
       }
 
-      /* Roboto Mono : monospace (hébergé Google Fonts, latin) */
       @font-face {
         font-family: 'Roboto Mono';
         font-style: normal;
@@ -78,9 +76,35 @@ const { locale = "fr" } = Astro.props as Props;
       code, pre, kbd, samp {
         font-family: 'Roboto Mono', monospace;
       }
+/* Liens d’ancrage dans les titres :
+   - gardent le style (gras, taille, etc.)
+   - couleur définie manuellement clair/sombre */
+h1 > a.heading-link,
+h2 > a.heading-link,
+h3 > a.heading-link,
+h4 > a.heading-link,
+h5 > a.heading-link,
+h6 > a.heading-link {
+  font: inherit;      /* récupère gras, taille, etc. du <h*> */
+  color: #000;        /* thème clair */
+}
+
+@media (prefers-color-scheme: dark) {
+  h1 > a.heading-link,
+  h2 > a.heading-link,
+  h3 > a.heading-link,
+  h4 > a.heading-link,
+  h5 > a.heading-link,
+  h6 > a.heading-link {
+    font: inherit;
+    color: #fff;      /* thème sombre */
+  }
+}
+
     </style>
     <slot name="head" />
   </head>
+
   <body class="bg-white text-slate-900 dark:bg-black dark:text-slate-100 leading-normal tracking-normal w-4/5 md:max-w-3xl mx-auto [&_a]:text-[#1565c0] dark:[&_a]:text-[#90caf9]">
     <main class="container flex flex-col space-y-4 min-h-screen">
       <Header />

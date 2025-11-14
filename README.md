@@ -4,6 +4,8 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`1c392ad`](https://github.com/c2tz/ct-blog.cta.li/commit/1c392ad97f06d6f3bf2618e43c1c28ea0ac18cac) — fix(ci): correct README update workflow script
+- [`fb789e3`](https://github.com/c2tz/ct-blog.cta.li/commit/fb789e32c7d7c2153643f6d89d217d9fd5df462a) — chore: update last commits in README
 - [`f321676`](https://github.com/c2tz/ct-blog.cta.li/commit/f321676fc094b2aaefd6a7eb5551a5356461fbfd) — chore(readme): reorganize structure and fix typos
 - [`dc42f88`](https://github.com/c2tz/ct-blog.cta.li/commit/dc42f88fc0f37dbed875375d7c6d7cf890973321) — chore: update last commits in README
 - [`59d6ee7`](https://github.com/c2tz/ct-blog.cta.li/commit/59d6ee780a8520b84d7e4f4510dd64d117d37133) — fix(ci): correct README update workflow script

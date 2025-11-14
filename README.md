@@ -4,10 +4,14 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`f321676`](https://github.com/c2tz/ct-blog.cta.li/commit/f321676fc094b2aaefd6a7eb5551a5356461fbfd) — chore(readme): reorganize structure and fix typos
+- [`dc42f88`](https://github.com/c2tz/ct-blog.cta.li/commit/dc42f88fc0f37dbed875375d7c6d7cf890973321) — chore: update last commits in README
+- [`59d6ee7`](https://github.com/c2tz/ct-blog.cta.li/commit/59d6ee780a8520b84d7e4f4510dd64d117d37133) — fix(ci): correct README update workflow script
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`
 <!-- COMMITS_MAIN:START -->
+- [`e70d431`](https://github.com/c2tz/ct-blog.cta.li/commit/e70d431c9938ee0e9579dad641c8336886240acc) — Initial commit
 <!-- COMMITS_MAIN:END -->
 
 ### Milestones

@@ -2,7 +2,7 @@ name: Update README with last commits
 
 on:
   schedule:
-    - cron: "0 5 * * *"
+    - cron: "0 5 * * *"  # tous les jours à 05:00 UTC
   workflow_dispatch:
   push:
     branches:
@@ -35,9 +35,21 @@ jobs:
           const path = require("path");
 
           const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-          const REPO = process.env.GITHUB_REPOSITORY; 
+          const REPO = process.env.GITHUB_REPOSITORY; // ex: "c2tz/ct-blog.cta.li"
 
-          const [owner, repo] = REPO.split("/");
+          if (!GITHUB_TOKEN) {
+            console.error("GITHUB_TOKEN manquant");
+            process.exit(1);
+          }
+
+          if (!REPO) {
+            console.error("GITHUB_REPOSITORY manquant");
+            process.exit(1);
+          }
+
+          const parts = REPO.split("/");
+          const owner = parts[0];
+          const repo = parts[1];
 
           const BRANCHES = [
             { name: "develop", marker: "COMMITS_DEVELOP" },
@@ -45,20 +57,30 @@ jobs:
           ];
 
           async function fetchCommits(branch, perPage = 3) {
-            const url = `https://api.github.com/repos/${owner}/${repo}/commits?sha=${encodeURIComponent(
-              branch
-            )}&per_page=${perPage}`;
+            const url =
+              "https://api.github.com/repos/" +
+              owner +
+              "/" +
+              repo +
+              "/commits?sha=" +
+              encodeURIComponent(branch) +
+              "&per_page=" +
+              perPage;
 
             const res = await fetch(url, {
               headers: {
-                Authorization: `Bearer ${GITHUB_TOKEN}`,
+                Authorization: "Bearer " + GITHUB_TOKEN,
                 "User-Agent": "github-actions-update-readme",
                 Accept: "application/vnd.github+json",
               },
             });
 
             if (!res.ok) {
-              console.error(\`Erreur API GitHub pour \${branch}:\`, res.status);
+              console.error(
+                "Erreur API GitHub pour " + branch + ":",
+                res.status,
+                await res.text()
+              );
               return [];
             }
 
@@ -67,47 +89,69 @@ jobs:
           }
 
           function formatCommitsMarkdown(commits) {
-            if (!commits.length) return "_Aucun commit trouvé._";
+            if (!commits.length) {
+              return "_Aucun commit trouvé._";
+            }
 
             return commits
               .map((c) => {
-                const sha = c.sha.slice(0, 7);
-                const url = c.html_url;
-                const msg = c.commit.message.split("\n")[0];
-                return \`- [\`${sha}\`](${url}) — ${msg}\`;
+                const sha = (c.sha || "").slice(0, 7);
+                const url = c.html_url || "";
+                const message =
+                  (c.commit && c.commit.message
+                    ? c.commit.message.split("\n")[0]
+                    : "(sans message)");
+                return "- [`" + sha + "`](" + url + ") — " + message;
               })
               .join("\n");
           }
 
           function updateSection(content, marker, newSection) {
             const regex = new RegExp(
-              \`(<!-- \${marker}:START -->)([\\\\s\\\\S]*?)(<!-- \${marker}:END -->)\`,
+              "(<!-- " + marker + ":START -->)([\\s\\S]*?)(<!-- " + marker + ":END -->)",
               "m"
             );
 
-            return content.replace(regex, \`$1\n\${newSection}\n$3\`);
+            if (!regex.test(content)) {
+              console.error("Balises pour " + marker + " introuvables dans README.md");
+              return content;
+            }
+
+            return content.replace(regex, "$1\n" + newSection + "\n$3");
           }
 
-          (async () => {
+          async function main() {
             const readmePath = path.join(process.cwd(), "README.md");
             let readme = fs.readFileSync(readmePath, "utf8");
 
-            for (const { name, marker } of BRANCHES) {
-              const commits = await fetchCommits(name, 3);
-              const md = formatCommitsMarkdown(commits);
-              readme = updateSection(readme, marker, md);
+            for (const cfg of BRANCHES) {
+              const branchName = cfg.name;
+              const marker = cfg.marker;
+
+              console.log("Récupération des commits pour " + branchName + "...");
+              const commits = await fetchCommits(branchName, 3);
+              const sectionMd = formatCommitsMarkdown(commits);
+              readme = updateSection(readme, marker, sectionMd);
             }
 
             fs.writeFileSync(readmePath, readme);
-            console.log("README mis à jour.");
-          })();
+            console.log("README.md mis à jour.");
+          }
+
+          main().catch((err) => {
+            console.error(err);
+            process.exit(1);
+          });
           EOF
 
       - name: Commit changes
         run: |
-          if git diff --quiet; then exit 0; fi
+          if git diff --quiet; then
+            echo "Aucun changement à committer."
+            exit 0
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add README.md
-          git commit -m "chore(auto-bot): update commits list"
+          git commit -m "chore: update last commits in README"
           git push

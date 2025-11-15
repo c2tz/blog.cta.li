@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`d345481`](https://github.com/c2tz/ct-blog.cta.li/commit/d345481b734d1ceed56dd0da0b5f82f53d201687) — content: update intro text
+- [`4cd72c5`](https://github.com/c2tz/ct-blog.cta.li/commit/4cd72c545703c9972d265abf23411fd955494d9f) — chore(ci): update README with recent commits
 - [`0a08d49`](https://github.com/c2tz/ct-blog.cta.li/commit/0a08d49a34428dbbbc792c4f6a47c999f95a11bb) — feat: add section anchors and refresh footer links
 - [`f82f66a`](https://github.com/c2tz/ct-blog.cta.li/commit/f82f66a1b4cbca57899d2bdf827e99001e37dda9) — chore(ci): update README with recent commits
 - [`1c392ad`](https://github.com/c2tz/ct-blog.cta.li/commit/1c392ad97f06d6f3bf2618e43c1c28ea0ac18cac) — fix(ci): correct README update workflow script
-- [`fb789e3`](https://github.com/c2tz/ct-blog.cta.li/commit/fb789e32c7d7c2153643f6d89d217d9fd5df462a) — chore: update last commits in README
-- [`f321676`](https://github.com/c2tz/ct-blog.cta.li/commit/f321676fc094b2aaefd6a7eb5551a5356461fbfd) — chore(readme): reorganize structure and fix typos
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

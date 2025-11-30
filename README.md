@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`e9f3765`](https://github.com/c2tz/ct-blog.cta.li/commit/e9f3765a3ee04805882cbf8865b3b19b26cf0da7) — feat: improve typography list colors
+- [`e77ee42`](https://github.com/c2tz/ct-blog.cta.li/commit/e77ee422f15bbca34167ab2ff3d699570f696bb3) — chore(ci): update README with recent commits
 - [`fa4a9c3`](https://github.com/c2tz/ct-blog.cta.li/commit/fa4a9c3af1427772e785d5617f129b5765a858be) — chore: add dependabot configuration
 - [`e376f28`](https://github.com/c2tz/ct-blog.cta.li/commit/e376f2883e131d72d46f413aff00fe11a8a5c3b3) — chore(ci): update README with recent commits
 - [`f3517b8`](https://github.com/c2tz/ct-blog.cta.li/commit/f3517b8340ac3939f3d560ad396979894d1138c3) — chore: update robots.txt to disallow crawling
-- [`9eef7d7`](https://github.com/c2tz/ct-blog.cta.li/commit/9eef7d72198522a1f9eb2858bfa7f9d658ab3b10) — feat: improve home posts list and date display
-- [`afc6101`](https://github.com/c2tz/ct-blog.cta.li/commit/afc61010c5cd80a531ad29cb295332c29bb866a1) — feat: customize shikijs theme
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`96d5e6d`](https://github.com/c2tz/ct-blog.cta.li/commit/96d5e6d385210564d1af0bb61932e664ca004d2c) — Merge branch 'develop' of https://github.com/c2tz/ct-blog.cta.li into develop
+- [`f40f166`](https://github.com/c2tz/ct-blog.cta.li/commit/f40f1660229e5890dc1f71498336974a783c1c2b) — chore(ci): update README with recent commits
+- [`a82a07d`](https://github.com/c2tz/ct-blog.cta.li/commit/a82a07dae4b1a08950ca83f09f6314c526ecb7d8) — Update .gitignore
 - [`e9f3765`](https://github.com/c2tz/ct-blog.cta.li/commit/e9f3765a3ee04805882cbf8865b3b19b26cf0da7) — feat: improve typography list colors
 - [`e77ee42`](https://github.com/c2tz/ct-blog.cta.li/commit/e77ee422f15bbca34167ab2ff3d699570f696bb3) — chore(ci): update README with recent commits
-- [`fa4a9c3`](https://github.com/c2tz/ct-blog.cta.li/commit/fa4a9c3af1427772e785d5617f129b5765a858be) — chore: add dependabot configuration
-- [`e376f28`](https://github.com/c2tz/ct-blog.cta.li/commit/e376f2883e131d72d46f413aff00fe11a8a5c3b3) — chore(ci): update README with recent commits
-- [`f3517b8`](https://github.com/c2tz/ct-blog.cta.li/commit/f3517b8340ac3939f3d560ad396979894d1138c3) — chore: update robots.txt to disallow crawling
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

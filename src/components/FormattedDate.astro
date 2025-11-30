@@ -7,13 +7,12 @@ const { date } = Astro.props as Props;
 
 // Formatage complet en français (jour + date longue)
 const dateFrComplete = date.toLocaleDateString("fr-FR", {
-  weekday: "long",
+  weekday: "short",
   year: "numeric",
-  month: "long",
+  month: "short",
   day: "numeric"
 });
 ---
-
-<time class="text-gray-500 text-sm font-mono" datetime={date.toISOString()}>
-  {dateFrComplete.charAt(0).toUpperCase() + dateFrComplete.slice(1)}
+<time class="text-[#616161] dark:text-[#9b9b9b] text-sm font-mono italic" datetime={date.toISOString()}>
+ {dateFrComplete.charAt(0).toUpperCase() + dateFrComplete.slice(1)}
 </time>

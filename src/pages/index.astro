@@ -1,21 +1,21 @@
 ---
-import { getCollection, getEntry, render } from 'astro:content';
+import { getCollection, getEntry, render } from "astro:content";
 
 import Layout from "../layouts/Layout.astro";
-import Prose from '../components/Prose.astro';
-import FormattedDate from '@/components/FormattedDate.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '@/consts';
+import Prose from "../components/Prose.astro";
+import FormattedDate from "@/components/FormattedDate.astro";
+import { SITE_DESCRIPTION, SITE_TITLE } from "@/consts";
 
 const entry = await getEntry("info", "intro");
 const { Content } = await render(entry!);
 
 const posts = (await getCollection("blog")).sort(
-  (b, a) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf()
+  (b, a) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf(),
 );
 
 const uniqueTags = [
   ...new Set(
-    posts.flatMap((post) => post.data.tags).filter((tag) => tag !== undefined)
+    posts.flatMap((post) => post.data.tags).filter((tag) => tag !== undefined),
   ),
 ].sort();
 ---
@@ -38,23 +38,29 @@ const uniqueTags = [
     </Prose>
 
     <div class="flex flex-col space-y-2">
-      <!-- H2 avec la même typographie que le Markdown,
-           lien ancre qui hérite de la couleur et se souligne au hover -->
-      <div class="prose prose-slate md:prose-lg dark:prose-invert prose-a:no-underline hover:prose-a:underline">
+      <div
+        class="prose prose-slate md:prose-lg dark:prose-invert prose-a:no-underline hover:prose-a:underline"
+      >
         <h2 id="blog-posts">
-          <a href="#blog-posts" class="heading-link" style="color:inherit">Blog Posts</a>
+          <a href="#blog-posts" class="heading-link" style="color:inherit"
+            >Blog Posts</a
+          >
         </h2>
       </div>
 
-      <!-- le reste n’hérite pas des styles typography -->
       <ul class="not-prose flex flex-col space-y-4 md:space-y-0">
         {
           posts.map((post) => (
-            <li class="flex flex-col space-x-0 md:flex-row md:space-x-2 md:items-baseline">
+            <li class="flex flex-col space-x-0 md:flex-row md:space-x-2 md:items-center">
               <FormattedDate date={post.data.pubDate} />
+              <!-- séparateur EM DASH, même couleur que la date, visible uniquement ≥ md -->
+              <span
+                class="hidden md:inline text-[#616161] dark:text-[#9b9b9b] select-none align-middle"
+                aria-hidden="true"
+              >—</span>
               <a
                 href={`/posts/${post.id}/`}
-                class="text-[#1565c0] dark:text-[#90caf9] md:text-lg hover:underline"
+                class="inline text-[#1565c0] dark:text-[#90caf9] md:text-lg hover:underline"
               >
                 {post.data.title}
               </a>
@@ -65,14 +71,17 @@ const uniqueTags = [
     </div>
 
     <div class="flex flex-col space-y-2">
-      <!-- Même rendu H2 que Markdown pour "Tags" -->
-      <div class="prose prose-slate md:prose-lg dark:prose-invert prose-a:no-underline hover:prose-a:underline">
+      <div
+        class="prose prose-slate md:prose-lg dark:prose-invert prose-a:no-underline hover:prose-a:underline"
+      >
         <h3 id="tags">
           <a href="#tags" class="heading-link" style="color:inherit">Tags</a>
         </h3>
       </div>
 
-      <ul class="not-prose flex flex-col space-x-0 space-y-1 md:flex-row md:space-x-2 md:space-y-0 md:flex-wrap">
+      <ul
+        class="not-prose flex flex-col space-x-0 space-y-1 md:flex-row md:space-x-2 md:space-y-0 md:flex-wrap"
+      >
         {
           uniqueTags.map((tag) => (
             <li>

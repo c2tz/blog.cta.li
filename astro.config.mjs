@@ -12,6 +12,14 @@ export default defineConfig({
   integrations: [mdx(), sitemap(), tailwind(), react()],
 
   markdown: {
+    shikiConfig: {
+      themes: {
+        light: 'light-plus',
+        dark: 'dark-plus',
+      },
+      wrap: true,
+    },
+
     rehypePlugins: [
       rehypeSlug,
       [

@@ -1,11 +1,7 @@
 ---
 import { SEO, type Props as SEOProps } from "astro-seo";
 
-import {
-  SITE_DESCRIPTION,
-  SITE_TAB_TITLE,
-  SITE_TAB_ARTICLE
-} from "@/consts";
+import { SITE_DESCRIPTION, SITE_TAB_TITLE, SITE_TAB_ARTICLE } from "@/consts";
 
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
@@ -16,19 +12,9 @@ interface Props extends SEOProps {
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
-// Extraction des props SEO
-const {
-  locale = "fr",
-  title,
-  description,
-  ...seoRest
-} = Astro.props as Props;
+const { locale = "fr", title, description, ...seoRest } = Astro.props as Props;
 
-// Titre personnalisé : "ct-blog: <titre>" ou titre par défaut
-const seoTitle = title
-  ? `${SITE_TAB_ARTICLE} ${title}`
-  : SITE_TAB_TITLE;
-
+const seoTitle = title ? `${SITE_TAB_ARTICLE} ${title}` : SITE_TAB_TITLE;
 const seoDescription = description ?? SITE_DESCRIPTION;
 ---
 
@@ -45,7 +31,7 @@ const seoDescription = description ?? SITE_DESCRIPTION;
         meta: [
           { name: "viewport", content: "width=device-width,initial-scale=1" },
           { name: "generator", content: Astro.generator },
-          ...(Astro.props.extend?.meta ?? [])
+          ...(Astro.props.extend?.meta ?? []),
         ],
         link: [
           ...(Astro.props.extend?.link ?? []),
@@ -54,59 +40,69 @@ const seoDescription = description ?? SITE_DESCRIPTION;
             rel: "alternate",
             type: "application/rss+xml",
             title: SITE_TAB_TITLE,
-            href: `${Astro.site}rss.xml`
+            href: `${Astro.site}rss.xml`,
           },
-          { rel: "sitemap", href: "/sitemap-index.xml" }
-        ]
+          { rel: "sitemap", href: "/sitemap-index.xml" },
+        ],
       }}
     />
 
     <style is:global>
-/* latin */
-@font-face {
-  font-family: 'Roboto Flex';
-  font-style: normal;
-  font-weight: 100 900;
-  font-stretch: 100%;
-  font-display: swap;
-  src: url('/fonts/roboto-flex-v30-latin-regular.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-:root {
-  font-family: "Roboto Flex", sans-serif;
-  font-optical-sizing: auto;
-}
-
-
-/* roboto-mono-regular - latin */
-@font-face {
-  font-display: swap;
-  font-family: 'Roboto Mono';
-  font-style: normal;
-  font-weight: 400;
-  src: url('/fonts/roboto-mono-v31-latin-regular.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
-    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
-    U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-/* roboto-mono-italic - latin */
-@font-face {
-  font-display: swap;
-  font-family: 'Roboto Mono';
-  font-style: italic;
-  font-weight: 400;
-  src: url('/fonts/roboto-mono-v31-latin-italic.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
-    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
-    U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
+      /* Fonts */
+      @font-face {
+        font-family: "Roboto Flex";
+        font-style: normal;
+        font-weight: 100 900;
+        font-stretch: 100%;
+        font-display: swap;
+        src: url("/fonts/roboto-flex-v30-latin-regular.woff2") format("woff2");
+        unicode-range:
+          U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+          U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+          U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+      @font-face {
+        font-display: swap;
+        font-family: "Roboto Mono";
+        font-style: normal;
+        font-weight: 400;
+        src: url("/fonts/roboto-mono-v31-latin-regular.woff2") format("woff2");
+        unicode-range:
+          U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+          U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+          U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+      @font-face {
+        font-display: swap;
+        font-family: "Roboto Mono";
+        font-style: italic;
+        font-weight: 400;
+        src: url("/fonts/roboto-mono-v31-latin-italic.woff2") format("woff2");
+        unicode-range:
+          U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+          U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+          U+2212, U+2215, U+FEFF, U+FFFD;
+      }
 
       :root {
         font-family: "Roboto Flex", sans-serif;
         font-optical-sizing: auto;
+
+        /* surfaces & teintes pour l’enveloppe code */
+        --code-surface: rgb(245, 245, 245);
+        --code-text-secondary: #000000;
+        --code-divider: #000000;
+        --code-pad: 1rem;
+
+        --heading-link-light: #000;
+        --heading-link-dark: #fff;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --code-surface: rgb(30 30 30);
+          --code-text-secondary: #ffffff;
+          --code-divider: #ffffff;
+        }
       }
 
       code,
@@ -124,9 +120,8 @@ const seoDescription = description ?? SITE_DESCRIPTION;
       h5 > a.heading-link,
       h6 > a.heading-link {
         font: inherit;
-        color: #000;
+        color: var(--heading-link-light);
       }
-
       @media (prefers-color-scheme: dark) {
         h1 > a.heading-link,
         h2 > a.heading-link,
@@ -134,8 +129,97 @@ const seoDescription = description ?? SITE_DESCRIPTION;
         h4 > a.heading-link,
         h5 > a.heading-link,
         h6 > a.heading-link {
-          font: inherit;
-          color: #fff;
+          color: var(--heading-link-dark);
+        }
+      }
+
+      /* Conteneur des blocs de code (bannière + code) */
+      .code-shell {
+        border: none;
+        background: var(--code-surface); /* blanc/noir en fond externe */
+border-radius: 10px;
+        overflow: hidden;
+        margin-block: 1rem;
+      }
+
+      /* On enlève juste le border-radius de prose sur les <pre> */
+      .prose
+        :where(pre):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
+        border-radius: 0 !important;
+      }
+
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 2.25rem;
+  padding-inline: var(--code-pad);
+  font-size: 0.75rem;
+  font-family: "Roboto Mono", monospace; /* <- ici */
+  user-select: none;
+  color: var(--code-text-secondary);
+  background: var(--code-surface);
+  border: 0  solid var(--code-divider);
+}
+
+
+
+      .code-lang {
+        text-transform: lowercase;
+      }
+
+      /* Bouton copie */
+      .code-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .code-copy-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        font-size: 0.75rem;
+        line-height: 1;
+        font-family: inherit;
+        cursor: pointer;
+        color: var(--code-text-secondary);
+      }
+
+      /* Icônes 16px */
+      .code-icon {
+        width: 16px;
+        height: 16px;
+        display: inline-block;
+        vertical-align: middle;
+      }
+      .code-check-icon {
+        display: none;
+      }
+      .is-copied .code-copy-icon {
+        display: none;
+      }
+      .is-copied .code-check-icon {
+        display: inline-block;
+      }
+
+      .code-shell pre {
+        margin: 0;
+        padding: 0.75rem var(--code-pad) 1rem;
+        overflow: auto; /* scrollbars natifs */
+        border-bottom: 0 solid var(--code-divider);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .astro-code,
+        .astro-code span {
+          color: var(--shiki-dark) !important;
+          background-color: var(--shiki-dark-bg) !important;
+          font-style: var(--shiki-dark-font-style) !important;
+          font-weight: var(--shiki-dark-font-weight) !important;
+          text-decoration: var(--shiki-dark-text-decoration) !important;
         }
       }
     </style>
@@ -144,12 +228,122 @@ const seoDescription = description ?? SITE_DESCRIPTION;
   </head>
 
   <body
-    class="bg-white text-slate-900 dark:bg-black dark:text-slate-100 leading-normal tracking-normal w-4/5 md:max-w-3xl mx-auto [&_a]:text-[#1565c0] dark:[&_a]:text-[#90caf9]"
+    class="bg-white text-slate-900 dark:bg-black dark:text-slate-100 leading-normal tracking-normal w-4/5 md:max-w-3xl mx-auto [&_a]:text-[#1565c0] dark:[&_a]:text-[#90caf9] [&_p]:text-slate-900 dark:[&_p]:text-slate-100"
   >
     <main class="container flex flex-col space-y-4 min-h-screen">
       <Header />
       <slot name="content" />
       <Footer />
     </main>
+
+    <!-- JS : transforme <pre><code> en blocs avec bannière (lang + bouton copier) -->
+    <script is:inline>
+      if (typeof window !== "undefined") {
+        window.addEventListener("DOMContentLoaded", () => {
+          const codeBlocks = document.querySelectorAll("pre > code");
+
+          codeBlocks.forEach((codeBlock) => {
+            const pre = codeBlock.parentElement;
+            if (!pre || pre.dataset.styled === "1") return;
+            pre.dataset.styled = "1";
+
+            /* Détection robuste du langage */
+            const langClass = Array.from(codeBlock.classList).find((c) =>
+              c.startsWith("language-"),
+            );
+            const dataLang =
+              codeBlock.getAttribute("data-language") ||
+              codeBlock.getAttribute("data-lang") ||
+              pre.getAttribute("data-language") ||
+              pre.getAttribute("data-lang");
+            const preLangClass = Array.from(pre.classList || []).find((c) =>
+              c.startsWith("language-"),
+            );
+            let lang =
+              (langClass && langClass.replace("language-", "")) ||
+              (preLangClass && preLangClass.replace("language-", "")) ||
+              (dataLang || "").toLowerCase();
+            if (!lang) lang = "code";
+
+            /* Wrapper + header */
+            const shell = document.createElement("div");
+            shell.className = "code-shell";
+            pre.parentNode?.insertBefore(shell, pre);
+            shell.appendChild(pre);
+
+            const header = document.createElement("div");
+            header.className = "code-header";
+
+            const langEl = document.createElement("div");
+            langEl.className = "code-lang";
+            langEl.textContent = lang;
+
+            const actions = document.createElement("div");
+            actions.className = "code-actions";
+
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "code-copy-btn";
+            button.setAttribute("aria-label", "Copier le code");
+
+            /* Icône copier */
+            const copyIcon = document.createElementNS(
+              "http://www.w3.org/2000/svg",
+              "svg",
+            );
+            copyIcon.setAttribute("viewBox", "0 -960 960 960");
+            copyIcon.classList.add("code-icon", "code-copy-icon");
+            copyIcon.setAttribute("width", "16");
+            copyIcon.setAttribute("height", "16");
+            copyIcon.setAttribute("fill", "currentColor");
+            copyIcon.innerHTML = `
+  <path d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z"/>
+`;
+
+            /* Icône coche (V) */
+            const checkIcon = document.createElementNS(
+              "http://www.w3.org/2000/svg",
+              "svg",
+            );
+            checkIcon.setAttribute("viewBox", "0 -960 960 960");
+            checkIcon.classList.add("code-icon", "code-check-icon");
+            checkIcon.setAttribute("width", "16");
+            checkIcon.setAttribute("height", "16");
+            checkIcon.setAttribute("fill", "currentColor");
+            checkIcon.innerHTML = `
+  <path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z"/>
+`;
+
+            const label = document.createElement("span");
+            label.textContent = "Copier le code";
+
+            button.appendChild(copyIcon);
+            button.appendChild(checkIcon);
+            button.appendChild(label);
+
+            /* Copie + bascule temporaire */
+            const revertDelay = 1000;
+            button.addEventListener("click", async () => {
+              try {
+                await navigator.clipboard.writeText(codeBlock.innerText);
+                button.classList.add("is-copied");
+                label.textContent = "Copié";
+                setTimeout(() => {
+                  button.classList.remove("is-copied");
+                  label.textContent = "Copier le code";
+                }, revertDelay);
+              } catch {
+                label.textContent = "Erreur";
+              }
+            });
+
+            actions.appendChild(button);
+            header.appendChild(langEl);
+            header.appendChild(actions);
+            shell.insertBefore(header, pre);
+          });
+        });
+      }
+    </script>
   </body>
 </html>

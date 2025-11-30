@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
-- [`ef7768e`](https://github.com/c2tz/ct-blog.cta.li/commit/ef7768ea0b621284520ddc1b6c9c5e30399f30d7) — refactor: change code for fonts and for tab title
-- [`4774053`](https://github.com/c2tz/ct-blog.cta.li/commit/477405308c6d471cfb8bc53a311082c29ab9a0ae) — chore(ci): update README with recent commits
-- [`d345481`](https://github.com/c2tz/ct-blog.cta.li/commit/d345481b734d1ceed56dd0da0b5f82f53d201687) — content: update intro text
-- [`4cd72c5`](https://github.com/c2tz/ct-blog.cta.li/commit/4cd72c545703c9972d265abf23411fd955494d9f) — chore(ci): update README with recent commits
-- [`0a08d49`](https://github.com/c2tz/ct-blog.cta.li/commit/0a08d49a34428dbbbc792c4f6a47c999f95a11bb) — feat: add section anchors and refresh footer links
+- [`f3517b8`](https://github.com/c2tz/ct-blog.cta.li/commit/f3517b8340ac3939f3d560ad396979894d1138c3) — chore: update robots.txt to disallow crawling
+- [`9eef7d7`](https://github.com/c2tz/ct-blog.cta.li/commit/9eef7d72198522a1f9eb2858bfa7f9d658ab3b10) — feat: improve home posts list and date display
+- [`afc6101`](https://github.com/c2tz/ct-blog.cta.li/commit/afc61010c5cd80a531ad29cb295332c29bb866a1) — feat: customize shikijs theme
+- [`a502b0b`](https://github.com/c2tz/ct-blog.cta.li/commit/a502b0b196766bbfc0deb714c0d438a601b101e9) — chore: upgrade astro to 5.16.3
+- [`9d7b77d`](https://github.com/c2tz/ct-blog.cta.li/commit/9d7b77d00b9b4ed9027fa9c564628fdc4c0e9478) — chore(ci): update README with recent commits
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

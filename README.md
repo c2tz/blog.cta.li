@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`bac0998`](https://github.com/c2tz/ct-blog.cta.li/commit/bac0998108dfba23199bf76f3be30170516fa14d) — chore(ci): update README with recent commits
 - [`be8e5fb`](https://github.com/c2tz/ct-blog.cta.li/commit/be8e5fb57655c74a8dc31b7e9d320a52ad46d4d3) — Merge pull request #12 from c2tz/dependabot/npm_and_yarn/astrojs/react-4.4.2
 - [`e18268f`](https://github.com/c2tz/ct-blog.cta.li/commit/e18268f3835be0c06c01146dae05f01d74814af0) — chore(deps): bump @astrojs/react from 4.1.2 to 4.4.2
 - [`6e891bb`](https://github.com/c2tz/ct-blog.cta.li/commit/6e891bbc2ae76b296c84b377aafa8380ef39321b) — chore(ci): update README with recent commits
 - [`4b0d23c`](https://github.com/c2tz/ct-blog.cta.li/commit/4b0d23cd36b695a42702b2482b90b9987bfbfc23) — Merge pull request #13 from c2tz/dependabot/npm_and_yarn/astrojs/tailwind-6.0.2
-- [`74d3f35`](https://github.com/c2tz/ct-blog.cta.li/commit/74d3f3593751e564a52c5174bf6884b9fcd86914) — chore(deps): bump @astrojs/tailwind from 5.1.4 to 6.0.2
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

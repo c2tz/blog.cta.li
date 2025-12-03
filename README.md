@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`4b0d23c`](https://github.com/c2tz/ct-blog.cta.li/commit/4b0d23cd36b695a42702b2482b90b9987bfbfc23) — Merge pull request #13 from c2tz/dependabot/npm_and_yarn/astrojs/tailwind-6.0.2
+- [`74d3f35`](https://github.com/c2tz/ct-blog.cta.li/commit/74d3f3593751e564a52c5174bf6884b9fcd86914) — chore(deps): bump @astrojs/tailwind from 5.1.4 to 6.0.2
+- [`ed6c15e`](https://github.com/c2tz/ct-blog.cta.li/commit/ed6c15e90860fa5b354d4b363607fe3aeb5c40cb) — chore(ci): update README with recent commits
 - [`f97c99c`](https://github.com/c2tz/ct-blog.cta.li/commit/f97c99c42cd74475ae3980a6a5e6cf2f2827c884) — Merge pull request #11 from c2tz/dependabot/npm_and_yarn/tailwindcss-3.4.18
 - [`5fd5101`](https://github.com/c2tz/ct-blog.cta.li/commit/5fd510128135aeac76b9e5b141ab459425934a5c) — chore(deps): bump tailwindcss from 3.4.17 to 3.4.18
-- [`207920c`](https://github.com/c2tz/ct-blog.cta.li/commit/207920cd4cd47d88a8409b113f183f40a3ba9ad6) — chore(ci): update README with recent commits
-- [`142095b`](https://github.com/c2tz/ct-blog.cta.li/commit/142095b61abe51aabf329ad66d040a00387bff87) — Merge pull request #14 from c2tz/dependabot/npm_and_yarn/astrojs/mdx-4.3.12
-- [`0d7ced5`](https://github.com/c2tz/ct-blog.cta.li/commit/0d7ced5b2c573a64bb309d7ade3fb894eb9103c5) — chore(deps): bump @astrojs/mdx from 4.0.3 to 4.3.12
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

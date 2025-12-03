@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`c00d25c`](https://github.com/c2tz/ct-blog.cta.li/commit/c00d25cebae68cc13d21f720581580e796fd9d80) — Merge pull request #15 from c2tz/dependabot/npm_and_yarn/npm_and_yarn-2cd3f9ad14
+- [`bc34df6`](https://github.com/c2tz/ct-blog.cta.li/commit/bc34df671cc2ea5d508d457a050851153e3c7a5e) — chore(ci): update README with recent commits
 - [`c1b831a`](https://github.com/c2tz/ct-blog.cta.li/commit/c1b831aa399a21df726a846a16f42a54ba3441b6) — chore(ci): update README with recent commits
 - [`f811cb1`](https://github.com/c2tz/ct-blog.cta.li/commit/f811cb1bc37d6b64ec8432f5b5141efbc34c1fe5) — chore(ci): update README with recent commits
 - [`13c33d0`](https://github.com/c2tz/ct-blog.cta.li/commit/13c33d0ebf7bae9e0daff6b1031fc5cc9ea751b6) — fix: limit blog post link hit area on mobile
-- [`e7e6916`](https://github.com/c2tz/ct-blog.cta.li/commit/e7e691669fe7af8793a5ea900e455ca4117cad60) — chore(ci): update README with recent commits
-- [`27b5836`](https://github.com/c2tz/ct-blog.cta.li/commit/27b58368906d38a25ebc655873a41c558193c0b6) — chore: upgrade dependencies
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

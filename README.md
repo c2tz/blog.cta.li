@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`16eaf23`](https://github.com/c2tz/ct-blog.cta.li/commit/16eaf23b636d786dc1c66ef8be43cbcde1abbd99) — Merge pull request #10 from c2tz/dependabot/github_actions/actions/setup-node-6
+- [`3eedff0`](https://github.com/c2tz/ct-blog.cta.li/commit/3eedff0b392842bd822ce2a3b34ce065310026ae) — chore(ci): update README with recent commits
 - [`083e63f`](https://github.com/c2tz/ct-blog.cta.li/commit/083e63fd84a365bcad2e57c00a6e71acd046a242) — Merge pull request #9 from c2tz/dependabot/github_actions/actions/checkout-6
 - [`d22882d`](https://github.com/c2tz/ct-blog.cta.li/commit/d22882d96b00a6db6ad3848ce595474588810b8f) — chore(ci): update README with recent commits
 - [`c00d25c`](https://github.com/c2tz/ct-blog.cta.li/commit/c00d25cebae68cc13d21f720581580e796fd9d80) — Merge pull request #15 from c2tz/dependabot/npm_and_yarn/npm_and_yarn-2cd3f9ad14
-- [`bc34df6`](https://github.com/c2tz/ct-blog.cta.li/commit/bc34df671cc2ea5d508d457a050851153e3c7a5e) — chore(ci): update README with recent commits
-- [`c1b831a`](https://github.com/c2tz/ct-blog.cta.li/commit/c1b831aa399a21df726a846a16f42a54ba3441b6) — chore(ci): update README with recent commits
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

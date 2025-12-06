@@ -31,6 +31,27 @@ export default defineConfig({
           },
         },
       ],
+
+      // Plugin perso: ajoute data-lightbox à toutes les <img>
+      () => (tree) => {
+        const walk = (node) => {
+          if (node && typeof node === 'object') {
+            // Si c'est une balise <img>
+            if (node.type === 'element' && node.tagName === 'img') {
+              node.properties ||= {};
+              node.properties['data-lightbox'] = '';
+            }
+
+            if (Array.isArray(node.children)) {
+              for (const child of node.children) {
+                walk(child);
+              }
+            }
+          }
+        };
+
+        walk(tree);
+      },
     ],
   },
 });

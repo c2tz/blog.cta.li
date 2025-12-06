@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`8b8bb4c`](https://github.com/c2tz/ct-blog.cta.li/commit/8b8bb4cd7a958e488d73928af5987c43cebe4651) — Merge pull request #17 from c2tz/dependabot/npm_and_yarn/astro-5.16.4
+- [`a17d57c`](https://github.com/c2tz/ct-blog.cta.li/commit/a17d57c5c50e10ee8d7b561159612c4af90b4660) — chore(deps): bump astro from 5.15.9 to 5.16.4
+- [`e3cf243`](https://github.com/c2tz/ct-blog.cta.li/commit/e3cf2433af123ccdb4f25b8cd2bee736249f3eb9) — chore(ci): update README with recent commits
 - [`7844d2b`](https://github.com/c2tz/ct-blog.cta.li/commit/7844d2bdbc15fd21706c23c5a6f44115e1eca265) — Merge pull request #19 from c2tz/dependabot/npm_and_yarn/astrojs/rss-4.0.14
 - [`da37595`](https://github.com/c2tz/ct-blog.cta.li/commit/da37595fb9d87369184cc52bd31e28b80f7e9eae) — chore(ci): update README with recent commits
-- [`dd2ef61`](https://github.com/c2tz/ct-blog.cta.li/commit/dd2ef6190e70803e6b068216c2c654e6181283e6) — Merge pull request #16 from c2tz/dependabot/npm_and_yarn/multi-e105fa5dd2
-- [`173fe3e`](https://github.com/c2tz/ct-blog.cta.li/commit/173fe3e67a3129766bcb9bdb973501ef7f5cd075) — chore(deps): bump react and @types/react
-- [`cbb2172`](https://github.com/c2tz/ct-blog.cta.li/commit/cbb21723be643830f5088233a5d942f4987b98bf) — chore(deps): bump @astrojs/rss from 4.0.10 to 4.0.14
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

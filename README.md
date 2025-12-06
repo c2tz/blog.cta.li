@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`7844d2b`](https://github.com/c2tz/ct-blog.cta.li/commit/7844d2bdbc15fd21706c23c5a6f44115e1eca265) — Merge pull request #19 from c2tz/dependabot/npm_and_yarn/astrojs/rss-4.0.14
+- [`da37595`](https://github.com/c2tz/ct-blog.cta.li/commit/da37595fb9d87369184cc52bd31e28b80f7e9eae) — chore(ci): update README with recent commits
 - [`dd2ef61`](https://github.com/c2tz/ct-blog.cta.li/commit/dd2ef6190e70803e6b068216c2c654e6181283e6) — Merge pull request #16 from c2tz/dependabot/npm_and_yarn/multi-e105fa5dd2
 - [`173fe3e`](https://github.com/c2tz/ct-blog.cta.li/commit/173fe3e67a3129766bcb9bdb973501ef7f5cd075) — chore(deps): bump react and @types/react
-- [`baa02a5`](https://github.com/c2tz/ct-blog.cta.li/commit/baa02a562160ff1176c6598b81ad54b3a81a4ecc) — chore(ci): update README with recent commits
-- [`a62b9a8`](https://github.com/c2tz/ct-blog.cta.li/commit/a62b9a85fc49dee19cdc99fb236516018fd8006e) — Merge pull request #18 from c2tz/dependabot/npm_and_yarn/satori-astro-0.3.1
-- [`69d5711`](https://github.com/c2tz/ct-blog.cta.li/commit/69d571138efda101695474e3295137e4ee4ef6dc) — chore(ci): update README with recent commits
+- [`cbb2172`](https://github.com/c2tz/ct-blog.cta.li/commit/cbb21723be643830f5088233a5d942f4987b98bf) — chore(deps): bump @astrojs/rss from 4.0.10 to 4.0.14
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

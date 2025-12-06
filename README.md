@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`55138fa`](https://github.com/c2tz/ct-blog.cta.li/commit/55138faf0aa626c84ec446b627344bc8dd01f478) — Delete .vscode directory
+- [`afdc259`](https://github.com/c2tz/ct-blog.cta.li/commit/afdc2595bb8e37b11c91a4e1c7a5d82b6046117e) — chore(ci): update README with recent commits
 - [`096db8f`](https://github.com/c2tz/ct-blog.cta.li/commit/096db8fd85c52d7f1e7ef31060292a276f4f7d85) — fix: img bad path
 - [`4a5b8f9`](https://github.com/c2tz/ct-blog.cta.li/commit/4a5b8f9f7c7c5b60a451c18980b0afde4d1f339b) — chore(ci): update README with recent commits
 - [`f7d5317`](https://github.com/c2tz/ct-blog.cta.li/commit/f7d5317fdd23c15baa5a30359d9da7a138c2c982) — Merge branch 'develop' of https://github.com/c2tz/ct-blog.cta.li into develop
-- [`2ab3d83`](https://github.com/c2tz/ct-blog.cta.li/commit/2ab3d835547f48b74e2298ef9b2e13e882506533) — test: add this font for closes pr
-- [`b00b5d0`](https://github.com/c2tz/ct-blog.cta.li/commit/b00b5d07b23380c994b6a1762bcabf83d3c6e44d) — chore(ci): update README with recent commits
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

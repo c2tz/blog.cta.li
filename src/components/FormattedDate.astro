@@ -4,8 +4,15 @@ interface Props {
 }
 
 const { date } = Astro.props as Props;
----
 
-<time class="text-gray-500 text-sm font-mono" datetime={date.toISOString()}>
-  {date.toISOString().split("T")[0]}
+// Formatage complet en français (jour + date longue)
+const dateFrComplete = date.toLocaleDateString("fr-FR", {
+  weekday: "short",
+  year: "numeric",
+  month: "short",
+  day: "numeric"
+});
+---
+<time class="text-[#616161] dark:text-[#9b9b9b] text-sm font-mono italic" datetime={date.toISOString()}>
+ {dateFrComplete.charAt(0).toUpperCase() + dateFrComplete.slice(1)}
 </time>

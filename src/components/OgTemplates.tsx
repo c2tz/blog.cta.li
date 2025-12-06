@@ -1,6 +1,6 @@
 import fs from "node:fs";
-
 import { SITE_TITLE } from "@/consts";
+
 const image = fs.readFileSync("./public/astro.png");
 const imageDataUrl = `data:image/png;base64,${image.toString("base64")}`;
 
@@ -20,7 +20,7 @@ export function HomeOgTemplate() {
         color: "#0f172a",
         fontSize: 48,
         fontWeight: 600,
-        fontFamily: "Inter",
+        fontFamily: "'Roboto Flex', system-ui, sans-serif",
         letterSpacing: "-0.05em",
         fontFeatureSettings: "'liga' 1, 'calt' 1",
       }}
@@ -51,7 +51,7 @@ export function PostOgTemplate({ title }: { title: string }) {
         color: "#0f172a",
         fontSize: 32,
         fontWeight: 600,
-        fontFamily: "Inter",
+        fontFamily: "'Roboto Flex', system-ui, sans-serif",
         letterSpacing: "-0.05em",
         fontFeatureSettings: "'liga' 1, 'calt' 1",
       }}

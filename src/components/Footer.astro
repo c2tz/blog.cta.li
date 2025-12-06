@@ -2,15 +2,85 @@
 import { SITE_TITLE } from "@/consts";
 ---
 
-<footer class="text-gray-500 font-extralight pb-8 flex flex-col justify-center md:flex-row md:justify-between space-y-2 md:space-y-0">
-  <span>Copyright (c) {new Date().getFullYear()} {SITE_TITLE}</span>
-  <span class="flex space-x-2">
-      <a href="https://github.com/lhr0909/astro-etch"
-        class="hover:text-blue-500"
+<footer
+  class="footer mt-auto w-full max-w-[100vw] px-4 py-4 text-center
+         [&_.footer-link]:text-[#616161] dark:[&_.footer-link]:text-[#9b9b9b]
+         [&_.footer-link:hover]:underline"
+>
+  <!-- Logo -->
+  <a href="/" class="inline-block">
+    <img
+      alt="c2tz logo"
+      src="/mask.webp"
+      height="60"
+      width="60"
+      class="block mx-auto rounded-full w-[60px] h-auto"
+      loading="lazy"
+      decoding="async"
+    />
+  </a>
+
+  <!-- Liens sociaux -->
+  <ul id="social" class="mt-4 flex flex-wrap items-center justify-center gap-3">
+    <li><a class="footer-link" href="https://bsky.app/profile/c2tz.bsky.social" target="_blank" rel="noopener noreferrer">Bluesky</a></li>
+    <li><a class="footer-link" href="https://github.com/c2tz" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+    <li><a class="footer-link" href="https://www.komoot.com/fr-fr/user/1042380125464" target="_blank" rel="noopener noreferrer">Komoot</a></li>
+    <li><a class="footer-link" href="https://matrix.to/#/@c2tz:matrix.org" target="_blank" rel="noopener noreferrer">Matrix</a></li>
+    <li><a class="footer-link" href="https://youtube.com/@c2tz" target="_blank" rel="noopener noreferrer">YouTube</a></li>
+    <li><a class="footer-link" href="https://blog.cta.li/" target="_blank" rel="noopener noreferrer">Blog</a></li>
+    <li><a class="footer-link" href="https://ct-nas.cta.li/" target="_blank" rel="noopener noreferrer">ct-nas</a></li>
+    <li><a class="footer-link" href="mailto:contact@cta.li">Email</a></li>
+    <li><a class="footer-link" href="/publickey.contact@cta.li-71584f1e017c181a059efc676491d5bd231fe4ed.asc">clé PGP</a></li>
+  </ul>
+
+  <!-- Ligne d’info -->
+  <div class="mt-4 text-sm font-extralight text-[#616161] dark:text-[#9b9b9b]">
+    <span>
+      <a
+        href="https://raw.githubusercontent.com/c2tz/ct-blog.cta.li/f82f66a1b4cbca57899d2bdf827e99001e37dda9/LICENSE"
         target="_blank"
-        rel="noopener"
-      >
-        GitHub
-      </a>
-  </span>
+        rel="noopener noreferrer"
+        class="footer-link"
+      >MIT License</a> {new Date().getFullYear()}
+      —
+      <a href="/" class="footer-link">{SITE_TITLE}</a>
+    </span>
+
+    <span class="mx-2">•</span>
+
+    <span>
+      Votre IP : <strong id="client-ip">Chargement…</strong>
+      (<span id="client-country">–</span>)
+    </span>
+  </div>
+
+  <!-- Script IP + pays (avec cache session) -->
+  <script type="module">
+    const ipEl = document.getElementById('client-ip');
+    const countryEl = document.getElementById('client-country');
+
+    try {
+      const cached = sessionStorage.getItem('ipgeo');
+      if (cached) {
+        const d = JSON.parse(cached);
+        ipEl.textContent = d.ip ?? 'non détectée';
+        countryEl.textContent = d.country_name ?? 'Pays inconnu';
+      } else {
+        fetch('https://ipapi.co/json/')
+          .then(r => r.json())
+          .then(d => {
+            sessionStorage.setItem('ipgeo', JSON.stringify(d));
+            ipEl.textContent = d.ip ?? 'non détectée';
+            countryEl.textContent = d.country_name ?? 'Pays inconnu';
+          })
+          .catch(() => {
+            ipEl.textContent = 'non détectée';
+            countryEl.textContent = 'Pays inconnu';
+          });
+      }
+    } catch {
+      ipEl.textContent = 'non détectée';
+      countryEl.textContent = 'Pays inconnu';
+    }
+  </script>
 </footer>

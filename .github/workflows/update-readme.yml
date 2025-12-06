@@ -1,0 +1,141 @@
+name: Update README with recent commits
+
+on:
+  schedule:
+    - cron: "0 5 * * *"  # Runs every day at 05:00 UTC
+  workflow_dispatch:      # Allows manual execution
+  push:
+    branches:
+      - develop
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+
+      - name: Update README sections with recent commits
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          node << 'EOF'
+          const fs = require("fs");
+          const path = require("path");
+
+          const TOKEN = process.env.GITHUB_TOKEN;
+          const REPO = process.env.GITHUB_REPOSITORY;
+
+          if (!TOKEN) {
+            console.error("Missing GITHUB_TOKEN");
+            process.exit(1);
+          }
+
+          if (!REPO) {
+            console.error("Missing GITHUB_REPOSITORY");
+            process.exit(1);
+          }
+
+          const [owner, repo] = REPO.split("/");
+
+          // Branches to process
+          const BRANCHES = [
+            { name: "develop", marker: "COMMITS_DEVELOP" },
+            { name: "main", marker: "COMMITS_MAIN" },
+          ];
+
+          // Fetch last X commits from a branch
+          async function fetchCommits(branch, count = 5) {
+            const url =
+              "https://api.github.com/repos/" +
+              owner +
+              "/" +
+              repo +
+              "/commits?sha=" +
+              encodeURIComponent(branch) +
+              "&per_page=" +
+              count;
+
+            const res = await fetch(url, {
+              headers: {
+                Authorization: "Bearer " + TOKEN,
+                "User-Agent": "github-actions",
+                Accept: "application/vnd.github+json",
+              },
+            });
+
+            if (!res.ok) {
+              console.error("GitHub API error for branch " + branch + ":", res.status);
+              return [];
+            }
+
+            const data = await res.json();
+            return Array.isArray(data) ? data : [];
+          }
+
+          // Format commit list in Markdown
+          function formatCommits(commits) {
+            if (!commits.length) return "_No commits found._";
+
+            return commits
+              .map((c) => {
+                const sha = c.sha.slice(0, 7);
+                const url = c.html_url;
+                const msg = c.commit.message.split("\n")[0];
+                return "- [`" + sha + "`](" + url + ") — " + msg;
+              })
+              .join("\n");
+          }
+
+          // Replace content between markers
+          function updateSection(content, marker, newSection) {
+            const regex = new RegExp(
+              "(<!-- " + marker + ":START -->)([\\s\\S]*?)(<!-- " + marker + ":END -->)",
+              "m"
+            );
+            return content.replace(regex, "$1\n" + newSection + "\n$3");
+          }
+
+          async function main() {
+            const readmeFile = path.join(process.cwd(), "README.md");
+            let readme = fs.readFileSync(readmeFile, "utf8");
+
+            // Process each branch
+            for (const entry of BRANCHES) {
+              const commits = await fetchCommits(entry.name, 5);
+              const md = formatCommits(commits);
+              readme = updateSection(readme, entry.marker, md);
+            }
+
+            fs.writeFileSync(readmeFile, readme);
+            console.log("README updated successfully.");
+          }
+
+          main().catch((err) => {
+            console.error(err);
+            process.exit(1);
+          });
+          EOF
+
+      - name: Commit changes if any
+        run: |
+          if git diff --quiet; then
+            echo "No changes detected."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "chore(ci): update README with recent commits"
+          git push

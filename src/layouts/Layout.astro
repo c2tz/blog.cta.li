@@ -1,7 +1,8 @@
 ---
-import { SEO, type Props as SEOProps } from 'astro-seo';
+import { SEO, type Props as SEOProps } from "astro-seo";
 
-import { SITE_DESCRIPTION, SITE_TITLE } from "@/consts";
+import { SITE_DESCRIPTION, SITE_TAB_TITLE, SITE_TAB_ARTICLE } from "@/consts";
+
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
 
@@ -10,19 +11,22 @@ interface Props extends SEOProps {
 }
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
-const { locale = "en" } = Astro.props as Props;
+
+const { locale = "fr", title, description, ...seoRest } = Astro.props as Props;
+
+const seoTitle = title ? `${SITE_TAB_ARTICLE} ${title}` : SITE_TAB_TITLE;
+const seoDescription = description ?? SITE_DESCRIPTION;
 ---
 
 <!doctype html>
 <html lang={locale}>
   <head>
     <SEO
-      titleTemplate={`%s - ${SITE_TITLE}`}
-      titleDefault={SITE_TITLE}
-      description={SITE_DESCRIPTION}
+      title={seoTitle}
+      description={seoDescription}
       charset="utf-8"
       canonical={canonicalURL}
-      {...Astro.props}
+      {...seoRest}
       extend={{
         meta: [
           { name: "viewport", content: "width=device-width,initial-scale=1" },
@@ -31,26 +35,275 @@ const { locale = "en" } = Astro.props as Props;
         ],
         link: [
           ...(Astro.props.extend?.link ?? []),
-          { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+          { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
           {
             rel: "alternate",
             type: "application/rss+xml",
-            title: SITE_TITLE,
+            title: SITE_TAB_TITLE,
             href: `${Astro.site}rss.xml`,
           },
-          { rel: "sitemap", href: "/sitemap-index.xml" },
         ],
       }}
     />
+
+    <style is:global>
+      /* Fonts */
+      @font-face {
+        font-family: "Roboto Flex";
+        font-style: normal;
+        font-weight: 100 900;
+        font-stretch: 100%;
+        font-display: swap;
+        src: url("/fonts/roboto-flex-v30-latin-regular.woff2") format("woff2");
+        unicode-range:
+          U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+          U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+          U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+      @font-face {
+        font-display: swap;
+        font-family: "Roboto Mono";
+        font-style: normal;
+        font-weight: 400;
+        src: url("/fonts/roboto-mono-v31-latin-regular.woff2") format("woff2");
+        unicode-range:
+          U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+          U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+          U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+      @font-face {
+        font-display: swap;
+        font-family: "Roboto Mono";
+        font-style: italic;
+        font-weight: 400;
+        src: url("/fonts/roboto-mono-v31-latin-italic.woff2") format("woff2");
+        unicode-range:
+          U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+          U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+          U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+
+      :root {
+        font-family: "Roboto Flex", sans-serif;
+        font-optical-sizing: auto;
+
+        /* surfaces & teintes pour l’enveloppe code */
+        --code-surface: rgb(245, 245, 245);
+        --code-text-secondary: #000000;
+        --code-divider: #000000;
+        --code-pad: 1rem;
+
+        --heading-link-light: #000;
+        --heading-link-dark: #fff;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --code-surface: rgb(30 30 30);
+          --code-text-secondary: #ffffff;
+          --code-divider: #ffffff;
+        }
+      }
+
+      code,
+      pre,
+      kbd,
+      samp {
+        font-family: "Roboto Mono", monospace;
+      }
+
+      /* Liens d’ancrage dans les titres */
+      h1 > a.heading-link,
+      h2 > a.heading-link,
+      h3 > a.heading-link,
+      h4 > a.heading-link,
+      h5 > a.heading-link,
+      h6 > a.heading-link {
+        font: inherit;
+        color: var(--heading-link-light);
+      }
+      @media (prefers-color-scheme: dark) {
+        h1 > a.heading-link,
+        h2 > a.heading-link,
+        h3 > a.heading-link,
+        h4 > a.heading-link,
+        h5 > a.heading-link,
+        h6 > a.heading-link {
+          color: var(--heading-link-dark);
+        }
+      }
+
+      /* Conteneur des blocs de code (bannière + code) */
+      .code-shell {
+        border: none;
+        background: var(--code-surface); /* blanc/noir en fond externe */
+        border-radius: 10px;
+        overflow: hidden;
+        margin-block: 1rem;
+      }
+
+      /* On enlève juste le border-radius de prose sur les <pre> */
+      .prose
+        :where(pre):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
+        border-radius: 0 !important;
+      }
+
+      .code-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 2.25rem;
+        padding-inline: var(--code-pad);
+        font-size: 0.75rem;
+        font-family: "Roboto Mono", monospace; /* <- ici */
+        user-select: none;
+        color: var(--code-text-secondary);
+        background: var(--code-surface);
+        border: 0 solid var(--code-divider);
+      }
+
+      .code-lang {
+        text-transform: lowercase;
+      }
+
+      /* Bouton copie */
+      .code-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .code-copy-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        font-size: 0.75rem;
+        line-height: 1;
+        font-family: inherit;
+        cursor: pointer;
+        color: var(--code-text-secondary);
+      }
+
+      /* Icônes 16px */
+      .code-icon {
+        width: 16px;
+        height: 16px;
+        display: inline-block;
+        vertical-align: middle;
+      }
+      .code-check-icon {
+        display: none;
+      }
+      .is-copied .code-copy-icon {
+        display: none;
+      }
+      .is-copied .code-check-icon {
+        display: inline-block;
+      }
+
+      .code-shell pre {
+        margin: 0;
+        padding: 0.75rem var(--code-pad) 1rem;
+        overflow: auto; /* scrollbars natifs */
+        border-bottom: 0 solid var(--code-divider);
+      }
+      .code-error-icon {
+  display: none;
+}
+
+.is-error .code-copy-icon,
+.is-error .code-check-icon {
+  display: none;
+}
+
+.is-error .code-error-icon {
+  display: inline-block;
+}
+
+
+
+  :global(html, body) {
+    overscroll-behavior: none;
+  }
+
+  img[data-lightbox] {
+    cursor: zoom-in;
+  }
+
+  .lightbox-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+
+    /* pas de scroll ni pan dans l’overlay */
+    overflow: hidden;
+    touch-action: none;
+
+    opacity: 0;
+    transform: scale(0.97);
+    transition:
+      opacity 0.2s ease-out,
+      transform 0.2s ease-out;
+  }
+
+  .lightbox-overlay.open {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .lightbox-overlay.closing {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+
+  .lightbox-overlay img {
+    max-width: 95vw;
+    max-height: 95vh;
+    object-fit: contain;
+    cursor: zoom-out;
+    /* empêche l’image elle-même de déclencher du pan/zoom natif */
+    touch-action: none;
+  }
+
+
+
+
+
+
+      @media (prefers-color-scheme: dark) {
+        .astro-code,
+        .astro-code span {
+          color: var(--shiki-dark) !important;
+          background-color: var(--shiki-dark-bg) !important;
+          font-style: var(--shiki-dark-font-style) !important;
+          font-weight: var(--shiki-dark-font-weight) !important;
+          text-decoration: var(--shiki-dark-text-decoration) !important;
+        }
+      }
+    </style>
+
     <slot name="head" />
   </head>
+
   <body
-    class="bg-white text-slate-900 leading-normal tracking-normal w-4/5 md:max-w-3xl mx-auto"
+    class="bg-white text-slate-900 dark:bg-black dark:text-slate-100 leading-normal tracking-normal w-4/5 md:max-w-3xl mx-auto [&_a]:text-[#1565c0] dark:[&_a]:text-[#90caf9] [&_p]:text-slate-900 dark:[&_p]:text-slate-100"
   >
     <main class="container flex flex-col space-y-4 min-h-screen">
       <Header />
       <slot name="content" />
       <Footer />
     </main>
-  </body>
+
+<script>
+  import { initCodeCopy } from "@/scripts/codeCopy";
+  import "@/scripts/lightbox";
+
+  initCodeCopy();
+</script>
+</body>
 </html>

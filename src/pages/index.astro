@@ -1,21 +1,21 @@
 ---
-import { getCollection, getEntry, render } from 'astro:content';
+import { getCollection, getEntry, render } from "astro:content";
 
 import Layout from "../layouts/Layout.astro";
-import Prose from '../components/Prose.astro';
-import FormattedDate from '@/components/FormattedDate.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '@/consts';
+import Prose from "../components/Prose.astro";
+import FormattedDate from "@/components/FormattedDate.astro";
+import { SITE_DESCRIPTION, SITE_TITLE } from "@/consts";
 
 const entry = await getEntry("info", "intro");
 const { Content } = await render(entry!);
 
 const posts = (await getCollection("blog")).sort(
-  (b, a) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf()
+  (b, a) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf(),
 );
 
 const uniqueTags = [
   ...new Set(
-    posts.flatMap((post) => post.data.tags).filter((tag) => tag !== undefined)
+    posts.flatMap((post) => post.data.tags).filter((tag) => tag !== undefined),
   ),
 ].sort();
 ---
@@ -36,22 +36,53 @@ const uniqueTags = [
     <Prose>
       <Content />
     </Prose>
+
     <div class="flex flex-col space-y-2">
-      <h1 class="text-2xl font-medium">Blog Posts</h1>
-      <ul class="flex flex-col space-y-4 md:space-y-0">
-        {
-          posts.map((post) => (
-            <li class="flex flex-col space-x-0 md:flex-row md:space-x-2 md:items-baseline">
-              <FormattedDate date={post.data.pubDate} />
-              <a href={`/posts/${post.id}/`} class="text-blue-500 md:text-lg hover:underline">{post.data.title}</a>
-            </li>
-          ))
-        }
-      </ul>
+      <div
+        class="prose prose-slate md:prose-lg dark:prose-invert prose-a:no-underline hover:prose-a:underline"
+      >
+        <h2 id="blog-posts">
+          <a href="#blog-posts" class="heading-link" style="color:inherit"
+            >Blog Posts</a
+          >
+        </h2>
+      </div>
+
+<ul class="not-prose flex flex-col space-y-4 md:space-y-0">
+  {
+    posts.map((post) => (
+      <li class="flex flex-col items-start space-x-0 md:flex-row md:space-x-2 md:items-center">
+        <FormattedDate date={post.data.pubDate} />
+        <!-- séparateur EM DASH, même couleur que la date, visible uniquement ≥ md -->
+        <span
+          class="hidden md:inline text-[#616161] dark:text-[#9b9b9b] select-none align-middle"
+          aria-hidden="true"
+        >—</span>
+        <a
+          href={`/posts/${post.id}/`}
+          class="inline text-[#1565c0] dark:text-[#90caf9] md:text-lg hover:underline"
+        >
+          {post.data.title}
+        </a>
+      </li>
+    ))
+  }
+</ul>
+
     </div>
+
     <div class="flex flex-col space-y-2">
-      <h2 class="text-xl font-medium tracking-tight">Tags</h2>
-      <ul class="flex flex-col space-x-0 space-y-1 md:flex-row md:space-x-2 md:space-y-0 md:flex-wrap">
+      <div
+        class="prose prose-slate md:prose-lg dark:prose-invert prose-a:no-underline hover:prose-a:underline"
+      >
+        <h3 id="tags">
+          <a href="#tags" class="heading-link" style="color:inherit">Tags</a>
+        </h3>
+      </div>
+
+      <ul
+        class="not-prose flex flex-col space-x-0 space-y-1 md:flex-row md:space-x-2 md:space-y-0 md:flex-wrap"
+      >
         {
           uniqueTags.map((tag) => (
             <li>

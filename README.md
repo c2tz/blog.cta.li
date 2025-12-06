@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`060653b`](https://github.com/c2tz/ct-blog.cta.li/commit/060653b05ed6cc29e61a381125a7b596328ba046) — Add .vscode to .gitignore
+- [`9194c66`](https://github.com/c2tz/ct-blog.cta.li/commit/9194c664286372e602f896cfb74c6f16eb279edf) — chore(ci): update README with recent commits
 - [`55138fa`](https://github.com/c2tz/ct-blog.cta.li/commit/55138faf0aa626c84ec446b627344bc8dd01f478) — Delete .vscode directory
 - [`afdc259`](https://github.com/c2tz/ct-blog.cta.li/commit/afdc2595bb8e37b11c91a4e1c7a5d82b6046117e) — chore(ci): update README with recent commits
 - [`096db8f`](https://github.com/c2tz/ct-blog.cta.li/commit/096db8fd85c52d7f1e7ef31060292a276f4f7d85) — fix: img bad path
-- [`4a5b8f9`](https://github.com/c2tz/ct-blog.cta.li/commit/4a5b8f9f7c7c5b60a451c18980b0afde4d1f339b) — chore(ci): update README with recent commits
-- [`f7d5317`](https://github.com/c2tz/ct-blog.cta.li/commit/f7d5317fdd23c15baa5a30359d9da7a138c2c982) — Merge branch 'develop' of https://github.com/c2tz/ct-blog.cta.li into develop
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

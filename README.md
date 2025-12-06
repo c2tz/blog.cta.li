@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`66a4f39`](https://github.com/c2tz/ct-blog.cta.li/commit/66a4f3932e811ffe4fd8b0b0c67e6aa4b69663bd) — fix: codecopy and lightbox 404 fix
+- [`189e7d6`](https://github.com/c2tz/ct-blog.cta.li/commit/189e7d6ae7f01d69cdfe74d4fa7f4ea6dff06701) — chore(ci): update README with recent commits
 - [`060653b`](https://github.com/c2tz/ct-blog.cta.li/commit/060653b05ed6cc29e61a381125a7b596328ba046) — Add .vscode to .gitignore
 - [`9194c66`](https://github.com/c2tz/ct-blog.cta.li/commit/9194c664286372e602f896cfb74c6f16eb279edf) — chore(ci): update README with recent commits
 - [`55138fa`](https://github.com/c2tz/ct-blog.cta.li/commit/55138faf0aa626c84ec446b627344bc8dd01f478) — Delete .vscode directory
-- [`afdc259`](https://github.com/c2tz/ct-blog.cta.li/commit/afdc2595bb8e37b11c91a4e1c7a5d82b6046117e) — chore(ci): update README with recent commits
-- [`096db8f`](https://github.com/c2tz/ct-blog.cta.li/commit/096db8fd85c52d7f1e7ef31060292a276f4f7d85) — fix: img bad path
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`c8bd045`](https://github.com/c2tz/ct-blog.cta.li/commit/c8bd045b4402d73069cfc384e2565f14259d58a9) — Merge pull request #23 from c2tz/dependabot/npm_and_yarn/multi-266c54db44
+- [`6c37698`](https://github.com/c2tz/ct-blog.cta.li/commit/6c376988fd5c2a148d8d7bcf2b3901ac1051e19c) — chore(ci): update README with recent commits
 - [`523383d`](https://github.com/c2tz/ct-blog.cta.li/commit/523383d7c6ea1db3e1f41f7e9a1bd8873100862c) — chore(dependabot): target develop branch for all dependency updates
+- [`e2a38b9`](https://github.com/c2tz/ct-blog.cta.li/commit/e2a38b9605791bee421de0fc7371ce406e030ecb) — chore(deps): bump react-dom and @types/react-dom
 - [`7951aec`](https://github.com/c2tz/ct-blog.cta.li/commit/7951aecbffd3d951dc1ff9e4fc9ea642af544465) — chore(ci): update README with recent commits
-- [`95f7ce1`](https://github.com/c2tz/ct-blog.cta.li/commit/95f7ce152f1ca6f7484b4f098342c8bc33d7cade) — Merge branch 'develop' of https://github.com/c2tz/ct-blog.cta.li into develop
-- [`3b031a0`](https://github.com/c2tz/ct-blog.cta.li/commit/3b031a0137ddfec621b25f1c2ea597ac1e8747e9) — feat: add code copy btn and lighhouse for img
-- [`f3adbbb`](https://github.com/c2tz/ct-blog.cta.li/commit/f3adbbb11097d9add4ae9978c3c7826eff77064d) — chore(ci): update README with recent commits
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

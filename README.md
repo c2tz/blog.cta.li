@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`0e69b12`](https://github.com/c2tz/ct-blog.cta.li/commit/0e69b12cba6caabe8f3ce8e90a8e105d9466e185) — Merge pull request #22 from c2tz/dependabot/npm_and_yarn/tailwindcss/typography-0.5.19
+- [`68e010c`](https://github.com/c2tz/ct-blog.cta.li/commit/68e010c5c17917c6377785381ae600a2534e895e) — chore(ci): update README with recent commits
 - [`c8bd045`](https://github.com/c2tz/ct-blog.cta.li/commit/c8bd045b4402d73069cfc384e2565f14259d58a9) — Merge pull request #23 from c2tz/dependabot/npm_and_yarn/multi-266c54db44
 - [`6c37698`](https://github.com/c2tz/ct-blog.cta.li/commit/6c376988fd5c2a148d8d7bcf2b3901ac1051e19c) — chore(ci): update README with recent commits
 - [`523383d`](https://github.com/c2tz/ct-blog.cta.li/commit/523383d7c6ea1db3e1f41f7e9a1bd8873100862c) — chore(dependabot): target develop branch for all dependency updates
-- [`e2a38b9`](https://github.com/c2tz/ct-blog.cta.li/commit/e2a38b9605791bee421de0fc7371ce406e030ecb) — chore(deps): bump react-dom and @types/react-dom
-- [`7951aec`](https://github.com/c2tz/ct-blog.cta.li/commit/7951aecbffd3d951dc1ff9e4fc9ea642af544465) — chore(ci): update README with recent commits
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

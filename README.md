@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`dd2ef61`](https://github.com/c2tz/ct-blog.cta.li/commit/dd2ef6190e70803e6b068216c2c654e6181283e6) — Merge pull request #16 from c2tz/dependabot/npm_and_yarn/multi-e105fa5dd2
+- [`173fe3e`](https://github.com/c2tz/ct-blog.cta.li/commit/173fe3e67a3129766bcb9bdb973501ef7f5cd075) — chore(deps): bump react and @types/react
+- [`baa02a5`](https://github.com/c2tz/ct-blog.cta.li/commit/baa02a562160ff1176c6598b81ad54b3a81a4ecc) — chore(ci): update README with recent commits
 - [`a62b9a8`](https://github.com/c2tz/ct-blog.cta.li/commit/a62b9a85fc49dee19cdc99fb236516018fd8006e) — Merge pull request #18 from c2tz/dependabot/npm_and_yarn/satori-astro-0.3.1
 - [`69d5711`](https://github.com/c2tz/ct-blog.cta.li/commit/69d571138efda101695474e3295137e4ee4ef6dc) — chore(ci): update README with recent commits
-- [`faa3dfa`](https://github.com/c2tz/ct-blog.cta.li/commit/faa3dfa3e48c75c442f43e958a0c805f4b82e46d) — Merge pull request #20 from c2tz/dependabot/npm_and_yarn/astrojs/sitemap-3.6.0
-- [`39259cf`](https://github.com/c2tz/ct-blog.cta.li/commit/39259cf1f54fbbaa9236e4a42a60a50d25b4734b) — chore(deps): bump @astrojs/sitemap from 3.2.1 to 3.6.0
-- [`fc2e4a7`](https://github.com/c2tz/ct-blog.cta.li/commit/fc2e4a7d05461fa3fbb7200cbf6cc11131c1659d) — chore(deps): bump satori-astro from 0.3.0 to 0.3.1
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

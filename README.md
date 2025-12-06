@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`f7d5317`](https://github.com/c2tz/ct-blog.cta.li/commit/f7d5317fdd23c15baa5a30359d9da7a138c2c982) — Merge branch 'develop' of https://github.com/c2tz/ct-blog.cta.li into develop
+- [`2ab3d83`](https://github.com/c2tz/ct-blog.cta.li/commit/2ab3d835547f48b74e2298ef9b2e13e882506533) — test: add this font for closes pr
+- [`b00b5d0`](https://github.com/c2tz/ct-blog.cta.li/commit/b00b5d07b23380c994b6a1762bcabf83d3c6e44d) — chore(ci): update README with recent commits
 - [`0e69b12`](https://github.com/c2tz/ct-blog.cta.li/commit/0e69b12cba6caabe8f3ce8e90a8e105d9466e185) — Merge pull request #22 from c2tz/dependabot/npm_and_yarn/tailwindcss/typography-0.5.19
 - [`68e010c`](https://github.com/c2tz/ct-blog.cta.li/commit/68e010c5c17917c6377785381ae600a2534e895e) — chore(ci): update README with recent commits
-- [`c8bd045`](https://github.com/c2tz/ct-blog.cta.li/commit/c8bd045b4402d73069cfc384e2565f14259d58a9) — Merge pull request #23 from c2tz/dependabot/npm_and_yarn/multi-266c54db44
-- [`6c37698`](https://github.com/c2tz/ct-blog.cta.li/commit/6c376988fd5c2a148d8d7bcf2b3901ac1051e19c) — chore(ci): update README with recent commits
-- [`523383d`](https://github.com/c2tz/ct-blog.cta.li/commit/523383d7c6ea1db3e1f41f7e9a1bd8873100862c) — chore(dependabot): target develop branch for all dependency updates
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

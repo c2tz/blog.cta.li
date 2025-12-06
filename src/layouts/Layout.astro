@@ -299,12 +299,11 @@ const seoDescription = description ?? SITE_DESCRIPTION;
       <Footer />
     </main>
 
-<script type="module">
-  import { initCodeCopy } from "/src/scripts/codeCopy.ts";
+<script>
+  import { initCodeCopy } from "@/scripts/codeCopy";
+  import "@/scripts/lightbox";
+
   initCodeCopy();
 </script>
-
-<!-- PhotoSwipe lightbox for Markdown images -->
-<script type="module" src="/src/scripts/lightbox.ts"></script>
 </body>
 </html>

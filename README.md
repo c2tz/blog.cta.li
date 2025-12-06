@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`95f7ce1`](https://github.com/c2tz/ct-blog.cta.li/commit/95f7ce152f1ca6f7484b4f098342c8bc33d7cade) — Merge branch 'develop' of https://github.com/c2tz/ct-blog.cta.li into develop
+- [`3b031a0`](https://github.com/c2tz/ct-blog.cta.li/commit/3b031a0137ddfec621b25f1c2ea597ac1e8747e9) — feat: add code copy btn and lighhouse for img
+- [`f3adbbb`](https://github.com/c2tz/ct-blog.cta.li/commit/f3adbbb11097d9add4ae9978c3c7826eff77064d) — chore(ci): update README with recent commits
 - [`ea735f7`](https://github.com/c2tz/ct-blog.cta.li/commit/ea735f7d48502559b35ca3216d535f08dab3358e) — chore(ci): update README with recent commits
 - [`8b8bb4c`](https://github.com/c2tz/ct-blog.cta.li/commit/8b8bb4cd7a958e488d73928af5987c43cebe4651) — Merge pull request #17 from c2tz/dependabot/npm_and_yarn/astro-5.16.4
-- [`a17d57c`](https://github.com/c2tz/ct-blog.cta.li/commit/a17d57c5c50e10ee8d7b561159612c4af90b4660) — chore(deps): bump astro from 5.15.9 to 5.16.4
-- [`e3cf243`](https://github.com/c2tz/ct-blog.cta.li/commit/e3cf2433af123ccdb4f25b8cd2bee736249f3eb9) — chore(ci): update README with recent commits
-- [`7844d2b`](https://github.com/c2tz/ct-blog.cta.li/commit/7844d2bdbc15fd21706c23c5a6f44115e1eca265) — Merge pull request #19 from c2tz/dependabot/npm_and_yarn/astrojs/rss-4.0.14
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

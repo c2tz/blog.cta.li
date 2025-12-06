@@ -1,7 +1,7 @@
 ---
 title: 'Markdown Style Guide'
 description: 'Here is a sample of some basic Markdown syntax that can be used when writing Markdown content in Astro.'
-pubDate: 'Jun 19 2024'
+pubDate: 'Dec 7 2025'
 tags:
   - styleguide
 ---
@@ -40,8 +40,8 @@ Itatur? Quiatae cullecum rem ent aut odis in re eossequodi nonsequ idebis ne sap
 
 ### Output
 
-![blog placeholder](/src/content/images/konachan-382339.jpg)
-![blog placeholder](/src/content/images/konachan-396319.jpg)
+![blog placeholder](./images/konachan-382339.jpg)
+![blog placeholder](./images/konachan-396319.jpg)
 
 ## Blockquotes
 

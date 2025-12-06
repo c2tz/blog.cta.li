@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
-- [`95f7ce1`](https://github.com/c2tz/ct-blog.cta.li/commit/95f7ce152f1ca6f7484b4f098342c8bc33d7cade) — Merge branch 'develop' of https://github.com/c2tz/ct-blog.cta.li into develop
-- [`3b031a0`](https://github.com/c2tz/ct-blog.cta.li/commit/3b031a0137ddfec621b25f1c2ea597ac1e8747e9) — feat: add code copy btn and lighhouse for img
-- [`f3adbbb`](https://github.com/c2tz/ct-blog.cta.li/commit/f3adbbb11097d9add4ae9978c3c7826eff77064d) — chore(ci): update README with recent commits
-- [`ea735f7`](https://github.com/c2tz/ct-blog.cta.li/commit/ea735f7d48502559b35ca3216d535f08dab3358e) — chore(ci): update README with recent commits
-- [`8b8bb4c`](https://github.com/c2tz/ct-blog.cta.li/commit/8b8bb4cd7a958e488d73928af5987c43cebe4651) — Merge pull request #17 from c2tz/dependabot/npm_and_yarn/astro-5.16.4
+- [`0e69b12`](https://github.com/c2tz/ct-blog.cta.li/commit/0e69b12cba6caabe8f3ce8e90a8e105d9466e185) — Merge pull request #22 from c2tz/dependabot/npm_and_yarn/tailwindcss/typography-0.5.19
+- [`68e010c`](https://github.com/c2tz/ct-blog.cta.li/commit/68e010c5c17917c6377785381ae600a2534e895e) — chore(ci): update README with recent commits
+- [`c8bd045`](https://github.com/c2tz/ct-blog.cta.li/commit/c8bd045b4402d73069cfc384e2565f14259d58a9) — Merge pull request #23 from c2tz/dependabot/npm_and_yarn/multi-266c54db44
+- [`6c37698`](https://github.com/c2tz/ct-blog.cta.li/commit/6c376988fd5c2a148d8d7bcf2b3901ac1051e19c) — chore(ci): update README with recent commits
+- [`523383d`](https://github.com/c2tz/ct-blog.cta.li/commit/523383d7c6ea1db3e1f41f7e9a1bd8873100862c) — chore(dependabot): target develop branch for all dependency updates
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

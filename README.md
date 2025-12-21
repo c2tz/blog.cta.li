@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`f51dbfb`](https://github.com/c2tz/ct-blog.cta.li/commit/f51dbfb0abae7b23a7babc84b70b95f2e4ff925b) — chore(deps): bump tailwindcss from 3.4.18 to 3.4.19 (#28)
+- [`c348816`](https://github.com/c2tz/ct-blog.cta.li/commit/c348816f5d6021a7df50868df5a3f76704aa59dd) — chore(ci): update README with recent commits
 - [`16cfe46`](https://github.com/c2tz/ct-blog.cta.li/commit/16cfe461daa999f17e575cc4d88668a10964c792) — chore(deps): bump @astrojs/mdx from 4.3.12 to 4.3.13 (#27)
 - [`12be9fd`](https://github.com/c2tz/ct-blog.cta.li/commit/12be9fd691c81b4654f6bd38d6acc997a3a39ea6) — chore(ci): update README with recent commits
 - [`802de62`](https://github.com/c2tz/ct-blog.cta.li/commit/802de62527b871e5632c7d4ccc0796f677221009) — chore(deps): bump astro from 5.16.4 to 5.16.6 (#29)
-- [`514c6ad`](https://github.com/c2tz/ct-blog.cta.li/commit/514c6ad8d7ed6085d7960d29f722398e42bea3f5) — chore(ci): update README with recent commits
-- [`66a4f39`](https://github.com/c2tz/ct-blog.cta.li/commit/66a4f3932e811ffe4fd8b0b0c67e6aa4b69663bd) — fix: codecopy and lightbox 404 fix
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

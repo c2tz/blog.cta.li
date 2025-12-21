@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`16cfe46`](https://github.com/c2tz/ct-blog.cta.li/commit/16cfe461daa999f17e575cc4d88668a10964c792) — chore(deps): bump @astrojs/mdx from 4.3.12 to 4.3.13 (#27)
+- [`12be9fd`](https://github.com/c2tz/ct-blog.cta.li/commit/12be9fd691c81b4654f6bd38d6acc997a3a39ea6) — chore(ci): update README with recent commits
 - [`802de62`](https://github.com/c2tz/ct-blog.cta.li/commit/802de62527b871e5632c7d4ccc0796f677221009) — chore(deps): bump astro from 5.16.4 to 5.16.6 (#29)
 - [`514c6ad`](https://github.com/c2tz/ct-blog.cta.li/commit/514c6ad8d7ed6085d7960d29f722398e42bea3f5) — chore(ci): update README with recent commits
 - [`66a4f39`](https://github.com/c2tz/ct-blog.cta.li/commit/66a4f3932e811ffe4fd8b0b0c67e6aa4b69663bd) — fix: codecopy and lightbox 404 fix
-- [`189e7d6`](https://github.com/c2tz/ct-blog.cta.li/commit/189e7d6ae7f01d69cdfe74d4fa7f4ea6dff06701) — chore(ci): update README with recent commits
-- [`060653b`](https://github.com/c2tz/ct-blog.cta.li/commit/060653b05ed6cc29e61a381125a7b596328ba046) — Add .vscode to .gitignore
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

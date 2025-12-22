@@ -9,9 +9,9 @@ export const GET: APIRoute = async ({ props }) => {
   // const fontFile = await fetch(
   //   "https://www.divby0.io/Inter-SemiBold.woff"
   // );
-  // const fontData: ArrayBuffer = await fontFile.arrayBuffer();
 
-  const fontData = await fs.readFile('./public/Inter-SemiBold.woff');
+  const fontUrl = new URL("../../../../public/fonts/roboto-flex-v30-latin-regular.ttf", import.meta.url);
+  const fontData = await fs.readFile(fontUrl);
 
   return await satoriAstroOG({
     template: PostOgTemplate({ title: props.data.title }),
@@ -21,9 +21,9 @@ export const GET: APIRoute = async ({ props }) => {
     satori: {
       fonts: [
         {
-          name: "Inter",
+          name: "Roboto Flex",
           data: fontData,
-          weight: 600,
+          weight: 400,
           style: "normal",
         },
       ],

@@ -5,7 +5,8 @@ import fs from "node:fs/promises";
 import { HomeOgTemplate } from "@/components/OgTemplates";
 
 export const GET: APIRoute = async ({ props }) => {
-  const fontData = await fs.readFile('./public/Inter-SemiBold.woff');
+  const fontUrl = new URL("../../public/fonts/roboto-flex-v30-latin-regular.ttf", import.meta.url);
+  const fontData = await fs.readFile(fontUrl);
 
   return await satoriAstroOG({
     template: HomeOgTemplate(),
@@ -15,9 +16,9 @@ export const GET: APIRoute = async ({ props }) => {
     satori: {
       fonts: [
         {
-          name: "Inter",
+          name: "Roboto Flex",
           data: fontData,
-          weight: 600,
+          weight: 400,
           style: "normal",
         },
       ],

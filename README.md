@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`cf3ebc2`](https://github.com/c2tz/ct-blog.cta.li/commit/cf3ebc241542e037ed4745608af04a6014fbc4f2) — chore(deps): bump satori-astro from 0.3.1 to 0.3.3 (#32)
+- [`d13be49`](https://github.com/c2tz/ct-blog.cta.li/commit/d13be49e9ea8cc6de4f2bb750a858e35bc73c879) — chore(ci): update README with recent commits
 - [`7155d48`](https://github.com/c2tz/ct-blog.cta.li/commit/7155d484da5d41d542ebbc72243b88271891a931) — chore: make few upgrade for og
 - [`7aa72b9`](https://github.com/c2tz/ct-blog.cta.li/commit/7aa72b9ee8f7c2c5e99a6a7dbd6c0bac4ef08093) — chore: update react and dependencies
 - [`e1deebb`](https://github.com/c2tz/ct-blog.cta.li/commit/e1deebbe4ca7fef5954db16f0c68a591f75b7f03) — chore(ci): update README with recent commits
-- [`f51dbfb`](https://github.com/c2tz/ct-blog.cta.li/commit/f51dbfb0abae7b23a7babc84b70b95f2e4ff925b) — chore(deps): bump tailwindcss from 3.4.18 to 3.4.19 (#28)
-- [`c348816`](https://github.com/c2tz/ct-blog.cta.li/commit/c348816f5d6021a7df50868df5a3f76704aa59dd) — chore(ci): update README with recent commits
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

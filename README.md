@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`73b302a`](https://github.com/c2tz/ct-blog.cta.li/commit/73b302a22711b8fc82a2532c646a7419f03b244f) — chore(deps): bump @astrojs/sitemap from 3.6.0 to 3.7.0 (#34)
+- [`5335444`](https://github.com/c2tz/ct-blog.cta.li/commit/53354445dcd00769cf46d8850272f5f7451f76cb) — chore(ci): update README with recent commits
 - [`cf3ebc2`](https://github.com/c2tz/ct-blog.cta.li/commit/cf3ebc241542e037ed4745608af04a6014fbc4f2) — chore(deps): bump satori-astro from 0.3.1 to 0.3.3 (#32)
 - [`d13be49`](https://github.com/c2tz/ct-blog.cta.li/commit/d13be49e9ea8cc6de4f2bb750a858e35bc73c879) — chore(ci): update README with recent commits
 - [`7155d48`](https://github.com/c2tz/ct-blog.cta.li/commit/7155d484da5d41d542ebbc72243b88271891a931) — chore: make few upgrade for og
-- [`7aa72b9`](https://github.com/c2tz/ct-blog.cta.li/commit/7aa72b9ee8f7c2c5e99a6a7dbd6c0bac4ef08093) — chore: update react and dependencies
-- [`e1deebb`](https://github.com/c2tz/ct-blog.cta.li/commit/e1deebbe4ca7fef5954db16f0c68a591f75b7f03) — chore(ci): update README with recent commits
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

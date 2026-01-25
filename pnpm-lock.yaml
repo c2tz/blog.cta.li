@@ -42,8 +42,8 @@ importers:
         specifier: ^5.4.4
         version: 5.4.4
       photoviewer:
-        specifier: ^3.10.3
-        version: 3.10.3
+        specifier: ^3.11.1
+        version: 3.11.1
       react:
         specifier: ^19.2.3
         version: 19.2.3
@@ -1905,8 +1905,8 @@ packages:
     resolution: {integrity: sha512-WNFHoKrkZNnvFFhbHL93WDkW3ifwVOXSW3w1UuZZelSmgXpIGiZSNlZJq37rR8YejqME2rHs9EhH9ZvlvFH2NA==}
     engines: {node: '>= 0.12.0'}
 
-  photoviewer@3.10.3:
-    resolution: {integrity: sha512-6RqhMOiPVMsgfMTP/j/lQLGGj2glzBWIDnrTpx2rcACOcO8ig+bnBAfofEPXBmLOgKxsu+HIiLQudVtloS9GEA==}
+  photoviewer@3.11.1:
+    resolution: {integrity: sha512-CnD62Zs0rmOd6y4prQmbF4/pB2zXhrxLn+5io4AVjSXLAAXjw2tHugOOZocV8r4MZ7QvUTB840L2a8MqJgEV8g==}
 
   piccolore@0.1.3:
     resolution: {integrity: sha512-o8bTeDWjE086iwKrROaDf31K0qC/BENdm15/uH9usSC/uZjJOKb2YGiVHfLY4GhwsERiPI1jmwI2XrA7ACOxVw==}
@@ -4939,7 +4939,7 @@ snapshots:
 
   photoswipe@5.4.4: {}
 
-  photoviewer@3.10.3:
+  photoviewer@3.11.1:
     dependencies:
       domq.js: 0.7.1
 

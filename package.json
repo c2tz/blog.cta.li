@@ -18,7 +18,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "astro": "^5.16.6",
-    "astro-seo": "^0.8.4",
+    "astro-seo": "^1.1.0",
     "photoswipe": "^5.4.4",
     "photoviewer": "^3.11.1",
     "react": "^19.2.3",

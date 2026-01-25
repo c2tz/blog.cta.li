@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`625b709`](https://github.com/c2tz/ct-blog.cta.li/commit/625b70946895be2e485b353ad22be799c34b85c5) — chore(deps): bump astro from 5.16.6 to 5.16.11 (#37)
+- [`564a392`](https://github.com/c2tz/ct-blog.cta.li/commit/564a392d6b1960f9fe84af052aaf8ddb95061582) — chore(ci): update README with recent commits
 - [`1aaa291`](https://github.com/c2tz/ct-blog.cta.li/commit/1aaa2912220f0bb46075f1dc3449e9e09c0f0401) — chore(deps): bump astro-seo from 0.8.4 to 1.1.0 (#36)
 - [`dedd5d3`](https://github.com/c2tz/ct-blog.cta.li/commit/dedd5d33b8237f47f2fbe397866cf419318533aa) — chore(ci): update README with recent commits
 - [`18dacd8`](https://github.com/c2tz/ct-blog.cta.li/commit/18dacd8ad495302858fb0deea8ef09637df6ed3c) — chore(deps): bump photoviewer from 3.10.3 to 3.11.1 (#35)
-- [`58a27b4`](https://github.com/c2tz/ct-blog.cta.li/commit/58a27b47fba618f6d68b6701ff806e07510f0213) — chore(ci): update README with recent commits
-- [`73b302a`](https://github.com/c2tz/ct-blog.cta.li/commit/73b302a22711b8fc82a2532c646a7419f03b244f) — chore(deps): bump @astrojs/sitemap from 3.6.0 to 3.7.0 (#34)
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

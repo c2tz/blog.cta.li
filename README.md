@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`1aaa291`](https://github.com/c2tz/ct-blog.cta.li/commit/1aaa2912220f0bb46075f1dc3449e9e09c0f0401) — chore(deps): bump astro-seo from 0.8.4 to 1.1.0 (#36)
+- [`dedd5d3`](https://github.com/c2tz/ct-blog.cta.li/commit/dedd5d33b8237f47f2fbe397866cf419318533aa) — chore(ci): update README with recent commits
 - [`18dacd8`](https://github.com/c2tz/ct-blog.cta.li/commit/18dacd8ad495302858fb0deea8ef09637df6ed3c) — chore(deps): bump photoviewer from 3.10.3 to 3.11.1 (#35)
 - [`58a27b4`](https://github.com/c2tz/ct-blog.cta.li/commit/58a27b47fba618f6d68b6701ff806e07510f0213) — chore(ci): update README with recent commits
 - [`73b302a`](https://github.com/c2tz/ct-blog.cta.li/commit/73b302a22711b8fc82a2532c646a7419f03b244f) — chore(deps): bump @astrojs/sitemap from 3.6.0 to 3.7.0 (#34)
-- [`5335444`](https://github.com/c2tz/ct-blog.cta.li/commit/53354445dcd00769cf46d8850272f5f7451f76cb) — chore(ci): update README with recent commits
-- [`cf3ebc2`](https://github.com/c2tz/ct-blog.cta.li/commit/cf3ebc241542e037ed4745608af04a6014fbc4f2) — chore(deps): bump satori-astro from 0.3.1 to 0.3.3 (#32)
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

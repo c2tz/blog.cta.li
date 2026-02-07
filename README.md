@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`726d6af`](https://github.com/c2tz/ct-blog.cta.li/commit/726d6afe7d1432ee3e77bd3da0f85b1fe83fd3c4) — chore(deps): bump react-dom from 19.2.3 to 19.2.4 (#42)
+- [`92fd84b`](https://github.com/c2tz/ct-blog.cta.li/commit/92fd84b7e0f7fc7eb874357ce72d6e1785e286a9) — chore(ci): update README with recent commits
 - [`2729cd8`](https://github.com/c2tz/ct-blog.cta.li/commit/2729cd8c07e3097a0090e57a5d355941e6a7d822) — chore(deps): bump astro from 5.16.15 to 5.17.1 (#39)
 - [`e89eacf`](https://github.com/c2tz/ct-blog.cta.li/commit/e89eacf20fb3022497c0e811c04507be82783623) — chore(ci): update README with recent commits
 - [`115cfb5`](https://github.com/c2tz/ct-blog.cta.li/commit/115cfb5ed2124ab3eb49a523b8724d322b16a1aa) — chore(deps): bump @astrojs/rss from 4.0.14 to 4.0.15 (#41)
-- [`2c07e9a`](https://github.com/c2tz/ct-blog.cta.li/commit/2c07e9a0e31e1f5c2e8f8f05f24db7777d12cee4) — chore(ci): update README with recent commits
-- [`ce01c54`](https://github.com/c2tz/ct-blog.cta.li/commit/ce01c54d8e12f91543c0d78ae47b129d9fa714bf) — chore(deps): bump react and @types/react (#40)
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

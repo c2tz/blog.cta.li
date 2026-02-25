@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`5411009`](https://github.com/c2tz/ct-blog.cta.li/commit/54110095ca49fa57fd4546a2a53292fb9f92a31b) — chore(deps): bump astro from 5.17.1 to 5.17.3 (#48)
+- [`4162292`](https://github.com/c2tz/ct-blog.cta.li/commit/41622924f99ea0fc07eef8c6d163ec50fe4602c5) — chore(ci): update README with recent commits
 - [`7c9be77`](https://github.com/c2tz/ct-blog.cta.li/commit/7c9be7732574f2f67b782fe9e07b7287419c5625) — Merge branch 'develop' of https://github.com/c2tz/ct-blog.cta.li into develop
 - [`ad96715`](https://github.com/c2tz/ct-blog.cta.li/commit/ad96715658002c6170446c486b6c6301da564965) — feat: add a cookie consent for ip
 - [`267c1b2`](https://github.com/c2tz/ct-blog.cta.li/commit/267c1b2e8c895393d48081d103b39f1419031629) — chore(ci): update README with recent commits
-- [`6e7037f`](https://github.com/c2tz/ct-blog.cta.li/commit/6e7037f276f35c8748d12a262f73546b29b4194c) — chore(deps): bump @types/react from 19.2.10 to 19.2.13 (#43)
-- [`fdfe888`](https://github.com/c2tz/ct-blog.cta.li/commit/fdfe8889ca2610d8a1233de6ef72acbbf20d1a6b) — chore(ci): update README with recent commits
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

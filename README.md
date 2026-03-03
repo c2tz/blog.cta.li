@@ -13,7 +13,6 @@
 
 #### branch `main`
 <!-- COMMITS_MAIN:START -->
-- [`b0a37e8`](https://github.com/c2tz/ct-blog.cta.li/commit/b0a37e867bea2a57c4ed14ebec5620fc29917ad9) — chore(ci): update README with recent commits
 - [`3986c3e`](https://github.com/c2tz/ct-blog.cta.li/commit/3986c3e9dbd62f215a2860b11519698f527b761a) — chore: synchronize develop with main (#24)
 - [`e70d431`](https://github.com/c2tz/ct-blog.cta.li/commit/e70d431c9938ee0e9579dad641c8336886240acc) — Initial commit
 <!-- COMMITS_MAIN:END -->

@@ -4,15 +4,16 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`f9f4f8d`](https://github.com/c2tz/ct-blog.cta.li/commit/f9f4f8d1c0521d6e615c51a5673737bb1d878124) — Merge branch 'main' into develop
+- [`4254c6c`](https://github.com/c2tz/ct-blog.cta.li/commit/4254c6c1e52ff5136bbc61c110a38ee7fc3170f6) — chore(ci): update README with recent commits
 - [`5411009`](https://github.com/c2tz/ct-blog.cta.li/commit/54110095ca49fa57fd4546a2a53292fb9f92a31b) — chore(deps): bump astro from 5.17.1 to 5.17.3 (#48)
 - [`4162292`](https://github.com/c2tz/ct-blog.cta.li/commit/41622924f99ea0fc07eef8c6d163ec50fe4602c5) — chore(ci): update README with recent commits
 - [`7c9be77`](https://github.com/c2tz/ct-blog.cta.li/commit/7c9be7732574f2f67b782fe9e07b7287419c5625) — Merge branch 'develop' of https://github.com/c2tz/ct-blog.cta.li into develop
-- [`ad96715`](https://github.com/c2tz/ct-blog.cta.li/commit/ad96715658002c6170446c486b6c6301da564965) — feat: add a cookie consent for ip
-- [`267c1b2`](https://github.com/c2tz/ct-blog.cta.li/commit/267c1b2e8c895393d48081d103b39f1419031629) — chore(ci): update README with recent commits
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`
 <!-- COMMITS_MAIN:START -->
+- [`b0a37e8`](https://github.com/c2tz/ct-blog.cta.li/commit/b0a37e867bea2a57c4ed14ebec5620fc29917ad9) — chore(ci): update README with recent commits
 - [`3986c3e`](https://github.com/c2tz/ct-blog.cta.li/commit/3986c3e9dbd62f215a2860b11519698f527b761a) — chore: synchronize develop with main (#24)
 - [`e70d431`](https://github.com/c2tz/ct-blog.cta.li/commit/e70d431c9938ee0e9579dad641c8336886240acc) — Initial commit
 <!-- COMMITS_MAIN:END -->

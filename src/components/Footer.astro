@@ -46,41 +46,190 @@ import { SITE_TITLE } from "@/consts";
       <a href="/" class="footer-link">{SITE_TITLE}</a>
     </span>
 
-    <span class="mx-2">•</span>
+<span id="ip-wrapper" hidden>
+  <span class="mx-2">•</span>
+  <span>Votre IP : <strong id="client-ip">—</strong> (<span id="client-country">—</span>)</span>
+</span>
 
-    <span>
-      Votre IP : <strong id="client-ip">Chargement…</strong>
-      (<span id="client-country">–</span>)
-    </span>
-  </div>
+<script type="module">
+(() => {
+const SOFT_TTL_MS  = 0;            // revalider à chaque événement (focus, accept, etc.)
+const HARD_TTL_MS  = 60 * 60 * 1e3; // 1 h de péremption dure
+const MIN_INTERVAL = 5 * 1e3;       // au moins 5 s entre deux fetchs réels
 
-  <!-- Script IP + pays (avec cache session) -->
-  <script type="module">
-    const ipEl = document.getElementById('client-ip');
-    const countryEl = document.getElementById('client-country');
+  const LS_KEY        = 'cc_ipgeo_cache_swr_v1';
 
+  let inFlight = false;
+  let controller = null;
+
+  // Providers (CORS permissifs d'abord)
+  const PROVIDERS = [
+    { name: 'geojs', url: 'https://get.geojs.io/v1/ip/geo.json',
+      map: d => ({ ip: d.ip, country_name: d.country || '' }) },
+    { name: 'ipapi', url: 'https://ipapi.co/json/',
+      map: d => ({ ip: d.ip, country_name: d.country_name || '' }) },
+    { name: 'ipify', url: 'https://api64.ipify.org?format=json',
+      map: d => ({ ip: d.ip, country_name: '' }) },
+  ];
+
+  // ---------- Consentement ----------
+  const allowed = () => {
     try {
-      const cached = sessionStorage.getItem('ipgeo');
-      if (cached) {
-        const d = JSON.parse(cached);
-        ipEl.textContent = d.ip ?? 'non détectée';
-        countryEl.textContent = d.country_name ?? 'Pays inconnu';
-      } else {
-        fetch('https://ipapi.co/json/')
-          .then(r => r.json())
-          .then(d => {
-            sessionStorage.setItem('ipgeo', JSON.stringify(d));
-            ipEl.textContent = d.ip ?? 'non détectée';
-            countryEl.textContent = d.country_name ?? 'Pays inconnu';
-          })
-          .catch(() => {
-            ipEl.textContent = 'non détectée';
-            countryEl.textContent = 'Pays inconnu';
-          });
+      return Boolean(
+        window.CookieConsent?.acceptedService?.('ipgeo','functionality') ||
+        window.CookieConsent?.isCategoryAccepted?.('functionality')
+      );
+    } catch { return false; }
+  };
+
+  // ---------- DOM ----------
+  const $ = () => ({
+    wrap:    document.getElementById('ip-wrapper') || null, // optionnel
+    ip:      document.getElementById('client-ip'),
+    country: document.getElementById('client-country'),
+  });
+
+  const show = v => { const { wrap } = $(); if (wrap) wrap.hidden = !v; };
+  const render = d => {
+    const { ip, country } = $();
+    if (!ip || !country) return;
+    ip.textContent      = d?.ip ?? 'non détectée';
+    country.textContent = d?.country_name ?? (d?.ip ? 'Pays inconnu' : '—');
+  };
+
+  // ---------- Cache ----------
+  const now = () => Date.now();
+
+  const readCache = () => {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      // obj: { ip, country_name, provider, ts, lastFetch }
+      if (!obj?.ts) return null;
+      // Expiration dure
+      if (now() - obj.ts > HARD_TTL_MS) return null;
+      return obj;
+    } catch { return null; }
+  };
+
+  const writeCache = d => {
+    try {
+      if (!d?.ip) return;
+      const payload = {
+        ip: d.ip,
+        country_name: d.country_name ?? '',
+        provider: d.provider || '',
+        ts: now(),           // moment où la donnée est fraîche
+        lastFetch: now(),    // moment où on a tenté un fetch réel
+      };
+      localStorage.setItem(LS_KEY, JSON.stringify(payload));
+    } catch {}
+  };
+
+  const touchLastFetch = () => {
+    try {
+      const obj = readCache();
+      const payload = obj || {};
+      payload.lastFetch = now();
+      if (!payload.ts) payload.ts = 0;
+      localStorage.setItem(LS_KEY, JSON.stringify(payload));
+    } catch {}
+  };
+
+  const shouldRevalidate = (cached) => {
+    const lf = cached?.lastFetch ?? cached?.ts ?? 0;
+    const tooOldSoft = (now() - (cached?.ts ?? 0)) > SOFT_TTL_MS;
+    const tooSoon    = (now() - lf) < MIN_INTERVAL;
+    return tooOldSoft && !tooSoon;
+  };
+
+  // ---------- Réseau ----------
+  const fetchWithFallback = async () => {
+    if (controller) controller.abort();
+    controller = new AbortController();
+
+    for (const p of PROVIDERS) {
+      try {
+        const res = await fetch(p.url, { signal: controller.signal, credentials: 'omit', cache: 'no-store' });
+        if (!res.ok) throw new Error(String(res.status));
+        const raw = await res.json().catch(() => ({}));
+        const d = p.map(raw);
+        if (d?.ip) { d.provider = p.name; return d; }
+      } catch {
+        // essaie le suivant
       }
-    } catch {
-      ipEl.textContent = 'non détectée';
-      countryEl.textContent = 'Pays inconnu';
     }
-  </script>
+    throw new Error('all_providers_failed');
+  };
+
+  const revalidate = async () => {
+    if (inFlight) return;
+    inFlight = true;
+    touchLastFetch(); // anti-rafale
+    try {
+      const d = await fetchWithFallback();
+      writeCache(d);
+      render(d);
+    } catch {
+      render({ ip: 'non détectée', country_name: 'Pays inconnu' });
+    } finally {
+      inFlight = false;
+      controller = null;
+    }
+  };
+
+  // ---------- Cycle principal ----------
+  const update = () => {
+    const { ip, country } = $();
+    if (!ip || !country) return;
+
+    if (!allowed()) {
+      // Pas de consentement → on masque (si wrapper) et on n’affiche rien
+      render({ ip: '—', country_name: '—' });
+      show(false);
+      return;
+    }
+
+    show(true);
+
+    const cached = readCache();
+    if (cached) {
+      // 1) Affiche immédiatement
+      render(cached);
+      // 2) Révalide en arrière-plan si “soft TTL” dépassé
+      if (shouldRevalidate(cached)) revalidate();
+    } else {
+      // Pas de cache → fetch maintenant
+      revalidate();
+    }
+  };
+
+  // Boot
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', update, { once: true });
+  else update();
+
+  // Réactivité immédiate à la modale
+  document.addEventListener('cc:onConsent', update);
+  document.addEventListener('cc:onChange', update);
+
+  // Revalide à chaque retour sur l’onglet et quand on redevient “online”
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') update();
+  });
+  window.addEventListener('online', update);
+
+  // Si CookieConsent est injecté après ce script, on attend jusqu’à 5 s
+  if (!window.CookieConsent?.acceptedService) {
+    const t0 = now();
+    const id = setInterval(() => {
+      if (window.CookieConsent?.acceptedService || now() - t0 > 5000) {
+        clearInterval(id);
+        update();
+      }
+    }, 150);
+  }
+})();
+</script>
+
 </footer>

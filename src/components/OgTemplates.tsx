@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import { SITE_TITLE } from "@/consts";
 
-const image = fs.readFileSync("./public/astro.png");
+const image = fs.readFileSync("./public/og.png");
 const imageDataUrl = `data:image/png;base64,${image.toString("base64")}`;
 
 export function HomeOgTemplate() {
@@ -52,7 +52,6 @@ export function PostOgTemplate({ title }: { title: string }) {
         fontSize: 32,
         fontWeight: 600,
         fontFamily: "'Roboto Flex', system-ui, sans-serif",
-        letterSpacing: "-0.05em",
         fontFeatureSettings: "'liga' 1, 'calt' 1",
       }}
     >

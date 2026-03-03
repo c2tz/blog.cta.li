@@ -5,6 +5,7 @@ import { SITE_DESCRIPTION, SITE_TAB_TITLE, SITE_TAB_ARTICLE } from "@/consts";
 
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
+import appInitUrl from '../scripts/app-init.ts?url';
 
 interface Props extends SEOProps {
   locale?: string;
@@ -44,6 +45,12 @@ const seoDescription = description ?? SITE_DESCRIPTION;
           },
         ],
       }}
+    />
+
+    <!-- CSS CookieConsent v3 (CDN) -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orestbida/cookieconsent@3.1.0/dist/cookieconsent.css"
     />
 
     <style is:global>
@@ -209,71 +216,64 @@ const seoDescription = description ?? SITE_DESCRIPTION;
         border-bottom: 0 solid var(--code-divider);
       }
       .code-error-icon {
-  display: none;
-}
+        display: none;
+      }
 
-.is-error .code-copy-icon,
-.is-error .code-check-icon {
-  display: none;
-}
+      .is-error .code-copy-icon,
+      .is-error .code-check-icon {
+        display: none;
+      }
 
-.is-error .code-error-icon {
-  display: inline-block;
-}
+      .is-error .code-error-icon {
+        display: inline-block;
+      }
 
+      :global(html, body) {
+        overscroll-behavior: none;
+      }
 
+      img[data-lightbox] {
+        cursor: zoom-in;
+      }
 
-  :global(html, body) {
-    overscroll-behavior: none;
-  }
+      .lightbox-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
 
-  img[data-lightbox] {
-    cursor: zoom-in;
-  }
+        /* pas de scroll ni pan dans l’overlay */
+        overflow: hidden;
+        touch-action: none;
 
-  .lightbox-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.9);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
+        opacity: 0;
+        transform: scale(0.97);
+        transition:
+          opacity 0.2s ease-out,
+          transform 0.2s ease-out;
+      }
 
-    /* pas de scroll ni pan dans l’overlay */
-    overflow: hidden;
-    touch-action: none;
+      .lightbox-overlay.open {
+        opacity: 1;
+        transform: scale(1);
+      }
 
-    opacity: 0;
-    transform: scale(0.97);
-    transition:
-      opacity 0.2s ease-out,
-      transform 0.2s ease-out;
-  }
+      .lightbox-overlay.closing {
+        opacity: 0;
+        transform: scale(0.97);
+      }
 
-  .lightbox-overlay.open {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  .lightbox-overlay.closing {
-    opacity: 0;
-    transform: scale(0.97);
-  }
-
-  .lightbox-overlay img {
-    max-width: 95vw;
-    max-height: 95vh;
-    object-fit: contain;
-    cursor: zoom-out;
-    /* empêche l’image elle-même de déclencher du pan/zoom natif */
-    touch-action: none;
-  }
-
-
-
-
-
+      .lightbox-overlay img {
+        max-width: 95vw;
+        max-height: 95vh;
+        object-fit: contain;
+        cursor: zoom-out;
+        /* empêche l’image elle-même de déclencher du pan/zoom natif */
+        touch-action: none;
+      }
 
       @media (prefers-color-scheme: dark) {
         .astro-code,
@@ -299,11 +299,10 @@ const seoDescription = description ?? SITE_DESCRIPTION;
       <Footer />
     </main>
 
-<script>
-  import { initCodeCopy } from "@/scripts/codeCopy";
-  import "@/scripts/lightbox";
+    <!-- Module applicatif packagé par Vite -->
+    <script type="module" src={appInitUrl}></script>
 
-  initCodeCopy();
-</script>
-</body>
+    <!-- Script de configuration CookieConsent v3 (déposé dans /public) -->
+    <script type="module" src="/cookieconsent-config.js"></script>
+  </body>
 </html>

@@ -4,11 +4,11 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`2ea3450`](https://github.com/c2tz/ct-blog.cta.li/commit/2ea34509acf7d9cc9429fce1e20e403d0a73bd2c) — chore(deps): bump astro from 5.17.3 to 5.18.0 (#49)
+- [`9794213`](https://github.com/c2tz/ct-blog.cta.li/commit/97942136172884656e467a1c947aeb48e1b1504d) — chore(ci): update README with recent commits
 - [`b921097`](https://github.com/c2tz/ct-blog.cta.li/commit/b9210972f5062b48f78a5fe46554ee279d34a52e) — chore(deps): bump @types/react from 19.2.13 to 19.2.14 (#46)
 - [`c871f4c`](https://github.com/c2tz/ct-blog.cta.li/commit/c871f4c749dfb82c7398cc6b4c2a9a245cd9f890) — chore(ci): update README with recent commits
 - [`c379530`](https://github.com/c2tz/ct-blog.cta.li/commit/c3795309ded71254fc4dc17aac181018f1ef00d4) — chore(deps): update dependencies
-- [`d86f4d3`](https://github.com/c2tz/ct-blog.cta.li/commit/d86f4d3e9b9f7d476fb358a4cde3210e501c2363) — chore(ci): update README with recent commits
-- [`f9f4f8d`](https://github.com/c2tz/ct-blog.cta.li/commit/f9f4f8d1c0521d6e615c51a5673737bb1d878124) — Merge branch 'main' into develop
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`

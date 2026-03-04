@@ -13,11 +13,11 @@
 
 #### branch `main`
 <!-- COMMITS_MAIN:START -->
+- [`05ceaa7`](https://github.com/c2tz/ct-blog.cta.li/commit/05ceaa7e88d6a78a6280aaa92d60d70e38fcf73b) — chore(ci): update README with recent commits
 - [`ce8bbf9`](https://github.com/c2tz/ct-blog.cta.li/commit/ce8bbf9e5471dbb2e3a51f6ca0984719eae0518c) — Develop (#51)
 - [`f729125`](https://github.com/c2tz/ct-blog.cta.li/commit/f729125e2993d55240ce83052af0990916dc7671) — chore(ci): update README with recent commits
 - [`601fe2f`](https://github.com/c2tz/ct-blog.cta.li/commit/601fe2f9b508cc01a248977c14e07ee3a16671d8) — chore(deps): bump the npm_and_yarn group across 1 directory with 4 updates (#45)
 - [`d8508d9`](https://github.com/c2tz/ct-blog.cta.li/commit/d8508d9b6abb845acf12f5ed12417ffb710046de) — chore(ci): update README with recent commits
-- [`1a87178`](https://github.com/c2tz/ct-blog.cta.li/commit/1a87178b3ef112a4e9e0c4d8a37f5848ecbe8c23) — chore: synchronize develop with main (#50)
 <!-- COMMITS_MAIN:END -->
 
 ### Milestones

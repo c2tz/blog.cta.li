@@ -13,11 +13,11 @@
 
 #### branch `main`
 <!-- COMMITS_MAIN:START -->
+- [`3a9a155`](https://github.com/c2tz/ct-blog.cta.li/commit/3a9a15540fcf13b5895b60f470c329ad24a44ff8) — chore(ci): update README with recent commits
 - [`c572683`](https://github.com/c2tz/ct-blog.cta.li/commit/c5726837d14037cd6b35afad6afc786f338b5d87) — chore(ci): update README with recent commits
 - [`abebefa`](https://github.com/c2tz/ct-blog.cta.li/commit/abebefa08677d966c3a62ee7022b51958a776376) — chore(ci): update README with recent commits
 - [`e49e7a4`](https://github.com/c2tz/ct-blog.cta.li/commit/e49e7a43e9d0032ed958b12495d137937db25e67) — chore(ci): update README with recent commits
 - [`39f68a3`](https://github.com/c2tz/ct-blog.cta.li/commit/39f68a3130736fd76e34010fbc7bf39986e75a59) — chore(ci): update README with recent commits
-- [`4a45cbb`](https://github.com/c2tz/ct-blog.cta.li/commit/4a45cbb9aa6b1765f9aaa382b83d8a58c7027e34) — chore(ci): update README with recent commits
 <!-- COMMITS_MAIN:END -->
 
 ### Milestones

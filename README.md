@@ -4,20 +4,20 @@
 
 #### branch `develop`
 <!-- COMMITS_DEVELOP:START -->
+- [`aed90c5`](https://github.com/c2tz/ct-blog.cta.li/commit/aed90c527d8d97b1d632811262da068c65c745e8) — chore(deps): update dependencies
+- [`ec09944`](https://github.com/c2tz/ct-blog.cta.li/commit/ec099446dd187ef17dd85973a9b95bb1413605e0) — chore(ci): update README with recent commits
 - [`6419af2`](https://github.com/c2tz/ct-blog.cta.li/commit/6419af2f731e819acb63227ab4c5467d49bbd0e3) — Merge branch 'main' into develop
 - [`f729125`](https://github.com/c2tz/ct-blog.cta.li/commit/f729125e2993d55240ce83052af0990916dc7671) — chore(ci): update README with recent commits
 - [`601fe2f`](https://github.com/c2tz/ct-blog.cta.li/commit/601fe2f9b508cc01a248977c14e07ee3a16671d8) — chore(deps): bump the npm_and_yarn group across 1 directory with 4 updates (#45)
-- [`444acad`](https://github.com/c2tz/ct-blog.cta.li/commit/444acad1be3e6b7b78b034db76beb3f367dab5a1) — chore(ci): update README with recent commits
-- [`2ea3450`](https://github.com/c2tz/ct-blog.cta.li/commit/2ea34509acf7d9cc9429fce1e20e403d0a73bd2c) — chore(deps): bump astro from 5.17.3 to 5.18.0 (#49)
 <!-- COMMITS_DEVELOP:END -->
 
 #### branch `main`
 <!-- COMMITS_MAIN:START -->
-- [`f729125`](https://github.com/c2tz/ct-blog.cta.li/commit/f729125e2993d55240ce83052af0990916dc7671) — chore(ci): update README with recent commits
-- [`601fe2f`](https://github.com/c2tz/ct-blog.cta.li/commit/601fe2f9b508cc01a248977c14e07ee3a16671d8) — chore(deps): bump the npm_and_yarn group across 1 directory with 4 updates (#45)
-- [`d8508d9`](https://github.com/c2tz/ct-blog.cta.li/commit/d8508d9b6abb845acf12f5ed12417ffb710046de) — chore(ci): update README with recent commits
-- [`1a87178`](https://github.com/c2tz/ct-blog.cta.li/commit/1a87178b3ef112a4e9e0c4d8a37f5848ecbe8c23) — chore: synchronize develop with main (#50)
-- [`b0a37e8`](https://github.com/c2tz/ct-blog.cta.li/commit/b0a37e867bea2a57c4ed14ebec5620fc29917ad9) — chore(ci): update README with recent commits
+- [`eda51d3`](https://github.com/c2tz/ct-blog.cta.li/commit/eda51d3b7650237fae88225763ccb4cb6ec05113) — chore(ci): update README with recent commits
+- [`2b0ed2a`](https://github.com/c2tz/ct-blog.cta.li/commit/2b0ed2a20d859e3020d63c917e2b77c65324cbbc) — chore(ci): update README with recent commits
+- [`16cdbd7`](https://github.com/c2tz/ct-blog.cta.li/commit/16cdbd7e2ec703595afbc9be7c1c131ad0d04c13) — chore(ci): update README with recent commits
+- [`b552336`](https://github.com/c2tz/ct-blog.cta.li/commit/b552336305528a1542b7ec51ee949e9cf8cccaa8) — chore(ci): update README with recent commits
+- [`40d9d9c`](https://github.com/c2tz/ct-blog.cta.li/commit/40d9d9c1b7123b20afd8822f380552191ffec95e) — chore(ci): update README with recent commits
 <!-- COMMITS_MAIN:END -->
 
 ### Milestones

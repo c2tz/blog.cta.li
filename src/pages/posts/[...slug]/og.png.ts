@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { satoriAstroOG } from "satori-astro";
 import { getCollection } from "astro:content";
 import fs from "node:fs/promises";
+import path from "node:path";
 
 import { PostOgTemplate } from "@/components/OgTemplates";
 
@@ -10,8 +11,9 @@ export const GET: APIRoute = async ({ props }) => {
   //   "https://www.divby0.io/Inter-SemiBold.woff"
   // );
 
-  const fontUrl = new URL("../../../../public/fonts/roboto-flex-v30-latin-regular.ttf", import.meta.url);
-  const fontData = await fs.readFile(fontUrl);
+  const fontData = await fs.readFile(
+    path.join(process.cwd(), "public/fonts/roboto-flex-v30-latin-regular.ttf")
+  );
 
   return await satoriAstroOG({
     template: PostOgTemplate({ title: props.data.title }),

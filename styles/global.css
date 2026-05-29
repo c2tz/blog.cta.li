@@ -1,0 +1,53 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@layer base {
+  :root {
+    font-family: "Roboto Flex", sans-serif;
+    font-optical-sizing: auto;
+  }
+
+  code,
+  pre,
+  kbd,
+  samp {
+    font-family: "Roboto Mono", monospace;
+  }
+}
+
+@layer components {
+  .prose {
+    --tw-prose-body: #000;
+    --tw-prose-bullets: #000;
+    --tw-prose-counters: #000;
+  }
+
+  .prose code {
+    margin-left: 0.25rem;
+    margin-right: 0.25rem;
+    padding: 0.125rem;
+    border-radius: 0.25rem;
+    border: 1px solid rgb(209 213 219);
+    font-weight: 400;
+    font-family: "SF Mono", "Roboto Mono", Menlo, monospace;
+  }
+
+  .prose code::before,
+  .prose code::after {
+    content: "";
+  }
+
+  .prose pre code {
+    margin-left: 0;
+    margin-right: 0;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+  }
+
+  .prose-invert {
+    --tw-prose-body: #fff;
+    --tw-prose-bullets: #fff;
+    --tw-prose-counters: #fff;
+  }
+}

@@ -1,18 +1,18 @@
 // Widget IP contrôlé par CookieConsent (service "ipgeo" dans la catégorie "functionality").
 
-declare global {
-  interface Window {
-    CookieConsent?: {
-      getUserPreferences?: () => {
-        acceptedServices?: Record<string, string[]>;
-      };
-      acceptService?: (services: string[] | string, category: string) => void;
-    };
-  }
+type CookieConsentApi = {
+  getUserPreferences?: () => {
+    acceptedServices?: Record<string, string[]>;
+  };
+  acceptService?: (services: string[] | string, category: string) => void;
+};
+
+function getCookieConsent(): CookieConsentApi | undefined {
+  return window.CookieConsent as unknown as CookieConsentApi | undefined;
 }
 
 function serviceAccepted(): boolean {
-  const list = window.CookieConsent?.getUserPreferences?.().acceptedServices?.['functionality'] ?? [];
+  const list = getCookieConsent()?.getUserPreferences?.().acceptedServices?.['functionality'] ?? [];
   return Array.isArray(list) && list.includes('ipgeo');
 }
 
@@ -56,7 +56,7 @@ export function initIpWidget() {
   document.addEventListener('click', (e) => {
     const btn = (e.target as HTMLElement).closest('[data-ipgeo-accept]');
     if (btn) {
-      window.CookieConsent?.acceptService?.(['ipgeo'], 'functionality');
+      getCookieConsent()?.acceptService?.(['ipgeo'], 'functionality');
       syncVisibility();
       if (serviceAccepted()) fetchIp();
     }

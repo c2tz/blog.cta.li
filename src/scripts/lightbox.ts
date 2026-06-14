@@ -3,11 +3,11 @@ import PhotoSwipeLightbox from "photoswipe/lightbox";
 import "photoswipe/style.css";
 
 function wrapMarkdownImages() {
-  const containers = document.querySelectorAll(".prose, article, main");
+  const containers = document.querySelectorAll(".site-prose");
   containers.forEach((container) => {
     const imgs = container.querySelectorAll<HTMLImageElement>("img:not([data-no-lightbox])");
     imgs.forEach((img) => {
-      if (img.closest("a[data-pswp-item]")) return;
+      if (img.closest("header, footer, nav, [data-no-lightbox], a")) return;
       if (!img.src) return;
       const a = document.createElement("a");
       a.href = img.src;
@@ -38,7 +38,7 @@ function wrapMarkdownImages() {
 }
 
 const lightbox = new PhotoSwipeLightbox({
-  gallery: ".prose, article, main",
+  gallery: ".site-prose",
   children: "a[data-pswp-item]",
   pswpModule: () => import("photoswipe"),
   // Zoom plus sensible mais on garde le scroll du pavé tactile pour le pan

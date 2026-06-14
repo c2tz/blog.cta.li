@@ -5,14 +5,14 @@ import 'https://cdn.jsdelivr.net/gh/orestbida/cookieconsent@3.1.0/dist/cookiecon
 CookieConsent.run({
   guiOptions: {
     consentModal: {
-      layout: "cloud inline",
-      position: "bottom center",
-      equalWeightButtons: true,
+      layout: "box",
+      position: "middle center",
+      equalWeightButtons: false,
       flipButtons: false
     },
     preferencesModal: {
       layout: "box",
-      position: "left",
+      position: "middle center",
       equalWeightButtons: true,
       flipButtons: false
     }
@@ -43,51 +43,51 @@ onChange:  () => document.dispatchEvent(new Event('cc:onChange')),
     translations: {
       fr: {
         consentModal: {
-          title: "Bonjour voyageur, c'est l'heure des cookies!",
+          title: "CRAFT OF UI – PRO UPGRADE",
           description:
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.",
-          acceptAllBtn: "Tout accepter",
-          acceptNecessaryBtn: "Tout rejeter",
-          showPreferencesBtn: "Gérer les préférences",
+            "You are one step away from unlocking Pro features and content. Your subscription will be updated in the next billing cycle. You will not be charged for this cycle.<br><br>Do you want to proceed?",
+          acceptAllBtn: "Proceed",
+          acceptNecessaryBtn: "Cancel",
+          showPreferencesBtn: "Preferences",
           footer:
-            "<a href=\"#link\">Politique de confidentialité</a>\n<a href=\"#link\">Termes et conditions</a>"
+            "<span>Proceed accepte les cookies optionnels. Cancel garde uniquement le nécessaire.</span>"
         },
         preferencesModal: {
-          title: "Préférences de cookies",
-          acceptAllBtn: "Tout accepter",
-          acceptNecessaryBtn: "Tout rejeter",
-          savePreferencesBtn: "Sauvegarder les préférences",
+          title: "Cookie control",
+          acceptAllBtn: "Proceed",
+          acceptNecessaryBtn: "Cancel",
+          savePreferencesBtn: "Save choices",
           closeIconLabel: "Fermer la modale",
           serviceCounterLabel: "Services",
           sections: [
             {
-              title: "Utilisation des Cookies",
+              title: "Utilisation des cookies",
               description:
-                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
+                "Tu peux choisir les fonctions optionnelles que le site est autorisé à activer."
             },
             {
               title:
-                "Cookies Strictement Nécessaires <span class=\"pm__badge\">Toujours Activé</span>",
+                "Cookies strictement nécessaires <span class=\"pm__badge\">Toujours actif</span>",
               description:
-                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+                "Ils servent au fonctionnement de base du site et ne peuvent pas être désactivés.",
               linkedCategory: "necessary"
             },
             {
-              title: "Cookies de Fonctionnalités",
+              title: "Fonctionnalités",
               description:
-                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+                "Active les fonctions optionnelles, comme le widget IP affiché dans le footer.",
               linkedCategory: "functionality"
             },
             {
-              title: "Cookies Analytiques",
+              title: "Analytique",
               description:
-                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+                "Réserve pour de futures mesures anonymisées de fréquentation. Rien n'est activé tant que cette catégorie reste refusée.",
               linkedCategory: "analytics"
             },
             {
               title: "Plus d'informations",
               description:
-                "For any query in relation to my policy on cookies and your choices, please <a class=\"cc__link\" href=\"#yourdomain.com\">contact me</a>."
+                "Pour une question liée aux cookies, tu peux écrire à <a class=\"cc__link\" href=\"mailto:contact@cta.li\">contact@cta.li</a>."
             }
           ]
         }

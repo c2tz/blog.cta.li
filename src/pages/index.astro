@@ -37,62 +37,44 @@ const uniqueTags = [
       <Content />
     </Prose>
 
-    <div class="flex flex-col space-y-2">
-      <div
-        class="prose prose-slate md:prose-lg dark:prose-invert prose-a:no-underline hover:prose-a:underline"
-      >
-        <h2 id="blog-posts">
-          <a href="#blog-posts" class="heading-link" style="color:inherit"
-            >Blog Posts</a
-          >
-        </h2>
-      </div>
-
-<ul class="not-prose flex flex-col space-y-4 md:space-y-0">
-  {
-    posts.map((post) => (
-      <li class="flex flex-col items-start space-x-0 md:flex-row md:space-x-2 md:items-center">
-        <FormattedDate date={post.data.pubDate} />
-        <!-- séparateur EM DASH, même couleur que la date, visible uniquement ≥ md -->
-        <span
-          class="hidden md:inline text-[#616161] dark:text-[#9b9b9b] select-none align-middle"
-          aria-hidden="true"
-        >—</span>
-        <a
-          href={`/posts/${post.id}/`}
-          class="inline text-[#1565c0] dark:text-[#90caf9] md:text-lg hover:underline"
+    <section class="home-section">
+      <h2 id="blog-posts">
+        <a href="#blog-posts" class="heading-link" style="color:inherit"
+          >Blog Posts</a
         >
-          {post.data.title}
-        </a>
-      </li>
-    ))
-  }
-</ul>
+      </h2>
 
-    </div>
+      <ul class="home-posts">
+        {
+          posts.map((post) => (
+            <li class="home-post">
+              <FormattedDate date={post.data.pubDate} />
+              <span class="home-separator" aria-hidden="true">—</span>
+              <a href={`/posts/${post.id}/`}>
+                {post.data.title}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
 
-    <div class="flex flex-col space-y-2">
-      <div
-        class="prose prose-slate md:prose-lg dark:prose-invert prose-a:no-underline hover:prose-a:underline"
-      >
-        <h3 id="tags">
-          <a href="#tags" class="heading-link" style="color:inherit">Tags</a>
-        </h3>
-      </div>
+    <section class="home-section">
+      <h3 id="tags">
+        <a href="#tags" class="heading-link" style="color:inherit">Tags</a>
+      </h3>
 
-      <ul
-        class="not-prose flex flex-col space-x-0 space-y-1 md:flex-row md:space-x-2 md:space-y-0 md:flex-wrap"
-      >
+      <ul class="home-tags">
         {
           uniqueTags.map((tag) => (
             <li>
-              <a class="text-blue-500 hover:underline" href={`/tags/${tag}/`}>
+              <a href={`/tags/${tag}/`}>
                 #{tag}
               </a>
             </li>
           ))
         }
       </ul>
-    </div>
+    </section>
   </Fragment>
 </Layout>

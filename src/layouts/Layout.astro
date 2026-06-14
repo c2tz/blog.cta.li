@@ -97,6 +97,7 @@ const seoDescription = description ?? SITE_DESCRIPTION;
 
         /* surfaces & teintes pour l’enveloppe code */
         --code-surface: rgb(245, 245, 245);
+        --code-block-surface: var(--code-surface);
         --code-text-secondary: #000000;
         --code-divider: #000000;
         --code-pad: 1rem;
@@ -107,6 +108,7 @@ const seoDescription = description ?? SITE_DESCRIPTION;
       @media (prefers-color-scheme: dark) {
         :root {
           --code-surface: rgb(30 30 30);
+          --code-block-surface: rgb(30 30 30);
           --code-text-secondary: #ffffff;
           --code-divider: #ffffff;
         }
@@ -128,6 +130,10 @@ const seoDescription = description ?? SITE_DESCRIPTION;
       h6 > a.heading-link {
         font: inherit;
         color: var(--heading-link-light);
+        text-decoration: none;
+      }
+      a[href]:hover {
+        text-decoration-line: underline;
       }
       @media (prefers-color-scheme: dark) {
         h1 > a.heading-link,
@@ -147,12 +153,6 @@ const seoDescription = description ?? SITE_DESCRIPTION;
         border-radius: 10px;
         overflow: hidden;
         margin-block: 1rem;
-      }
-
-      /* On enlève juste le border-radius de prose sur les <pre> */
-      .prose
-        :where(pre):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
-        border-radius: 0 !important;
       }
 
       .code-header {
@@ -213,8 +213,12 @@ const seoDescription = description ?? SITE_DESCRIPTION;
       .code-shell pre {
         margin: 0;
         padding: 0.75rem var(--code-pad) 1rem;
+        background: var(--code-block-surface) !important;
         overflow: auto; /* scrollbars natifs */
         border-bottom: 0 solid var(--code-divider);
+      }
+      .code-shell pre code {
+        background: transparent !important;
       }
       .code-error-icon {
         display: none;
@@ -229,7 +233,8 @@ const seoDescription = description ?? SITE_DESCRIPTION;
         display: inline-block;
       }
 
-      :global(html, body) {
+      html,
+      body {
         overscroll-behavior: none;
       }
 
@@ -291,10 +296,8 @@ const seoDescription = description ?? SITE_DESCRIPTION;
     <slot name="head" />
   </head>
 
-  <body
-    class="bg-white text-slate-900 dark:bg-black dark:text-slate-100 leading-normal tracking-normal w-4/5 md:max-w-3xl mx-auto [&_a]:text-[#1565c0] dark:[&_a]:text-[#90caf9] [&_p]:text-slate-900 dark:[&_p]:text-slate-100"
-  >
-    <main class="container flex flex-col space-y-4 min-h-screen">
+  <body>
+    <main class="site-main flex min-h-screen flex-col">
       <Header />
       <slot name="content" />
       <Footer />

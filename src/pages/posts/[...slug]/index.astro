@@ -35,7 +35,7 @@ const { Content } = await render(post);
 >
   <Fragment slot="content">
     <div class="flex flex-col space-y-2 mb-4">
-      <h1 class="text-2xl font-medium">{post.data.title}</h1>
+      <h1>{post.data.title}</h1>
       {post.data.description && (
         <p class="hidden">{post.data.description}</p>
       )}
@@ -48,7 +48,7 @@ const { Content } = await render(post);
       {
         post.data.tags?.map((tag) => (
           <li>
-            <a class="text-blue-500 hover:underline" href={`/tags/${tag}/`}>
+            <a href={`/tags/${tag}/`}>
               #{tag}
             </a>
           </li>

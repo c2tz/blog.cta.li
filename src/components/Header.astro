@@ -1,5 +1,7 @@
 ---
 import { SITE_TITLE } from "../consts";
+
+const isHome = Astro.url.pathname === "/";
 ---
 
 <nav
@@ -8,7 +10,11 @@ import { SITE_TITLE } from "../consts";
          [&_.header-link:hover]:underline"
 >
   <h2 class="text-lg font-medium">
-    <a href="/" class="header-link inline-block">
+    <a
+      href="/"
+      class:list={["header-link", "inline-block", { "header-link--glitch": isHome }]}
+      data-glitch={SITE_TITLE}
+    >
       {SITE_TITLE}
     </a>
   </h2>

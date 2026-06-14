@@ -33,7 +33,7 @@ const { posts } = Astro.props;
 
 <Layout title={`Posts with Tag "${tag}"`}>
   <Fragment slot="content">
-    <h1 class="text-2xl font-medium">Posts with Tag "{tag}"</h1>
+    <h1>Posts with Tag "{tag}"</h1>
     <ul>
       {
         posts.map((post) => (
@@ -41,7 +41,7 @@ const { posts } = Astro.props;
             <span class="text-gray-500 text-xs md:text-sm">
                 <FormattedDate date={post.data.pubDate} />
             </span>
-            <a href={`/posts/${post.id}/`} class="text-blue-500 md:text-lg">{post.data.title}</a>
+            <a href={`/posts/${post.id}/`}>{post.data.title}</a>
           </li>
         ))
       }

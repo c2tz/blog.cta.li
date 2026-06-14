@@ -232,7 +232,25 @@ lightbox.on("uiRegister", () => {
 });
 
 /* ---------- Init ---------- */
-document.addEventListener("DOMContentLoaded", () => {
+let isInitialized = false;
+
+function initLightbox() {
   wrapMarkdownImages();
+  if (isInitialized) {
+    try {
+      lightbox.refresh();
+    } catch {}
+    return;
+  }
+
   lightbox.init();
-});
+  isInitialized = true;
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initLightbox, { once: true });
+} else {
+  initLightbox();
+}
+
+addEventListener("astro:page-load", initLightbox);

@@ -1,4 +1,39 @@
 export function initCodeCopy() {
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      const textarea = document.createElement("textarea");
+      const selection = document.getSelection();
+      const selectedRange =
+        selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+
+      textarea.value = text;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.inset = "0 auto auto 0";
+      textarea.style.opacity = "0";
+
+      document.body.appendChild(textarea);
+      textarea.select();
+      textarea.setSelectionRange(0, textarea.value.length);
+
+      let copied = false;
+      try {
+        copied = document.execCommand("copy");
+      } finally {
+        textarea.remove();
+        if (selectedRange && selection) {
+          selection.removeAllRanges();
+          selection.addRange(selectedRange);
+        }
+      }
+
+      return copied;
+    }
+  };
+
   const run = () => {
     const codeBlocks = document.querySelectorAll("pre > code");
 
@@ -113,7 +148,8 @@ export function initCodeCopy() {
         };
 
         try {
-          await navigator.clipboard.writeText(text);
+          const copied = await copyToClipboard(text);
+          if (!copied) throw new Error("copy_failed");
           markCopied("Copié");
         } catch {
           button.classList.remove("is-copied");

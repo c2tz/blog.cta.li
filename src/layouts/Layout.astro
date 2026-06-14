@@ -5,7 +5,6 @@ import { SITE_DESCRIPTION, SITE_TAB_TITLE, SITE_TAB_ARTICLE } from "@/consts";
 
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
-import appInitUrl from '../scripts/app-init.ts?url';
 import '../styles/global.css';
 
 interface Props extends SEOProps {
@@ -304,7 +303,9 @@ const seoDescription = description ?? SITE_DESCRIPTION;
     </main>
 
     <!-- Module applicatif packagé par Vite -->
-    <script type="module" src={appInitUrl}></script>
+    <script>
+      import "../scripts/app-init.ts";
+    </script>
 
     <!-- Script de configuration CookieConsent v3 (déposé dans /public) -->
     <script type="module" src="/cookieconsent-config.js"></script>

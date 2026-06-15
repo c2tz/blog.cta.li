@@ -1,0 +1,210 @@
+---
+export interface SeoLink {
+  crossorigin?: string;
+  href?: string | URL;
+  hreflang?: string;
+  imagesizes?: string;
+  imagesrcset?: string;
+  media?: string;
+  prefetch?: boolean;
+  referrerpolicy?: string;
+  rel?: string;
+  sizes?: string;
+  title?: string;
+  type?: string;
+}
+
+export interface SeoMeta {
+  content?: string;
+  httpEquiv?: string;
+  name?: string;
+  property?: string;
+}
+
+export interface Props {
+  canonical?: string | URL;
+  charset?: string;
+  description?: string;
+  extend?: {
+    link?: SeoLink[];
+    meta?: SeoMeta[];
+  };
+  languageAlternates?: {
+    href: string | URL;
+    hrefLang: string;
+  }[];
+  noarchive?: boolean;
+  nocache?: boolean;
+  nofollow?: boolean;
+  noindex?: boolean;
+  openGraph?: {
+    article?: {
+      authors?: string[];
+      expirationTime?: string;
+      modifiedTime?: string;
+      publishedTime?: string;
+      section?: string;
+      tags?: string[];
+    };
+    basic: {
+      image: string;
+      title: string;
+      type: string;
+      url?: string | URL;
+    };
+    image?: {
+      alt?: string;
+      height?: number;
+      secureUrl?: string;
+      type?: string;
+      url?: string;
+      width?: number;
+    };
+    optional?: {
+      audio?: string;
+      description?: string;
+      determiner?: string;
+      locale?: string;
+      localeAlternate?: string[];
+      siteName?: string;
+      video?: string;
+    };
+  };
+  removeTrailingSlashForRoot?: boolean;
+  robotsExtras?: string;
+  title?: string;
+  titleDefault?: string;
+  titleTemplate?: string;
+  twitter?: {
+    card?: "summary" | "summary_large_image" | "app" | "player";
+    creator?: string;
+    description?: string;
+    image?: string | URL;
+    imageAlt?: string;
+    site?: string;
+    title?: string;
+  };
+}
+
+const {
+  canonical,
+  charset,
+  description,
+  extend,
+  languageAlternates,
+  noarchive,
+  nocache,
+  nofollow,
+  noindex,
+  openGraph,
+  removeTrailingSlashForRoot,
+  robotsExtras,
+  title,
+  titleDefault,
+  titleTemplate,
+  twitter,
+} = Astro.props;
+
+const baseUrl = Astro.site ?? Astro.url;
+const defaultCanonicalUrl = new URL(Astro.url.pathname + Astro.url.search, baseUrl);
+const canonicalHref =
+  canonical ??
+  (removeTrailingSlashForRoot && Astro.url.pathname === "/"
+    ? defaultCanonicalUrl.origin + defaultCanonicalUrl.search
+    : defaultCanonicalUrl.href);
+
+const pageTitle = title
+  ? titleTemplate
+    ? titleTemplate.replace(/%s/g, title)
+    : title
+  : titleDefault;
+
+const robots = `${noindex ? "noindex" : "index"}, ${nofollow ? "nofollow" : "follow"}${
+  noarchive ? ", noarchive" : ""
+}${nocache ? ", nocache" : ""}${robotsExtras ? `, ${robotsExtras}` : ""}`;
+
+const ogDescription = openGraph?.optional?.description ?? description;
+const twitterTitle = twitter?.title ?? pageTitle;
+const twitterDescription = twitter?.description ?? description;
+---
+
+{pageTitle && <title>{pageTitle}</title>}
+{charset && <meta charset={charset} />}
+{description && <meta name="description" content={description} />}
+<meta name="robots" content={robots} />
+<link rel="canonical" href={canonicalHref} />
+
+{
+  languageAlternates?.map(({ href, hrefLang }) => (
+    <link rel="alternate" href={href} hreflang={hrefLang} />
+  ))
+}
+
+{
+  openGraph && (
+    <>
+      <meta property="og:title" content={openGraph.basic.title} />
+      <meta property="og:type" content={openGraph.basic.type} />
+      <meta property="og:image" content={openGraph.basic.image} />
+      <meta property="og:url" content={openGraph.basic.url ?? canonicalHref} />
+      {ogDescription && <meta property="og:description" content={ogDescription} />}
+      {openGraph.optional?.audio && <meta property="og:audio" content={openGraph.optional.audio} />}
+      {openGraph.optional?.determiner && (
+        <meta property="og:determiner" content={openGraph.optional.determiner} />
+      )}
+      {openGraph.optional?.locale && <meta property="og:locale" content={openGraph.optional.locale} />}
+      {openGraph.optional?.localeAlternate?.map((locale) => (
+        <meta property="og:locale:alternate" content={locale} />
+      ))}
+      {openGraph.optional?.siteName && (
+        <meta property="og:site_name" content={openGraph.optional.siteName} />
+      )}
+      {openGraph.optional?.video && <meta property="og:video" content={openGraph.optional.video} />}
+      {openGraph.image?.url && <meta property="og:image" content={openGraph.image.url} />}
+      {openGraph.image?.secureUrl && (
+        <meta property="og:image:secure_url" content={openGraph.image.secureUrl} />
+      )}
+      {openGraph.image?.type && <meta property="og:image:type" content={openGraph.image.type} />}
+      {openGraph.image?.width && (
+        <meta property="og:image:width" content={String(openGraph.image.width)} />
+      )}
+      {openGraph.image?.height && (
+        <meta property="og:image:height" content={String(openGraph.image.height)} />
+      )}
+      {openGraph.image?.alt && <meta property="og:image:alt" content={openGraph.image.alt} />}
+      {openGraph.article?.publishedTime && (
+        <meta property="article:published_time" content={openGraph.article.publishedTime} />
+      )}
+      {openGraph.article?.modifiedTime && (
+        <meta property="article:modified_time" content={openGraph.article.modifiedTime} />
+      )}
+      {openGraph.article?.expirationTime && (
+        <meta property="article:expiration_time" content={openGraph.article.expirationTime} />
+      )}
+      {openGraph.article?.authors?.map((author) => (
+        <meta property="article:author" content={author} />
+      ))}
+      {openGraph.article?.section && (
+        <meta property="article:section" content={openGraph.article.section} />
+      )}
+      {openGraph.article?.tags?.map((tag) => <meta property="article:tag" content={tag} />)}
+    </>
+  )
+}
+
+{
+  twitter && (
+    <>
+      {twitter.card && <meta name="twitter:card" content={twitter.card} />}
+      {twitter.site && <meta name="twitter:site" content={twitter.site} />}
+      {twitter.creator && <meta name="twitter:creator" content={twitter.creator} />}
+      {twitterTitle && <meta name="twitter:title" content={twitterTitle} />}
+      {twitterDescription && <meta name="twitter:description" content={twitterDescription} />}
+      {twitter.image && <meta name="twitter:image" content={twitter.image} />}
+      {twitter.imageAlt && <meta name="twitter:image:alt" content={twitter.imageAlt} />}
+    </>
+  )
+}
+
+{extend?.meta?.map((meta) => <meta {...meta} />)}
+{extend?.link?.map((link) => <link {...link} />)}

@@ -1,10 +1,10 @@
 ---
-import { SEO, type Props as SEOProps } from "astro-seo";
-
 import { SITE_DESCRIPTION, SITE_TAB_TITLE, SITE_TAB_ARTICLE } from "@/consts";
 
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
+import { CookieConsentBannerComponent } from "@/components/CookieConsentBanner.component";
+import SEO, { type Props as SEOProps } from "@/components/SEO.astro";
 import '../styles/global.css';
 
 interface Props extends SEOProps {
@@ -56,6 +56,7 @@ const seoDescription = description ?? SITE_DESCRIPTION;
       <slot name="content" />
       <Footer />
     </main>
+    <CookieConsentBannerComponent client:load />
 
     <!-- Module applicatif packagé par Vite -->
     <script>

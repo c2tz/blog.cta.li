@@ -3,6 +3,7 @@ import { type CollectionEntry, getCollection, render } from "astro:content";
 
 import Layout from "@/layouts/Layout.astro";
 import FormattedDate from "@/components/FormattedDate.astro";
+import PostGitDates from "@/components/PostGitDates.astro";
 import Prose from "@/components/Prose.astro";
 
 export async function getStaticPaths() {
@@ -16,7 +17,9 @@ export async function getStaticPaths() {
 type Props = CollectionEntry<"blog">;
 
 const post = Astro.props;
-const { Content } = await render(post);
+const { Content, remarkPluginFrontmatter } = await render(post);
+const createdAt = remarkPluginFrontmatter?.createdAt ?? post.data.pubDate;
+const lastModified = remarkPluginFrontmatter?.lastModified ?? post.data.pubDate;
 ---
 
 <Layout
@@ -34,7 +37,7 @@ const { Content } = await render(post);
   }}
 >
   <Fragment slot="content">
-    <div class="flex flex-col space-y-2 mb-4">
+    <div class="post-header">
       <h1>{post.data.title}</h1>
       {post.data.description && (
         <p class="hidden">{post.data.description}</p>
@@ -44,7 +47,8 @@ const { Content } = await render(post);
     <Prose>
       <Content />
     </Prose>
-    <ul class="flex flex-col space-x-0 space-y-1 md:flex-row md:space-x-2 md:space-y-0 md:flex-wrap">
+    <PostGitDates createdAt={createdAt} lastModified={lastModified} />
+    <ul class="post-tags">
       {
         post.data.tags?.map((tag) => (
           <li>

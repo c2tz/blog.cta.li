@@ -1,0 +1,37 @@
+---
+interface Props {
+  createdAt: Date | string;
+  lastModified: Date | string;
+}
+
+const { createdAt, lastModified } = Astro.props as Props;
+
+const formatter = new Intl.DateTimeFormat("fr-FR", {
+  weekday: "short",
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+});
+
+function toDate(value: Date | string) {
+  return value instanceof Date ? value : new Date(value);
+}
+
+function formatDate(value: Date | string) {
+  const date = toDate(value);
+  const formatted = formatter.format(date);
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+}
+---
+
+<footer class="post-git-dates" aria-label="Dates du post">
+  <span>
+    Créé le
+    <time datetime={toDate(createdAt).toISOString()}>{formatDate(createdAt)}</time>
+  </span>
+  <span class="post-meta-separator" aria-hidden="true">—</span>
+  <span>
+    Modifié le
+    <time datetime={toDate(lastModified).toISOString()}>{formatDate(lastModified)}</time>
+  </span>
+</footer>

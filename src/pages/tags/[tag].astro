@@ -34,13 +34,12 @@ const { posts } = Astro.props;
 <Layout title={`Posts with Tag "${tag}"`}>
   <Fragment slot="content">
     <h1>Posts with Tag "{tag}"</h1>
-    <ul>
+    <ul class="tag-posts">
       {
         posts.map((post) => (
-          <li class="flex space-x-2 items-baseline">
-            <span class="text-gray-500 text-xs md:text-sm">
-                <FormattedDate date={post.data.pubDate} />
-            </span>
+          <li class="tag-post">
+            <FormattedDate date={post.data.pubDate} />
+            <span class="tag-separator" aria-hidden="true">—</span>
             <a href={`/posts/${post.id}/`}>{post.data.title}</a>
           </li>
         ))

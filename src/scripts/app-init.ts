@@ -1,102 +1,5 @@
-import * as CookieConsent from "vanilla-cookieconsent";
-import "vanilla-cookieconsent/dist/cookieconsent.css";
 import PhotoSwipeLightbox from "photoswipe/lightbox";
 import "photoswipe/style.css";
-
-let isCookieConsentInitialized = false;
-
-function initCookieConsent() {
-  if (isCookieConsentInitialized) return;
-  isCookieConsentInitialized = true;
-
-  (window as any).CookieConsent = CookieConsent;
-
-  CookieConsent.run({
-    guiOptions: {
-      consentModal: {
-        layout: "box",
-        position: "bottom center",
-        equalWeightButtons: true,
-        flipButtons: false,
-      },
-      preferencesModal: {
-        layout: "box",
-        position: "middle center",
-        equalWeightButtons: true,
-        flipButtons: false,
-      },
-    },
-    disablePageInteraction: true,
-    categories: {
-      necessary: { readOnly: true },
-      functionality: {
-        services: {
-          ipgeo: { label: "Widget IP (adresse + pays)" },
-        },
-      },
-      analytics: {},
-    },
-    onConsent: () => document.dispatchEvent(new Event("cc:onConsent")),
-    onChange: () => document.dispatchEvent(new Event("cc:onChange")),
-    language: {
-      default: "fr",
-      autoDetect: "browser",
-      translations: {
-        fr: {
-          consentModal: {
-            title: "Cookies",
-            description:
-              "Ce site utilise des cookies nécessaires à son fonctionnement. Les cookies optionnels servent uniquement aux fonctionnalités que tu acceptes, comme le widget IP du footer.",
-            acceptAllBtn: "Tout accepter",
-            acceptNecessaryBtn: "Tout refuser",
-            showPreferencesBtn: "Préférences",
-            footer:
-              "<span>Tu peux changer d'avis à tout moment depuis les préférences.</span>",
-          },
-          preferencesModal: {
-            title: "Préférences des cookies",
-            acceptAllBtn: "Tout accepter",
-            acceptNecessaryBtn: "Tout refuser",
-            savePreferencesBtn: "Sauvegarder",
-            closeIconLabel: "Fermer la modale",
-            serviceCounterLabel: "Services",
-            sections: [
-              {
-                title: "Utilisation des cookies",
-                description:
-                  "Tu peux choisir les fonctions optionnelles que le site est autorisé à activer.",
-              },
-              {
-                title:
-                  'Cookies strictement nécessaires <span class="pm__badge">Toujours actif</span>',
-                description:
-                  "Ils servent au fonctionnement de base du site et ne peuvent pas être désactivés.",
-                linkedCategory: "necessary",
-              },
-              {
-                title: "Fonctionnalités",
-                description:
-                  "Active les fonctions optionnelles, comme le widget IP affiché dans le footer.",
-                linkedCategory: "functionality",
-              },
-              {
-                title: "Analytique",
-                description:
-                  "Réserve pour de futures mesures anonymisées de fréquentation. Rien n'est activé tant que cette catégorie reste refusée.",
-                linkedCategory: "analytics",
-              },
-              {
-                title: "Plus d'informations",
-                description:
-                  'Pour une question liée aux cookies, tu peux écrire à <a class="cc__link" href="mailto:contact@cta.li">contact@cta.li</a>.',
-              },
-            ],
-          },
-        },
-      },
-    },
-  });
-}
 
 function createIcon(className: string, path: string) {
   const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -398,7 +301,6 @@ function initLightbox() {
 }
 
 function initApp() {
-  initCookieConsent();
   initCodeBlocks();
   initLightbox();
 }

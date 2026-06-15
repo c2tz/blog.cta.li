@@ -1,13 +1,15 @@
 import fs from "node:fs";
+import { createElement as h } from "react";
 import { SITE_TITLE } from "@/consts";
 
 const image = fs.readFileSync("./public/og.png");
 const imageDataUrl = `data:image/png;base64,${image.toString("base64")}`;
 
 export function HomeOgTemplate() {
-  return (
-    <div
-      style={{
+  return h(
+    "div",
+    {
+      style: {
         position: "relative",
         height: "100%",
         width: "100%",
@@ -23,23 +25,23 @@ export function HomeOgTemplate() {
         fontFamily: "'Roboto Flex', system-ui, sans-serif",
         letterSpacing: "-0.05em",
         fontFeatureSettings: "'liga' 1, 'calt' 1",
-      }}
-    >
-      <img
-        style={{ borderRadius: "12px" }}
-        src={imageDataUrl}
-        width="192"
-        height="192"
-      />
-      <div>{SITE_TITLE}</div>
-    </div>
+      },
+    },
+    h("img", {
+      style: { borderRadius: "12px" },
+      src: imageDataUrl,
+      width: 192,
+      height: 192,
+    }),
+    h("div", null, SITE_TITLE),
   );
 }
 
 export function PostOgTemplate({ title }: { title: string }) {
-  return (
-    <div
-      style={{
+  return h(
+    "div",
+    {
+      style: {
         position: "relative",
         height: "100%",
         width: "100%",
@@ -53,10 +55,12 @@ export function PostOgTemplate({ title }: { title: string }) {
         fontWeight: 600,
         fontFamily: "'Roboto Flex', system-ui, sans-serif",
         fontFeatureSettings: "'liga' 1, 'calt' 1",
-      }}
-    >
-      <div
-        style={{
+      },
+    },
+    h(
+      "div",
+      {
+        style: {
           display: "flex",
           flexDirection: "row",
           gap: "40px",
@@ -64,26 +68,27 @@ export function PostOgTemplate({ title }: { title: string }) {
           position: "absolute",
           top: 60,
           left: 60,
-        }}
-      >
-        <img
-          style={{ borderRadius: "12px" }}
-          src={imageDataUrl}
-          width="128"
-          height="128"
-        />
-        <div>{SITE_TITLE}</div>
-      </div>
-      <div
-        style={{
+        },
+      },
+      h("img", {
+        style: { borderRadius: "12px" },
+        src: imageDataUrl,
+        width: 128,
+        height: 128,
+      }),
+      h("div", null, SITE_TITLE),
+    ),
+    h(
+      "div",
+      {
+        style: {
           padding: "150px",
           marginTop: "150px",
           fontSize: 48,
           fontWeight: 600,
-        }}
-      >
-        {title}
-      </div>
-    </div>
+        },
+      },
+      title,
+    ),
   );
 }

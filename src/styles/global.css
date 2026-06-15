@@ -788,19 +788,22 @@ html.disable--interaction:where(.show--consent, .show--preferences) body {
 @media (max-width: 735px) {
   .home-post,
   .tag-post {
-    display: block;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.5em;
   }
 
   .home-separator,
-  .tag-separator,
-  .post-meta-separator {
-    display: none;
+  .tag-separator {
+    display: inline;
   }
 
   .cookie-consent {
-    bottom: 0.5rem;
+    bottom: 1rem;
     grid-template-columns: 1fr;
-    width: calc(100vw - 1rem);
+    width: calc(100vw - 2rem);
+    padding: 1rem;
   }
 
   .cookie-consent__icon {

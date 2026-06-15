@@ -13,6 +13,9 @@ import remarkGitDates from './src/remark/remarkGitDates.mjs';
 
 export default defineConfig({
   site: 'https://ct-blog.cta.li/',
+  devToolbar: {
+    enabled: false,
+  },
 
   integrations: [
     mdx(),

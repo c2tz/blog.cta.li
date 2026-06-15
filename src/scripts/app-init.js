@@ -1,7 +1,7 @@
 import PhotoSwipeLightbox from "photoswipe/lightbox";
 import "photoswipe/style.css";
 
-function createIcon(className: string, path: string) {
+function createIcon(className, path) {
   const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   icon.setAttribute("viewBox", "0 -960 960 960");
   icon.setAttribute("width", "16");
@@ -12,7 +12,7 @@ function createIcon(className: string, path: string) {
   return icon;
 }
 
-async function copyToClipboard(text: string) {
+async function copyToClipboard(text) {
   try {
     await navigator.clipboard.writeText(text);
     return true;
@@ -48,7 +48,7 @@ async function copyToClipboard(text: string) {
 }
 
 function initCodeBlocks() {
-  document.querySelectorAll<HTMLElement>("pre > code").forEach((codeBlock) => {
+  document.querySelectorAll("pre > code").forEach((codeBlock) => {
     const pre = codeBlock.parentElement;
     if (!pre || pre.dataset.styled === "1") return;
     pre.dataset.styled = "1";
@@ -111,7 +111,7 @@ function initCodeBlocks() {
     );
 
     button.addEventListener("click", async () => {
-      const mark = (className: string, text: string) => {
+      const mark = (className, text) => {
         button.classList.remove("is-copied", "is-error");
         button.classList.add(className);
         label.textContent = text;
@@ -134,7 +134,7 @@ function initCodeBlocks() {
 function wrapMarkdownImages() {
   document.querySelectorAll(".site-prose").forEach((container) => {
     container
-      .querySelectorAll<HTMLImageElement>("img:not([data-no-lightbox])")
+      .querySelectorAll("img:not([data-no-lightbox])")
       .forEach((img) => {
         if (img.closest("header, footer, nav, [data-no-lightbox], a")) return;
         if (!img.src) return;
@@ -166,7 +166,7 @@ function wrapMarkdownImages() {
   });
 }
 
-function fileNameFromURL(url: string) {
+function fileNameFromURL(url) {
   try {
     const parsed = new URL(url, location.href);
     return decodeURIComponent(parsed.pathname.split("/").pop() || "image");
@@ -175,7 +175,7 @@ function fileNameFromURL(url: string) {
   }
 }
 
-async function downloadViaFetch(url: string, filename: string) {
+async function downloadViaFetch(url, filename) {
   const res = await fetch(url, { mode: "cors" });
   const blob = await res.blob();
   const blobUrl = URL.createObjectURL(blob);
@@ -188,8 +188,8 @@ async function downloadViaFetch(url: string, filename: string) {
   URL.revokeObjectURL(blobUrl);
 }
 
-function attachWheelZoom(pswp: any) {
-  const onWheel = (event: WheelEvent) => {
+function attachWheelZoom(pswp) {
+  const onWheel = (event) => {
     if (!event.ctrlKey && !event.metaKey) return;
     event.preventDefault();
 
@@ -209,7 +209,7 @@ function attachWheelZoom(pswp: any) {
     pswp.element?.addEventListener("wheel", onWheel, { passive: false });
   });
   pswp.on("destroy", () => {
-    pswp.element?.removeEventListener("wheel", onWheel as any);
+    pswp.element?.removeEventListener("wheel", onWheel);
   });
 }
 
@@ -260,7 +260,7 @@ lightbox.on("uiRegister", () => {
     ariaLabel: "Télécharger",
     html: '<svg aria-hidden="true" class="pswp__icn" viewBox="0 -960 960 960" width="32" height="32"><path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z" fill="currentColor"/></svg>',
     onClick: async (_event, _el, instance) => {
-      const src = instance.currSlide?.data?.src as string | undefined;
+      const src = instance.currSlide?.data?.src;
       if (!src) return;
 
       try {

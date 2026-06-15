@@ -13,6 +13,21 @@ function createIcon(className, path) {
   return icon;
 }
 
+const FULLSCREEN_ICON_PATH =
+  "M120-120v-200h80v120h120v80H120Zm520 0v-80h120v-120h80v200H640ZM120-640v-200h200v80H200v120h-80Zm640 0v-120H640v-80h200v200h-80Z";
+const CLOSE_FULLSCREEN_ICON_PATH =
+  "m136-80-56-56 264-264H160v-80h320v320h-80v-184L136-80Zm344-400v-320h80v184l264-264 56 56-264 264h184v80H480Z";
+const SCROLL_TOP_ICON_PATH =
+  "M440-727 256-544l-56-56 280-280 280 280-56 57-184-184v287h-80v-287Zm0 487v-120h80v120h-80Zm0 160v-80h80v80h-80Z";
+
+function getScrollProgress() {
+  const doc = document.documentElement;
+  const scrollTop = window.scrollY || doc.scrollTop || document.body.scrollTop || 0;
+  const scrollable = Math.max(doc.scrollHeight - window.innerHeight, 1);
+
+  return Math.min(100, Math.max(0, Math.round((scrollTop / scrollable) * 100)));
+}
+
 async function copyToClipboard(text) {
   try {
     await navigator.clipboard.writeText(text);
@@ -53,6 +68,7 @@ function initCodeBlocks() {
     const pre = codeBlock.parentElement;
     if (!pre || pre.dataset.styled === "1") return;
     pre.dataset.styled = "1";
+    pre.removeAttribute("tabindex");
 
     const langClass = Array.from(codeBlock.classList).find((className) =>
       className.startsWith("language-"),
@@ -186,31 +202,106 @@ function initSiteTooltips() {
     backref.setAttribute("aria-label", "Retour au contenu");
     backref.setAttribute("data-tooltip", "Retour au contenu");
     backref.classList.add("site-tooltip");
+
+    if (!backref.dataset.footnoteEnhanced) {
+      backref.dataset.footnoteEnhanced = "true";
+      backref.addEventListener("click", () => {
+        const hash = backref.getAttribute("href");
+        if (!hash?.startsWith("#")) return;
+
+        requestAnimationFrame(() => {
+          const target = document.getElementById(decodeURIComponent(hash.slice(1)));
+          if (target && !target.hasAttribute("tabindex")) {
+            target.setAttribute("tabindex", "-1");
+          }
+          target?.scrollIntoView({ behavior: "smooth", block: "center" });
+          target?.focus?.({ preventScroll: true });
+        });
+      });
+    }
   });
 }
 
 function initBackToTopButton() {
-  if (document.querySelector(".site-scroll-top")) return;
+  const existingButton = document.querySelector(".site-scroll-top");
+  if (existingButton) {
+    syncBackToTopButton(existingButton);
+    return;
+  }
 
   const button = document.createElement("button");
   button.type = "button";
   button.className = "site-scroll-top site-tooltip";
   button.setAttribute("aria-label", "Retour en haut");
   button.setAttribute("data-tooltip", "Retour en haut");
-  button.innerHTML =
-    '<svg aria-hidden="true" viewBox="0 -960 960 960" focusable="false"><path d="m280-400 200-200 200 200H280Z"/></svg>';
+  button.innerHTML = `
+    <span class="site-scroll-top__clip" aria-hidden="true">
+      <span class="site-scroll-top__state"></span>
+      <span class="site-scroll-top__ripple"></span>
+    </span>
+    <svg aria-hidden="true" viewBox="0 -960 960 960" focusable="false">
+      <path d="${SCROLL_TOP_ICON_PATH}"></path>
+    </svg>
+    <span class="site-scroll-top__count" data-scroll-progress-count aria-hidden="true">0</span>
+  `;
 
-  const sync = () => {
-    button.classList.toggle("is-visible", window.scrollY > window.innerHeight);
-  };
+  button.addEventListener("pointerdown", (event) => {
+    const rect = button.getBoundingClientRect();
+    button.style.setProperty("--ripple-x", `${event.clientX - rect.left}px`);
+    button.style.setProperty("--ripple-y", `${event.clientY - rect.top}px`);
+    button.classList.remove("is-rippling");
+    button.getBoundingClientRect();
+    button.classList.add("is-rippling");
+    window.setTimeout(() => button.classList.remove("is-rippling"), 480);
+  });
 
   button.addEventListener("click", () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
-  window.addEventListener("scroll", sync, { passive: true });
-  window.addEventListener("resize", sync, { passive: true });
+  window.addEventListener("scroll", () => syncBackToTopButton(button), { passive: true });
+  window.addEventListener("resize", () => syncBackToTopButton(button), { passive: true });
   document.body.appendChild(button);
-  sync();
+  syncBackToTopButton(button);
+}
+
+function syncBackToTopButton(button) {
+  const progress = getScrollProgress();
+  const isVisible = window.scrollY > 100;
+  const count = button.querySelector("[data-scroll-progress-count]");
+
+  button.classList.toggle("is-visible", isVisible);
+  button.tabIndex = isVisible ? 0 : -1;
+  button.setAttribute("aria-label", `Retour en haut, progression ${progress} %`);
+  if (count) count.textContent = String(progress);
+}
+
+function initScrollProgressBar() {
+  const existingBar = document.querySelector(".site-scroll-progress");
+  if (existingBar) {
+    syncScrollProgressBar(existingBar);
+    return;
+  }
+
+  const bar = document.createElement("div");
+  bar.className = "site-scroll-progress";
+  bar.setAttribute("role", "progressbar");
+  bar.setAttribute("aria-label", "Progression de lecture");
+  bar.setAttribute("aria-valuemin", "0");
+  bar.setAttribute("aria-valuemax", "100");
+  bar.innerHTML = '<span class="site-scroll-progress__bar"></span>';
+
+  window.addEventListener("scroll", () => syncScrollProgressBar(bar), { passive: true });
+  window.addEventListener("resize", () => syncScrollProgressBar(bar), { passive: true });
+  document.body.appendChild(bar);
+  syncScrollProgressBar(bar);
+}
+
+function syncScrollProgressBar(bar) {
+  const progress = getScrollProgress();
+  const fill = bar.querySelector(".site-scroll-progress__bar");
+
+  bar.setAttribute("aria-valuenow", String(progress));
+  fill?.style.setProperty("--scroll-progress", `${progress / 100}`);
 }
 
 function wrapMarkdownImages() {
@@ -223,7 +314,18 @@ function wrapMarkdownImages() {
 
         const link = document.createElement("a");
         link.href = img.src;
+        link.tabIndex = 0;
         link.setAttribute("data-pswp-item", "");
+        link.setAttribute(
+          "aria-label",
+          img.alt ? `Agrandir l'image : ${img.alt}` : `Agrandir l'image ${fileNameFromURL(img.src)}`,
+        );
+
+        link.addEventListener("keydown", (event) => {
+          if (event.key !== " ") return;
+          event.preventDefault();
+          link.click();
+        });
 
         const setSize = () => {
           const width =
@@ -245,6 +347,17 @@ function wrapMarkdownImages() {
         img.decoding = "async";
         img.loading = img.loading === "eager" ? "eager" : "lazy";
       });
+  });
+}
+
+function initKeyboardAccessibleTargets() {
+  document.querySelectorAll("a[href]").forEach((link) => {
+    if (!link.hasAttribute("tabindex")) link.setAttribute("tabindex", "0");
+  });
+
+  document.querySelectorAll("main :is(h1, h2, h3, h4, h5, h6)").forEach((heading) => {
+    if (heading.closest("nav") || heading.querySelector("a[href]")) return;
+    if (!heading.hasAttribute("tabindex")) heading.setAttribute("tabindex", "0");
   });
 }
 
@@ -344,23 +457,28 @@ function transitionThumbRadiusFlat(img, pswp) {
   img.classList.add("is-lightbox-radius-flat");
 }
 
-function hideThumbDuringClose(img) {
+function hideThumbBehindLightbox(img, pswp) {
   if (!img) return;
-  img.classList.add("is-lightbox-radius-instant", "is-lightbox-thumb-hidden");
-  img.classList.remove("is-lightbox-radius-flat");
-  cleanupThumbRadiusTransition(img);
+  syncThumbRadiusTransition(img, pswp);
+  img.getBoundingClientRect();
+  img.classList.add("is-lightbox-thumb-hidden");
 }
 
-function showThumbAfterClose(img) {
+function revealThumbAfterClose(img, onDone) {
   if (!img) return;
-  img.classList.remove("is-lightbox-thumb-hidden");
-  requestAnimationFrame(() => img.classList.remove("is-lightbox-radius-instant"));
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      img.getBoundingClientRect();
+      img.classList.remove("is-lightbox-thumb-hidden", "is-lightbox-thumb-fade");
+      onDone?.();
+    });
+  });
 }
 
 function restoreThumbRadiusInstant(img) {
   if (!img) return;
   img.classList.add("is-lightbox-radius-instant");
-  img.classList.remove("is-lightbox-radius-flat", "is-lightbox-thumb-hidden");
+  img.classList.remove("is-lightbox-radius-flat");
   cleanupThumbRadiusTransition(img);
   requestAnimationFrame(() => img.classList.remove("is-lightbox-radius-instant"));
 }
@@ -375,6 +493,7 @@ function transitionPhotoSwipeImageRadius(pswp, radius) {
 function initLightboxRadiusTransition(pswp) {
   let thumb = null;
   const flatThumbs = new Set();
+  const hiddenThumbs = new Set();
 
   const keepThumbFlat = (img) => {
     if (!img) return;
@@ -382,10 +501,23 @@ function initLightboxRadiusTransition(pswp) {
     transitionThumbRadiusFlat(img, pswp);
   };
 
+  const hideThumb = (img) => {
+    if (!img) return;
+    hiddenThumbs.add(img);
+    hideThumbBehindLightbox(img, pswp);
+  };
+
+  const revealThumb = (img) => {
+    if (!img) return;
+    img.classList.remove("is-lightbox-thumb-hidden", "is-lightbox-thumb-fade");
+    hiddenThumbs.delete(img);
+  };
+
   const resetInactiveThumbs = (activeThumb) => {
     flatThumbs.forEach((img) => {
       if (img === activeThumb) return;
       restoreThumbRadiusInstant(img);
+      revealThumb(img);
       flatThumbs.delete(img);
     });
   };
@@ -402,6 +534,7 @@ function initLightboxRadiusTransition(pswp) {
 
   pswp.on("openingAnimationStart", () => {
     thumb = getSlideThumb(pswp.currSlide);
+    hideThumb(thumb);
     keepThumbFlat(thumb);
     requestAnimationFrame(() => transitionPhotoSwipeImageRadius(pswp, "0px"));
   });
@@ -409,13 +542,13 @@ function initLightboxRadiusTransition(pswp) {
   pswp.on("closingAnimationStart", () => {
     thumb = getSlideThumb(pswp.currSlide) || thumb;
     resetInactiveThumbs(thumb);
-    hideThumbDuringClose(thumb);
-    transitionPhotoSwipeImageRadius(pswp, "16px");
+    transitionPhotoSwipeImageRadius(pswp, "0px");
   });
 
   pswp.on("closingAnimationEnd", () => {
     cleanupThumbRadiusTransition(thumb);
-    showThumbAfterClose(thumb);
+    restoreThumbRadiusInstant(thumb);
+    revealThumbAfterClose(thumb, () => hiddenThumbs.delete(thumb));
     flatThumbs.delete(thumb);
   });
 
@@ -424,14 +557,26 @@ function initLightboxRadiusTransition(pswp) {
       restoreThumbRadiusInstant(img);
     });
     flatThumbs.clear();
+    hiddenThumbs.forEach((img) => revealThumb(img));
+    hiddenThumbs.clear();
     cleanupThumbRadiusTransition(thumb);
     thumb?.classList.remove(
       "is-lightbox-radius-flat",
       "is-lightbox-radius-instant",
       "is-lightbox-thumb-hidden",
+      "is-lightbox-thumb-fade",
     );
     thumb = null;
   });
+}
+
+function syncFullscreenButton(button) {
+  const isFullscreen = Boolean(document.fullscreenElement);
+  const label = isFullscreen ? "Quitter le plein écran" : "Plein écran";
+  const path = button.querySelector("path");
+
+  path?.setAttribute("d", isFullscreen ? CLOSE_FULLSCREEN_ICON_PATH : FULLSCREEN_ICON_PATH);
+  enhancePhotoSwipeButton(button, label);
 }
 
 function attachWheelZoom(pswp) {
@@ -480,6 +625,24 @@ lightbox.on("uiRegister", () => {
   attachWheelZoom(pswp);
   initLightboxRadiusTransition(pswp);
 
+  const fullscreenButtons = new Set();
+  const syncFullscreenButtons = () => {
+    fullscreenButtons.forEach((button) => {
+      if (!button.isConnected) {
+        fullscreenButtons.delete(button);
+        return;
+      }
+
+      syncFullscreenButton(button);
+    });
+  };
+
+  document.addEventListener("fullscreenchange", syncFullscreenButtons);
+  pswp.on("destroy", () => {
+    document.removeEventListener("fullscreenchange", syncFullscreenButtons);
+    fullscreenButtons.clear();
+  });
+
   const localizeButtons = () => {
     const labels = {
       ".pswp__button--arrow--prev": "Image précédente",
@@ -492,7 +655,12 @@ lightbox.on("uiRegister", () => {
 
     for (const [selector, label] of Object.entries(labels)) {
       pswp.element?.querySelectorAll(selector).forEach((button) => {
-        enhancePhotoSwipeButton(button, label);
+        if (selector === ".pswp__button--fullscreen") {
+          fullscreenButtons.add(button);
+          syncFullscreenButton(button);
+        } else {
+          enhancePhotoSwipeButton(button, label);
+        }
       });
     }
   };
@@ -512,15 +680,19 @@ lightbox.on("uiRegister", () => {
       tagName: "button",
       className: "pswp__button custom pswp__button--fullscreen",
       ariaLabel: "Plein écran",
-      html: '<svg aria-hidden="true" class="pswp__icn" width="32" height="32" viewBox="0 -960 960 960"><path fill="currentColor" d="M120-120v-200h80v120h120v80H120Zm520 0v-80h120v-120h80v200H640ZM120-640v-200h200v80H200v120h-80Zm640 0v-120H640v-80h200v200h-80Z"/></svg>',
-      onInit: (el) => enhancePhotoSwipeButton(el, "Plein écran"),
+      html: `<svg aria-hidden="true" class="pswp__icn" width="32" height="32" viewBox="0 -960 960 960"><path fill="currentColor" d="${FULLSCREEN_ICON_PATH}"/></svg>`,
+      onInit: (el) => {
+        fullscreenButtons.add(el);
+        syncFullscreenButton(el);
+      },
       onClick: (_event, el, instance) => {
         const root = instance.element || document.documentElement;
         if (!document.fullscreenElement) {
-          root.requestFullscreen?.();
+          root.requestFullscreen?.()?.catch?.(() => {});
         } else {
-          document.exitFullscreen?.();
+          document.exitFullscreen?.()?.catch?.(() => {});
         }
+        requestAnimationFrame(() => syncFullscreenButton(el));
       },
     });
   }
@@ -582,6 +754,8 @@ function initApp() {
   initSiteTooltips();
   initCodeBlocks();
   initLightbox();
+  initKeyboardAccessibleTargets();
+  initScrollProgressBar();
   initBackToTopButton();
 }
 

@@ -27,7 +27,7 @@ export default {
               borderRadius: theme('spacing.1'),
               border: `1px solid ${theme('colors.gray.300')}`,
               fontWeight: 'normal',
-              fontFamily: '"SF Mono", "Roboto Mono", Menlo, monospace',
+              fontFamily: '"Roboto Mono", monospace',
             },
             'code::before': {
               content: "''",

@@ -2,6 +2,8 @@
 title: 'Markdown Style Guide'
 description: 'Here is a sample of some basic Markdown syntax that can be used when writing Markdown content in Astro.'
 pubDate: 'Dec 7 2025'
+createdAt: '2025-11-12T16:30:08Z'
+lastModified: '2026-06-15T10:17:39+02:00'
 tags:
   - styleguide
 ---

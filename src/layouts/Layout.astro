@@ -38,6 +38,13 @@ const seoDescription = description ?? SITE_DESCRIPTION;
           ...(Astro.props.extend?.link ?? []),
           { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
           {
+            rel: "preload",
+            href: "/fonts/roboto-flex-v30-latin-regular.woff2",
+            as: "font",
+            type: "font/woff2",
+            crossorigin: "anonymous",
+          },
+          {
             rel: "alternate",
             type: "application/rss+xml",
             title: SITE_TAB_TITLE,
@@ -51,11 +58,11 @@ const seoDescription = description ?? SITE_DESCRIPTION;
   </head>
 
   <body>
-    <main class="site-main flex min-h-screen flex-col">
+    <main class="site-main">
       <Header />
       <slot name="content" />
-      <Footer />
     </main>
+    <Footer />
     <CookieConsentBannerComponent client:load />
 
     <!-- Module applicatif packagé par Vite -->

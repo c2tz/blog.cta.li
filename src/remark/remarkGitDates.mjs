@@ -1,5 +1,4 @@
 import { execFileSync } from "node:child_process";
-import { statSync } from "node:fs";
 import { relative, resolve } from "node:path";
 
 const cwd = process.cwd();
@@ -19,27 +18,29 @@ function gitDate(args, filePath) {
   }
 }
 
-function fileSystemDates(filePath) {
-  const stats = statSync(filePath);
-  return {
-    createdAt: (stats.birthtimeMs > 0 ? stats.birthtime : stats.ctime).toISOString(),
-    lastModified: stats.mtime.toISOString(),
-  };
+function normalizeDate(value) {
+  if (!value) return undefined;
+  const date = new Date(value);
+  return Number.isNaN(date.valueOf()) ? undefined : date.toISOString();
 }
 
 export default function remarkGitDates() {
   return (_tree, file) => {
     const filePath = resolve(String(file.history[0] || ""));
-    const fallback = fileSystemDates(filePath);
 
     file.data.astro ??= {};
     file.data.astro.frontmatter ??= {};
 
+    const frontmatter = file.data.astro.frontmatter;
+    const frontmatterCreated = normalizeDate(frontmatter.createdAt);
+    const frontmatterModified = normalizeDate(frontmatter.lastModified);
+    const published = normalizeDate(frontmatter.pubDate);
+    const gitCreated = gitDate(["log", "--follow", "--reverse", "--format=%cI"], filePath);
+    const gitModified = gitDate(["log", "--follow", "-1", "--format=%cI"], filePath);
+
     file.data.astro.frontmatter.createdAt =
-      gitDate(["log", "--follow", "--reverse", "--format=%cI"], filePath) ||
-      fallback.createdAt;
+      gitCreated || frontmatterCreated || published;
     file.data.astro.frontmatter.lastModified =
-      gitDate(["log", "--follow", "-1", "--format=%cI"], filePath) ||
-      fallback.lastModified;
+      gitModified || frontmatterModified || frontmatter.createdAt || published;
   };
 }

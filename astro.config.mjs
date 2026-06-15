@@ -35,15 +35,16 @@ export default defineConfig({
   },
 
   markdown: {
-    processor: unified({
-      syntaxHighlight: 'shiki',
-      shikiConfig: {
-        themes: {
-          light: 'light-plus',
-          dark: 'dark-plus',
-        },
-        wrap: true,
+    syntaxHighlight: 'shiki',
+    shikiConfig: {
+      themes: {
+        light: 'light-plus',
+        dark: 'dark-plus',
       },
+      defaultColor: false,
+      wrap: true,
+    },
+    processor: unified({
       remarkPlugins: [remarkGitDates],
       rehypePlugins: [
         rehypeSlug,

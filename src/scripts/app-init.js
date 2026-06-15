@@ -1,4 +1,5 @@
 import PhotoSwipeLightbox from "photoswipe/lightbox";
+import PhotoSwipe from "photoswipe";
 import "photoswipe/style.css";
 
 function createIcon(className, path) {
@@ -89,10 +90,17 @@ function initCodeBlocks() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "code-copy-btn";
+    button.tabIndex = 0;
     button.setAttribute("aria-label", "Copier le code");
+    button.setAttribute("aria-keyshortcuts", "Enter Space");
 
     const label = document.createElement("span");
     label.textContent = "Copier le code";
+
+    const status = document.createElement("span");
+    status.className = "sr-only code-copy-status";
+    status.setAttribute("role", "status");
+    status.setAttribute("aria-live", "polite");
 
     button.append(
       createIcon(
@@ -115,9 +123,12 @@ function initCodeBlocks() {
         button.classList.remove("is-copied", "is-error");
         button.classList.add(className);
         label.textContent = text;
+        button.setAttribute("aria-label", text);
+        status.textContent = text;
         setTimeout(() => {
           button.classList.remove(className);
           label.textContent = "Copier le code";
+          button.setAttribute("aria-label", "Copier le code");
         }, 1000);
       };
 
@@ -126,9 +137,80 @@ function initCodeBlocks() {
     });
 
     actions.appendChild(button);
+    actions.appendChild(status);
     header.append(langEl, actions);
     shell.insertBefore(header, pre);
   });
+}
+
+function initTooltipGate() {
+  const root = document.documentElement;
+  if (root.classList.contains("tooltips-active")) return;
+
+  const activate = () => {
+    root.classList.add("tooltips-active");
+    window.removeEventListener("pointerdown", activate);
+    window.removeEventListener("pointermove", activate);
+    window.removeEventListener("keydown", activate);
+    window.removeEventListener("touchstart", activate);
+  };
+
+  window.addEventListener("pointerdown", activate, { once: true, passive: true });
+  window.addEventListener("pointermove", activate, { once: true, passive: true });
+  window.addEventListener("keydown", activate, { once: true });
+  window.addEventListener("touchstart", activate, { once: true, passive: true });
+}
+
+function initSiteTooltips() {
+  document.querySelectorAll("[title]").forEach((element) => {
+    const title = element.getAttribute("title");
+    if (!title) return;
+
+    element.setAttribute("data-tooltip", title);
+    element.removeAttribute("title");
+    element.classList.add("site-tooltip");
+
+    if (!element.hasAttribute("aria-label")) {
+      element.setAttribute("aria-label", title);
+    }
+
+    if (
+      !element.matches("a, button, input, select, textarea, summary") &&
+      !element.hasAttribute("tabindex")
+    ) {
+      element.setAttribute("tabindex", "0");
+    }
+  });
+
+  document.querySelectorAll("[data-footnote-backref]").forEach((backref) => {
+    backref.setAttribute("aria-label", "Retour au contenu");
+    backref.setAttribute("data-tooltip", "Retour au contenu");
+    backref.classList.add("site-tooltip");
+  });
+}
+
+function initBackToTopButton() {
+  if (document.querySelector(".site-scroll-top")) return;
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "site-scroll-top site-tooltip";
+  button.setAttribute("aria-label", "Retour en haut");
+  button.setAttribute("data-tooltip", "Retour en haut");
+  button.innerHTML =
+    '<svg aria-hidden="true" viewBox="0 -960 960 960" focusable="false"><path d="m280-400 200-200 200 200H280Z"/></svg>';
+
+  const sync = () => {
+    button.classList.toggle("is-visible", window.scrollY > window.innerHeight);
+  };
+
+  button.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+  window.addEventListener("scroll", sync, { passive: true });
+  window.addEventListener("resize", sync, { passive: true });
+  document.body.appendChild(button);
+  sync();
 }
 
 function wrapMarkdownImages() {
@@ -175,6 +257,52 @@ function fileNameFromURL(url) {
   }
 }
 
+function enhancePhotoSwipeButton(button, label) {
+  const topBar = button.closest(".pswp__top-bar");
+  const contrastScope = topBar ? "bar" : "button";
+
+  topBar?.classList.add("pswp__top-bar--contrast");
+  button.setAttribute("aria-label", label);
+  button.removeAttribute("title");
+  button.dataset.tooltip = label;
+  button.dataset.contrast = "true";
+  button.dataset.contrastScope = contrastScope;
+  button.setAttribute("type", "button");
+  button.classList.add("pswp__button--contrast");
+  button.style.setProperty("color", "#fff", "important");
+  button.style.setProperty(
+    "mix-blend-mode",
+    contrastScope === "bar" ? "normal" : "difference",
+    "important",
+  );
+  button.style.setProperty("overflow", "visible", "important");
+  button.style.setProperty("filter", "none", "important");
+  button.tabIndex = button.hasAttribute("disabled") ? -1 : 0;
+
+  button.querySelectorAll(".pswp__icn, svg, path").forEach((icon) => {
+    icon.style.setProperty("color", "#fff", "important");
+    icon.style.setProperty("fill", "currentColor", "important");
+    icon.style.setProperty(
+      "mix-blend-mode",
+      contrastScope === "bar" ? "normal" : "difference",
+      "important",
+    );
+    icon.style.setProperty("filter", "none", "important");
+    if (icon.hasAttribute("stroke")) {
+      icon.style.setProperty("stroke", "currentColor", "important");
+    }
+  });
+
+  if (!button.dataset.keyboardEnhanced) {
+    button.dataset.keyboardEnhanced = "true";
+    button.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      button.click();
+    });
+  }
+}
+
 async function downloadViaFetch(url, filename) {
   const res = await fetch(url, { mode: "cors" });
   const blob = await res.blob();
@@ -186,6 +314,124 @@ async function downloadViaFetch(url, filename) {
   link.click();
   link.remove();
   URL.revokeObjectURL(blobUrl);
+}
+
+function getSlideThumb(slide) {
+  const source = slide?.data?.element;
+  if (!source) return null;
+  return source.matches?.("img") ? source : source.querySelector?.("img");
+}
+
+function syncThumbRadiusTransition(img, pswp) {
+  if (!img) return;
+  const duration = pswp.element
+    ? getComputedStyle(pswp.element).getPropertyValue("--pswp-transition-duration").trim()
+    : "";
+  img.style.transitionDuration = duration || "";
+  img.style.transitionTimingFunction = "cubic-bezier(0.4, 0, 0.22, 1)";
+}
+
+function cleanupThumbRadiusTransition(img) {
+  if (!img) return;
+  img.style.removeProperty("transition-duration");
+  img.style.removeProperty("transition-timing-function");
+}
+
+function transitionThumbRadiusFlat(img, pswp) {
+  if (!img) return;
+  syncThumbRadiusTransition(img, pswp);
+  img.getBoundingClientRect();
+  img.classList.add("is-lightbox-radius-flat");
+}
+
+function hideThumbDuringClose(img) {
+  if (!img) return;
+  img.classList.add("is-lightbox-radius-instant", "is-lightbox-thumb-hidden");
+  img.classList.remove("is-lightbox-radius-flat");
+  cleanupThumbRadiusTransition(img);
+}
+
+function showThumbAfterClose(img) {
+  if (!img) return;
+  img.classList.remove("is-lightbox-thumb-hidden");
+  requestAnimationFrame(() => img.classList.remove("is-lightbox-radius-instant"));
+}
+
+function restoreThumbRadiusInstant(img) {
+  if (!img) return;
+  img.classList.add("is-lightbox-radius-instant");
+  img.classList.remove("is-lightbox-radius-flat", "is-lightbox-thumb-hidden");
+  cleanupThumbRadiusTransition(img);
+  requestAnimationFrame(() => img.classList.remove("is-lightbox-radius-instant"));
+}
+
+function transitionPhotoSwipeImageRadius(pswp, radius) {
+  pswp.element?.querySelectorAll(".pswp__img").forEach((img) => {
+    img.classList.add("pswp__img--radius-transition");
+    img.style.borderRadius = radius;
+  });
+}
+
+function initLightboxRadiusTransition(pswp) {
+  let thumb = null;
+  const flatThumbs = new Set();
+
+  const keepThumbFlat = (img) => {
+    if (!img) return;
+    flatThumbs.add(img);
+    transitionThumbRadiusFlat(img, pswp);
+  };
+
+  const resetInactiveThumbs = (activeThumb) => {
+    flatThumbs.forEach((img) => {
+      if (img === activeThumb) return;
+      restoreThumbRadiusInstant(img);
+      flatThumbs.delete(img);
+    });
+  };
+
+  pswp.on("contentAppendImage", ({ content }) => {
+    const img = content?.element;
+    if (!(img instanceof HTMLImageElement)) return;
+    img.classList.add("pswp__img--radius-transition");
+    img.style.borderRadius = "16px";
+    requestAnimationFrame(() => {
+      img.style.borderRadius = "0px";
+    });
+  });
+
+  pswp.on("openingAnimationStart", () => {
+    thumb = getSlideThumb(pswp.currSlide);
+    keepThumbFlat(thumb);
+    requestAnimationFrame(() => transitionPhotoSwipeImageRadius(pswp, "0px"));
+  });
+
+  pswp.on("closingAnimationStart", () => {
+    thumb = getSlideThumb(pswp.currSlide) || thumb;
+    resetInactiveThumbs(thumb);
+    hideThumbDuringClose(thumb);
+    transitionPhotoSwipeImageRadius(pswp, "16px");
+  });
+
+  pswp.on("closingAnimationEnd", () => {
+    cleanupThumbRadiusTransition(thumb);
+    showThumbAfterClose(thumb);
+    flatThumbs.delete(thumb);
+  });
+
+  pswp.on("destroy", () => {
+    flatThumbs.forEach((img) => {
+      restoreThumbRadiusInstant(img);
+    });
+    flatThumbs.clear();
+    cleanupThumbRadiusTransition(thumb);
+    thumb?.classList.remove(
+      "is-lightbox-radius-flat",
+      "is-lightbox-radius-instant",
+      "is-lightbox-thumb-hidden",
+    );
+    thumb = null;
+  });
 }
 
 function attachWheelZoom(pswp) {
@@ -216,10 +462,14 @@ function attachWheelZoom(pswp) {
 const lightbox = new PhotoSwipeLightbox({
   gallery: ".site-prose",
   children: "a[data-pswp-item]",
-  pswpModule: () => import("photoswipe"),
+  pswpModule: PhotoSwipe,
   initialZoomLevel: "fit",
   secondaryZoomLevel: (zoomLevel) => zoomLevel.fit * 2.5,
   maxZoomLevel: 5,
+  arrowPrevTitle: "Image précédente",
+  arrowNextTitle: "Image suivante",
+  closeTitle: "Fermer",
+  zoomTitle: "Zoomer",
 });
 
 lightbox.on("uiRegister", () => {
@@ -228,6 +478,30 @@ lightbox.on("uiRegister", () => {
   if (!pswp || !ui) return;
 
   attachWheelZoom(pswp);
+  initLightboxRadiusTransition(pswp);
+
+  const localizeButtons = () => {
+    const labels = {
+      ".pswp__button--arrow--prev": "Image précédente",
+      ".pswp__button--arrow--next": "Image suivante",
+      ".pswp__button--close": "Fermer",
+      ".pswp__button--zoom": "Zoomer",
+      ".pswp__button--fullscreen": "Plein écran",
+      ".pswp__button--download": "Télécharger",
+    };
+
+    for (const [selector, label] of Object.entries(labels)) {
+      pswp.element?.querySelectorAll(selector).forEach((button) => {
+        enhancePhotoSwipeButton(button, label);
+      });
+    }
+  };
+
+  const enhanceButtons = () => requestAnimationFrame(localizeButtons);
+
+  pswp.on("afterInit", enhanceButtons);
+  pswp.on("bindEvents", enhanceButtons);
+  pswp.on("change", enhanceButtons);
 
   if (!window.matchMedia("(pointer: coarse)").matches && window.innerWidth >= 768) {
     ui.registerElement({
@@ -239,6 +513,7 @@ lightbox.on("uiRegister", () => {
       className: "pswp__button custom pswp__button--fullscreen",
       ariaLabel: "Plein écran",
       html: '<svg aria-hidden="true" class="pswp__icn" width="32" height="32" viewBox="0 -960 960 960"><path fill="currentColor" d="M120-120v-200h80v120h120v80H120Zm520 0v-80h120v-120h80v200H640ZM120-640v-200h200v80H200v120h-80Zm640 0v-120H640v-80h200v200h-80Z"/></svg>',
+      onInit: (el) => enhancePhotoSwipeButton(el, "Plein écran"),
       onClick: (_event, el, instance) => {
         const root = instance.element || document.documentElement;
         if (!document.fullscreenElement) {
@@ -259,6 +534,7 @@ lightbox.on("uiRegister", () => {
     className: "pswp__button pswp__button--download custom",
     ariaLabel: "Télécharger",
     html: '<svg aria-hidden="true" class="pswp__icn" viewBox="0 -960 960 960" width="32" height="32"><path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z" fill="currentColor"/></svg>',
+    onInit: (el) => enhancePhotoSwipeButton(el, "Télécharger"),
     onClick: async (_event, _el, instance) => {
       const src = instance.currSlide?.data?.src;
       if (!src) return;
@@ -280,6 +556,7 @@ lightbox.on("uiRegister", () => {
     className: "pswp__button custom pswp__button--close",
     ariaLabel: "Fermer",
     html: '<svg aria-hidden="true" class="pswp__icn" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="32" height="32"><path fill="currentColor" d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>',
+    onInit: (el) => enhancePhotoSwipeButton(el, "Fermer"),
     onClick: (_event, _el, instance) => instance.close(),
   });
 });
@@ -301,8 +578,11 @@ function initLightbox() {
 }
 
 function initApp() {
+  initTooltipGate();
+  initSiteTooltips();
   initCodeBlocks();
   initLightbox();
+  initBackToTopButton();
 }
 
 if (document.readyState === "loading") {

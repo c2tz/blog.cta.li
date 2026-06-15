@@ -42,7 +42,7 @@ const lastModified = remarkPluginFrontmatter?.lastModified ?? post.data.pubDate;
       {post.data.description && (
         <p class="hidden">{post.data.description}</p>
       )}
-      <FormattedDate date={post.data.pubDate} />
+      <FormattedDate date={post.data.pubDate} label="Publié le :" />
     </div>
     <Prose>
       <Content />

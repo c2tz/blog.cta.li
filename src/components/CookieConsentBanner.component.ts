@@ -1,8 +1,6 @@
-import { DOCUMENT } from "@angular/common";
 import {
   ChangeDetectionStrategy,
   Component,
-  inject,
   signal,
 } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
@@ -109,7 +107,6 @@ function exposeConsentApi() {
   `,
 })
 export class CookieConsentBannerComponent implements OnInit, OnDestroy {
-  private readonly document = inject(DOCUMENT);
   private readonly handleKeydown = (event: KeyboardEvent) => {
     if (event.key === "Escape" && this.visible()) this.reject();
   };
@@ -145,21 +142,21 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
     exposeConsentApi();
     this.visible.set(false);
     this.unlockPage();
-    this.document.dispatchEvent(new Event("cc:onConsent"));
-    this.document.dispatchEvent(new Event("cc:onChange"));
+    document.dispatchEvent(new Event("cc:onConsent"));
+    document.dispatchEvent(new Event("cc:onChange"));
   }
 
   private syncPageState() {
     if (this.visible()) {
-      this.document.documentElement.classList.add("disable--interaction", "show--consent");
-      this.document.querySelector(".site-main")?.setAttribute("inert", "");
+      document.documentElement.classList.add("disable--interaction", "show--consent");
+      document.querySelector(".site-main")?.setAttribute("inert", "");
     } else {
       this.unlockPage();
     }
   }
 
   private unlockPage() {
-    this.document.documentElement.classList.remove("disable--interaction", "show--consent");
-    this.document.querySelector(".site-main")?.removeAttribute("inert");
+    document.documentElement.classList.remove("disable--interaction", "show--consent");
+    document.querySelector(".site-main")?.removeAttribute("inert");
   }
 }

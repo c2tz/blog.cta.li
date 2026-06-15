@@ -28,6 +28,28 @@ function getScrollProgress() {
   return Math.min(100, Math.max(0, Math.round((scrollTop / scrollable) * 100)));
 }
 
+let scrollUiFrame = 0;
+
+function requestScrollUiSync() {
+  if (scrollUiFrame) return;
+
+  scrollUiFrame = requestAnimationFrame(() => {
+    scrollUiFrame = 0;
+    syncScrollUi();
+  });
+}
+
+function syncScrollUi() {
+  const progress = getScrollProgress();
+
+  document
+    .querySelectorAll(".site-scroll-top")
+    .forEach((button) => syncBackToTopButton(button, progress));
+  document
+    .querySelectorAll(".site-scroll-progress")
+    .forEach((bar) => syncScrollProgressBar(bar, progress));
+}
+
 async function copyToClipboard(text) {
   try {
     await navigator.clipboard.writeText(text);
@@ -242,7 +264,7 @@ function initBackToTopButton() {
     <svg aria-hidden="true" viewBox="0 -960 960 960" focusable="false">
       <path d="${SCROLL_TOP_ICON_PATH}"></path>
     </svg>
-    <span class="site-scroll-top__count" data-scroll-progress-count aria-hidden="true">0</span>
+    <span class="site-scroll-top__count mat-badge-content" data-scroll-progress-count aria-hidden="true">0</span>
   `;
 
   button.addEventListener("pointerdown", (event) => {
@@ -258,14 +280,13 @@ function initBackToTopButton() {
   button.addEventListener("click", () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
-  window.addEventListener("scroll", () => syncBackToTopButton(button), { passive: true });
-  window.addEventListener("resize", () => syncBackToTopButton(button), { passive: true });
+  window.addEventListener("scroll", requestScrollUiSync, { passive: true });
+  window.addEventListener("resize", requestScrollUiSync, { passive: true });
   document.body.appendChild(button);
-  syncBackToTopButton(button);
+  syncScrollUi();
 }
 
-function syncBackToTopButton(button) {
-  const progress = getScrollProgress();
+function syncBackToTopButton(button, progress = getScrollProgress()) {
   const isVisible = window.scrollY > 100;
   const count = button.querySelector("[data-scroll-progress-count]");
 
@@ -290,27 +311,33 @@ function initScrollProgressBar() {
   bar.setAttribute("aria-valuemax", "100");
   bar.innerHTML = '<span class="site-scroll-progress__bar"></span>';
 
-  window.addEventListener("scroll", () => syncScrollProgressBar(bar), { passive: true });
-  window.addEventListener("resize", () => syncScrollProgressBar(bar), { passive: true });
+  window.addEventListener("scroll", requestScrollUiSync, { passive: true });
+  window.addEventListener("resize", requestScrollUiSync, { passive: true });
   document.body.appendChild(bar);
-  syncScrollProgressBar(bar);
+  syncScrollUi();
 }
 
-function syncScrollProgressBar(bar) {
-  const progress = getScrollProgress();
+function syncScrollProgressBar(bar, progress = getScrollProgress()) {
   const fill = bar.querySelector(".site-scroll-progress__bar");
 
   bar.setAttribute("aria-valuenow", String(progress));
-  fill?.style.setProperty("--scroll-progress", `${progress / 100}`);
+  fill?.style.setProperty("transform", `translate3d(0, 0, 0) scaleX(${progress / 100})`);
 }
 
 function wrapMarkdownImages() {
   document.querySelectorAll(".site-prose").forEach((container) => {
+    let imageIndex = 0;
+
     container
       .querySelectorAll("img:not([data-no-lightbox])")
       .forEach((img) => {
         if (img.closest("header, footer, nav, [data-no-lightbox], a")) return;
         if (!img.src) return;
+        const isPriorityImage =
+          imageIndex === 0 ||
+          img.loading === "eager" ||
+          img.getAttribute("fetchpriority") === "high";
+        imageIndex += 1;
 
         const link = document.createElement("a");
         link.href = img.src;
@@ -345,7 +372,11 @@ function wrapMarkdownImages() {
         img.parentNode?.insertBefore(link, img);
         link.appendChild(img);
         img.decoding = "async";
-        img.loading = img.loading === "eager" ? "eager" : "lazy";
+        img.loading = isPriorityImage ? "eager" : "lazy";
+        if (isPriorityImage) {
+          img.fetchPriority = "high";
+          img.setAttribute("fetchpriority", "high");
+        }
       });
   });
 }

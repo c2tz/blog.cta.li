@@ -42,6 +42,10 @@
   font-optical-sizing: auto;
   --site-font: "Roboto Flex", sans-serif;
   --site-mono-font: "Roboto Mono", monospace;
+  --font-sans: var(--site-font);
+  --font-mono: var(--site-mono-font);
+  --default-font-family: var(--site-font);
+  --default-mono-font-family: var(--site-mono-font);
   --site-bg: #fff;
   --site-text: #000;
   --site-border: #ddd;
@@ -92,6 +96,17 @@
     max-width: 832px;
     margin: auto;
     padding: 1rem;
+  }
+
+  .site-main,
+  footer {
+    position: relative;
+    z-index: 1;
+  }
+
+  .site-main > :not(.home-fluid) {
+    position: relative;
+    z-index: 1;
   }
 
   table {
@@ -228,6 +243,31 @@
   }
 }
 
+.home-fluid {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.home-fluid::after {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 18%, transparent 0 18rem, var(--site-bg) 72rem),
+    linear-gradient(to bottom, transparent, var(--site-bg) 90%);
+  content: "";
+}
+
+.home-fluid__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0.38;
+  mix-blend-mode: multiply;
+}
+
 .site-prose {
   max-width: none;
   color: var(--site-text);
@@ -348,6 +388,7 @@
   :where(pre, pre code):not(
     :where([class~="not-prose"], [class~="not-prose"] *)
   ) {
+  font-family: var(--site-mono-font);
   font-size: 0.875rem;
   line-height: 1.25rem;
 }
@@ -799,10 +840,17 @@ html.tooltips-active .post-icon-tooltip:is(:hover, :focus-visible)::after {
 }
 
 .code-shell pre {
+  font-family: var(--site-mono-font);
   margin: 0;
   padding: var(--code-pad);
   overflow: auto;
   background-color: var(--code-block-surface) !important;
+}
+
+.code-shell pre *,
+.code-shell pre code,
+.code-shell pre code * {
+  font-family: inherit;
 }
 
 .code-shell pre.astro-code {
@@ -1102,7 +1150,9 @@ html.disable--interaction:where(.show--consent, .show--preferences) body {
   inset: 0 0 auto;
   z-index: 9500;
   height: 3px;
+  overflow: hidden;
   pointer-events: none;
+  transform: translate3d(0, 0, 0);
 }
 
 .site-scroll-progress__bar {
@@ -1110,10 +1160,10 @@ html.disable--interaction:where(.show--consent, .show--preferences) body {
   width: 100%;
   height: 100%;
   background: var(--site-link);
-  box-shadow: 0 0 8px rgb(21 101 192 / 0.34);
-  transform: scaleX(var(--scroll-progress, 0));
+  transform: translate3d(0, 0, 0) scaleX(0);
   transform-origin: left center;
-  transition: transform 80ms linear;
+  backface-visibility: hidden;
+  will-change: transform;
 }
 
 .site-scroll-top {
@@ -1229,22 +1279,23 @@ html.disable--interaction:where(.show--consent, .show--preferences) body {
 
 .site-scroll-top__count {
   position: absolute;
-  right: -0.35rem;
-  bottom: -0.25rem;
+  right: -0.45rem;
+  bottom: -0.35rem;
   z-index: 2;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.45rem;
-  height: 1rem;
-  padding-inline: 0.25rem;
-  border: 2px solid var(--scroll-top-container);
+  min-width: 1.5rem;
+  height: 1.125rem;
+  padding-inline: 0.3125rem;
+  border: 2px solid var(--site-bg);
   border-radius: 999px;
   background: var(--site-link);
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.22);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.26);
   color: var(--site-bg);
-  font: 600 0.625rem/1 var(--site-font);
+  font: 600 0.625rem/1.125rem var(--site-font);
   letter-spacing: 0;
+  pointer-events: none;
 }
 
 .site-scroll-top:focus-visible {
@@ -1426,6 +1477,11 @@ html.show--consent .site-scroll-top {
     --mat-button-outlined-ripple-color: rgb(144 202 249 / 0.22);
   }
 
+  .home-fluid__canvas {
+    opacity: 0.46;
+    mix-blend-mode: screen;
+  }
+
   @supports (color: color-mix(in srgb, #000, #fff)) {
     .site-scroll-top {
       --scroll-top-container: color-mix(in srgb, var(--site-link) 14%, var(--site-bg));
@@ -1451,6 +1507,7 @@ html.show--consent .site-scroll-top {
 
 @media (prefers-reduced-motion: reduce) {
   .site-prose img,
+  .home-fluid__canvas,
   .pswp__img--radius-transition,
   .site-scroll-top,
   .site-scroll-progress__bar,

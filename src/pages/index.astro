@@ -3,6 +3,7 @@ import { getCollection, getEntry, render } from "astro:content";
 
 import Layout from "../layouts/Layout.astro";
 import Prose from "../components/Prose.astro";
+import HomeFluid from "../components/HomeFluid.astro";
 import FormattedDate from "@/components/FormattedDate.astro";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/consts";
 
@@ -33,6 +34,8 @@ const uniqueTags = [
   }}
 >
   <Fragment slot="content">
+    <HomeFluid />
+
     <Prose>
       <Content />
     </Prose>

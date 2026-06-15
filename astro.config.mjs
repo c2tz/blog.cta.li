@@ -59,11 +59,22 @@ export default defineConfig({
         ],
 
         () => (tree) => {
+          let firstMarkdownImage = true;
+
           const walk = (node) => {
             if (node && typeof node === 'object') {
               if (node.type === 'element' && node.tagName === 'img') {
                 node.properties ||= {};
                 node.properties['data-lightbox'] = '';
+                node.properties.decoding = 'async';
+
+                if (firstMarkdownImage) {
+                  node.properties.loading = 'eager';
+                  node.properties.fetchpriority = 'high';
+                  firstMarkdownImage = false;
+                } else {
+                  node.properties.loading = 'lazy';
+                }
               }
 
               if (Array.isArray(node.children)) {

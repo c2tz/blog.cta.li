@@ -45,6 +45,20 @@ const seoDescription = description ?? SITE_DESCRIPTION;
             crossorigin: "anonymous",
           },
           {
+            rel: "preload",
+            href: "/fonts/roboto-mono-v31-latin-regular.woff2",
+            as: "font",
+            type: "font/woff2",
+            crossorigin: "anonymous",
+          },
+          {
+            rel: "preload",
+            href: "/fonts/roboto-mono-v31-latin-italic.woff2",
+            as: "font",
+            type: "font/woff2",
+            crossorigin: "anonymous",
+          },
+          {
             rel: "alternate",
             type: "application/rss+xml",
             title: SITE_TAB_TITLE,

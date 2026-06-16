@@ -11,6 +11,30 @@ import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import remarkGitDates from './src/remark/remarkGitDates.mjs';
 
+const viteLogger = {
+  hasWarned: false,
+  hasErrorLogged: () => false,
+  clearScreen: () => {},
+  info: (message) => console.info(message),
+  error: (message) => console.error(message),
+  warnOnce(message) {
+    this.warn(message);
+  },
+  warn(message) {
+    if (
+      typeof message === 'string' &&
+      message.includes('"ChangeDetectionStrategy" and "Component"') &&
+      message.includes('"@angular/core"') &&
+      message.includes('"src/components/CookieConsentBanner.component.ts"')
+    ) {
+      return;
+    }
+
+    this.hasWarned = true;
+    console.warn(message);
+  },
+};
+
 export default defineConfig({
   site: 'https://ct-blog.cta.li/',
   devToolbar: {
@@ -31,6 +55,7 @@ export default defineConfig({
   ],
 
   vite: {
+    customLogger: viteLogger,
     plugins: [tailwindcss()],
   },
 

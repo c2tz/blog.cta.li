@@ -1,6 +1,7 @@
 import PhotoSwipeLightbox from "photoswipe/lightbox";
 import PhotoSwipe from "photoswipe";
 import "photoswipe/style.css";
+import { initMuiTooltips } from "./mui-tooltips.js";
 
 function createIcon(className, path) {
   const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -19,6 +20,17 @@ const CLOSE_FULLSCREEN_ICON_PATH =
   "m136-80-56-56 264-264H160v-80h320v320h-80v-184L136-80Zm344-400v-320h80v184l264-264 56 56-264 264h184v80H480Z";
 const SCROLL_TOP_ICON_PATH =
   "M440-727 256-544l-56-56 280-280 280 280-56 57-184-184v287h-80v-287Zm0 487v-120h80v120h-80Zm0 160v-80h80v80h-80Z";
+const DYNAMIC_ANCHOR_OFFSET = 96;
+
+let isDynamicAnchorInitialized = false;
+let dynamicAnchorFrame = 0;
+let activeHeadingLink = null;
+let activeHeadingHash = "";
+let dynamicAnchorHashPausedUntil = 0;
+
+function hideSiteTooltip() {
+  document.dispatchEvent(new CustomEvent("site:tooltip-hide"));
+}
 
 function getScrollProgress() {
   const doc = document.documentElement;
@@ -181,24 +193,6 @@ function initCodeBlocks() {
   });
 }
 
-function initTooltipGate() {
-  const root = document.documentElement;
-  if (root.classList.contains("tooltips-active")) return;
-
-  const activate = () => {
-    root.classList.add("tooltips-active");
-    window.removeEventListener("pointerdown", activate);
-    window.removeEventListener("pointermove", activate);
-    window.removeEventListener("keydown", activate);
-    window.removeEventListener("touchstart", activate);
-  };
-
-  window.addEventListener("pointerdown", activate, { once: true, passive: true });
-  window.addEventListener("pointermove", activate, { once: true, passive: true });
-  window.addEventListener("keydown", activate, { once: true });
-  window.addEventListener("touchstart", activate, { once: true, passive: true });
-}
-
 function initSiteTooltips() {
   document.querySelectorAll("[title]").forEach((element) => {
     const title = element.getAttribute("title");
@@ -228,6 +222,9 @@ function initSiteTooltips() {
     if (!backref.dataset.footnoteEnhanced) {
       backref.dataset.footnoteEnhanced = "true";
       backref.addEventListener("click", () => {
+        hideSiteTooltip();
+        backref.blur?.();
+
         const hash = backref.getAttribute("href");
         if (!hash?.startsWith("#")) return;
 
@@ -241,6 +238,14 @@ function initSiteTooltips() {
         });
       });
     }
+  });
+
+  document.querySelectorAll(".site-prose a[href^='#user-content-fn-']").forEach((ref) => {
+    if (ref.hasAttribute("data-footnote-backref")) return;
+
+    ref.setAttribute("aria-label", "Voir l'explication");
+    ref.setAttribute("data-tooltip", "Voir l'explication");
+    ref.classList.add("site-tooltip", "footnote-ref-tooltip");
   });
 }
 
@@ -278,6 +283,8 @@ function initBackToTopButton() {
   });
 
   button.addEventListener("click", () => {
+    hideSiteTooltip();
+    button.blur();
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
   window.addEventListener("scroll", requestScrollUiSync, { passive: true });
@@ -297,6 +304,8 @@ function syncBackToTopButton(button, progress = getScrollProgress()) {
 }
 
 function initScrollProgressBar() {
+  if (document.body?.dataset.scrollUi === "off") return;
+
   const existingBar = document.querySelector(".site-scroll-progress");
   if (existingBar) {
     syncScrollProgressBar(existingBar);
@@ -322,6 +331,172 @@ function syncScrollProgressBar(bar, progress = getScrollProgress()) {
 
   bar.setAttribute("aria-valuenow", String(progress));
   fill?.style.setProperty("transform", `translate3d(0, 0, 0) scaleX(${progress / 100})`);
+}
+
+function removeScrollUi() {
+  document.querySelectorAll(".site-scroll-progress, .site-scroll-top").forEach((element) => {
+    element.remove();
+  });
+}
+
+function getHeadingHashFromLink(link) {
+  const hash = link.getAttribute("href");
+  if (!hash?.startsWith("#") || hash === "#") return "";
+  return hash;
+}
+
+function getDynamicAnchorEntries() {
+  const postHeader = document.querySelector(".post-header");
+  const prose = document.querySelector(".site-prose");
+  if (!postHeader || !prose) return [];
+
+  const entries = [];
+  const resetHeading = postHeader.querySelector("[data-anchor-reset]");
+  if (resetHeading) {
+    entries.push({
+      hash: "",
+      heading: resetHeading,
+      link: null,
+      reset: true,
+    });
+  }
+
+  prose
+    .querySelectorAll(":is(h1, h2, h3, h4, h5, h6) > a.heading-link[href^='#']")
+    .forEach((link) => {
+      const hash = getHeadingHashFromLink(link);
+      const heading = link.closest("h1, h2, h3, h4, h5, h6");
+      if (!hash || !heading) return;
+
+      entries.push({
+        hash,
+        heading,
+        link,
+        reset: false,
+      });
+    });
+
+  return entries.sort((a, b) => {
+    const aTop = a.heading.getBoundingClientRect().top + window.scrollY;
+    const bTop = b.heading.getBoundingClientRect().top + window.scrollY;
+    return aTop - bTop;
+  });
+}
+
+function clearActiveHeading(managedHashes = new Set()) {
+  activeHeadingLink?.classList.remove("is-anchor-active");
+  activeHeadingLink?.removeAttribute("aria-current");
+  activeHeadingLink = null;
+
+  if (location.hash && (managedHashes.has(location.hash) || location.hash === activeHeadingHash)) {
+    history.replaceState(null, "", `${location.pathname}${location.search}`);
+  }
+
+  activeHeadingHash = "";
+}
+
+function setActiveHeading(entry, { updateLocation = true } = {}) {
+  if (activeHeadingLink && activeHeadingLink !== entry.link) {
+    activeHeadingLink.classList.remove("is-anchor-active");
+    activeHeadingLink.removeAttribute("aria-current");
+  }
+
+  activeHeadingLink = entry.link;
+  activeHeadingHash = entry.hash;
+  activeHeadingLink?.classList.add("is-anchor-active");
+  activeHeadingLink?.setAttribute("aria-current", "location");
+
+  if (updateLocation && location.hash !== entry.hash) {
+    history.replaceState(null, "", entry.hash);
+  }
+}
+
+function syncDynamicAnchors() {
+  dynamicAnchorFrame = 0;
+
+  const entries = getDynamicAnchorEntries();
+  if (entries.length === 0) {
+    clearActiveHeading();
+    return;
+  }
+
+  const managedHashes = new Set(
+    entries.filter((entry) => !entry.reset).map((entry) => entry.hash),
+  );
+
+  if (window.scrollY < 24) {
+    clearActiveHeading(managedHashes);
+    return;
+  }
+
+  let currentEntry = null;
+  const viewportOffset = window.visualViewport?.offsetTop || 0;
+  const activationLine = viewportOffset + DYNAMIC_ANCHOR_OFFSET;
+
+  for (const entry of entries) {
+    if (entry.heading.getBoundingClientRect().top <= activationLine) {
+      currentEntry = entry;
+    } else {
+      break;
+    }
+  }
+
+  if (!currentEntry || currentEntry.reset || !currentEntry.link) {
+    clearActiveHeading(managedHashes);
+    return;
+  }
+
+  const isPausedOnUnmanagedHash =
+    Date.now() < dynamicAnchorHashPausedUntil &&
+    location.hash &&
+    !managedHashes.has(location.hash);
+
+  setActiveHeading(currentEntry, { updateLocation: !isPausedOnUnmanagedHash });
+}
+
+function requestDynamicAnchorSync() {
+  if (dynamicAnchorFrame) return;
+  dynamicAnchorFrame = requestAnimationFrame(syncDynamicAnchors);
+}
+
+function initDynamicAnchors() {
+  requestDynamicAnchorSync();
+  if (isDynamicAnchorInitialized) return;
+
+  isDynamicAnchorInitialized = true;
+
+  document.addEventListener(
+    "click",
+    (event) => {
+      const link = event.target?.closest?.("a[href^='#']");
+      if (!link) return;
+
+      hideSiteTooltip();
+      const isHeadingLink =
+        link.matches(".heading-link") &&
+        Boolean(link.closest(".site-prose :is(h1, h2, h3, h4, h5, h6)"));
+
+      dynamicAnchorHashPausedUntil = isHeadingLink ? 0 : Date.now() + 1600;
+
+      if (event.detail > 0) {
+        requestAnimationFrame(() => link.blur?.());
+      }
+
+      requestAnimationFrame(requestDynamicAnchorSync);
+      window.setTimeout(requestDynamicAnchorSync, 420);
+    },
+    true,
+  );
+
+  window.addEventListener("scroll", requestDynamicAnchorSync, { passive: true });
+  window.addEventListener("resize", requestDynamicAnchorSync, { passive: true });
+  window.visualViewport?.addEventListener("resize", requestDynamicAnchorSync, {
+    passive: true,
+  });
+  window.visualViewport?.addEventListener("scroll", requestDynamicAnchorSync, {
+    passive: true,
+  });
+  window.addEventListener("hashchange", requestDynamicAnchorSync);
 }
 
 function wrapMarkdownImages() {
@@ -353,6 +528,7 @@ function wrapMarkdownImages() {
           event.preventDefault();
           link.click();
         });
+        link.addEventListener("click", hideSiteTooltip);
 
         const setSize = () => {
           const width =
@@ -439,6 +615,7 @@ function enhancePhotoSwipeButton(button, label) {
 
   if (!button.dataset.keyboardEnhanced) {
     button.dataset.keyboardEnhanced = "true";
+    button.addEventListener("click", hideSiteTooltip);
     button.addEventListener("keydown", (event) => {
       if (event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();
@@ -564,6 +741,7 @@ function initLightboxRadiusTransition(pswp) {
   });
 
   pswp.on("openingAnimationStart", () => {
+    hideSiteTooltip();
     thumb = getSlideThumb(pswp.currSlide);
     hideThumb(thumb);
     keepThumbFlat(thumb);
@@ -571,6 +749,7 @@ function initLightboxRadiusTransition(pswp) {
   });
 
   pswp.on("closingAnimationStart", () => {
+    hideSiteTooltip();
     thumb = getSlideThumb(pswp.currSlide) || thumb;
     resetInactiveThumbs(thumb);
     transitionPhotoSwipeImageRadius(pswp, "0px");
@@ -584,6 +763,7 @@ function initLightboxRadiusTransition(pswp) {
   });
 
   pswp.on("destroy", () => {
+    hideSiteTooltip();
     flatThumbs.forEach((img) => {
       restoreThumbRadiusInstant(img);
     });
@@ -781,13 +961,18 @@ function initLightbox() {
 }
 
 function initApp() {
-  initTooltipGate();
   initSiteTooltips();
+  initMuiTooltips();
   initCodeBlocks();
   initLightbox();
   initKeyboardAccessibleTargets();
-  initScrollProgressBar();
-  initBackToTopButton();
+  initDynamicAnchors();
+  if (document.body?.dataset.scrollUi === "off") {
+    removeScrollUi();
+  } else {
+    initScrollProgressBar();
+    initBackToTopButton();
+  }
 }
 
 if (document.readyState === "loading") {

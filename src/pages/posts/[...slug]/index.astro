@@ -38,7 +38,7 @@ const lastModified = remarkPluginFrontmatter?.lastModified ?? post.data.pubDate;
 >
   <Fragment slot="content">
     <div class="post-header">
-      <h1>{post.data.title}</h1>
+      <h1 id="post-title" class="post-title-anchor" data-anchor-reset>{post.data.title}</h1>
       {post.data.description && (
         <p class="hidden">{post.data.description}</p>
       )}

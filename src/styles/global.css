@@ -82,6 +82,19 @@
     overscroll-behavior: none;
   }
 
+  body.page-no-scroll-ui {
+    overflow-y: auto;
+  }
+
+  body.home-page {
+    --site-bg: #06070b;
+    --site-text: #f8fafc;
+    --site-border: rgb(255 255 255 / 0.18);
+    --site-muted: #d1d5db;
+    --site-link: #bfdbfe;
+    background-color: var(--site-bg);
+  }
+
   main {
     width: 100%;
     max-width: 832px;
@@ -104,7 +117,7 @@
     z-index: 1;
   }
 
-  .site-main > :not(.home-fluid) {
+  .site-main > :not(.home-anime-bg) {
     position: relative;
     z-index: 1;
   }
@@ -243,29 +256,92 @@
   }
 }
 
-.home-fluid {
+.home-anime-bg {
   position: fixed;
   inset: 0;
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
+  background: #06070b;
 }
 
-.home-fluid::after {
+.home-anime-bg::after {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 50% 18%, transparent 0 18rem, var(--site-bg) 72rem),
-    linear-gradient(to bottom, transparent, var(--site-bg) 90%);
+    radial-gradient(circle at 50% 18%, rgb(0 0 0 / 0.42) 0 18rem, rgb(0 0 0 / 0.78) 72rem),
+    linear-gradient(to bottom, rgb(0 0 0 / 0.56), rgb(0 0 0 / 0.84));
   content: "";
 }
 
-.home-fluid__canvas {
+.home-anime-bg__image {
   display: block;
   width: 100%;
   height: 100%;
-  opacity: 0.38;
-  mix-blend-mode: multiply;
+  background-image: var(--home-konachan-image);
+  background-position: center;
+  background-size: cover;
+  opacity: 0;
+  transform: scale(1.015);
+  transition: opacity 360ms ease;
+}
+
+.home-anime-bg__image[data-loaded="true"] {
+  opacity: 1;
+}
+
+body.home-page .site-main,
+body.home-page footer {
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.45);
+}
+
+body.home-page footer,
+body.home-page footer div,
+body.home-page footer span,
+body.home-page footer .footer-link,
+body.home-page footer .footer-link:visited {
+  color: var(--site-muted) !important;
+}
+
+.home-anime-credit {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  max-width: min(24rem, calc(100vw - 2rem));
+  padding: 0.45rem 0.65rem;
+  border: 1px solid rgb(255 255 255 / 0.22);
+  border-radius: 4px;
+  background: rgb(0 0 0 / 0.38);
+  color: #fff;
+  font-size: 0.8125rem;
+  line-height: 1.25;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.55);
+  backdrop-filter: blur(8px);
+}
+
+.home-anime-credit[hidden] {
+  display: none;
+}
+
+.home-anime-credit__label {
+  color: rgb(255 255 255 / 0.78);
+  white-space: nowrap;
+}
+
+.home-anime-credit__link,
+.home-anime-credit__link:visited {
+  color: #fff;
+  font-weight: 500;
+  overflow: hidden;
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.16em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .site-prose {
@@ -362,7 +438,47 @@
   ) {
   color: var(--site-link);
   font-weight: 400;
-  text-decoration: none;
+  text-decoration-line: none;
+  text-decoration-thickness: from-font;
+  text-decoration-color: currentColor;
+  text-underline-offset: 0.16em;
+}
+
+.site-prose
+  :where(a, a:visited):is(:hover, :focus-visible):not(
+    :where([class~="not-prose"], [class~="not-prose"] *)
+  ) {
+  text-decoration-line: underline;
+}
+
+.site-prose
+  :where(a[data-pswp-item], a[data-pswp-item]:visited):is(:hover, :focus-visible):not(
+    :where([class~="not-prose"], [class~="not-prose"] *)
+  ) {
+  text-decoration-line: none;
+}
+
+.site-prose .footnotes {
+  color: var(--site-muted);
+  font-size: 70%;
+  font-style: italic;
+}
+
+.site-prose .footnotes :where(p, li) {
+  color: inherit;
+  font-size: 1em;
+  font-style: inherit;
+}
+
+.site-prose .footnotes :where(a, a:visited) {
+  color: inherit;
+  text-decoration-line: none;
+  text-decoration-thickness: from-font;
+  text-underline-offset: 0.16em;
+}
+
+.site-prose .footnotes :where(a, a:visited):is(:hover, :focus-visible) {
+  text-decoration-line: underline;
 }
 
 .site-prose
@@ -428,6 +544,12 @@ h6 > a.heading-link {
   text-decoration: none;
 }
 
+h1 > a.heading-link.is-anchor-active,
+h2 > a.heading-link.is-anchor-active,
+h3 > a.heading-link.is-anchor-active,
+h4 > a.heading-link.is-anchor-active,
+h5 > a.heading-link.is-anchor-active,
+h6 > a.heading-link.is-anchor-active,
 h1 > a.heading-link:is(:hover, :focus-visible),
 h2 > a.heading-link:is(:hover, :focus-visible),
 h3 > a.heading-link:is(:hover, :focus-visible),
@@ -449,12 +571,21 @@ main :is(h1, h2, h3, h4, h5, h6)[tabindex="0"]:focus-visible {
   font-family: var(--site-font);
 }
 
+body.home-page .header-link,
+body.home-page .header-link:visited {
+  color: #fff !important;
+  text-shadow:
+    0 1px 2px rgb(0 0 0 / 0.82),
+    0 0 16px rgb(0 0 0 / 0.42);
+}
+
 .header-link--glitch {
-  --glitch-bg: var(--site-bg);
-  --glitch-c1: #ff1744;
-  --glitch-c2: #2962ff;
+  --glitch-bg: transparent;
+  --glitch-c1: #ff3d71;
+  --glitch-c2: #40c4ff;
   position: relative;
   isolation: isolate;
+  color: #fff;
   animation: glitch-jitter 3.5s infinite steps(1, end);
 }
 
@@ -467,7 +598,7 @@ main :is(h1, h2, h3, h4, h5, h6)[tabindex="0"]:focus-visible {
   pointer-events: none;
   color: currentColor;
   background: var(--glitch-bg);
-  opacity: 0.9;
+  opacity: 0.95;
 }
 
 .header-link--glitch::before {
@@ -578,87 +709,9 @@ abbr.site-tooltip {
   text-underline-offset: 0.12em;
 }
 
-.site-tooltip::before {
-  position: absolute;
-  z-index: 50;
-  bottom: calc(100% + 0.5rem);
-  left: 50%;
-  max-width: min(18rem, calc(100vw - 2rem));
-  min-height: 1.5rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  background: #616161;
-  color: #fff;
-  content: attr(data-tooltip);
-  font: 400 0.75rem/1.25rem var(--site-font);
-  opacity: 0;
-  pointer-events: none;
-  transform: translate(-50%, 0.25rem);
-  visibility: hidden;
-  white-space: nowrap;
-}
-
-.site-scroll-top.site-tooltip::before {
-  right: 0;
-  left: auto;
-  transform: translateY(0.25rem);
-}
-
-html.tooltips-active .site-tooltip::before {
-  transition:
-    opacity 120ms ease,
-    transform 120ms ease,
-    visibility 120ms ease;
-}
-
-html.tooltips-active .site-tooltip:is(:hover, :focus-visible)::before {
-  opacity: 1;
-  transform: translate(-50%, 0);
-  visibility: visible;
-}
-
-html.tooltips-active .site-scroll-top.site-tooltip:is(:hover, :focus-visible)::before {
-  transform: translateY(0);
-}
-
 .post-icon-tooltip:focus-visible {
   outline: 2px solid var(--site-link);
   outline-offset: 2px;
-}
-
-.post-icon-tooltip::after {
-  position: absolute;
-  z-index: 20;
-  bottom: calc(100% + 0.5rem);
-  left: 0;
-  max-width: min(18rem, calc(100vw - 2rem));
-  min-height: 1.5rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  background: #616161;
-  color: #fff;
-  content: attr(data-tooltip);
-  font-size: 0.75rem;
-  font-weight: 400;
-  line-height: 1.25rem;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(0.25rem);
-  visibility: hidden;
-  white-space: nowrap;
-}
-
-html.tooltips-active .post-icon-tooltip::after {
-  transition:
-    opacity 120ms ease,
-    transform 120ms ease,
-    visibility 120ms ease;
-}
-
-html.tooltips-active .post-icon-tooltip:is(:hover, :focus-visible)::after {
-  opacity: 1;
-  transform: translateY(0);
-  visibility: visible;
 }
 
 .post-header {
@@ -667,6 +720,10 @@ html.tooltips-active .post-icon-tooltip:is(:hover, :focus-visible)::after {
 
 .post-header h1 {
   margin-block-end: 0.25em;
+}
+
+.post-title-anchor {
+  scroll-margin-block-start: 5rem;
 }
 
 .post-tags,
@@ -735,32 +792,33 @@ html.tooltips-active .post-icon-tooltip:is(:hover, :focus-visible)::after {
 .site-prose a[data-footnote-backref] {
   position: relative;
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1em;
-  height: 1em;
-  margin-inline-start: 0.15em;
-  overflow: hidden;
-  color: var(--site-link);
-  font-size: 1rem;
-  text-indent: -9999px;
-  line-height: 1;
+  align-items: baseline;
+  margin-inline-start: 0.2em;
+  color: inherit;
+  font-size: 0;
+  line-height: inherit;
   text-decoration: none;
-  vertical-align: 0.06em;
+  vertical-align: baseline;
 }
 
-.site-prose a.data-footnote-backref::after,
-.site-prose a[data-footnote-backref]::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  display: block;
-  width: 1rem;
-  height: 1rem;
-  background-color: currentColor;
-  text-indent: 0;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 -960 960 960'%3E%3Cpath d='M360-200v-80h284q63 0 109.5-40T800-420q0-60-46.5-100T644-560H312l124 124-56 56-220-220 220-220 56 56-124 124h332q97 0 166.5 63T880-420q0 94-69.5 157T644-200H360Z'/%3E%3C/svg%3E")
-    center / contain no-repeat;
+.site-prose a.data-footnote-backref::before,
+.site-prose a[data-footnote-backref]::before {
+  content: "\21A9\FE0E";
+  font-family: var(--site-font);
+  font-size: 0.7rem;
+  line-height: inherit;
+}
+
+.site-prose a.data-footnote-backref:is(:hover, :focus-visible),
+.site-prose a[data-footnote-backref]:is(:hover, :focus-visible) {
+  text-decoration-line: underline;
+  text-decoration-thickness: from-font;
+  text-underline-offset: 0.16em;
+}
+
+.site-prose .footnote-ref-tooltip {
+  border-radius: 3px;
+  font-weight: 500;
 }
 
 .code-shell {
@@ -954,67 +1012,46 @@ img[data-lightbox],
   outline-offset: -0.45rem;
 }
 
-.pswp__counter {
-  text-shadow: none !important;
+.pswp__button--arrow {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 50px !important;
+  height: 75px !important;
 }
 
-.pswp__button[data-tooltip]::after {
-  position: absolute;
-  z-index: 1;
-  top: calc(100% - 0.25rem);
-  left: 0.25rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  background: #616161;
-  color: #fff;
-  content: attr(data-tooltip);
-  font: 400 0.75rem/1.25rem var(--site-font);
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(0.25rem);
-  visibility: hidden;
-  white-space: nowrap;
-  mix-blend-mode: normal;
+.pswp__button--close,
+.pswp__button--fullscreen,
+.pswp__button--zoom,
+.pswp__button--download,
+.pswp__button--zoom-in,
+.pswp__button--zoom-out,
+.pswp__button--arrow .pswp__icn,
+.pswp__button--arrow svg {
+  width: 50px !important;
+  height: 50px !important;
+}
+
+.pswp__button--arrow .pswp__icn,
+.pswp__button--arrow svg {
+  position: static !important;
+  margin: 0 !important;
+  transform: none !important;
+}
+
+.pswp__button--close:not(.custom) {
+  width: 50px !important;
+  height: 50px !important;
+}
+
+.pswp__counter {
+  text-shadow: none !important;
 }
 
 .pswp__button--arrow,
 .pswp__button--zoom,
 .pswp__button--close {
   overflow: visible !important;
-}
-
-html.tooltips-active .pswp__button[data-tooltip]::after {
-  transition:
-    opacity 120ms ease,
-    transform 120ms ease,
-    visibility 120ms ease;
-}
-
-html.tooltips-active .pswp__button[data-tooltip]:is(:hover, :focus-visible)::after {
-  opacity: 1;
-  transform: translateY(0);
-  visibility: visible;
-}
-
-.pswp__button--arrow[data-tooltip]::after {
-  top: calc(50% + 2.25rem);
-}
-
-.pswp__button--arrow--prev[data-tooltip]::after {
-  left: 0.5rem;
-}
-
-.pswp__button--arrow--next[data-tooltip]::after,
-.pswp__button--download[data-tooltip]::after,
-.pswp__button--close[data-tooltip]::after {
-  right: 0.5rem;
-  left: auto;
-}
-
-.pswp__button--fullscreen[data-tooltip]::after,
-.pswp__button--zoom[data-tooltip]::after {
-  right: auto;
-  left: 0.5rem;
 }
 
 .pswp__icn-shadow,
@@ -1029,6 +1066,26 @@ html.tooltips-active .pswp__button[data-tooltip]:is(:hover, :focus-visible)::aft
   order: -10;
   margin-inline-start: 6px !important;
   margin-inline-end: auto !important;
+}
+
+.pswp__button--close.custom,
+.pswp__button--fullscreen,
+.pswp__button--download {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 50px !important;
+  height: 50px !important;
+}
+
+.pswp__button--close.custom .pswp__icn,
+.pswp__button--fullscreen .pswp__icn,
+.pswp__button--download .pswp__icn {
+  position: static !important;
+  width: 32px !important;
+  height: 32px !important;
+  margin: 0 !important;
+  transform: none !important;
 }
 
 html.disable--interaction:where(.show--consent, .show--preferences),
@@ -1307,6 +1364,11 @@ html.show--consent .site-scroll-top {
   display: none;
 }
 
+body.page-no-scroll-ui .site-scroll-progress,
+body.page-no-scroll-ui .site-scroll-top {
+  display: none;
+}
+
 @keyframes cookie-backdrop-in {
   from {
     opacity: 0;
@@ -1402,6 +1464,14 @@ html.show--consent .site-scroll-top {
 }
 
 @media (max-width: 735px) {
+  .home-anime-credit {
+    top: 0.65rem;
+    right: 0.65rem;
+    left: 0.65rem;
+    justify-content: space-between;
+    max-width: none;
+  }
+
   .home-post,
   .tag-post {
     display: flex;
@@ -1477,9 +1547,10 @@ html.show--consent .site-scroll-top {
     --mat-button-outlined-ripple-color: rgb(144 202 249 / 0.22);
   }
 
-  .home-fluid__canvas {
-    opacity: 0.46;
-    mix-blend-mode: screen;
+  .home-anime-bg::after {
+    background:
+      radial-gradient(circle at 50% 18%, rgb(0 0 0 / 0.52) 0 18rem, rgb(0 0 0 / 0.84) 72rem),
+      linear-gradient(to bottom, rgb(0 0 0 / 0.64), rgb(0 0 0 / 0.88));
   }
 
   @supports (color: color-mix(in srgb, #000, #fff)) {
@@ -1507,7 +1578,7 @@ html.show--consent .site-scroll-top {
 
 @media (prefers-reduced-motion: reduce) {
   .site-prose img,
-  .home-fluid__canvas,
+  .home-anime-bg__image,
   .pswp__img--radius-transition,
   .site-scroll-top,
   .site-scroll-progress__bar,

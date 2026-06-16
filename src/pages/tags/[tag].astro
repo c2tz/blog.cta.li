@@ -31,7 +31,7 @@ const { tag } = Astro.params;
 const { posts } = Astro.props;
 ---
 
-<Layout title={`Posts with Tag "${tag}"`}>
+<Layout title={`Posts with Tag "${tag}"`} bodyClass="tag-page" scrollUi={false}>
   <Fragment slot="content">
     <h1>Posts with Tag "{tag}"</h1>
     <ul class="tag-posts">

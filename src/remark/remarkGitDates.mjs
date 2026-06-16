@@ -39,8 +39,8 @@ export default function remarkGitDates() {
     const gitModified = gitDate(["log", "--follow", "-1", "--format=%cI"], filePath);
 
     file.data.astro.frontmatter.createdAt =
-      gitCreated || frontmatterCreated || published;
+      frontmatterCreated || gitCreated || published;
     file.data.astro.frontmatter.lastModified =
-      gitModified || frontmatterModified || frontmatter.createdAt || published;
+      frontmatterModified || gitModified || frontmatterCreated || published;
   };
 }

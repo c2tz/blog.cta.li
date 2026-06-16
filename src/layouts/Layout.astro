@@ -9,11 +9,20 @@ import '../styles/global.css';
 
 interface Props extends SEOProps {
   locale?: string;
+  bodyClass?: string;
+  scrollUi?: boolean;
 }
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
-const { locale = "fr", title, description, ...seoRest } = Astro.props as Props;
+const {
+  locale = "fr",
+  title,
+  description,
+  bodyClass,
+  scrollUi = true,
+  ...seoRest
+} = Astro.props as Props;
 
 const seoTitle = title ? `${SITE_TAB_ARTICLE} ${title}` : SITE_TAB_TITLE;
 const seoDescription = description ?? SITE_DESCRIPTION;
@@ -38,27 +47,6 @@ const seoDescription = description ?? SITE_DESCRIPTION;
           ...(Astro.props.extend?.link ?? []),
           { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
           {
-            rel: "preload",
-            href: "/fonts/roboto-flex-v30-latin-regular.woff2",
-            as: "font",
-            type: "font/woff2",
-            crossorigin: "anonymous",
-          },
-          {
-            rel: "preload",
-            href: "/fonts/roboto-mono-v31-latin-regular.woff2",
-            as: "font",
-            type: "font/woff2",
-            crossorigin: "anonymous",
-          },
-          {
-            rel: "preload",
-            href: "/fonts/roboto-mono-v31-latin-italic.woff2",
-            as: "font",
-            type: "font/woff2",
-            crossorigin: "anonymous",
-          },
-          {
             rel: "alternate",
             type: "application/rss+xml",
             title: SITE_TAB_TITLE,
@@ -71,7 +59,10 @@ const seoDescription = description ?? SITE_DESCRIPTION;
     <slot name="head" />
   </head>
 
-  <body>
+  <body
+    class:list={[bodyClass, { "page-no-scroll-ui": !scrollUi }]}
+    data-scroll-ui={scrollUi ? "on" : "off"}
+  >
     <main class="site-main">
       <Header />
       <slot name="content" />

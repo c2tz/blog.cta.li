@@ -222,15 +222,20 @@ function TooltipLayer() {
             maxWidth: "min(24rem, calc(100vw - 24px))",
             overflowWrap: "anywhere",
             borderRadius: "4px",
-            bgcolor: "#616161",
-            color: "#fff",
+            border: "1px solid var(--site-tooltip-border)",
+            bgcolor: "var(--site-tooltip-bg)",
+            color: "var(--site-tooltip-text)",
             font: "400 0.75rem/1.3 var(--site-font)",
             letterSpacing: 0,
           },
         },
         arrow: {
           sx: {
-            color: "#616161",
+            color: "var(--site-tooltip-bg)",
+            "&::before": {
+              border: "1px solid var(--site-tooltip-border)",
+              boxSizing: "border-box",
+            },
           },
         },
       },

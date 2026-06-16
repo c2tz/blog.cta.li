@@ -53,7 +53,7 @@ const uniqueTags = [
         {
           posts.map((post) => (
             <li class="home-post">
-              <FormattedDate date={post.data.pubDate} />
+              <FormattedDate date={post.data.pubDate} time={post.data.pubTime} />
               <span class="home-separator" aria-hidden="true">—</span>
               <a href={`/posts/${post.id}/`}>
                 {post.data.title}

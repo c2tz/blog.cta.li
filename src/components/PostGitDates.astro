@@ -13,6 +13,13 @@ const formatter = new Intl.DateTimeFormat("fr-FR", {
   day: "numeric",
 });
 
+const timeFormatter = new Intl.DateTimeFormat("fr-FR", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+  timeZoneName: "shortOffset",
+});
+
 function toDate(value: Date | string) {
   return value instanceof Date ? value : new Date(value);
 }
@@ -21,6 +28,17 @@ function formatDate(value: Date | string) {
   const date = toDate(value);
   const formatted = formatter.format(date);
   return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+}
+
+function formatTime(value: Date | string) {
+  return timeFormatter
+    .format(toDate(value))
+    .replace(/\s?UTC$/, " UTC+0")
+    .replace("UTC−", "UTC-");
+}
+
+function formatDateTime(value: Date | string) {
+  return `${formatDate(value)}, ${formatTime(value)}`;
 }
 
 const createdLabel = "Création du post";
@@ -42,7 +60,7 @@ const modifiedLabel = "Dernière modification du post";
     </span>
     <span class="post-git-date__text">
       <span class="post-git-date__label">Créé le :</span>
-      <time datetime={toDate(createdAt).toISOString()}>{formatDate(createdAt)}</time>
+      <time datetime={toDate(createdAt).toISOString()}>{formatDateTime(createdAt)}</time>
     </span>
   </span>
   <span class="post-git-date-divider" aria-hidden="true"></span>
@@ -60,7 +78,7 @@ const modifiedLabel = "Dernière modification du post";
     </span>
     <span class="post-git-date__text">
       <span class="post-git-date__label">Modifié le :</span>
-      <time datetime={toDate(lastModified).toISOString()}>{formatDate(lastModified)}</time>
+      <time datetime={toDate(lastModified).toISOString()}>{formatDateTime(lastModified)}</time>
     </span>
   </span>
 </footer>

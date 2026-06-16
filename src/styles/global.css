@@ -51,6 +51,9 @@
   --site-border: #ddd;
   --site-muted: #616161;
   --site-link: #1565c0;
+  --site-tooltip-bg: #000;
+  --site-tooltip-text: #fff;
+  --site-tooltip-border: #1565c0;
   --code-surface: #f3f3f3;
   --code-block-surface: #ffffff;
   --code-pad: 1rem;
@@ -92,6 +95,9 @@
     --site-border: rgb(255 255 255 / 0.18);
     --site-muted: #d1d5db;
     --site-link: #bfdbfe;
+    --site-tooltip-bg: #fff;
+    --site-tooltip-text: #000;
+    --site-tooltip-border: #90caf9;
     background-color: var(--site-bg);
   }
 
@@ -1523,6 +1529,9 @@ body.page-no-scroll-ui .site-scroll-top {
     --site-border: #222;
     --site-muted: #9f9f9f;
     --site-link: #90caf9;
+    --site-tooltip-bg: #fff;
+    --site-tooltip-text: #000;
+    --site-tooltip-border: #90caf9;
     --code-surface: #252526;
     --code-block-surface: #1e1e1e;
   }

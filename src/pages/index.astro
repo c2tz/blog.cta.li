@@ -21,11 +21,18 @@ const posts = (await getCollection("blog"))
     return aCreated - bCreated;
   });
 
-const uniqueTags = [
+const latestPosts = posts.slice(0, 4);
+const contentTags = [
   ...new Set(
-    posts.flatMap((post) => post.data.tags).filter((tag) => tag !== undefined),
+    posts
+      .flatMap((post) => post.data.tags)
+      .filter((tag): tag is string => tag !== undefined && tag !== "all"),
   ),
 ].sort();
+const uniqueTags = [
+  "all",
+  ...contentTags,
+];
 ---
 
 <Layout
@@ -54,7 +61,7 @@ const uniqueTags = [
 
       <ul class="home-posts">
         {
-          posts.map((post) => (
+          latestPosts.map((post) => (
             <li class="home-post">
               <FormattedDate date={post.gitDates.createdAt ?? post.data.pubDate} utcDetails />
               <span class="home-separator" aria-hidden="true">—</span>

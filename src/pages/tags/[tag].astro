@@ -19,18 +19,24 @@ export async function getStaticPaths() {
       return aCreated - bCreated;
     });
 
-  const uniqueTags = [
+  const contentTags = [
     ...new Set(
       allPosts
         .flatMap((post) => post.data.tags)
-        .filter((tag) => tag !== undefined)
+        .filter((tag): tag is string => tag !== undefined && tag !== "all")
     ),
+  ].sort();
+  const uniqueTags = [
+    "all",
+    ...contentTags,
   ];
 
   return uniqueTags.map((tag) => {
-    const filteredPosts = allPosts.filter(
-      (post) => post.data.tags && post.data.tags.includes(tag)
-    );
+    const filteredPosts =
+      tag === "all"
+        ? allPosts
+        : allPosts.filter((post) => post.data.tags && post.data.tags.includes(tag));
+
     return {
       params: { tag },
       props: { posts: filteredPosts },

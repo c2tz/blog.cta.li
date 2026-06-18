@@ -1,7 +1,6 @@
 ---
 import fallbackOne from "@/content/blog/images/konachan-396319.jpg";
 import fallbackTwo from "@/content/blog/images/konachan-382339.jpg";
-import { SITE_TITLE } from "@/consts";
 import { KonachanRefreshButtonComponent } from "./KonachanRefreshButton.component";
 
 const emergencyImages = [fallbackOne.src, fallbackTwo.src];
@@ -19,27 +18,26 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
   </div>
 
   <div class="home-hero__content">
-    <p class="home-hero__eyebrow">{SITE_TITLE}</p>
     <h1 id="home-hero-title">Court Teplaye</h1>
     <p class="home-hero__lede">
       Micro-récits, grandes émotions. Des textes courts pour lire entre deux.
     </p>
     <nav class="home-hero__actions" aria-label="Navigation d'accueil">
       <a
-        href="#blog-posts"
-        class="home-hero__button mdc-button mat-mdc-button-base mat-mdc-unelevated-button"
+        href="/tags/all/"
+        class="home-hero__button mdc-button mat-mdc-button-base mat-mdc-tonal-button site-material-ripple"
       >
         <span class="mat-mdc-button-persistent-ripple mdc-button__ripple" aria-hidden="true"></span>
-        <span class="mdc-button__label">Lire les articles</span>
+        <span class="mdc-button__label">Voir plus</span>
         <span class="mat-focus-indicator" aria-hidden="true"></span>
         <span class="mat-mdc-button-touch-target" aria-hidden="true"></span>
       </a>
       <a
-        href="#tags"
-        class="home-hero__button mdc-button mat-mdc-button-base mat-mdc-outlined-button"
+        href="http://www.cta.li"
+        class="home-hero__button mdc-button mat-mdc-button-base mat-mdc-outlined-button site-material-ripple"
       >
         <span class="mat-mdc-button-persistent-ripple mdc-button__ripple" aria-hidden="true"></span>
-        <span class="mdc-button__label">Explorer les tags</span>
+        <span class="mdc-button__label">À propos</span>
         <span class="mat-focus-indicator" aria-hidden="true"></span>
         <span class="mat-mdc-button-touch-target" aria-hidden="true"></span>
       </a>

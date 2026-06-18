@@ -25,6 +25,10 @@ const gitDates = getContentEntryGitDates("blog", post, {
 const createdAt = gitDates.createdAt ?? remarkPluginFrontmatter?.createdAt ?? post.data.pubDate;
 const lastModified =
   gitDates.lastModified ?? remarkPluginFrontmatter?.lastModified ?? createdAt;
+const postTags = [
+  "all",
+  ...[...(post.data.tags ?? [])].filter((tag) => tag !== "all"),
+];
 ---
 
 <Layout
@@ -54,7 +58,7 @@ const lastModified =
     <PostGitDates createdAt={createdAt} lastModified={lastModified} />
     <ul class="post-tags">
       {
-        post.data.tags?.map((tag) => (
+        postTags.map((tag) => (
           <li>
             <a href={`/tags/${tag}/`}>
               #{tag}

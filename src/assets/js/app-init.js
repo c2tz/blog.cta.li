@@ -31,11 +31,29 @@ function createMaterialButtonChrome(rippleClass = "mdc-button__ripple") {
   return { focus, ripple, touchTarget };
 }
 
-function createMaterialButtonLabel(...children) {
-  const label = document.createElement("span");
-  label.className = "mdc-button__label";
-  label.append(...children);
-  return label;
+function initManualMaterialRipples() {
+  if (document.documentElement.dataset.manualMaterialRipples === "true") return;
+
+  document.documentElement.dataset.manualMaterialRipples = "true";
+  document.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
+
+    const button = event.target?.closest?.(".site-material-ripple");
+    if (!button || button.matches(":disabled, [aria-disabled='true']")) return;
+
+    const rect = button.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height) * 2.2;
+    const ripple = document.createElement("span");
+
+    ripple.className = "site-material-ripple__wave";
+    ripple.style.width = `${size}px`;
+    ripple.style.height = `${size}px`;
+    ripple.style.left = `${event.clientX - rect.left}px`;
+    ripple.style.top = `${event.clientY - rect.top}px`;
+
+    button.appendChild(ripple);
+    ripple.addEventListener("animationend", () => ripple.remove(), { once: true });
+  });
 }
 
 const FULLSCREEN_ICON_PATH =
@@ -197,36 +215,32 @@ function initCodeBlocks() {
 
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "code-copy-btn mdc-button mat-mdc-button-base mat-mdc-button";
+    button.className =
+      "code-copy-btn site-tooltip mdc-icon-button mat-mdc-icon-button mat-mdc-button-base site-material-ripple";
     button.tabIndex = 0;
     button.setAttribute("aria-label", "Copier le code");
+    button.setAttribute("data-tooltip", "Copier le code");
     button.setAttribute("aria-keyshortcuts", "Enter Space");
-
-    const label = document.createElement("span");
-    label.textContent = "Copier le code";
 
     const status = document.createElement("span");
     status.className = "sr-only code-copy-status";
     status.setAttribute("role", "status");
     status.setAttribute("aria-live", "polite");
 
-    const materialChrome = createMaterialButtonChrome();
+    const materialChrome = createMaterialButtonChrome("mdc-icon-button__ripple");
     button.append(
       materialChrome.ripple,
-      createMaterialButtonLabel(
-        createIcon(
-          "code-copy-icon",
-          "M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z",
-        ),
-        createIcon(
-          "code-check-icon",
-          "M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z",
-        ),
-        createIcon(
-          "code-error-icon",
-          "M480-280q17 0 28.5-11.5T520-320q0-17-11.5-28.5T480-360q-17 0-28.5 11.5T440-320q0 17 11.5 28.5T480-280Zm-40-160h80v-240h-80v240Zm40 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z",
-        ),
-        label,
+      createIcon(
+        "code-copy-icon",
+        "M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z",
+      ),
+      createIcon(
+        "code-check-icon",
+        "M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z",
+      ),
+      createIcon(
+        "code-error-icon",
+        "M480-280q17 0 28.5-11.5T520-320q0-17-11.5-28.5T480-360q-17 0-28.5 11.5T440-320q0 17 11.5 28.5T480-280Zm-40-160h80v-240h-80v240Zm40 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z",
       ),
       materialChrome.focus,
       materialChrome.touchTarget,
@@ -236,13 +250,13 @@ function initCodeBlocks() {
       const mark = (className, text) => {
         button.classList.remove("is-copied", "is-error");
         button.classList.add(className);
-        label.textContent = text;
         button.setAttribute("aria-label", text);
+        button.setAttribute("data-tooltip", text);
         status.textContent = text;
         setTimeout(() => {
           button.classList.remove(className);
-          label.textContent = "Copier le code";
           button.setAttribute("aria-label", "Copier le code");
+          button.setAttribute("data-tooltip", "Copier le code");
         }, 1000);
       };
 
@@ -314,6 +328,8 @@ function initSiteTooltips() {
 }
 
 function initBackToTopButton() {
+  if (document.body?.dataset.scrollTopUi === "off") return;
+
   const existingButton = document.querySelector(".site-scroll-top");
   if (existingButton) {
     syncBackToTopButton(existingButton);
@@ -323,30 +339,20 @@ function initBackToTopButton() {
   const button = document.createElement("button");
   button.type = "button";
   button.className =
-    "site-scroll-top site-action-button site-tooltip mdc-fab mat-mdc-fab-base mdc-fab--mini mat-mdc-mini-fab";
+    "site-scroll-top mdc-button mat-mdc-button-base mat-mdc-outlined-button site-material-ripple";
   button.setAttribute("aria-label", "Retour en haut");
-  button.setAttribute("data-tooltip", "Retour en haut");
   button.innerHTML = `
-    <span class="mat-mdc-button-persistent-ripple mdc-fab__ripple" aria-hidden="true"></span>
+    <span class="mat-mdc-button-persistent-ripple mdc-button__ripple" aria-hidden="true"></span>
     <span class="mdc-button__label">
       <svg matButtonIcon aria-hidden="true" viewBox="0 -960 960 960" focusable="false">
         <path d="${SCROLL_TOP_ICON_PATH}"></path>
       </svg>
+      <span>Haut</span>
+      <span class="site-scroll-top__count" data-scroll-progress-count aria-hidden="true">0%</span>
     </span>
     <span class="mat-focus-indicator" aria-hidden="true"></span>
     <span class="mat-mdc-button-touch-target" aria-hidden="true"></span>
-    <span class="site-scroll-top__count mat-badge-content" data-scroll-progress-count aria-hidden="true">0</span>
   `;
-
-  button.addEventListener("pointerdown", (event) => {
-    const rect = button.getBoundingClientRect();
-    button.style.setProperty("--ripple-x", `${event.clientX - rect.left}px`);
-    button.style.setProperty("--ripple-y", `${event.clientY - rect.top}px`);
-    button.classList.remove("is-rippling");
-    button.getBoundingClientRect();
-    button.classList.add("is-rippling");
-    window.setTimeout(() => button.classList.remove("is-rippling"), 480);
-  });
 
   button.addEventListener("click", () => {
     hideSiteTooltip();
@@ -366,11 +372,11 @@ function syncBackToTopButton(button, progress = getScrollProgress()) {
   button.classList.toggle("is-visible", isVisible);
   button.tabIndex = isVisible ? 0 : -1;
   button.setAttribute("aria-label", `Retour en haut, progression ${progress} %`);
-  if (count) count.textContent = String(progress);
+  if (count) count.textContent = `${progress}%`;
 }
 
 function initScrollProgressBar() {
-  if (document.body?.dataset.scrollUi === "off") return;
+  if (document.body?.dataset.scrollProgressUi === "off") return;
 
   const existingBar = document.querySelector(".site-scroll-progress");
   if (existingBar) {
@@ -400,7 +406,7 @@ function syncScrollProgressBar(bar, progress = getScrollProgress()) {
 }
 
 function removeScrollUi() {
-  document.querySelectorAll(".site-scroll-progress, .site-scroll-top").forEach((element) => {
+  document.querySelectorAll(".site-scroll-progress").forEach((element) => {
     element.remove();
   });
 }
@@ -1063,7 +1069,8 @@ lightbox.on("uiRegister", () => {
       appendTo: "bar",
       isButton: true,
       tagName: "button",
-      className: "pswp__button custom pswp__button--fullscreen",
+      className:
+        "pswp__button custom pswp__button--fullscreen mat-mdc-button-base mat-mdc-icon-button",
       ariaLabel: "Plein écran",
       html: `<svg aria-hidden="true" class="pswp__icn" width="32" height="32" viewBox="0 -960 960 960"><path fill="currentColor" d="${FULLSCREEN_ICON_PATH}"/></svg>`,
       onInit: (el) => {
@@ -1088,7 +1095,8 @@ lightbox.on("uiRegister", () => {
     appendTo: "bar",
     isButton: true,
     tagName: "a",
-    className: "pswp__button custom pswp__button--open-new",
+    className:
+      "pswp__button custom pswp__button--open-new mat-mdc-button-base mat-mdc-icon-button",
     ariaLabel: "Visualiser",
     html: `<svg aria-hidden="true" class="pswp__icn" width="32" height="32" viewBox="0 -960 960 960"><path fill="currentColor" d="${OPEN_IMAGE_ICON_PATH}"/></svg>`,
     onInit: (el, instance) => {
@@ -1116,7 +1124,8 @@ lightbox.on("uiRegister", () => {
     appendTo: "bar",
     isButton: true,
     tagName: "button",
-    className: "pswp__button pswp__button--download custom",
+    className:
+      "pswp__button pswp__button--download custom mat-mdc-button-base mat-mdc-icon-button",
     ariaLabel: "Télécharger",
     html: '<svg aria-hidden="true" class="pswp__icn" viewBox="0 -960 960 960" width="32" height="32"><path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z" fill="currentColor"/></svg>',
     onInit: (el) => enhancePhotoSwipeButton(el, "Télécharger"),
@@ -1138,7 +1147,8 @@ lightbox.on("uiRegister", () => {
     appendTo: "bar",
     isButton: true,
     tagName: "button",
-    className: "pswp__button custom pswp__button--close",
+    className:
+      "pswp__button custom pswp__button--close mat-mdc-button-base mat-mdc-icon-button",
     ariaLabel: "Fermer",
     html: '<svg aria-hidden="true" class="pswp__icn" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="32" height="32"><path fill="currentColor" d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>',
     onInit: (el) => enhancePhotoSwipeButton(el, "Fermer"),
@@ -1164,6 +1174,7 @@ function initLightbox() {
 
 function initApp() {
   initLocalDateTimes();
+  initManualMaterialRipples();
   initSiteTooltips();
   initMuiTooltips();
   initCodeBlocks();
@@ -1172,6 +1183,7 @@ function initApp() {
   initDynamicAnchors();
   if (document.body?.dataset.scrollUi === "off") {
     removeScrollUi();
+    initBackToTopButton();
   } else {
     initScrollProgressBar();
     initBackToTopButton();

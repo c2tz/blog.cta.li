@@ -24,7 +24,6 @@ function getTooltipTarget(start) {
 }
 
 function getPlacement(target) {
-  if (target.classList.contains("site-scroll-top")) return "left";
   if (target.classList.contains("pswp__button--arrow--next")) return "left";
   if (target.classList.contains("pswp__button--arrow--prev")) return "right";
   if (target.closest(".pswp__top-bar")) return "bottom";
@@ -33,6 +32,23 @@ function getPlacement(target) {
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
+}
+
+function getViewportBox() {
+  const viewport = window.visualViewport;
+  const left = viewport?.offsetLeft || 0;
+  const top = viewport?.offsetTop || 0;
+  const width = viewport?.width || window.innerWidth;
+  const height = viewport?.height || window.innerHeight;
+
+  return {
+    bottom: top + height,
+    height,
+    left,
+    right: left + width,
+    top,
+    width,
+  };
 }
 
 function ensureLayer() {
@@ -95,29 +111,36 @@ function placeTooltip() {
   layer.hidden = false;
 
   const placement = getPlacement(activeTarget);
+  const viewport = getViewportBox();
+  layer.style.maxWidth = `${Math.max(48, viewport.width - VIEWPORT_MARGIN * 2)}px`;
+
   const targetRect = activeTarget.getBoundingClientRect();
   const layerRect = layer.getBoundingClientRect();
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
-  const centerX = targetRect.left + targetRect.width / 2;
-  const centerY = targetRect.top + targetRect.height / 2;
-  const maxLeft = viewportWidth - layerRect.width - VIEWPORT_MARGIN;
-  const maxTop = viewportHeight - layerRect.height - VIEWPORT_MARGIN;
+  const targetLeft = targetRect.left + viewport.left;
+  const targetTop = targetRect.top + viewport.top;
+  const targetRight = targetRect.right + viewport.left;
+  const targetBottom = targetRect.bottom + viewport.top;
+  const centerX = targetLeft + targetRect.width / 2;
+  const centerY = targetTop + targetRect.height / 2;
+  const minLeft = viewport.left + VIEWPORT_MARGIN;
+  const minTop = viewport.top + VIEWPORT_MARGIN;
+  const maxLeft = viewport.right - layerRect.width - VIEWPORT_MARGIN;
+  const maxTop = viewport.bottom - layerRect.height - VIEWPORT_MARGIN;
   let left = centerX - layerRect.width / 2;
-  let top = targetRect.top - layerRect.height - TOOLTIP_GAP;
+  let top = targetTop - layerRect.height - TOOLTIP_GAP;
 
   if (placement === "bottom") {
-    top = targetRect.bottom + TOOLTIP_GAP;
+    top = targetBottom + TOOLTIP_GAP;
   } else if (placement === "left") {
-    left = targetRect.left - layerRect.width - TOOLTIP_GAP;
+    left = targetLeft - layerRect.width - TOOLTIP_GAP;
     top = centerY - layerRect.height / 2;
   } else if (placement === "right") {
-    left = targetRect.right + TOOLTIP_GAP;
+    left = targetRight + TOOLTIP_GAP;
     top = centerY - layerRect.height / 2;
   }
 
-  left = clamp(left, VIEWPORT_MARGIN, Math.max(VIEWPORT_MARGIN, maxLeft));
-  top = clamp(top, VIEWPORT_MARGIN, Math.max(VIEWPORT_MARGIN, maxTop));
+  left = clamp(left, minLeft, Math.max(minLeft, maxLeft));
+  top = clamp(top, minTop, Math.max(minTop, maxTop));
 
   layer.dataset.placement = placement;
   layer.style.transform = `translate3d(${Math.round(left)}px, ${Math.round(top)}px, 0)`;

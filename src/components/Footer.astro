@@ -3,9 +3,7 @@ import { SITE_TITLE } from "@/consts";
 ---
 
 <footer
-  class="footer mt-auto w-full max-w-[100vw] px-4 py-4 text-center
-         [&_.footer-link]:text-[#616161] dark:[&_.footer-link]:text-[#9b9b9b]
-         [&_.footer-link:hover]:underline"
+  class="footer"
 >
   <!-- Logo -->
   <a href="/" class="inline-block">
@@ -14,7 +12,6 @@ import { SITE_TITLE } from "@/consts";
       src="/mask.webp"
       height="60"
       width="60"
-      class="block mx-auto rounded-full w-[60px] h-auto"
       loading="eager"
       decoding="async"
       data-no-lightbox
@@ -22,7 +19,7 @@ import { SITE_TITLE } from "@/consts";
   </a>
 
   <!-- Liens sociaux -->
-  <ul id="social" class="mt-4 flex flex-wrap items-center justify-center gap-3">
+  <ul id="social">
     <li><a class="footer-link" href="https://bsky.app/profile/c2tz.bsky.social" target="_blank" rel="noopener noreferrer">Bluesky</a></li>
     <li><a class="footer-link" href="https://github.com/c2tz" target="_blank" rel="noopener noreferrer">GitHub</a></li>
     <li><a class="footer-link" href="https://www.komoot.com/fr-fr/user/1042380125464" target="_blank" rel="noopener noreferrer">Komoot</a></li>

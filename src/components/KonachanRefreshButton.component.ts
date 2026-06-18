@@ -21,9 +21,9 @@ const REFRESH_ICON_PATH =
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button
-      matMiniFab
+      matIconButton
       type="button"
-      class="home-anime-refresh site-action-button site-tooltip"
+      class="home-anime-refresh site-tooltip"
       [disabled]="busy()"
       [attr.aria-label]="busy() ? 'Image en cours de chargement' : 'Changer l\\'image'"
       [attr.data-tooltip]="busy() ? 'Image en cours de chargement' : 'Changer l\\'image'"

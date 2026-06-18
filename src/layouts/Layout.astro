@@ -62,6 +62,8 @@ const seoDescription = description ?? SITE_DESCRIPTION;
   <body
     class:list={[bodyClass, { "page-no-scroll-ui": !scrollUi }]}
     data-scroll-ui={scrollUi ? "on" : "off"}
+    data-scroll-progress-ui={scrollUi ? "on" : "off"}
+    data-scroll-top-ui="on"
   >
     <main class="site-main">
       <Header />

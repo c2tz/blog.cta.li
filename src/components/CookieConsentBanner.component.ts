@@ -4,6 +4,7 @@ import {
   signal,
 } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
+import { MatButtonModule } from "@angular/material/button";
 
 const STORAGE_KEY = "ct_cookie_consent_v1";
 const COOKIE_NAME = "ct_cookie_consent";
@@ -59,6 +60,7 @@ function exposeConsentApi() {
 @Component({
   selector: "cookie-consent-banner",
   standalone: true,
+  imports: [MatButtonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (visible()) {
@@ -89,30 +91,20 @@ function exposeConsentApi() {
 
         <div class="cookie-consent__actions">
           <button
+            matButton="outlined"
             type="button"
-            class="mdc-button mat-mdc-button-base mat-mdc-outlined-button"
+            class="cookie-consent__button"
             (click)="reject()"
           >
-            <span
-              class="mat-mdc-button-persistent-ripple mdc-button__ripple"
-              aria-hidden="true"
-            ></span>
-            <span class="mdc-button__label">Refuser</span>
-            <span class="mat-focus-indicator" aria-hidden="true"></span>
-            <span class="mat-mdc-button-touch-target" aria-hidden="true"></span>
+            Refuser
           </button>
           <button
+            matButton="filled"
             type="button"
-            class="mdc-button mat-mdc-button-base mat-mdc-outlined-button cookie-consent__accept"
+            class="cookie-consent__button cookie-consent__accept"
             (click)="accept()"
           >
-            <span
-              class="mat-mdc-button-persistent-ripple mdc-button__ripple"
-              aria-hidden="true"
-            ></span>
-            <span class="mdc-button__label">Accepter</span>
-            <span class="mat-focus-indicator" aria-hidden="true"></span>
-            <span class="mat-mdc-button-touch-target" aria-hidden="true"></span>
+            Accepter
           </button>
         </div>
       </section>

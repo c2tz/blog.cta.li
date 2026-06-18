@@ -39,7 +39,7 @@ const seoDescription = description ?? SITE_DESCRIPTION;
       {...seoRest}
       extend={{
         meta: [
-          { name: "viewport", content: "width=device-width,initial-scale=1" },
+          { name: "viewport", content: "width=device-width,initial-scale=1,viewport-fit=cover" },
           { name: "generator", content: Astro.generator },
           ...(Astro.props.extend?.meta ?? []),
         ],

@@ -1,39 +1,71 @@
 ---
 import fallbackOne from "@/content/blog/images/konachan-396319.jpg";
 import fallbackTwo from "@/content/blog/images/konachan-382339.jpg";
+import { SITE_TITLE } from "@/consts";
 import { KonachanRefreshButtonComponent } from "./KonachanRefreshButton.component";
 
 const emergencyImages = [fallbackOne.src, fallbackTwo.src];
 ---
 
-<div class="home-anime-bg" aria-hidden="true">
-  <img
-    class="home-anime-bg__image"
-    data-konachan-background
-    alt=""
-    decoding="async"
-    fetchpriority="high"
-  />
-</div>
+<section class="home-anime-landing" aria-labelledby="home-hero-title">
+  <div class="home-anime-bg" aria-hidden="true">
+    <img
+      class="home-anime-bg__image"
+      data-konachan-background
+      alt=""
+      decoding="async"
+      fetchpriority="high"
+    />
+  </div>
 
-<aside class="home-anime-credit" data-konachan-credit>
-  <a
-    class="home-anime-credit__link"
-    href="https://konachan.com"
-    target="_blank"
-    rel="noopener noreferrer"
-    data-konachan-credit-link
-    hidden
-  >
-    Voir la source
-  </a>
-  <KonachanRefreshButtonComponent client:load />
-</aside>
+  <div class="home-hero__content">
+    <p class="home-hero__eyebrow">{SITE_TITLE}</p>
+    <h1 id="home-hero-title">Court Teplaye</h1>
+    <p class="home-hero__lede">
+      Micro-récits, grandes émotions. Des textes courts pour lire entre deux.
+    </p>
+    <nav class="home-hero__actions" aria-label="Navigation d'accueil">
+      <a
+        href="#blog-posts"
+        class="home-hero__button mdc-button mat-mdc-button-base mat-mdc-unelevated-button"
+      >
+        <span class="mat-mdc-button-persistent-ripple mdc-button__ripple" aria-hidden="true"></span>
+        <span class="mdc-button__label">Lire les articles</span>
+        <span class="mat-focus-indicator" aria-hidden="true"></span>
+        <span class="mat-mdc-button-touch-target" aria-hidden="true"></span>
+      </a>
+      <a
+        href="#tags"
+        class="home-hero__button mdc-button mat-mdc-button-base mat-mdc-outlined-button"
+      >
+        <span class="mat-mdc-button-persistent-ripple mdc-button__ripple" aria-hidden="true"></span>
+        <span class="mdc-button__label">Explorer les tags</span>
+        <span class="mat-focus-indicator" aria-hidden="true"></span>
+        <span class="mat-mdc-button-touch-target" aria-hidden="true"></span>
+      </a>
+    </nav>
+  </div>
+
+  <aside class="home-anime-credit" data-konachan-credit>
+    <a
+      class="home-anime-credit__link"
+      href="https://konachan.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      data-konachan-credit-link
+      hidden
+    >
+      Voir la source
+    </a>
+    <KonachanRefreshButtonComponent client:load />
+  </aside>
+</section>
 
 <script define:vars={{ emergencyImages }}>
   const TARGET_SELECTOR = "[data-konachan-background]";
   const CREDIT_SELECTOR = "[data-konachan-credit]";
   const CREDIT_LINK_SELECTOR = "[data-konachan-credit-link]";
+  const LANDING_SELECTOR = ".home-anime-landing";
   const STATUS_SELECTOR = "[data-konachan-status]";
   const MANIFEST_URL = "/konachan-backgrounds.json";
   const KONACHAN_API_URL = "https://konachan.com/post.json";
@@ -266,6 +298,21 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
     return unique([image?.url, image?.originalUrl, image?.remoteUrl].map(normalizeUrl));
   }
 
+  function syncViewport(target) {
+    const landing = target.closest(LANDING_SELECTOR);
+    if (!landing) return;
+
+    const viewport = window.visualViewport;
+    const width = Math.round(viewport?.width || window.innerWidth || landing.clientWidth);
+    const height = Math.round(viewport?.height || window.innerHeight || landing.clientHeight);
+    const ratio = width / Math.max(height, 1);
+
+    landing.style.setProperty("--home-viewport-width", `${width}px`);
+    landing.style.setProperty("--home-viewport-height", `${height}px`);
+    landing.dataset.homeViewport =
+      ratio < 0.78 ? "portrait" : ratio > 1.55 ? "wide" : "landscape";
+  }
+
   async function warmBrowserCache(images) {
     if (!("caches" in window)) return;
 
@@ -341,11 +388,14 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
     if (!loadedUrl) throw new Error("konachan_image_unavailable");
 
     const layer = target.closest(".home-anime-bg");
-    target.style.setProperty("--home-konachan-image", toCssUrl(loadedUrl));
+    const cssUrl = toCssUrl(loadedUrl);
+    document.body?.style.setProperty("--home-konachan-image", cssUrl);
+    document.body?.setAttribute("data-konachan-background-loaded", "true");
+    target.style.setProperty("--home-konachan-image", cssUrl);
     target.setAttribute("src", loadedUrl);
     target.dataset.loaded = "true";
     if (layer) {
-      layer.style.setProperty("--home-konachan-image", toCssUrl(loadedUrl));
+      layer.style.setProperty("--home-konachan-image", cssUrl);
       layer.dataset.loaded = "true";
     }
     state.currentUrl = loadedUrl;
@@ -373,6 +423,15 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
     if (!target || !("style" in target) || target.dataset.ready === "true") return;
 
     target.dataset.ready = "true";
+    syncViewport(target);
+    const handleViewportChange = () => syncViewport(target);
+    window.addEventListener("resize", handleViewportChange, { passive: true });
+    window.visualViewport?.addEventListener("resize", handleViewportChange, {
+      passive: true,
+    });
+    window.visualViewport?.addEventListener("scroll", handleViewportChange, {
+      passive: true,
+    });
     const status = document.querySelector(STATUS_SELECTOR);
 
     const setRefreshState = ({ busy, message }) => {

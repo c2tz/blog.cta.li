@@ -1,15 +1,11 @@
 ---
-import { getCollection, getEntry, render } from "astro:content";
+import { getCollection } from "astro:content";
 
 import Layout from "../layouts/Layout.astro";
-import Prose from "../components/Prose.astro";
 import HomeKonachanBackground from "../components/HomeKonachanBackground.astro";
 import FormattedDate from "@/components/FormattedDate.astro";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/consts";
 import { getContentEntryGitDates } from "@/lib/gitDates.mjs";
-
-const entry = await getEntry("info", "intro");
-const { Content } = await render(entry!);
 
 const posts = (await getCollection("blog"))
   .map((post) => ({
@@ -49,14 +45,10 @@ const uniqueTags = [
   <Fragment slot="content">
     <HomeKonachanBackground />
 
-    <Prose>
-      <Content />
-    </Prose>
-
-    <section class="home-section">
+    <section class="home-section home-section--posts" aria-labelledby="blog-posts">
       <h2 id="blog-posts">
         <a href="#blog-posts" class="heading-link" style="color:inherit"
-          >Blog Posts</a
+          >Derniers articles</a
         >
       </h2>
 
@@ -75,7 +67,7 @@ const uniqueTags = [
       </ul>
     </section>
 
-    <section class="home-section">
+    <section class="home-section home-section--tags" aria-labelledby="tags">
       <h3 id="tags">
         <a href="#tags" class="heading-link" style="color:inherit">Tags</a>
       </h3>

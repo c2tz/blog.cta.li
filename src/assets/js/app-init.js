@@ -10,8 +10,32 @@ function createIcon(className, path) {
   icon.setAttribute("height", "16");
   icon.setAttribute("fill", "currentColor");
   icon.classList.add("code-icon", className);
+  icon.setAttribute("matButtonIcon", "");
   icon.innerHTML = `<path d="${path}"/>`;
   return icon;
+}
+
+function createMaterialButtonChrome(rippleClass = "mdc-button__ripple") {
+  const ripple = document.createElement("span");
+  ripple.className = `mat-mdc-button-persistent-ripple ${rippleClass}`;
+  ripple.setAttribute("aria-hidden", "true");
+
+  const focus = document.createElement("span");
+  focus.className = "mat-focus-indicator";
+  focus.setAttribute("aria-hidden", "true");
+
+  const touchTarget = document.createElement("span");
+  touchTarget.className = "mat-mdc-button-touch-target";
+  touchTarget.setAttribute("aria-hidden", "true");
+
+  return { focus, ripple, touchTarget };
+}
+
+function createMaterialButtonLabel(...children) {
+  const label = document.createElement("span");
+  label.className = "mdc-button__label";
+  label.append(...children);
+  return label;
 }
 
 const FULLSCREEN_ICON_PATH =
@@ -173,7 +197,7 @@ function initCodeBlocks() {
 
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "code-copy-btn";
+    button.className = "code-copy-btn mdc-button mat-mdc-button-base mat-mdc-button";
     button.tabIndex = 0;
     button.setAttribute("aria-label", "Copier le code");
     button.setAttribute("aria-keyshortcuts", "Enter Space");
@@ -186,20 +210,26 @@ function initCodeBlocks() {
     status.setAttribute("role", "status");
     status.setAttribute("aria-live", "polite");
 
+    const materialChrome = createMaterialButtonChrome();
     button.append(
-      createIcon(
-        "code-copy-icon",
-        "M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z",
+      materialChrome.ripple,
+      createMaterialButtonLabel(
+        createIcon(
+          "code-copy-icon",
+          "M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z",
+        ),
+        createIcon(
+          "code-check-icon",
+          "M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z",
+        ),
+        createIcon(
+          "code-error-icon",
+          "M480-280q17 0 28.5-11.5T520-320q0-17-11.5-28.5T480-360q-17 0-28.5 11.5T440-320q0 17 11.5 28.5T480-280Zm-40-160h80v-240h-80v240Zm40 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z",
+        ),
+        label,
       ),
-      createIcon(
-        "code-check-icon",
-        "M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z",
-      ),
-      createIcon(
-        "code-error-icon",
-        "M480-280q17 0 28.5-11.5T520-320q0-17-11.5-28.5T480-360q-17 0-28.5 11.5T440-320q0 17 11.5 28.5T480-280Zm-40-160h80v-240h-80v240Zm40 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z",
-      ),
-      label,
+      materialChrome.focus,
+      materialChrome.touchTarget,
     );
 
     button.addEventListener("click", async () => {
@@ -292,17 +322,19 @@ function initBackToTopButton() {
 
   const button = document.createElement("button");
   button.type = "button";
-  button.className = "site-scroll-top site-action-button site-tooltip";
+  button.className =
+    "site-scroll-top site-action-button site-tooltip mdc-fab mat-mdc-fab-base mdc-fab--mini mat-mdc-mini-fab";
   button.setAttribute("aria-label", "Retour en haut");
   button.setAttribute("data-tooltip", "Retour en haut");
   button.innerHTML = `
-    <span class="site-action-button__clip" aria-hidden="true">
-      <span class="site-action-button__state"></span>
-      <span class="site-action-button__ripple"></span>
+    <span class="mat-mdc-button-persistent-ripple mdc-fab__ripple" aria-hidden="true"></span>
+    <span class="mdc-button__label">
+      <svg matButtonIcon aria-hidden="true" viewBox="0 -960 960 960" focusable="false">
+        <path d="${SCROLL_TOP_ICON_PATH}"></path>
+      </svg>
     </span>
-    <svg aria-hidden="true" viewBox="0 -960 960 960" focusable="false">
-      <path d="${SCROLL_TOP_ICON_PATH}"></path>
-    </svg>
+    <span class="mat-focus-indicator" aria-hidden="true"></span>
+    <span class="mat-mdc-button-touch-target" aria-hidden="true"></span>
     <span class="site-scroll-top__count mat-badge-content" data-scroll-progress-count aria-hidden="true">0</span>
   `;
 
@@ -622,7 +654,7 @@ function enhancePhotoSwipeButton(button, label) {
   button.dataset.contrast = "true";
   button.dataset.contrastScope = contrastScope;
   button.setAttribute("type", "button");
-  button.classList.add("pswp__button--contrast");
+  button.classList.add("pswp__button--contrast", "mat-mdc-button-base", "mat-mdc-icon-button");
   button.style.setProperty("color", "#fff", "important");
   button.style.setProperty(
     "mix-blend-mode",
@@ -847,6 +879,75 @@ function initLightboxZoomLock(pswp) {
   });
 }
 
+function initLightboxDesktopImageClickClose(pswp) {
+  let cleanup = null;
+  let imagePointer = null;
+  const isMousePointer = (event) =>
+    event.pointerType === "mouse" || event.type === "mousedown" || event.type === "mouseup";
+  const isLightboxImage = (target) =>
+    target instanceof Element && target.classList.contains("pswp__img");
+
+  const onPointerDown = (event) => {
+    if (event.button !== 0 || !isMousePointer(event) || !isLightboxImage(event.target)) {
+      imagePointer = null;
+      return;
+    }
+
+    imagePointer = {
+      id: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+    };
+  };
+
+  const onPointerUp = (event) => {
+    if (!imagePointer || !isMousePointer(event) || !isLightboxImage(event.target)) {
+      imagePointer = null;
+      return;
+    }
+
+    const samePointer =
+      event.pointerId === imagePointer.id || event.type === "mouseup";
+    const moved =
+      Math.abs(event.clientX - imagePointer.x) > 8 ||
+      Math.abs(event.clientY - imagePointer.y) > 8;
+
+    imagePointer = null;
+
+    if (!samePointer || moved) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    pswp.close();
+  };
+
+  const bind = () => {
+    const root = pswp.element;
+    if (!root || cleanup) return;
+
+    root.addEventListener("mousedown", onPointerDown, true);
+    root.addEventListener("pointerdown", onPointerDown, true);
+    root.addEventListener("pointerup", onPointerUp, true);
+    root.addEventListener("mouseup", onPointerUp, true);
+
+    cleanup = () => {
+      root.removeEventListener("mousedown", onPointerDown, true);
+      root.removeEventListener("pointerdown", onPointerDown, true);
+      root.removeEventListener("pointerup", onPointerUp, true);
+      root.removeEventListener("mouseup", onPointerUp, true);
+      imagePointer = null;
+    };
+  };
+
+  bind();
+  pswp.on("afterInit", bind);
+  pswp.on("bindEvents", bind);
+  pswp.on("destroy", () => {
+    cleanup?.();
+    cleanup = null;
+  });
+}
+
 function removePhotoSwipeZoomUi(pswp) {
   const root = pswp.element;
   if (!root) return;
@@ -878,7 +979,7 @@ const lightbox = new PhotoSwipeLightbox({
   allowPanToNext: true,
   pinchToClose: false,
   closeOnVerticalDrag: true,
-  imageClickAction: false,
+  imageClickAction: "close",
   doubleTapAction: false,
   arrowPrevTitle: "Image précédente",
   arrowNextTitle: "Image suivante",
@@ -892,6 +993,7 @@ lightbox.on("uiRegister", () => {
 
   initLightboxRadiusTransition(pswp);
   initLightboxZoomLock(pswp);
+  initLightboxDesktopImageClickClose(pswp);
 
   ui.uiElementsData = ui.uiElementsData.filter((element) => {
     const name = String(element.name || element.className || "");

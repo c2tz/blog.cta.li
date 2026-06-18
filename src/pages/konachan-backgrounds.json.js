@@ -4,6 +4,7 @@ import {
   KONACHAN_OUTPUT_HEIGHT,
   KONACHAN_OUTPUT_WIDTH,
   KONACHAN_TAGS,
+  KONACHAN_TAG_QUERIES,
   getKonachanBackgroundPosts,
 } from "@/lib/konachanBackgrounds.mjs";
 
@@ -28,6 +29,7 @@ export const GET = async () => {
     JSON.stringify({
       source: "https://konachan.com/help/api",
       tags: KONACHAN_TAGS,
+      tagQueries: KONACHAN_TAG_QUERIES,
       minWidth: KONACHAN_OUTPUT_WIDTH,
       minHeight: KONACHAN_OUTPUT_HEIGHT,
       minAspectRatio: KONACHAN_MIN_ASPECT_RATIO,

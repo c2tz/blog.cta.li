@@ -1,11 +1,14 @@
 ---
 interface Props {
-  date: Date;
+  date: Date | string;
   label?: string;
   time?: string;
+  utcDetails?: boolean;
 }
 
-const { date, label, time } = Astro.props as Props;
+const { date: rawDate, label, time, utcDetails = false } = Astro.props as Props;
+const date = rawDate instanceof Date ? rawDate : new Date(rawDate);
+const pad = (value: number) => String(value).padStart(2, "0");
 
 // Formatage complet en français (jour + date longue)
 const dateFrComplete = date.toLocaleDateString("fr-FR", {
@@ -17,14 +20,29 @@ const dateFrComplete = date.toLocaleDateString("fr-FR", {
 
 const formattedDate = dateFrComplete.charAt(0).toUpperCase() + dateFrComplete.slice(1);
 const formattedDateTime = time ? `${formattedDate}, ${time}` : formattedDate;
-const pad = (value: number) => String(value).padStart(2, "0");
 const localDatePart = [
   date.getFullYear(),
   pad(date.getMonth() + 1),
   pad(date.getDate()),
 ].join("-");
 const dateTimeValue = time ? `${localDatePart}T${time}:00` : date.toISOString();
+const utcIsoBasic = [
+  date.getUTCFullYear(),
+  pad(date.getUTCMonth() + 1),
+  pad(date.getUTCDate()),
+].join("") + `T${[
+  pad(date.getUTCHours()),
+  pad(date.getUTCMinutes()),
+  pad(date.getUTCSeconds()),
+].join("")}Z`;
+const displayDateTime = utcDetails ? utcIsoBasic : formattedDateTime;
 const tooltipLabel = label ? `${label} ${formattedDateTime}` : undefined;
+const localTimeAttrs = utcDetails
+  ? {
+      "data-local-date-time": date.toISOString(),
+      "data-local-date-format": "compact-tz",
+    }
+  : {};
 ---
 {
   label ? (
@@ -41,12 +59,23 @@ const tooltipLabel = label ? `${label} ${formattedDateTime}` : undefined;
         </svg>
       </span>
       <time datetime={dateTimeValue}>
-        {formattedDateTime}
+        {displayDateTime}
       </time>
     </span>
+  ) : tooltipLabel ? (
+    <time
+      class="post-date site-tooltip"
+      datetime={dateTimeValue}
+      tabindex="0"
+      data-tooltip={tooltipLabel}
+      aria-label={tooltipLabel}
+      {...localTimeAttrs}
+    >
+      {displayDateTime}
+    </time>
   ) : (
-    <time class="post-date" datetime={dateTimeValue}>
-      {formattedDateTime}
+    <time class="post-date" datetime={dateTimeValue} {...localTimeAttrs}>
+      {displayDateTime}
     </time>
   )
 }

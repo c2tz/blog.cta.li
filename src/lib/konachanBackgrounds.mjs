@@ -1,8 +1,15 @@
 export const KONACHAN_API_URL = "https://konachan.com/post.json";
 export const KONACHAN_POST_URL = "https://konachan.com/post/show/";
 export const KONACHAN_TAGS = "rating:safe width:>=1920 height:>=1080";
-export const KONACHAN_FETCH_LIMIT = 100;
-export const KONACHAN_MANIFEST_LIMIT = 16;
+export const KONACHAN_TAG_QUERIES = [
+  KONACHAN_TAGS,
+  "rating:safe width:>=1600 height:>=900 landscape",
+  "rating:safe width:>=1920 height:>=1080 scenic",
+  "rating:safe width:>=1920 height:>=1080 original",
+];
+export const KONACHAN_FETCH_LIMIT = 80;
+export const KONACHAN_FETCH_PAGES = [1, 2, 3];
+export const KONACHAN_MANIFEST_LIMIT = 32;
 export const KONACHAN_OUTPUT_WIDTH = 1920;
 export const KONACHAN_OUTPUT_HEIGHT = 1080;
 export const KONACHAN_MAX_BYTES = 1024 * 1024;
@@ -43,28 +50,52 @@ function mapPost(post) {
   };
 }
 
+function shuffle(items) {
+  const copy = [...items];
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const target = Math.floor(Math.random() * (index + 1));
+    [copy[index], copy[target]] = [copy[target], copy[index]];
+  }
+  return copy;
+}
+
+async function fetchKonachanPosts(tags, page) {
+  const params = new URLSearchParams({
+    limit: String(KONACHAN_FETCH_LIMIT),
+    page: String(page),
+    tags,
+  });
+
+  const response = await fetch(`${KONACHAN_API_URL}?${params}`, {
+    headers: { accept: "application/json" },
+  });
+
+  if (!response.ok) return [];
+
+  const posts = await response.json();
+  return Array.isArray(posts) ? posts : [];
+}
+
 export async function getKonachanBackgroundPosts() {
   if (cachedPosts) return cachedPosts;
 
-  const params = new URLSearchParams({
-    limit: String(KONACHAN_FETCH_LIMIT),
-    tags: KONACHAN_TAGS,
-  });
-
   try {
-    const response = await fetch(`${KONACHAN_API_URL}?${params}`, {
-      headers: { accept: "application/json" },
-    });
+    const responses = await Promise.allSettled(
+      KONACHAN_TAG_QUERIES.flatMap((tags) =>
+        KONACHAN_FETCH_PAGES.map((page) => fetchKonachanPosts(tags, page)),
+      ),
+    );
+    const uniquePosts = new Map();
 
-    if (!response.ok) return [];
-
-    const posts = await response.json();
-    if (!Array.isArray(posts)) return [];
-
-    cachedPosts = posts
+    responses
+      .flatMap((result) => (result.status === "fulfilled" ? result.value : []))
       .map(mapPost)
       .filter(Boolean)
-      .slice(0, KONACHAN_MANIFEST_LIMIT);
+      .forEach((post) => {
+        if (!uniquePosts.has(post.id)) uniquePosts.set(post.id, post);
+      });
+
+    cachedPosts = shuffle([...uniquePosts.values()]).slice(0, KONACHAN_MANIFEST_LIMIT);
     return cachedPosts;
   } catch {
     cachedPosts = [];

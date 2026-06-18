@@ -43,12 +43,18 @@ export async function getStaticPaths() {
 }
 
 export const GET = async ({ props }) => {
-  const response = await fetch(props.post.remoteUrl, {
-    headers: { accept: "image/*" },
-  });
+  let response;
+
+  try {
+    response = await fetch(props.post.remoteUrl, {
+      headers: { accept: "image/*" },
+    });
+  } catch {
+    return new Response(null, { status: 404 });
+  }
 
   if (!response.ok) {
-    return new Response(null, { status: 502 });
+    return new Response(null, { status: 404 });
   }
 
   const input = Buffer.from(await response.arrayBuffer());

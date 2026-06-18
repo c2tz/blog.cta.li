@@ -6,13 +6,24 @@ import Prose from "../components/Prose.astro";
 import HomeKonachanBackground from "../components/HomeKonachanBackground.astro";
 import FormattedDate from "@/components/FormattedDate.astro";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/consts";
+import { getContentEntryGitDates } from "@/lib/gitDates.mjs";
 
 const entry = await getEntry("info", "intro");
 const { Content } = await render(entry!);
 
-const posts = (await getCollection("blog")).sort(
-  (b, a) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf(),
-);
+const posts = (await getCollection("blog"))
+  .map((post) => ({
+    ...post,
+    gitDates: getContentEntryGitDates("blog", post, {
+      createdAt: post.data.createdAt ?? post.data.pubDate,
+      lastModified: post.data.lastModified ?? post.data.pubDate,
+    }),
+  }))
+  .sort((b, a) => {
+    const aCreated = new Date(a.gitDates.createdAt ?? a.data.pubDate).valueOf();
+    const bCreated = new Date(b.gitDates.createdAt ?? b.data.pubDate).valueOf();
+    return aCreated - bCreated;
+  });
 
 const uniqueTags = [
   ...new Set(
@@ -53,7 +64,7 @@ const uniqueTags = [
         {
           posts.map((post) => (
             <li class="home-post">
-              <FormattedDate date={post.data.pubDate} time={post.data.pubTime} />
+              <FormattedDate date={post.gitDates.createdAt ?? post.data.pubDate} utcDetails />
               <span class="home-separator" aria-hidden="true">—</span>
               <a href={`/posts/${post.id}/`}>
                 {post.data.title}

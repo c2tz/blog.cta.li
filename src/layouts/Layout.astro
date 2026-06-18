@@ -5,7 +5,7 @@ import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
 import { CookieConsentBannerComponent } from "@/components/CookieConsentBanner.component";
 import SEO, { type Props as SEOProps } from "@/components/SEO.astro";
-import '../styles/global.css';
+import "@/assets/css/global.css";
 
 interface Props extends SEOProps {
   locale?: string;
@@ -72,7 +72,7 @@ const seoDescription = description ?? SITE_DESCRIPTION;
 
     <!-- Module applicatif packagé par Vite -->
     <script>
-      import "../scripts/app-init.js";
+      import "@/assets/js/app-init.js";
     </script>
   </body>
 </html>

@@ -18,6 +18,8 @@ const FULLSCREEN_ICON_PATH =
   "M120-120v-200h80v120h120v80H120Zm520 0v-80h120v-120h80v200H640ZM120-640v-200h200v80H200v120h-80Zm640 0v-120H640v-80h200v200h-80Z";
 const CLOSE_FULLSCREEN_ICON_PATH =
   "m136-80-56-56 264-264H160v-80h320v320h-80v-184L136-80Zm344-400v-320h80v184l264-264 56 56-264 264h184v80H480Z";
+const OPEN_IMAGE_ICON_PATH =
+  "M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Zm0-300Zm0 220q113 0 207.5-59.5T832-500q-50-101-144.5-160.5T480-720q-113 0-207.5 59.5T128-500q50 101 144.5 160.5T480-280Z";
 const SCROLL_TOP_ICON_PATH =
   "M440-727 256-544l-56-56 280-280 280 280-56 57-184-184v287h-80v-287Zm0 487v-120h80v120h-80Zm0 160v-80h80v80h-80Z";
 const DYNAMIC_ANCHOR_OFFSET = 96;
@@ -30,6 +32,38 @@ let dynamicAnchorHashPausedUntil = 0;
 
 function hideSiteTooltip() {
   document.dispatchEvent(new CustomEvent("site:tooltip-hide"));
+}
+
+function padDatePart(value, length = 2) {
+  return String(value).padStart(length, "0");
+}
+
+function formatCompactLocalDateTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.valueOf())) return "";
+
+  const offsetMinutes = -date.getTimezoneOffset();
+  const sign = offsetMinutes >= 0 ? "+" : "-";
+  const absOffset = Math.abs(offsetMinutes);
+  const timezone = `${sign}${padDatePart(Math.floor(absOffset / 60))}${padDatePart(
+    absOffset % 60,
+  )}`;
+
+  return `${padDatePart(date.getFullYear(), 4)}${padDatePart(
+    date.getMonth() + 1,
+  )}${padDatePart(date.getDate())}T${padDatePart(date.getHours())}${padDatePart(
+    date.getMinutes(),
+  )}${padDatePart(date.getSeconds())}${timezone}`;
+}
+
+function initLocalDateTimes() {
+  document.querySelectorAll("time[data-local-date-time]").forEach((time) => {
+    const formatted = formatCompactLocalDateTime(time.dataset.localDateTime);
+    if (!formatted) return;
+
+    time.textContent = formatted;
+    time.setAttribute("aria-label", formatted);
+  });
 }
 
 function getScrollProgress() {
@@ -258,13 +292,13 @@ function initBackToTopButton() {
 
   const button = document.createElement("button");
   button.type = "button";
-  button.className = "site-scroll-top site-tooltip";
+  button.className = "site-scroll-top site-action-button site-tooltip";
   button.setAttribute("aria-label", "Retour en haut");
   button.setAttribute("data-tooltip", "Retour en haut");
   button.innerHTML = `
-    <span class="site-scroll-top__clip" aria-hidden="true">
-      <span class="site-scroll-top__state"></span>
-      <span class="site-scroll-top__ripple"></span>
+    <span class="site-action-button__clip" aria-hidden="true">
+      <span class="site-action-button__state"></span>
+      <span class="site-action-button__ripple"></span>
     </span>
     <svg aria-hidden="true" viewBox="0 -960 960 960" focusable="false">
       <path d="${SCROLL_TOP_ICON_PATH}"></path>
@@ -790,42 +824,65 @@ function syncFullscreenButton(button) {
   enhancePhotoSwipeButton(button, label);
 }
 
-function attachWheelZoom(pswp) {
-  const onWheel = (event) => {
-    if (!event.ctrlKey && !event.metaKey) return;
+function initLightboxZoomLock(pswp) {
+  const root = pswp.element;
+  if (!root) return;
+
+  const preventGesture = (event) => {
     event.preventDefault();
-
-    const slide = pswp.currSlide;
-    if (!slide) return;
-
-    const current = slide.currZoomLevel || slide.zoomLevels.initial;
-    const next = Math.min(
-      slide.zoomLevels.max,
-      Math.max(slide.zoomLevels.min, current * Math.exp(-(event.deltaY || 0) * 0.005)),
-    );
-
-    pswp.zoomTo(next, { x: event.clientX, y: event.clientY }, 220);
+  };
+  const preventZoomWheel = (event) => {
+    if (event.ctrlKey || event.metaKey) event.preventDefault();
   };
 
-  pswp.on("bindEvents", () => {
-    pswp.element?.addEventListener("wheel", onWheel, { passive: false });
-  });
+  root.addEventListener("wheel", preventZoomWheel, { passive: false });
+  root.addEventListener("gesturestart", preventGesture, { passive: false });
+  root.addEventListener("gesturechange", preventGesture, { passive: false });
+  root.addEventListener("gestureend", preventGesture, { passive: false });
   pswp.on("destroy", () => {
-    pswp.element?.removeEventListener("wheel", onWheel);
+    root.removeEventListener("wheel", preventZoomWheel);
+    root.removeEventListener("gesturestart", preventGesture);
+    root.removeEventListener("gesturechange", preventGesture);
+    root.removeEventListener("gestureend", preventGesture);
   });
+}
+
+function removePhotoSwipeZoomUi(pswp) {
+  const root = pswp.element;
+  if (!root) return;
+
+  root.classList.remove("pswp--zoom-allowed", "pswp--click-to-zoom", "pswp--zoomed-in");
+  root
+    .querySelectorAll(
+      [
+        ".pswp__button--zoom",
+        ".pswp__button--zoom-in",
+        ".pswp__button--zoom-out",
+        "[aria-label='Zoom']",
+        "[title='Zoom']",
+      ].join(","),
+    )
+    .forEach((element) => element.remove());
 }
 
 const lightbox = new PhotoSwipeLightbox({
   gallery: ".site-prose",
   children: "a[data-pswp-item]",
   pswpModule: PhotoSwipe,
+  mainClass: "pswp--system-zoom",
   initialZoomLevel: "fit",
-  secondaryZoomLevel: (zoomLevel) => zoomLevel.fit * 2.5,
-  maxZoomLevel: 5,
+  secondaryZoomLevel: "fit",
+  maxZoomLevel: "fit",
+  wheelToZoom: false,
+  zoom: false,
+  allowPanToNext: true,
+  pinchToClose: false,
+  closeOnVerticalDrag: true,
+  imageClickAction: false,
+  doubleTapAction: false,
   arrowPrevTitle: "Image précédente",
   arrowNextTitle: "Image suivante",
   closeTitle: "Fermer",
-  zoomTitle: "Zoomer",
 });
 
 lightbox.on("uiRegister", () => {
@@ -833,8 +890,13 @@ lightbox.on("uiRegister", () => {
   const ui = pswp?.ui;
   if (!pswp || !ui) return;
 
-  attachWheelZoom(pswp);
   initLightboxRadiusTransition(pswp);
+  initLightboxZoomLock(pswp);
+
+  ui.uiElementsData = ui.uiElementsData.filter((element) => {
+    const name = String(element.name || element.className || "");
+    return !name.toLowerCase().includes("zoom");
+  });
 
   const fullscreenButtons = new Set();
   const syncFullscreenButtons = () => {
@@ -859,8 +921,8 @@ lightbox.on("uiRegister", () => {
       ".pswp__button--arrow--prev": "Image précédente",
       ".pswp__button--arrow--next": "Image suivante",
       ".pswp__button--close": "Fermer",
-      ".pswp__button--zoom": "Zoomer",
       ".pswp__button--fullscreen": "Plein écran",
+      ".pswp__button--open-new": "Visualiser",
       ".pswp__button--download": "Télécharger",
     };
 
@@ -876,11 +938,21 @@ lightbox.on("uiRegister", () => {
     }
   };
 
-  const enhanceButtons = () => requestAnimationFrame(localizeButtons);
+  const enhanceButtons = () => {
+    requestAnimationFrame(() => {
+      removePhotoSwipeZoomUi(pswp);
+      localizeButtons();
+    });
+  };
 
+  pswp.on("uiElementCreate", ({ data }) => {
+    const name = String(data.name || data.className || "");
+    if (name.toLowerCase().includes("zoom")) data.html = "";
+  });
   pswp.on("afterInit", enhanceButtons);
   pswp.on("bindEvents", enhanceButtons);
   pswp.on("change", enhanceButtons);
+  pswp.on("zoomPanUpdate", () => removePhotoSwipeZoomUi(pswp));
 
   if (!window.matchMedia("(pointer: coarse)").matches && window.innerWidth >= 768) {
     ui.registerElement({
@@ -907,6 +979,34 @@ lightbox.on("uiRegister", () => {
       },
     });
   }
+
+  ui.registerElement({
+    name: "open-new-tab",
+    order: 111,
+    appendTo: "bar",
+    isButton: true,
+    tagName: "a",
+    className: "pswp__button custom pswp__button--open-new",
+    ariaLabel: "Visualiser",
+    html: `<svg aria-hidden="true" class="pswp__icn" width="32" height="32" viewBox="0 -960 960 960"><path fill="currentColor" d="${OPEN_IMAGE_ICON_PATH}"/></svg>`,
+    onInit: (el, instance) => {
+      const link = el;
+      const syncHref = () => {
+        const src = instance.currSlide?.data?.src;
+        if (src) {
+          link.setAttribute("href", src);
+          link.setAttribute("target", "_blank");
+          link.setAttribute("rel", "noopener");
+        } else {
+          link.removeAttribute("href");
+        }
+      };
+
+      enhancePhotoSwipeButton(link, "Visualiser");
+      syncHref();
+      instance.on("change", syncHref);
+    },
+  });
 
   ui.registerElement({
     name: "download",
@@ -961,6 +1061,7 @@ function initLightbox() {
 }
 
 function initApp() {
+  initLocalDateTimes();
   initSiteTooltips();
   initMuiTooltips();
   initCodeBlocks();

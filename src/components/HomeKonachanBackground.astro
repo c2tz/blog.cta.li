@@ -3,6 +3,23 @@ import fallbackOne from "@/content/blog/images/konachan-396319.jpg";
 import fallbackTwo from "@/content/blog/images/konachan-382339.jpg";
 import { KonachanRefreshButtonComponent } from "./KonachanRefreshButton.component";
 
+interface Props {
+  title?: string;
+  lede?: string;
+  primaryActionHref?: string;
+  primaryActionLabel?: string;
+  secondaryActionHref?: string;
+  secondaryActionLabel?: string;
+}
+
+const {
+  title = "Court Teplaye",
+  lede = "Micro-récits, grandes émotions. Des textes courts pour lire entre deux.",
+  primaryActionHref = "/tags/all/",
+  primaryActionLabel = "Voir plus",
+  secondaryActionHref = "http://www.cta.li",
+  secondaryActionLabel = "À propos",
+} = Astro.props;
 const emergencyImages = [fallbackOne.src, fallbackTwo.src];
 ---
 
@@ -18,26 +35,26 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
   </div>
 
   <div class="home-hero__content">
-    <h1 id="home-hero-title">Court Teplaye</h1>
+    <h1 id="home-hero-title">{title}</h1>
     <p class="home-hero__lede">
-      Micro-récits, grandes émotions. Des textes courts pour lire entre deux.
+      {lede}
     </p>
     <nav class="home-hero__actions" aria-label="Navigation d'accueil">
       <a
-        href="/tags/all/"
+        href={primaryActionHref}
         class="home-hero__button mdc-button mat-mdc-button-base mat-mdc-tonal-button site-material-ripple"
       >
         <span class="mat-mdc-button-persistent-ripple mdc-button__ripple" aria-hidden="true"></span>
-        <span class="mdc-button__label">Voir plus</span>
+        <span class="mdc-button__label">{primaryActionLabel}</span>
         <span class="mat-focus-indicator" aria-hidden="true"></span>
         <span class="mat-mdc-button-touch-target" aria-hidden="true"></span>
       </a>
       <a
-        href="http://www.cta.li"
+        href={secondaryActionHref}
         class="home-hero__button mdc-button mat-mdc-button-base mat-mdc-outlined-button site-material-ripple"
       >
         <span class="mat-mdc-button-persistent-ripple mdc-button__ripple" aria-hidden="true"></span>
-        <span class="mdc-button__label">À propos</span>
+        <span class="mdc-button__label">{secondaryActionLabel}</span>
         <span class="mat-focus-indicator" aria-hidden="true"></span>
         <span class="mat-mdc-button-touch-target" aria-hidden="true"></span>
       </a>

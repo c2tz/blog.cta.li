@@ -931,9 +931,11 @@ main :is(h1, h2, h3, h4, h5, h6)[tabindex="0"]:focus-visible {
   --glitch-c2: #40c4ff;
   --glitch-c3: #c6ff00;
   position: relative;
+  overflow: visible;
   isolation: isolate;
   color: inherit;
   text-shadow: 0 0 0 transparent;
+  transform-origin: 50% 55%;
   animation:
     glitch-jitter 4.2s infinite steps(1, end),
     glitch-shadow-pulse 2.8s infinite steps(1, end);
@@ -1752,14 +1754,38 @@ body.page-no-scroll-ui .site-scroll-progress {
 @keyframes glitch-jitter {
   0%,
   7%,
+  14%,
+  18%,
+  31%,
+  37%,
   49%,
   56%,
   68%,
   76%,
+  83%,
+  87%,
   92%,
   100% {
     filter: none;
     transform: translate3d(0, 0, 0);
+  }
+
+  8% {
+    filter: contrast(1.22) saturate(1.2);
+    transform: translate3d(-1px, 0, 0) skewX(3deg);
+  }
+
+  9% {
+    transform: translate3d(2px, 1px, 0) skewX(-5deg) scaleY(0.98);
+  }
+
+  32% {
+    filter: hue-rotate(-10deg) contrast(1.12);
+    transform: translate3d(1px, 0, 0) scaleX(1.025);
+  }
+
+  33% {
+    transform: translate3d(-2px, -1px, 0) skewX(6deg);
   }
 
   50% {
@@ -1785,6 +1811,15 @@ body.page-no-scroll-ui .site-scroll-progress {
     transform: translate3d(2px, -1px, 0) skewX(5deg);
   }
 
+  84% {
+    filter: contrast(1.35) saturate(1.45);
+    transform: translate3d(-2px, 0, 0) scaleX(1.06) skewX(-2deg);
+  }
+
+  85% {
+    transform: translate3d(3px, 1px, 0) scaleY(0.96);
+  }
+
   93% {
     transform: translate3d(1px, 0, 0);
   }
@@ -1792,11 +1827,22 @@ body.page-no-scroll-ui .site-scroll-progress {
 
 @keyframes glitch-shadow-pulse {
   0%,
+  12%,
+  17%,
   46%,
   54%,
+  70%,
+  75%,
   88%,
   100% {
     text-shadow: 0 0 0 transparent;
+  }
+
+  13% {
+    text-shadow:
+      1px 0 var(--glitch-c2),
+      -3px 0 var(--glitch-c1),
+      0 0 0.22rem rgb(198 255 0 / 0.25);
   }
 
   47% {
@@ -1810,6 +1856,13 @@ body.page-no-scroll-ui .site-scroll-progress {
       -1px 0 var(--glitch-c3),
       1px 0 var(--glitch-c2),
       0 0 0.35rem rgb(64 196 255 / 0.35);
+  }
+
+  71% {
+    text-shadow:
+      3px 0 var(--glitch-c3),
+      -1px 0 var(--glitch-c1),
+      0 0 0.28rem rgb(255 61 113 / 0.32);
   }
 
   89% {
@@ -1828,8 +1881,16 @@ body.page-no-scroll-ui .site-scroll-progress {
     clip-path: inset(0 0 88% 0);
   }
 
+  18% {
+    clip-path: inset(46% 0 41% 0);
+  }
+
   24% {
     clip-path: inset(34% 0 45% 0);
+  }
+
+  31% {
+    clip-path: inset(5% 0 73% 0);
   }
 
   38% {
@@ -1842,6 +1903,10 @@ body.page-no-scroll-ui .site-scroll-progress {
 
   63% {
     clip-path: inset(55% 0 26% 0);
+  }
+
+  69% {
+    clip-path: inset(11% 0 59% 0);
   }
 
   76% {
@@ -1870,6 +1935,10 @@ body.page-no-scroll-ui .site-scroll-progress {
     clip-path: inset(8% 0 80% 0);
   }
 
+  29% {
+    clip-path: inset(64% 0 19% 0);
+  }
+
   37% {
     clip-path: inset(42% 0 36% 0);
   }
@@ -1880,6 +1949,10 @@ body.page-no-scroll-ui .site-scroll-progress {
 
   61% {
     clip-path: inset(44% 0 38% 0);
+  }
+
+  68% {
+    clip-path: inset(18% 0 58% 0);
   }
 
   73% {
@@ -1897,12 +1970,20 @@ body.page-no-scroll-ui .site-scroll-progress {
 
 @keyframes glitch-layer-blue {
   0%,
+  16%,
+  20%,
   48%,
   54%,
   72%,
+  86%,
   100% {
     opacity: 0.9;
     transform: translate3d(-1px, 0, 0);
+  }
+
+  17% {
+    opacity: 0.65;
+    transform: translate3d(-5px, 0, 0) scaleX(1.08);
   }
 
   49% {
@@ -1918,16 +1999,29 @@ body.page-no-scroll-ui .site-scroll-progress {
     opacity: 0.75;
     transform: translate3d(-2px, 1px, 0);
   }
+
+  87% {
+    opacity: 1;
+    transform: translate3d(4px, -1px, 0) skewX(6deg);
+  }
 }
 
 @keyframes glitch-layer-red {
   0%,
+  25%,
+  30%,
   45%,
   53%,
   80%,
+  90%,
   100% {
     opacity: 0.9;
     transform: translate3d(1px, 0, 0);
+  }
+
+  26% {
+    opacity: 0.68;
+    transform: translate3d(5px, -1px, 0) scaleX(1.06);
   }
 
   46% {
@@ -1942,6 +2036,11 @@ body.page-no-scroll-ui .site-scroll-progress {
   81% {
     opacity: 0.78;
     transform: translate3d(2px, -1px, 0);
+  }
+
+  91% {
+    opacity: 1;
+    transform: translate3d(-4px, 1px, 0) skewX(-7deg);
   }
 }
 
@@ -2143,5 +2242,9 @@ body.page-no-scroll-ui .site-scroll-progress {
   .header-link--glitch::before,
   .header-link--glitch::after {
     animation: none;
+  }
+
+  .header-link--glitch {
+    text-shadow: none;
   }
 }

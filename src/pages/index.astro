@@ -1,5 +1,5 @@
 ---
-import { getCollection } from "astro:content";
+import { getCollection, getEntry } from "astro:content";
 
 import Layout from "../layouts/Layout.astro";
 import HomeKonachanBackground from "../components/HomeKonachanBackground.astro";
@@ -33,6 +33,30 @@ const uniqueTags = [
   "all",
   ...contentTags,
 ];
+const intro = await getEntry("info", "intro");
+const introData = intro?.data ?? {};
+const homeCopy = {
+  heroTitle: typeof introData.heroTitle === "string" ? introData.heroTitle : "Court Teplaye",
+  heroLede:
+    typeof introData.heroLede === "string"
+      ? introData.heroLede
+      : "Micro-récits, grandes émotions. Des textes courts pour lire entre deux.",
+  primaryActionHref:
+    typeof introData.primaryActionHref === "string" ? introData.primaryActionHref : "/tags/all/",
+  primaryActionLabel:
+    typeof introData.primaryActionLabel === "string" ? introData.primaryActionLabel : "Voir plus",
+  secondaryActionHref:
+    typeof introData.secondaryActionHref === "string"
+      ? introData.secondaryActionHref
+      : "http://www.cta.li",
+  secondaryActionLabel:
+    typeof introData.secondaryActionLabel === "string"
+      ? introData.secondaryActionLabel
+      : "À propos",
+  latestPostsTitle:
+    typeof introData.latestPostsTitle === "string" ? introData.latestPostsTitle : "Derniers articles",
+  tagsTitle: typeof introData.tagsTitle === "string" ? introData.tagsTitle : "Tags",
+};
 ---
 
 <Layout
@@ -50,12 +74,19 @@ const uniqueTags = [
   }}
 >
   <Fragment slot="content">
-    <HomeKonachanBackground />
+    <HomeKonachanBackground
+      title={homeCopy.heroTitle}
+      lede={homeCopy.heroLede}
+      primaryActionHref={homeCopy.primaryActionHref}
+      primaryActionLabel={homeCopy.primaryActionLabel}
+      secondaryActionHref={homeCopy.secondaryActionHref}
+      secondaryActionLabel={homeCopy.secondaryActionLabel}
+    />
 
     <section class="home-section home-section--posts" aria-labelledby="blog-posts">
       <h2 id="blog-posts">
         <a href="#blog-posts" class="heading-link" style="color:inherit"
-          >Derniers articles</a
+          >{homeCopy.latestPostsTitle}</a
         >
       </h2>
 
@@ -76,7 +107,7 @@ const uniqueTags = [
 
     <section class="home-section home-section--tags" aria-labelledby="tags">
       <h3 id="tags">
-        <a href="#tags" class="heading-link" style="color:inherit">Tags</a>
+        <a href="#tags" class="heading-link" style="color:inherit">{homeCopy.tagsTitle}</a>
       </h3>
 
       <ul class="home-tags">

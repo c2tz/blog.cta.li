@@ -23,14 +23,20 @@ const REFRESH_ICON_PATH =
     <button
       matIconButton
       type="button"
-      class="home-anime-refresh site-icon-button site-tooltip"
+      class="home-anime-refresh site-icon-button site-tooltip site-material-ripple"
       [disabled]="busy()"
       [attr.aria-label]="busy() ? 'Image en cours de chargement' : 'Changer l\\'image'"
       [attr.data-tooltip]="busy() ? 'Image en cours de chargement' : 'Changer l\\'image'"
       data-tooltip-placement="bottom"
       (click)="refresh()"
     >
-      <svg matButtonIcon aria-hidden="true" viewBox="0 -960 960 960" focusable="false">
+      <svg
+        matButtonIcon
+        class="site-button-icon"
+        aria-hidden="true"
+        viewBox="0 -960 960 960"
+        focusable="false"
+      >
         <path d="${REFRESH_ICON_PATH}"></path>
       </svg>
     </button>

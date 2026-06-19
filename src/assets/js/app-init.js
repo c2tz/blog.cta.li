@@ -6,19 +6,27 @@ import { initMuiTooltips } from "./mui-tooltips.js";
 const CODE_COPY_ICON_PATH =
   "M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z";
 const CODE_CHECK_ICON_PATH = "M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z";
-const CODE_ERROR_ICON_PATH =
-  "M480-280q17 0 28.5-11.5T520-320q0-17-11.5-28.5T480-360q-17 0-28.5 11.5T440-320q0 17 11.5 28.5T480-280Zm-40-160h80v-240h-80v240Zm40 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z";
 
-function createIcon(className, path) {
+function createMaterialIcon(path, className = "") {
   const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   icon.setAttribute("viewBox", "0 -960 960 960");
   icon.setAttribute("width", "20");
   icon.setAttribute("height", "20");
   icon.setAttribute("fill", "currentColor");
-  icon.classList.add("code-icon", className);
+  icon.classList.add("site-button-icon");
+  className
+    .split(/\s+/)
+    .filter(Boolean)
+    .forEach((token) => icon.classList.add(token));
   icon.setAttribute("matButtonIcon", "");
+  icon.setAttribute("aria-hidden", "true");
+  icon.setAttribute("focusable", "false");
   icon.innerHTML = `<path d="${path}"/>`;
   return icon;
+}
+
+function materialIconHtml(path, className = "pswp__icn site-button-icon", size = 20) {
+  return `<svg aria-hidden="true" class="${className}" width="${size}" height="${size}" viewBox="0 -960 960 960" focusable="false"><path fill="currentColor" d="${path}"/></svg>`;
 }
 
 function createMaterialButtonChrome(rippleClass = "mdc-button__ripple") {
@@ -68,8 +76,14 @@ const CLOSE_FULLSCREEN_ICON_PATH =
   "m136-80-56-56 264-264H160v-80h320v320h-80v-184L136-80Zm344-400v-320h80v184l264-264 56 56-264 264h184v80H480Z";
 const OPEN_IMAGE_ICON_PATH =
   "M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Zm0-300Zm0 220q113 0 207.5-59.5T832-500q-50-101-144.5-160.5T480-720q-113 0-207.5 59.5T128-500q50 101 144.5 160.5T480-280Z";
+const DOWNLOAD_IMAGE_ICON_PATH =
+  "M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z";
 const SHARE_IMAGE_ICON_PATH =
   "M720-80q-50 0-85-35t-35-85q0-7 1-14.5t3-13.5L322-392q-17 15-38 23.5t-44 8.5q-50 0-85-35t-35-85q0-50 35-85t85-35q23 0 44 8.5t38 23.5l282-164q-2-6-3-13.5t-1-14.5q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35q-23 0-44-8.5T638-672L356-508q2 6 3 13.5t1 14.5q0 7-1 14.5t-3 13.5l282 164q17-15 38-23.5t44-8.5q50 0 85 35t35 85q0 50-35 85t-85 35Zm0-80q17 0 28.5-11.5T760-200q0-17-11.5-28.5T720-240q-17 0-28.5 11.5T680-200q0 17 11.5 28.5T720-160ZM240-440q17 0 28.5-11.5T280-480q0-17-11.5-28.5T240-520q-17 0-28.5 11.5T200-480q0 17 11.5 28.5T240-440Zm480-280q17 0 28.5-11.5T760-760q0-17-11.5-28.5T720-800q-17 0-28.5 11.5T680-760q0 17 11.5 28.5T720-720Z";
+const CLOSE_ICON_PATH =
+  "m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z";
+const LIGHTBOX_PREV_ICON_PATH = "M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z";
+const LIGHTBOX_NEXT_ICON_PATH = "M400-240 344-296l184-184-184-184 56-56 240 240-240 240Z";
 const SCROLL_TOP_ICON_PATH =
   "M440-727 256-544l-56-56 280-280 280 280-56 57-184-184v287h-80v-287Zm0 487v-120h80v120h-80Zm0 160v-80h80v80h-80Z";
 const DYNAMIC_ANCHOR_OFFSET = 96;
@@ -224,10 +238,9 @@ function initCodeBlocks() {
     const button = document.createElement("button");
     button.type = "button";
     button.className =
-      "code-copy-btn site-icon-button site-tooltip mat-mdc-icon-button mat-mdc-button-base";
+      "code-copy-button site-icon-button site-material-ripple mat-mdc-icon-button mat-mdc-button-base";
     button.tabIndex = 0;
     button.setAttribute("aria-label", "Copier le code");
-    button.setAttribute("data-tooltip", "Copier le code");
     button.setAttribute("aria-keyshortcuts", "Enter Space");
 
     const status = document.createElement("span");
@@ -236,37 +249,36 @@ function initCodeBlocks() {
     status.setAttribute("aria-live", "polite");
 
     const materialChrome = createMaterialButtonChrome("mdc-icon-button__ripple");
-    const copyIcon = createIcon("code-copy-icon", CODE_COPY_ICON_PATH);
-    const copyIconPath = copyIcon.querySelector("path");
+    const copyIcon = createMaterialIcon(
+      CODE_COPY_ICON_PATH,
+      "code-copy-button__icon code-copy-button__icon--copy",
+    );
+    const checkIcon = createMaterialIcon(
+      CODE_CHECK_ICON_PATH,
+      "code-copy-button__icon code-copy-button__icon--check",
+    );
     button.append(
       materialChrome.ripple,
       copyIcon,
+      checkIcon,
       materialChrome.focus,
       materialChrome.touchTarget,
     );
 
     button.addEventListener("click", async () => {
-      const mark = (className, text, iconPath) => {
+      const mark = (className, text) => {
         button.classList.remove("is-copied", "is-error");
         button.classList.add(className);
         button.setAttribute("aria-label", text);
-        button.setAttribute("data-tooltip", text);
-        copyIconPath?.setAttribute("d", iconPath);
         status.textContent = text;
         setTimeout(() => {
           button.classList.remove(className);
           button.setAttribute("aria-label", "Copier le code");
-          button.setAttribute("data-tooltip", "Copier le code");
-          copyIconPath?.setAttribute("d", CODE_COPY_ICON_PATH);
         }, 1000);
       };
 
       const copied = await copyToClipboard(codeBlock.innerText);
-      mark(
-        copied ? "is-copied" : "is-error",
-        copied ? "Copié" : "Erreur",
-        copied ? CODE_CHECK_ICON_PATH : CODE_ERROR_ICON_PATH,
-      );
+      mark(copied ? "is-copied" : "is-error", copied ? "Copié" : "Erreur");
     });
 
     actions.appendChild(button);
@@ -654,6 +666,19 @@ function fileNameFromURL(url) {
   }
 }
 
+function syncPhotoSwipeArrowIcon(button) {
+  const iconPath = button.classList.contains("pswp__button--arrow--prev")
+    ? LIGHTBOX_PREV_ICON_PATH
+    : button.classList.contains("pswp__button--arrow--next")
+      ? LIGHTBOX_NEXT_ICON_PATH
+      : "";
+
+  if (!iconPath || button.dataset.siteArrowIcon === iconPath) return;
+
+  button.dataset.siteArrowIcon = iconPath;
+  button.innerHTML = materialIconHtml(iconPath);
+}
+
 function enhancePhotoSwipeButton(button, label) {
   const topBar = button.closest(".pswp__top-bar");
   const contrastScope = topBar ? "bar" : "button";
@@ -664,17 +689,24 @@ function enhancePhotoSwipeButton(button, label) {
   button.dataset.tooltip = label;
   button.dataset.contrast = "true";
   button.dataset.contrastScope = contrastScope;
-  button.setAttribute("type", "button");
-  button.classList.add("pswp__button--contrast", "mat-mdc-button-base", "mat-mdc-icon-button");
+  if (button.tagName?.toLowerCase() === "button") button.setAttribute("type", "button");
+  button.classList.add(
+    "pswp__button--contrast",
+    "site-icon-button",
+    "site-material-ripple",
+    "mat-mdc-button-base",
+    "mat-mdc-icon-button",
+  );
   button.style.setProperty("color", "#fff", "important");
   button.style.setProperty(
     "mix-blend-mode",
     contrastScope === "bar" ? "normal" : "difference",
     "important",
   );
-  button.style.setProperty("overflow", "visible", "important");
+  button.style.setProperty("overflow", "hidden", "important");
   button.style.setProperty("filter", "none", "important");
   button.tabIndex = button.hasAttribute("disabled") ? -1 : 0;
+  syncPhotoSwipeArrowIcon(button);
 
   button.querySelectorAll(".pswp__icn, svg, path").forEach((icon) => {
     icon.style.setProperty("color", "#fff", "important");
@@ -1036,8 +1068,12 @@ lightbox.on("uiRegister", () => {
   initLightboxDesktopImageClickClose(pswp);
 
   ui.uiElementsData = ui.uiElementsData.filter((element) => {
-    const name = String(element.name || element.className || "");
-    return !name.toLowerCase().includes("zoom");
+    const name = String(element.name || "");
+    const className = String(element.className || "");
+    const normalizedName = name.toLowerCase();
+    const key = `${normalizedName} ${className.toLowerCase()}`;
+
+    return normalizedName !== "close" && !key.includes("zoom");
   });
 
   const fullscreenButtons = new Set();
@@ -1105,9 +1141,9 @@ lightbox.on("uiRegister", () => {
       isButton: true,
       tagName: "button",
       className:
-        "pswp__button custom pswp__button--fullscreen mat-mdc-button-base mat-mdc-icon-button",
+        "pswp__button custom pswp__button--fullscreen site-icon-button site-material-ripple mat-mdc-button-base mat-mdc-icon-button",
       ariaLabel: "Plein écran",
-      html: `<svg aria-hidden="true" class="pswp__icn" width="32" height="32" viewBox="0 -960 960 960"><path fill="currentColor" d="${FULLSCREEN_ICON_PATH}"/></svg>`,
+      html: materialIconHtml(FULLSCREEN_ICON_PATH),
       onInit: (el) => {
         fullscreenButtons.add(el);
         syncFullscreenButton(el);
@@ -1131,9 +1167,9 @@ lightbox.on("uiRegister", () => {
     isButton: true,
     tagName: "a",
     className:
-      "pswp__button custom pswp__button--open-new mat-mdc-button-base mat-mdc-icon-button",
+      "pswp__button custom pswp__button--open-new site-icon-button site-material-ripple mat-mdc-button-base mat-mdc-icon-button",
     ariaLabel: "Visualiser",
-    html: `<svg aria-hidden="true" class="pswp__icn" width="32" height="32" viewBox="0 -960 960 960"><path fill="currentColor" d="${OPEN_IMAGE_ICON_PATH}"/></svg>`,
+    html: materialIconHtml(OPEN_IMAGE_ICON_PATH),
     onInit: (el, instance) => {
       const link = el;
       const syncHref = () => {
@@ -1160,9 +1196,9 @@ lightbox.on("uiRegister", () => {
     isButton: true,
     tagName: "button",
     className:
-      "pswp__button pswp__button--download custom mat-mdc-button-base mat-mdc-icon-button",
+      "pswp__button pswp__button--download custom site-icon-button site-material-ripple mat-mdc-button-base mat-mdc-icon-button",
     ariaLabel: "Télécharger",
-    html: '<svg aria-hidden="true" class="pswp__icn" viewBox="0 -960 960 960" width="32" height="32"><path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z" fill="currentColor"/></svg>',
+    html: materialIconHtml(DOWNLOAD_IMAGE_ICON_PATH),
     onInit: (el) => enhancePhotoSwipeButton(el, "Télécharger"),
     onClick: async (_event, _el, instance) => {
       const src = instance.currSlide?.data?.src;
@@ -1183,9 +1219,9 @@ lightbox.on("uiRegister", () => {
     isButton: true,
     tagName: "button",
     className:
-      "pswp__button custom pswp__button--share mat-mdc-button-base mat-mdc-icon-button",
+      "pswp__button custom pswp__button--share site-icon-button site-material-ripple mat-mdc-button-base mat-mdc-icon-button",
     ariaLabel: "Partager",
-    html: `<svg aria-hidden="true" class="pswp__icn" viewBox="0 -960 960 960" width="32" height="32"><path d="${SHARE_IMAGE_ICON_PATH}" fill="currentColor"/></svg>`,
+    html: materialIconHtml(SHARE_IMAGE_ICON_PATH),
     onInit: (el) => enhancePhotoSwipeButton(el, "Partager"),
     onClick: async (_event, el, instance) => {
       const src = instance.currSlide?.data?.src;
@@ -1202,9 +1238,9 @@ lightbox.on("uiRegister", () => {
     isButton: true,
     tagName: "button",
     className:
-      "pswp__button custom pswp__button--close mat-mdc-button-base mat-mdc-icon-button",
+      "pswp__button custom pswp__button--close site-icon-button site-material-ripple mat-mdc-button-base mat-mdc-icon-button",
     ariaLabel: "Fermer",
-    html: '<svg aria-hidden="true" class="pswp__icn" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="32" height="32"><path fill="currentColor" d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>',
+    html: materialIconHtml(CLOSE_ICON_PATH),
     onInit: (el) => enhancePhotoSwipeButton(el, "Fermer"),
     onClick: (_event, _el, instance) => instance.close(),
   });

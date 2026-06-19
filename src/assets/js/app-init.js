@@ -3,11 +3,17 @@ import PhotoSwipe from "photoswipe";
 import "photoswipe/style.css";
 import { initMuiTooltips } from "./mui-tooltips.js";
 
+const CODE_COPY_ICON_PATH =
+  "M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z";
+const CODE_CHECK_ICON_PATH = "M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z";
+const CODE_ERROR_ICON_PATH =
+  "M480-280q17 0 28.5-11.5T520-320q0-17-11.5-28.5T480-360q-17 0-28.5 11.5T440-320q0 17 11.5 28.5T480-280Zm-40-160h80v-240h-80v240Zm40 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z";
+
 function createIcon(className, path) {
   const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   icon.setAttribute("viewBox", "0 -960 960 960");
-  icon.setAttribute("width", "16");
-  icon.setAttribute("height", "16");
+  icon.setAttribute("width", "20");
+  icon.setAttribute("height", "20");
   icon.setAttribute("fill", "currentColor");
   icon.classList.add("code-icon", className);
   icon.setAttribute("matButtonIcon", "");
@@ -218,7 +224,7 @@ function initCodeBlocks() {
     const button = document.createElement("button");
     button.type = "button";
     button.className =
-      "code-copy-btn site-tooltip mdc-icon-button mat-mdc-icon-button mat-mdc-button-base site-material-ripple";
+      "code-copy-btn site-icon-button site-tooltip mat-mdc-icon-button mat-mdc-button-base";
     button.tabIndex = 0;
     button.setAttribute("aria-label", "Copier le code");
     button.setAttribute("data-tooltip", "Copier le code");
@@ -230,40 +236,37 @@ function initCodeBlocks() {
     status.setAttribute("aria-live", "polite");
 
     const materialChrome = createMaterialButtonChrome("mdc-icon-button__ripple");
+    const copyIcon = createIcon("code-copy-icon", CODE_COPY_ICON_PATH);
+    const copyIconPath = copyIcon.querySelector("path");
     button.append(
       materialChrome.ripple,
-      createIcon(
-        "code-copy-icon",
-        "M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z",
-      ),
-      createIcon(
-        "code-check-icon",
-        "M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z",
-      ),
-      createIcon(
-        "code-error-icon",
-        "M480-280q17 0 28.5-11.5T520-320q0-17-11.5-28.5T480-360q-17 0-28.5 11.5T440-320q0 17 11.5 28.5T480-280Zm-40-160h80v-240h-80v240Zm40 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z",
-      ),
+      copyIcon,
       materialChrome.focus,
       materialChrome.touchTarget,
     );
 
     button.addEventListener("click", async () => {
-      const mark = (className, text) => {
+      const mark = (className, text, iconPath) => {
         button.classList.remove("is-copied", "is-error");
         button.classList.add(className);
         button.setAttribute("aria-label", text);
         button.setAttribute("data-tooltip", text);
+        copyIconPath?.setAttribute("d", iconPath);
         status.textContent = text;
         setTimeout(() => {
           button.classList.remove(className);
           button.setAttribute("aria-label", "Copier le code");
           button.setAttribute("data-tooltip", "Copier le code");
+          copyIconPath?.setAttribute("d", CODE_COPY_ICON_PATH);
         }, 1000);
       };
 
       const copied = await copyToClipboard(codeBlock.innerText);
-      mark(copied ? "is-copied" : "is-error", copied ? "Copié" : "Erreur");
+      mark(
+        copied ? "is-copied" : "is-error",
+        copied ? "Copié" : "Erreur",
+        copied ? CODE_CHECK_ICON_PATH : CODE_ERROR_ICON_PATH,
+      );
     });
 
     actions.appendChild(button);

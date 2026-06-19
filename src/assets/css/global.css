@@ -382,6 +382,28 @@
   color: var(--mat-button-text-label-text-color, var(--site-link));
 }
 
+.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-width: 2.5rem;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--site-icon-button-color, var(--site-link));
+  line-height: 0;
+  vertical-align: middle;
+}
+
+.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base > svg {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
 .mdc-button.mat-mdc-button-base.mat-mdc-unelevated-button,
 .mat-mdc-unelevated-button {
   height: 2.5rem;
@@ -677,25 +699,9 @@
 
 .home-anime-refresh.mat-mdc-icon-button.mat-mdc-button-base {
   flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  min-width: 2.5rem;
-  margin: -0.1rem -0.1rem -0.1rem 0;
-  padding: 0;
-  overflow: hidden;
-  border-radius: 50%;
-  background: transparent;
-  color: #fff;
-  line-height: 0;
-  text-shadow: none;
-}
-
-.home-anime-refresh.mat-mdc-icon-button.mat-mdc-button-base > svg {
-  flex: 0 0 auto;
   margin: 0;
+  --site-icon-button-color: #fff;
+  text-shadow: none;
 }
 
 .site-prose {
@@ -936,9 +942,7 @@ main :is(h1, h2, h3, h4, h5, h6)[tabindex="0"]:focus-visible {
   color: inherit;
   text-shadow: 0 0 0 transparent;
   transform-origin: 50% 55%;
-  animation:
-    glitch-jitter 4.2s infinite steps(1, end),
-    glitch-shadow-pulse 2.8s infinite steps(1, end);
+  animation: glitch-shadow-pulse 2.8s infinite steps(1, end);
 }
 
 .header-link--glitch::before,
@@ -1261,7 +1265,7 @@ abbr.site-tooltip {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 2.25rem;
+  min-height: 3rem;
   padding-inline: var(--code-pad);
   background: var(--code-surface);
   color: var(--site-text);
@@ -1280,46 +1284,31 @@ abbr.site-tooltip {
   gap: 0.5rem;
 }
 
-.code-copy-btn {
-  width: 2.5rem;
-  height: 2.5rem;
-  min-width: 2.5rem;
-  padding: 0;
-  overflow: hidden;
-  border: 0;
-  border-radius: 50%;
+.code-copy-btn.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base {
+  --site-icon-button-color: #000;
   background: transparent;
-  color: #fff;
-  line-height: 0;
+  filter: none;
 }
 
-.code-copy-btn:hover {
+.code-copy-btn.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base:is(
+    :hover,
+    :focus-visible
+  ) {
+  background: transparent;
   text-decoration: none;
 }
 
-.code-copy-btn > svg {
-  flex: 0 0 auto;
-  margin: 0;
+.code-copy-btn.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base:active {
+  background: transparent;
+  transform: none;
 }
 
-.code-icon {
-  display: inline-block;
+.code-copy-btn .code-icon {
+  display: block;
   width: 20px;
   height: 20px;
-  vertical-align: middle;
-}
-
-.code-check-icon,
-.code-error-icon,
-.is-copied .code-copy-icon,
-.is-error .code-copy-icon,
-.is-error .code-check-icon {
-  display: none;
-}
-
-.is-copied .code-check-icon,
-.is-error .code-error-icon {
-  display: inline-block;
+  flex: 0 0 auto;
+  fill: currentColor;
 }
 
 .code-shell pre {
@@ -2204,6 +2193,10 @@ body.page-no-scroll-ui .site-scroll-progress {
 
   .code-shell {
     border-color: #000;
+  }
+
+  .code-copy-btn.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base {
+    --site-icon-button-color: #fff;
   }
 
   .code-shell pre.astro-code {

@@ -23,7 +23,7 @@ const REFRESH_ICON_PATH =
     <button
       matIconButton
       type="button"
-      class="home-anime-refresh site-tooltip"
+      class="home-anime-refresh site-icon-button site-tooltip"
       [disabled]="busy()"
       [attr.aria-label]="busy() ? 'Image en cours de chargement' : 'Changer l\\'image'"
       [attr.data-tooltip]="busy() ? 'Image en cours de chargement' : 'Changer l\\'image'"

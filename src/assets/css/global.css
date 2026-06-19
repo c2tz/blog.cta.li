@@ -1417,6 +1417,9 @@ img[data-lightbox],
 
 .pswp__top-bar {
   align-items: center !important;
+  gap: 0.25rem !important;
+  box-sizing: border-box !important;
+  padding-inline: 0.5rem !important;
 }
 
 .pswp__top-bar--contrast .pswp__button[data-contrast="true"],
@@ -1479,6 +1482,7 @@ img[data-lightbox],
   padding: 0 !important;
   margin: 0 !important;
   border-radius: 50% !important;
+  clip-path: circle(50% at 50% 50%);
   background: transparent !important;
   line-height: 0 !important;
   overflow: hidden !important;
@@ -1487,6 +1491,14 @@ img[data-lightbox],
 .pswp__button--arrow {
   top: calc(50% - 1.25rem) !important;
   margin-top: 0 !important;
+}
+
+.pswp__button--arrow--prev {
+  left: 1rem !important;
+}
+
+.pswp__button--arrow--next {
+  right: 1rem !important;
 }
 
 .pswp__button:is(
@@ -1501,8 +1513,8 @@ img[data-lightbox],
   position: relative !important;
   inset: auto !important;
   z-index: 1;
-  width: 20px !important;
-  height: 20px !important;
+  width: 24px !important;
+  height: 24px !important;
   flex: 0 0 auto;
   margin: 0 !important;
   transform: none !important;
@@ -1513,6 +1525,8 @@ img[data-lightbox],
   display: inline-flex !important;
   align-items: center !important;
   height: 2.5rem !important;
+  margin-inline-start: 0.5rem !important;
+  margin-inline-end: 0.5rem !important;
   margin-top: 0 !important;
   text-shadow: none !important;
   line-height: 1 !important;
@@ -1531,7 +1545,7 @@ img[data-lightbox],
 
 .pswp__button--fullscreen {
   order: -10;
-  margin-inline-start: 6px !important;
+  margin-inline-start: 0 !important;
   margin-inline-end: 0 !important;
 }
 

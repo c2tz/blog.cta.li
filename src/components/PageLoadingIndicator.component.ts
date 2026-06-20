@@ -53,14 +53,31 @@ export class PageLoadingIndicatorComponent implements OnInit, OnDestroy {
   };
 
   private readonly handleDocumentClick = (event: MouseEvent) => {
-    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey) return;
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) return;
     const target = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[href]") : null;
-    if (!target || target.target || target.hasAttribute("download")) return;
+    if (
+      !target ||
+      target.target ||
+      target.hasAttribute("download") ||
+      target.hasAttribute("data-pswp-item")
+    ) return;
 
     const url = new URL(target.href, window.location.href);
     if (url.origin !== window.location.origin) return;
     if (url.pathname === location.pathname && url.search === location.search && url.hash) return;
     this.start("navigation");
+  };
+
+  private readonly handlePhotoSwipeState = (event: Event) => {
+    const open = Boolean((event as CustomEvent<{ open?: boolean }>).detail?.open);
+    if (open) this.end("navigation");
   };
 
   ngOnInit() {
@@ -70,9 +87,10 @@ export class PageLoadingIndicatorComponent implements OnInit, OnDestroy {
     else this.clear();
     window.addEventListener("load", this.handleLoad, { once: true });
     window.addEventListener("pageshow", this.handlePageShow);
-    document.addEventListener("click", this.handleDocumentClick, true);
+    document.addEventListener("click", this.handleDocumentClick);
     document.addEventListener("site:loading-start", this.handleStart);
     document.addEventListener("site:loading-end", this.handleEnd);
+    document.addEventListener("site:photoswipe-state", this.handlePhotoSwipeState);
   }
 
   ngOnDestroy() {
@@ -80,9 +98,10 @@ export class PageLoadingIndicatorComponent implements OnInit, OnDestroy {
 
     window.removeEventListener("load", this.handleLoad);
     window.removeEventListener("pageshow", this.handlePageShow);
-    document.removeEventListener("click", this.handleDocumentClick, true);
+    document.removeEventListener("click", this.handleDocumentClick);
     document.removeEventListener("site:loading-start", this.handleStart);
     document.removeEventListener("site:loading-end", this.handleEnd);
+    document.removeEventListener("site:photoswipe-state", this.handlePhotoSwipeState);
   }
 
   private start(key: string) {

@@ -2,6 +2,7 @@
 import fallbackOne from "@/content/blog/images/konachan-396319.jpg";
 import fallbackTwo from "@/content/blog/images/konachan-382339.jpg";
 import { HomeHeroActionsComponent } from "./HomeHeroActions.component";
+import { KonachanLoadingIndicatorComponent } from "./KonachanLoadingIndicator.component";
 import { KonachanRefreshButtonComponent } from "./KonachanRefreshButton.component";
 
 interface Props {
@@ -24,7 +25,7 @@ const {
 const emergencyImages = [fallbackOne.src, fallbackTwo.src];
 ---
 
-<section class="home-anime-landing" aria-labelledby="home-hero-title">
+<section class="home-anime-landing" aria-labelledby="home-hero-title" aria-busy="false">
   <div class="home-anime-bg" aria-hidden="true">
     <img
       class="home-anime-bg__image"
@@ -34,6 +35,7 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
       fetchpriority="high"
     />
   </div>
+  <KonachanLoadingIndicatorComponent client:load />
 
   <div class="home-hero__content">
     <h1 id="home-hero-title">{title}</h1>
@@ -396,6 +398,7 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
 
     const setRefreshState = ({ busy, message }) => {
       if (status) status.textContent = message;
+      target.closest(LANDING_SELECTOR)?.setAttribute("aria-busy", String(busy));
       document.dispatchEvent(
         new CustomEvent("konachan:refresh-state", {
           detail: { busy, status: message },

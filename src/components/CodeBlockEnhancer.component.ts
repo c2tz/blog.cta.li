@@ -5,16 +5,16 @@ import {
   ComponentRef,
   EnvironmentInjector,
   createComponent,
+  inject,
   input,
   signal,
 } from "@angular/core";
 import type { AfterViewInit, OnDestroy } from "@angular/core";
 import { MatButtonModule } from "@angular/material/button";
-import { MatTooltipModule } from "@angular/material/tooltip";
+import { MatIconModule } from "@angular/material/icon";
+import { MatSnackBar, MatSnackBarModule } from "@angular/material/snack-bar";
 
-const COPY_ICON_PATH =
-  "M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z";
-const CHECK_ICON_PATH = "M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z";
+const COPY_FEEDBACK_DURATION_MS = 2200;
 
 async function copyToClipboard(text: string) {
   try {
@@ -52,7 +52,7 @@ async function copyToClipboard(text: string) {
 @Component({
   selector: "site-code-copy-button",
   standalone: true,
-  imports: [MatButtonModule, MatTooltipModule],
+  imports: [MatButtonModule, MatIconModule, MatSnackBarModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button
@@ -62,28 +62,20 @@ async function copyToClipboard(text: string) {
       [class.is-copied]="state() === 'copied'"
       [class.is-error]="state() === 'error'"
       [attr.aria-label]="label()"
-      [matTooltip]="label()"
-      matTooltipPosition="left"
       (click)="copy()"
     >
-      <svg
-        matButtonIcon
+      <mat-icon
         class="code-copy-button__icon code-copy-button__icon--copy"
-        viewBox="0 -960 960 960"
         aria-hidden="true"
-        focusable="false"
       >
-        <path [attr.d]="copyIcon"></path>
-      </svg>
-      <svg
-        matButtonIcon
+        &#xE14D;
+      </mat-icon>
+      <mat-icon
         class="code-copy-button__icon code-copy-button__icon--check"
-        viewBox="0 -960 960 960"
         aria-hidden="true"
-        focusable="false"
       >
-        <path [attr.d]="checkIcon"></path>
-      </svg>
+        &#xE5CA;
+      </mat-icon>
     </button>
     <span class="sr-only code-copy-status" role="status" aria-live="polite">
       {{ status() }}
@@ -101,10 +93,8 @@ class CodeCopyButtonComponent implements OnDestroy {
   readonly code = input("");
   readonly state = signal<"idle" | "copied" | "error">("idle");
   readonly status = signal("");
-  readonly copyIcon = COPY_ICON_PATH;
-  readonly checkIcon = CHECK_ICON_PATH;
-
   private resetTimer = 0;
+  private readonly snackBar = inject(MatSnackBar);
 
   readonly label = () => {
     if (this.state() === "copied") return "Copié";
@@ -113,20 +103,29 @@ class CodeCopyButtonComponent implements OnDestroy {
   };
 
   ngOnDestroy() {
-    window.clearTimeout(this.resetTimer);
+    if (typeof window !== "undefined") {
+      window.clearTimeout(this.resetTimer);
+    }
   }
 
   async copy() {
-    document.dispatchEvent(new CustomEvent("site:tooltip-hide"));
     const copied = await copyToClipboard(this.code());
     this.state.set(copied ? "copied" : "error");
-    this.status.set(copied ? "Copié" : "Erreur");
+    const message = copied ? "Code copié" : "Impossible de copier le code";
+    this.status.set(message);
+
+    this.snackBar.open(message, undefined, {
+      duration: COPY_FEEDBACK_DURATION_MS,
+      horizontalPosition: "center",
+      politeness: copied ? "polite" : "assertive",
+      verticalPosition: "bottom",
+    });
 
     window.clearTimeout(this.resetTimer);
     this.resetTimer = window.setTimeout(() => {
       this.state.set("idle");
       this.status.set("");
-    }, 1000);
+    }, COPY_FEEDBACK_DURATION_MS);
   }
 }
 

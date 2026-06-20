@@ -1,5 +1,23 @@
 @import "tailwindcss";
 @import "@angular/material/prebuilt-themes/azure-blue.css";
+@import "@fontsource/material-icons";
+
+.material-icons {
+  display: inline-block;
+  font-family: "Material Icons";
+  font-size: 24px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: "liga";
+  font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+}
 
 @font-face {
   font-family: "Roboto Flex";
@@ -79,6 +97,12 @@
   --mat-sys-focus-state-layer-opacity: 0.12;
   --mat-sys-pressed-state-layer-opacity: 0.12;
   --mat-sys-label-large-font: var(--site-font);
+  --mat-sys-label-medium-font: var(--site-font);
+  --mat-sys-label-small-font: var(--site-font);
+  --mat-sys-body-large-font: var(--site-font);
+  --mat-sys-body-medium-font: var(--site-font);
+  --mat-sys-body-small-font: var(--site-font);
+  --mat-sys-body-small-tracking: 0;
   --mat-sys-label-large-size: 0.875rem;
   --mat-sys-label-large-line-height: 1.25rem;
   --mat-sys-label-large-tracking: 0;
@@ -436,7 +460,7 @@
 
 .mat-mdc-button-persistent-ripple,
 .mat-mdc-button-persistent-ripple::before,
-.mat-focus-indicator,
+.mat-mdc-button-base > .mat-focus-indicator,
 .mat-mdc-button-touch-target {
   position: absolute;
   pointer-events: none;
@@ -444,7 +468,7 @@
 
 .mat-mdc-button-persistent-ripple,
 .mat-mdc-button-persistent-ripple::before,
-.mat-focus-indicator {
+.mat-mdc-button-base > .mat-focus-indicator {
   inset: 0;
   border-radius: inherit;
 }
@@ -487,7 +511,7 @@
   min-width: 0;
 }
 
-.mat-mdc-icon-button svg {
+.mat-mdc-icon-button > svg {
   position: relative;
   z-index: 1;
   width: 20px;
@@ -508,7 +532,7 @@
   pointer-events: none;
 }
 
-.mdc-button.mat-mdc-button-base svg {
+.mdc-button.mat-mdc-button-base > svg {
   position: relative;
   z-index: 1;
   width: 20px;
@@ -935,80 +959,46 @@ main :is(h1, h2, h3, h4, h5, h6)[tabindex="0"]:focus-visible {
   --mat-menu-container-color: var(--site-bg);
   --mat-menu-item-label-text-color: var(--site-text);
   --mat-menu-item-icon-color: var(--site-text);
-  --mat-menu-item-hover-state-layer-color: var(--site-link);
-  --mat-menu-item-focus-state-layer-color: var(--site-link);
+  --mat-menu-item-hover-state-layer-color: var(--site-tonal-container);
+  --mat-menu-item-focus-state-layer-color: var(--site-tonal-container);
 }
 
-.site-theme-radio-group {
-  display: grid;
-  padding-block: 0.375rem;
-}
-
-.site-theme-radio-option.mat-mdc-radio-button {
+.site-theme-menu-item.mat-mdc-menu-item {
   position: relative;
-  display: block;
   min-height: 3.25rem;
-  overflow: hidden;
-  color: var(--site-text);
-  --mdc-radio-selected-icon-color: var(--site-link);
-  --mdc-radio-selected-hover-icon-color: var(--site-link);
-  --mdc-radio-selected-focus-icon-color: var(--site-link);
-  --mdc-radio-selected-pressed-icon-color: var(--site-link);
-  --mdc-radio-unselected-icon-color: var(--site-muted);
-  --mdc-radio-unselected-hover-icon-color: var(--site-text);
-}
-
-.site-theme-radio-option.mat-mdc-radio-button:is(:hover, :focus-within) {
-  background: color-mix(in srgb, var(--site-link) 10%, transparent);
-}
-
-.site-theme-radio-option.mat-mdc-radio-button.mat-mdc-radio-checked {
-  background: color-mix(in srgb, var(--site-link) 6%, transparent);
-}
-
-.site-theme-radio-option.mat-ripple {
-  border-radius: 0;
-}
-
-.site-theme-radio-option .mdc-form-field,
-.site-theme-radio-option .mdc-label {
-  width: 100%;
-}
-
-.site-theme-radio-option .mdc-form-field {
-  min-height: 3.25rem;
-  padding-inline: 0.75rem;
-}
-
-.site-theme-radio-option .mdc-label {
-  align-self: stretch;
-  padding-inline-start: 0.375rem;
   cursor: pointer;
-}
-
-.site-theme-radio-content {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  height: 100%;
+  pointer-events: auto;
   font-size: 0.95rem;
   font-weight: 600;
 }
 
-.site-theme-menu .mat-mdc-menu-item > svg {
-  width: 1.5rem;
-  height: 1.5rem;
-  margin: 0;
-  fill: currentColor;
+.site-theme-menu-item[aria-checked="true"] {
+  background: transparent;
 }
 
-.site-theme-example-icon {
+.site-theme-radio-icon.mat-icon {
+  color: var(--site-muted);
+  pointer-events: none;
+}
+
+.site-theme-radio-icon--checked.mat-icon {
+  color: var(--site-link);
+}
+
+.site-theme-menu-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  pointer-events: none;
+}
+
+.site-theme-menu-item .site-theme-example-icon {
   display: block;
   flex: 0 0 25px;
   width: 25px;
   height: 24px;
-  margin-inline-start: auto;
+  margin: 0;
 }
 
 .header-link--glitch {
@@ -1119,7 +1109,8 @@ main :is(h1, h2, h3, h4, h5, h6)[tabindex="0"]:focus-visible {
   display: block;
   width: 1.1rem;
   height: 1.1rem;
-  fill: currentColor;
+  font-size: 1.1rem;
+  line-height: 1.1rem;
 }
 
 .post-date__icon-trigger {
@@ -1311,13 +1302,15 @@ abbr.site-tooltip {
   transform: none;
 }
 
-.code-copy-button .code-copy-button__icon {
+.code-copy-button.site-icon-button.mat-mdc-icon-button .code-copy-button__icon.mat-icon {
   position: absolute;
   top: 50%;
   left: 50%;
   z-index: 1;
   width: 20px;
   height: 20px;
+  font-size: 20px;
+  line-height: 20px;
   pointer-events: none;
   transform: translate3d(-50%, -50%, 0);
   transition: opacity 120ms ease;
@@ -1444,10 +1437,10 @@ html.disable--interaction:where(.show--consent, .show--preferences) body {
   bottom: 1rem;
   z-index: 9999;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.75rem 1rem;
-  width: min(34rem, calc(100vw - 2rem));
-  padding: 1rem;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  width: min(38rem, calc(100vw - 2rem));
+  padding: 1.25rem;
   border: 1px solid var(--site-border);
   border-radius: 4px;
   background: var(--site-bg);
@@ -1483,21 +1476,6 @@ html.disable--interaction:where(.show--consent, .show--preferences) body {
   --mat-button-outlined-state-layer-color: var(--site-link);
 }
 
-.cookie-consent__icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  color: var(--site-link);
-}
-
-.cookie-consent__icon svg {
-  width: 24px;
-  height: 24px;
-  fill: currentColor;
-}
-
 .cookie-consent h2 {
   margin: 0 0 0.35rem;
   font-size: 1.1rem;
@@ -1514,18 +1492,16 @@ html.disable--interaction:where(.show--consent, .show--preferences) body {
 }
 
 .cookie-consent__actions {
-  grid-column: 1 / -1;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-end;
   gap: 0.5rem;
-  padding-top: 0.25rem;
 }
 
-.cookie-consent .mat-mdc-outlined-button,
-.cookie-consent .mat-mdc-unelevated-button {
-  min-width: 8rem;
+.cookie-consent .mat-mdc-button {
+  min-width: auto;
   height: 2.5rem;
+  padding-inline: 0.75rem;
   font-size: 0.875rem;
   font-weight: 600;
 }
@@ -1551,33 +1527,71 @@ html.disable--interaction:where(.show--consent, .show--preferences) body {
   will-change: transform;
 }
 
-.site-scroll-top.mdc-button.mat-mdc-button-base {
+.site-scroll-top.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base {
   position: fixed;
-  right: 1rem;
+  right: calc(2rem + env(safe-area-inset-right, 0px));
   bottom: 1rem;
   z-index: 9000;
+  overflow: visible;
+  color: var(--site-link);
   opacity: 0;
   pointer-events: none;
   transform: translateY(1rem);
   transition:
     opacity 180ms ease,
     transform 180ms ease;
+  --site-icon-button-color: var(--site-link);
+  --mat-badge-background-color: var(--site-link);
+  --mat-badge-text-color: var(--site-link-contrast);
+  --mat-icon-button-state-layer-color: var(--site-link);
+  --mat-progress-spinner-active-indicator-color: var(--site-link);
 }
 
-.site-scroll-top.mdc-button.mat-mdc-button-base.is-visible {
+.site-scroll-top.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base.is-visible {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
 }
 
-.site-scroll-top__count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: inherit;
-  font: inherit;
-  letter-spacing: 0;
+.site-scroll-top.site-icon-button.mat-mdc-icon-button
+  .site-scroll-top__progress.mat-mdc-progress-spinner {
+  position: relative;
+  inset: auto;
+  margin: 0;
   pointer-events: none;
+}
+
+.site-scroll-top .mat-mdc-button-progress-indicator-container {
+  pointer-events: none;
+}
+
+.site-scroll-top.mat-mdc-button-progress-indicator-shown .mat-icon {
+  visibility: visible;
+}
+
+.site-scroll-top__progress svg {
+  width: 100%;
+  height: 100%;
+  fill: transparent;
+}
+
+.site-scroll-top .mat-icon {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  overflow: hidden;
+  font-family: "Material Icons";
+  font-size: 24px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 24px;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+  -webkit-font-smoothing: antialiased;
 }
 
 .site-scroll-top:disabled {
@@ -1978,22 +1992,13 @@ body.page-no-scroll-ui .site-scroll-progress {
 
   .cookie-consent {
     bottom: 1rem;
-    grid-template-columns: 1fr;
     width: calc(100vw - 2rem);
     padding: 1rem;
   }
 
-  .cookie-consent__icon {
-    display: none;
-  }
-
   .cookie-consent__actions {
-    flex-direction: column;
-  }
-
-  .cookie-consent .mat-mdc-outlined-button,
-  .cookie-consent .mat-mdc-unelevated-button {
-    width: 100%;
+    flex-direction: row;
+    justify-content: flex-end;
   }
 }
 

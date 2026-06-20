@@ -4,10 +4,11 @@ import {
   signal,
 } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
+import { MatBadgeModule } from "@angular/material/badge";
 import { MatButtonModule } from "@angular/material/button";
-
-const SCROLL_TOP_ICON_PATH =
-  "M440-727 256-544l-56-56 280-280 280 280-56 57-184-184v287h-80v-287Zm0 487v-120h80v120h-80Zm0 160v-80h80v80h-80Z";
+import { MatIconModule } from "@angular/material/icon";
+import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
+import { MatTooltipModule } from "@angular/material/tooltip";
 
 function getScrollProgress() {
   const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
@@ -18,30 +19,44 @@ function getScrollProgress() {
 @Component({
   selector: "site-scroll-top-button",
   standalone: true,
-  imports: [MatButtonModule],
+  imports: [
+    MatBadgeModule,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+    MatTooltipModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button
-      matButton="outlined"
+      matIconButton
       type="button"
-      class="site-scroll-top"
+      class="site-scroll-top site-icon-button"
       [class.is-visible]="visible()"
       [tabIndex]="visible() ? 0 : -1"
       [attr.aria-label]="'Retour en haut, progression ' + progress() + ' %'"
+      [matBadge]="progress()"
+      [matBadgeHidden]="!visible()"
+      matBadgePosition="above after"
+      [showProgress]="true"
+      matTooltip="Retour en haut"
+      matTooltipPosition="left"
       (click)="scrollToTop()"
     >
-      <svg matButtonIcon aria-hidden="true" viewBox="0 -960 960 960" focusable="false">
-        <path [attr.d]="iconPath"></path>
-      </svg>
-      <span>Haut</span>
-      <span class="site-scroll-top__count" data-scroll-progress-count aria-hidden="true">
-        {{ progress() }}%
-      </span>
+      <mat-spinner
+        progressIndicator
+        class="site-scroll-top__progress"
+        mode="determinate"
+        [value]="progress()"
+        diameter="40"
+        strokeWidth="3"
+        aria-hidden="true"
+      ></mat-spinner>
+      <mat-icon class="site-scroll-top__icon" aria-hidden="true">&#xE5D8;</mat-icon>
     </button>
   `,
 })
 export class ScrollTopButtonComponent implements OnInit, OnDestroy {
-  readonly iconPath = SCROLL_TOP_ICON_PATH;
   readonly progress = signal(0);
   readonly visible = signal(false);
 

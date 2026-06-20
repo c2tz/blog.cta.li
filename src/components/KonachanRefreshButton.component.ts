@@ -5,7 +5,7 @@ import {
 } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
 import { MatButtonModule } from "@angular/material/button";
-import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
+import { MatIconModule } from "@angular/material/icon";
 import { MatTooltipModule } from "@angular/material/tooltip";
 
 interface RefreshState {
@@ -13,13 +13,10 @@ interface RefreshState {
   status?: string;
 }
 
-const REFRESH_ICON_PATH =
-  "M480-120q-75 0-140.5-28.5t-114-77q-48.5-48.5-77-114T120-480q0-75 28.5-140.5t77-114q48.5-48.5 114-77T480-840q82 0 155.5 35T760-706v-94h80v240H600v-80h110q-41-56-101-88t-129-32q-117 0-198.5 81.5T200-480q0 117 81.5 198.5T480-200q93 0 168.5-54.5T755-397h82q-27 121-125 199T480-120Z";
-
 @Component({
   selector: "konachan-refresh-button",
   standalone: true,
-  imports: [MatButtonModule, MatProgressSpinnerModule, MatTooltipModule],
+  imports: [MatButtonModule, MatIconModule, MatTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button
@@ -33,19 +30,7 @@ const REFRESH_ICON_PATH =
       matTooltipPosition="below"
       (click)="refresh()"
     >
-      @if (busy()) {
-        <mat-spinner diameter="20" strokeWidth="3" aria-hidden="true"></mat-spinner>
-      } @else {
-        <svg
-          matButtonIcon
-          class="site-button-icon"
-          aria-hidden="true"
-          viewBox="0 -960 960 960"
-          focusable="false"
-        >
-          <path d="${REFRESH_ICON_PATH}"></path>
-        </svg>
-      }
+      <mat-icon aria-hidden="true">refresh</mat-icon>
     </button>
     <span class="sr-only" role="status" aria-live="polite" data-konachan-status>
       {{ status() }}

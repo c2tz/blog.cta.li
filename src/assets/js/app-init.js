@@ -416,16 +416,41 @@ async function downloadViaFetch(url, filename) {
   URL.revokeObjectURL(blobUrl);
 }
 
+function dispatchPhotoSwipeShareResult(message) {
+  document.dispatchEvent(
+    new CustomEvent("site:photoswipe-share-result", { detail: { message } }),
+  );
+}
+
+async function getPhotoSwipeShareFile(url) {
+  const parsed = new URL(url, location.href);
+  const response = await fetch(parsed.href, {
+    cache: "force-cache",
+    credentials: parsed.origin === location.origin ? "same-origin" : "omit",
+    mode: "cors",
+  });
+  if (!response.ok) throw new Error(`image_share_${response.status}`);
+
+  const blob = await response.blob();
+  return new File([blob], fileNameFromURL(parsed.href), {
+    type: blob.type || "image/jpeg",
+  });
+}
+
 async function sharePhotoSwipeImage(src) {
   const url = new URL(src, location.href).href;
-  const shareData = {
-    title: document.title,
-    url,
-  };
 
   if (navigator.share) {
     try {
-      await navigator.share(shareData);
+      const file = await getPhotoSwipeShareFile(url).catch(() => null);
+      const fileShareData = file ? { files: [file], title: document.title } : null;
+
+      if (fileShareData && navigator.canShare?.(fileShareData)) {
+        await navigator.share(fileShareData);
+      } else {
+        await navigator.share({ title: document.title, url });
+      }
+      dispatchPhotoSwipeShareResult("Image partagée");
       return;
     } catch (error) {
       if (error?.name === "AbortError") return;
@@ -434,9 +459,7 @@ async function sharePhotoSwipeImage(src) {
 
   try {
     await navigator.clipboard.writeText(url);
-    document.dispatchEvent(
-      new CustomEvent("site:photoswipe-share-result", { detail: { copied: true } }),
-    );
+    dispatchPhotoSwipeShareResult("Lien copié");
   } catch {
     window.open(url, "_blank", "noopener");
   }

@@ -1,0 +1,21 @@
+packages:
+  - "."
+
+publicHoistPattern:
+  - tslib
+
+overrides:
+  "@angular/forms": 22.0.2
+  "@babel/core": 7.29.7
+  esbuild: 0.28.1
+  piscina: 5.2.0
+
+allowedDeprecatedVersions:
+  "@angular/animations": "22.0.2"
+
+allowBuilds:
+  "@parcel/watcher": true
+  esbuild: true
+  lmdb: true
+  msgpackr-extract: true
+  sharp: true

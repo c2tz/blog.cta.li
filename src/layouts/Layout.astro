@@ -4,6 +4,8 @@ import { SITE_DESCRIPTION, SITE_TAB_TITLE, SITE_TAB_ARTICLE } from "@/consts";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
 import { CookieConsentBannerComponent } from "@/components/CookieConsentBanner.component";
+import { PhotoSwipeToolbarComponent } from "@/components/PhotoSwipeToolbar.component";
+import { ScrollTopButtonComponent } from "@/components/ScrollTopButton.component";
 import SEO, { type Props as SEOProps } from "@/components/SEO.astro";
 import "@/assets/css/global.css";
 
@@ -71,6 +73,8 @@ const seoDescription = description ?? SITE_DESCRIPTION;
     </main>
     <Footer />
     <CookieConsentBannerComponent client:load />
+    <PhotoSwipeToolbarComponent client:load />
+    {scrollUi && <ScrollTopButtonComponent client:load />}
 
     <!-- Module applicatif packagé par Vite -->
     <script>

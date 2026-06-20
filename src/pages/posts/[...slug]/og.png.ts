@@ -1,12 +1,14 @@
 import type { APIRoute } from "astro";
 import { satoriAstroOG } from "satori-astro";
-import { getCollection } from "astro:content";
+import { getCollection, type CollectionEntry } from "astro:content";
 import fs from "node:fs/promises";
 import path from "node:path";
 
 import { PostOgTemplate } from "@/components/OgTemplates";
 
 export const GET: APIRoute = async ({ props }) => {
+  const post = props as CollectionEntry<"blog">;
+
   // const fontFile = await fetch(
   //   "https://www.divby0.io/Inter-SemiBold.woff"
   // );
@@ -16,7 +18,7 @@ export const GET: APIRoute = async ({ props }) => {
   );
 
   return await satoriAstroOG({
-    template: PostOgTemplate({ title: props.data.title }),
+    template: PostOgTemplate({ title: post.data.title }),
     width: 1200,
     height: 600,
   }).toResponse({
@@ -34,7 +36,7 @@ export const GET: APIRoute = async ({ props }) => {
 };
 
 export async function getStaticPaths() {
-  const posts = await getCollection("blog");
+  const posts: CollectionEntry<"blog">[] = await getCollection("blog");
   return posts.map((post) => ({
     params: { slug: post.id },
     props: post,

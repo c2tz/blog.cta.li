@@ -1,6 +1,7 @@
 ---
 import fallbackOne from "@/content/blog/images/konachan-396319.jpg";
 import fallbackTwo from "@/content/blog/images/konachan-382339.jpg";
+import { HomeHeroActionsComponent } from "./HomeHeroActions.component";
 import { KonachanRefreshButtonComponent } from "./KonachanRefreshButton.component";
 
 interface Props {
@@ -39,26 +40,13 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
     <p class="home-hero__lede">
       {lede}
     </p>
-    <nav class="home-hero__actions" aria-label="Navigation d'accueil">
-      <a
-        href={primaryActionHref}
-        class="home-hero__button mdc-button mat-mdc-button-base mat-mdc-tonal-button site-material-ripple"
-      >
-        <span class="mat-mdc-button-persistent-ripple mdc-button__ripple" aria-hidden="true"></span>
-        <span class="mdc-button__label">{primaryActionLabel}</span>
-        <span class="mat-focus-indicator" aria-hidden="true"></span>
-        <span class="mat-mdc-button-touch-target" aria-hidden="true"></span>
-      </a>
-      <a
-        href={secondaryActionHref}
-        class="home-hero__button mdc-button mat-mdc-button-base mat-mdc-outlined-button site-material-ripple"
-      >
-        <span class="mat-mdc-button-persistent-ripple mdc-button__ripple" aria-hidden="true"></span>
-        <span class="mdc-button__label">{secondaryActionLabel}</span>
-        <span class="mat-focus-indicator" aria-hidden="true"></span>
-        <span class="mat-mdc-button-touch-target" aria-hidden="true"></span>
-      </a>
-    </nav>
+    <HomeHeroActionsComponent
+      client:load
+      primaryActionHref={primaryActionHref}
+      primaryActionLabel={primaryActionLabel}
+      secondaryActionHref={secondaryActionHref}
+      secondaryActionLabel={secondaryActionLabel}
+    />
   </div>
 
   <aside class="home-anime-credit" data-konachan-credit>
@@ -82,9 +70,9 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
   const CREDIT_LINK_SELECTOR = "[data-konachan-credit-link]";
   const LANDING_SELECTOR = ".home-anime-landing";
   const STATUS_SELECTOR = "[data-konachan-status]";
-  const MANIFEST_URL = "/konachan-backgrounds.json";
-  const KONACHAN_CACHE_KEY = "home_konachan_backgrounds_v4";
-  const KONACHAN_CACHE_NAME = "home-konachan-backgrounds-v1";
+  const MANIFEST_URL = "/konachan-backgrounds.json?v=1";
+  const KONACHAN_CACHE_KEY = "home_konachan_backgrounds_v5";
+  const KONACHAN_CACHE_NAME = "home-konachan-backgrounds-v2";
   const KONACHAN_CACHE_TTL_MS = 14 * 24 * 60 * 60 * 1000;
   const KONACHAN_MANIFEST_RELOAD_MS = 24 * 60 * 60 * 1000;
   const EMERGENCY_IMAGES = emergencyImages;
@@ -192,8 +180,13 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
       if (!response.ok) throw new Error(`konachan_manifest_${response.status}`);
       await cacheJsonResponse(MANIFEST_URL, response);
       const manifest = await response.json();
-      return Array.isArray(manifest.images) ? manifest.images : [];
-    } catch {
+      const images = Array.isArray(manifest.images) ? manifest.images : [];
+      if (images.length === 0) {
+        console.warn("[Konachan] The deployed manifest contains no images.");
+      }
+      return images;
+    } catch (error) {
+      console.warn("[Konachan] Unable to load the deployed manifest.", error);
       const cached = await readCachedJson(MANIFEST_URL);
       return Array.isArray(cached?.images) ? cached.images : [];
     }
@@ -347,7 +340,9 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
       try {
         loadedUrl = await preload(candidate);
         break;
-      } catch {}
+      } catch (error) {
+        console.warn(`[Konachan] Unable to preload ${candidate}.`, error);
+      }
     }
 
     if (!loadedUrl) throw new Error("konachan_image_unavailable");

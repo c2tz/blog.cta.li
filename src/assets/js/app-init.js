@@ -25,10 +25,6 @@ function createMaterialIcon(path, className = "") {
   return icon;
 }
 
-function materialIconHtml(path, className = "pswp__icn site-button-icon", size = 24) {
-  return `<svg aria-hidden="true" class="${className}" width="${size}" height="${size}" viewBox="0 -960 960 960" focusable="false"><path fill="currentColor" d="${path}"/></svg>`;
-}
-
 function createMaterialButtonChrome(rippleClass = "mdc-button__ripple") {
   const ripple = document.createElement("span");
   ripple.className = `mat-mdc-button-persistent-ripple ${rippleClass}`;
@@ -70,22 +66,6 @@ function initManualMaterialRipples() {
   });
 }
 
-const FULLSCREEN_ICON_PATH =
-  "M120-120v-200h80v120h120v80H120Zm520 0v-80h120v-120h80v200H640ZM120-640v-200h200v80H200v120h-80Zm640 0v-120H640v-80h200v200h-80Z";
-const CLOSE_FULLSCREEN_ICON_PATH =
-  "m136-80-56-56 264-264H160v-80h320v320h-80v-184L136-80Zm344-400v-320h80v184l264-264 56 56-264 264h184v80H480Z";
-const OPEN_IMAGE_ICON_PATH =
-  "M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Zm0-300Zm0 220q113 0 207.5-59.5T832-500q-50-101-144.5-160.5T480-720q-113 0-207.5 59.5T128-500q50 101 144.5 160.5T480-280Z";
-const DOWNLOAD_IMAGE_ICON_PATH =
-  "M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z";
-const LINK_ICON_PATH =
-  "M440-280H280q-83 0-141.5-58.5T80-480q0-83 58.5-141.5T280-680h160v80H280q-50 0-85 35t-35 85q0 50 35 85t85 35h160v80Zm-120-160v-80h320v80H320Zm200 160v-80h160q50 0 85-35t35-85q0-50-35-85t-85-35H520v-80h160q83 0 141.5 58.5T880-480q0 83-58.5 141.5T680-280H520Z";
-const CLOSE_ICON_PATH =
-  "m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z";
-const LIGHTBOX_PREV_ICON_PATH =
-  "M313-440h487v-80H313l224-224-57-56-320 320 320 320 57-56-224-224Z";
-const LIGHTBOX_NEXT_ICON_PATH =
-  "m647-440-224 224 57 56 320-320-320-320-57 56 224 224H160v80h487Z";
 const SCROLL_TOP_ICON_PATH =
   "M440-727 256-544l-56-56 280-280 280 280-56 57-184-184v287h-80v-287Zm0 487v-120h80v120h-80Zm0 160v-80h80v80h-80Z";
 const DYNAMIC_ANCHOR_OFFSET = 96;
@@ -668,73 +648,6 @@ function fileNameFromURL(url) {
   }
 }
 
-function syncPhotoSwipeArrowIcon(button) {
-  const iconPath = button.classList.contains("pswp__button--arrow--prev")
-    ? LIGHTBOX_PREV_ICON_PATH
-    : button.classList.contains("pswp__button--arrow--next")
-      ? LIGHTBOX_NEXT_ICON_PATH
-      : "";
-
-  if (!iconPath || button.dataset.siteArrowIcon === iconPath) return;
-
-  button.dataset.siteArrowIcon = iconPath;
-  button.innerHTML = materialIconHtml(iconPath);
-}
-
-function enhancePhotoSwipeButton(button, label) {
-  const topBar = button.closest(".pswp__top-bar");
-  const contrastScope = topBar ? "bar" : "button";
-
-  topBar?.classList.add("pswp__top-bar--contrast");
-  button.setAttribute("aria-label", label);
-  button.removeAttribute("title");
-  button.dataset.tooltip = label;
-  button.dataset.contrast = "true";
-  button.dataset.contrastScope = contrastScope;
-  if (button.tagName?.toLowerCase() === "button") button.setAttribute("type", "button");
-  button.classList.add(
-    "pswp__button--contrast",
-    "site-icon-button",
-    "site-material-ripple",
-    "mat-mdc-button-base",
-    "mat-mdc-icon-button",
-  );
-  button.style.setProperty("color", "#fff", "important");
-  button.style.setProperty(
-    "mix-blend-mode",
-    contrastScope === "bar" ? "normal" : "difference",
-    "important",
-  );
-  button.style.setProperty("overflow", "hidden", "important");
-  button.style.setProperty("filter", "none", "important");
-  button.tabIndex = button.hasAttribute("disabled") ? -1 : 0;
-  syncPhotoSwipeArrowIcon(button);
-
-  button.querySelectorAll(".pswp__icn, svg, path").forEach((icon) => {
-    icon.style.setProperty("color", "#fff", "important");
-    icon.style.setProperty("fill", "currentColor", "important");
-    icon.style.setProperty(
-      "mix-blend-mode",
-      contrastScope === "bar" ? "normal" : "difference",
-      "important",
-    );
-    icon.style.setProperty("filter", "none", "important");
-    if (icon.hasAttribute("stroke")) {
-      icon.style.setProperty("stroke", "currentColor", "important");
-    }
-  });
-
-  if (!button.dataset.keyboardEnhanced) {
-    button.dataset.keyboardEnhanced = "true";
-    button.addEventListener("click", hideSiteTooltip);
-    button.addEventListener("keydown", (event) => {
-      if (event.key !== "Enter" && event.key !== " ") return;
-      event.preventDefault();
-      button.click();
-    });
-  }
-}
-
 async function downloadViaFetch(url, filename) {
   const res = await fetch(url, { mode: "cors" });
   const blob = await res.blob();
@@ -748,12 +661,7 @@ async function downloadViaFetch(url, filename) {
   URL.revokeObjectURL(blobUrl);
 }
 
-function setTemporaryPhotoSwipeButtonLabel(button, label, fallbackLabel) {
-  enhancePhotoSwipeButton(button, label);
-  window.setTimeout(() => enhancePhotoSwipeButton(button, fallbackLabel), 1400);
-}
-
-async function sharePhotoSwipeImage(src, button) {
+async function sharePhotoSwipeImage(src) {
   const url = new URL(src, location.href).href;
   const shareData = {
     title: document.title,
@@ -771,7 +679,9 @@ async function sharePhotoSwipeImage(src, button) {
 
   try {
     await navigator.clipboard.writeText(url);
-    setTemporaryPhotoSwipeButtonLabel(button, "Lien copié", "Partager");
+    document.dispatchEvent(
+      new CustomEvent("site:photoswipe-share-result", { detail: { copied: true } }),
+    );
   } catch {
     window.open(url, "_blank", "noopener");
   }
@@ -921,15 +831,6 @@ function initLightboxRadiusTransition(pswp) {
   });
 }
 
-function syncFullscreenButton(button) {
-  const isFullscreen = Boolean(document.fullscreenElement);
-  const label = isFullscreen ? "Quitter le plein écran" : "Plein écran";
-  const path = button.querySelector("path");
-
-  path?.setAttribute("d", isFullscreen ? CLOSE_FULLSCREEN_ICON_PATH : FULLSCREEN_ICON_PATH);
-  enhancePhotoSwipeButton(button, label);
-}
-
 function initLightboxZoomLock(pswp) {
   const root = pswp.element;
   if (!root) return;
@@ -1050,6 +951,10 @@ const lightbox = new PhotoSwipeLightbox({
   maxZoomLevel: "fit",
   wheelToZoom: false,
   zoom: false,
+  close: false,
+  counter: false,
+  arrowPrev: false,
+  arrowNext: false,
   allowPanToNext: true,
   pinchToClose: false,
   closeOnVerticalDrag: true,
@@ -1058,6 +963,78 @@ const lightbox = new PhotoSwipeLightbox({
   arrowPrevTitle: "Image précédente",
   arrowNextTitle: "Image suivante",
   closeTitle: "Fermer",
+});
+
+let activePhotoSwipe = null;
+
+function dispatchPhotoSwipeState(pswp, open = true) {
+  const src = pswp?.currSlide?.data?.src;
+  const total = pswp?.getNumItems?.() ?? 0;
+
+  document.dispatchEvent(
+    new CustomEvent("site:photoswipe-state", {
+      detail: {
+        open,
+        src: typeof src === "string" ? src : "",
+        index: Math.min(total, Math.max(1, (pswp?.currIndex ?? 0) + 1)),
+        total: Math.max(1, total),
+        isFullscreen: Boolean(document.fullscreenElement),
+        fullscreenAvailable: Boolean(document.fullscreenEnabled),
+      },
+    }),
+  );
+}
+
+document.addEventListener("fullscreenchange", () => {
+  if (activePhotoSwipe) dispatchPhotoSwipeState(activePhotoSwipe);
+});
+
+document.addEventListener("site:photoswipe-action", async (event) => {
+  const pswp = activePhotoSwipe;
+  const action = event.detail?.action;
+  if (!pswp || !action) return;
+
+  if (action === "close") {
+    pswp.close();
+    return;
+  }
+
+  if (action === "previous") {
+    pswp.prev();
+    return;
+  }
+
+  if (action === "next") {
+    pswp.next();
+    return;
+  }
+
+  if (action === "fullscreen") {
+    const root = pswp.element || document.documentElement;
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen?.();
+      } else {
+        await root.requestFullscreen?.();
+      }
+    } catch {}
+    dispatchPhotoSwipeState(pswp);
+    return;
+  }
+
+  const src = pswp.currSlide?.data?.src;
+  if (!src) return;
+
+  if (action === "download") {
+    try {
+      await downloadViaFetch(src, fileNameFromURL(src));
+    } catch {
+      window.open(src, "_blank", "noopener");
+    }
+    return;
+  }
+
+  if (action === "share") await sharePhotoSwipeImage(src);
 });
 
 lightbox.on("uiRegister", () => {
@@ -1069,182 +1046,20 @@ lightbox.on("uiRegister", () => {
   initLightboxZoomLock(pswp);
   initLightboxDesktopImageClickClose(pswp);
 
-  ui.uiElementsData = ui.uiElementsData.filter((element) => {
-    const name = String(element.name || "");
-    const className = String(element.className || "");
-    const normalizedName = name.toLowerCase();
-    const key = `${normalizedName} ${className.toLowerCase()}`;
+  ui.uiElementsData = ui.uiElementsData.filter(
+    (element) => String(element.name || "").toLowerCase() === "preloader",
+  );
 
-    return normalizedName !== "close" && !key.includes("zoom");
-  });
+  activePhotoSwipe = pswp;
+  const syncToolbar = () => dispatchPhotoSwipeState(pswp);
 
-  const fullscreenButtons = new Set();
-  const syncFullscreenButtons = () => {
-    fullscreenButtons.forEach((button) => {
-      if (!button.isConnected) {
-        fullscreenButtons.delete(button);
-        return;
-      }
-
-      syncFullscreenButton(button);
-    });
-  };
-
-  document.addEventListener("fullscreenchange", syncFullscreenButtons);
-  pswp.on("destroy", () => {
-    document.removeEventListener("fullscreenchange", syncFullscreenButtons);
-    fullscreenButtons.clear();
-  });
-
-  const localizeButtons = () => {
-    const labels = {
-      ".pswp__button--arrow--prev": "Image précédente",
-      ".pswp__button--arrow--next": "Image suivante",
-      ".pswp__button--close": "Fermer",
-      ".pswp__button--fullscreen": "Plein écran",
-      ".pswp__button--open-new": "Visualiser",
-      ".pswp__button--download": "Télécharger",
-      ".pswp__button--share": "Partager",
-    };
-
-    for (const [selector, label] of Object.entries(labels)) {
-      pswp.element?.querySelectorAll(selector).forEach((button) => {
-        if (selector === ".pswp__button--fullscreen") {
-          fullscreenButtons.add(button);
-          syncFullscreenButton(button);
-        } else {
-          enhancePhotoSwipeButton(button, label);
-        }
-      });
-    }
-  };
-
-  const enhanceButtons = () => {
-    requestAnimationFrame(() => {
-      removePhotoSwipeZoomUi(pswp);
-      localizeButtons();
-    });
-  };
-
-  pswp.on("uiElementCreate", ({ data }) => {
-    const name = String(data.name || data.className || "");
-    if (name.toLowerCase().includes("zoom")) data.html = "";
-  });
-  pswp.on("afterInit", enhanceButtons);
-  pswp.on("bindEvents", enhanceButtons);
-  pswp.on("change", enhanceButtons);
+  pswp.on("afterInit", syncToolbar);
+  pswp.on("bindEvents", syncToolbar);
+  pswp.on("change", syncToolbar);
   pswp.on("zoomPanUpdate", () => removePhotoSwipeZoomUi(pswp));
-
-  if (!window.matchMedia("(pointer: coarse)").matches && window.innerWidth >= 768) {
-    ui.registerElement({
-      name: "custom-fullscreen",
-      order: 1,
-      appendTo: "bar",
-      isButton: true,
-      tagName: "button",
-      className:
-        "pswp__button custom pswp__button--fullscreen site-icon-button site-material-ripple mat-mdc-button-base mat-mdc-icon-button",
-      ariaLabel: "Plein écran",
-      html: materialIconHtml(FULLSCREEN_ICON_PATH),
-      onInit: (el) => {
-        fullscreenButtons.add(el);
-        syncFullscreenButton(el);
-      },
-      onClick: (_event, el, instance) => {
-        const root = instance.element || document.documentElement;
-        if (!document.fullscreenElement) {
-          root.requestFullscreen?.()?.catch?.(() => {});
-        } else {
-          document.exitFullscreen?.()?.catch?.(() => {});
-        }
-        requestAnimationFrame(() => syncFullscreenButton(el));
-      },
-    });
-  }
-
-  ui.registerElement({
-    name: "open-new-tab",
-    order: 112,
-    appendTo: "bar",
-    isButton: true,
-    tagName: "a",
-    className:
-      "pswp__button custom pswp__button--open-new site-icon-button site-material-ripple mat-mdc-button-base mat-mdc-icon-button",
-    ariaLabel: "Visualiser",
-    html: materialIconHtml(OPEN_IMAGE_ICON_PATH),
-    onInit: (el, instance) => {
-      const link = el;
-      const syncHref = () => {
-        const src = instance.currSlide?.data?.src;
-        if (src) {
-          link.setAttribute("href", src);
-          link.setAttribute("target", "_blank");
-          link.setAttribute("rel", "noopener");
-        } else {
-          link.removeAttribute("href");
-        }
-      };
-
-      enhancePhotoSwipeButton(link, "Visualiser");
-      syncHref();
-      instance.on("change", syncHref);
-    },
-  });
-
-  ui.registerElement({
-    name: "download",
-    order: 110,
-    appendTo: "bar",
-    isButton: true,
-    tagName: "button",
-    className:
-      "pswp__button pswp__button--download custom site-icon-button site-material-ripple mat-mdc-button-base mat-mdc-icon-button",
-    ariaLabel: "Télécharger",
-    html: materialIconHtml(DOWNLOAD_IMAGE_ICON_PATH),
-    onInit: (el) => enhancePhotoSwipeButton(el, "Télécharger"),
-    onClick: async (_event, _el, instance) => {
-      const src = instance.currSlide?.data?.src;
-      if (!src) return;
-
-      try {
-        await downloadViaFetch(src, fileNameFromURL(src));
-      } catch {
-        window.open(src, "_blank", "noopener");
-      }
-    },
-  });
-
-  ui.registerElement({
-    name: "share-image",
-    order: 111,
-    appendTo: "bar",
-    isButton: true,
-    tagName: "button",
-    className:
-      "pswp__button custom pswp__button--share site-icon-button site-material-ripple mat-mdc-button-base mat-mdc-icon-button",
-    ariaLabel: "Partager",
-    html: materialIconHtml(LINK_ICON_PATH),
-    onInit: (el) => enhancePhotoSwipeButton(el, "Partager"),
-    onClick: async (_event, el, instance) => {
-      const src = instance.currSlide?.data?.src;
-      if (!src) return;
-
-      await sharePhotoSwipeImage(src, el);
-    },
-  });
-
-  ui.registerElement({
-    name: "custom-close",
-    order: 120,
-    appendTo: "bar",
-    isButton: true,
-    tagName: "button",
-    className:
-      "pswp__button custom pswp__button--close site-icon-button site-material-ripple mat-mdc-button-base mat-mdc-icon-button",
-    ariaLabel: "Fermer",
-    html: materialIconHtml(CLOSE_ICON_PATH),
-    onInit: (el) => enhancePhotoSwipeButton(el, "Fermer"),
-    onClick: (_event, _el, instance) => instance.close(),
+  pswp.on("destroy", () => {
+    if (activePhotoSwipe === pswp) activePhotoSwipe = null;
+    dispatchPhotoSwipeState(pswp, false);
   });
 });
 

@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "build:vercel": "node scripts/ensure-git-history.mjs && astro build",
     "preview": "astro preview",
     "astro": "astro",
     "update:konachan": "node scripts/update-konachan-backgrounds.mjs"

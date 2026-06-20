@@ -12,7 +12,7 @@ export default function remarkGitDates() {
     const frontmatter = file.data.astro.frontmatter;
     const published = normalizeDate(frontmatter.pubDate);
     const gitDates = getFileGitDates(filePath, {
-      createdAt: normalizeDate(frontmatter.createdAt) || published,
+      createdAt: normalizeDate(frontmatter.createdAt),
       lastModified: normalizeDate(frontmatter.lastModified) || published,
     });
 

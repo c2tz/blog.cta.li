@@ -2,7 +2,7 @@ name: Update Konachan backgrounds
 
 on:
   schedule:
-    - cron: "17 4 * * 1"
+   - cron: "0 20 * * 6"
   workflow_dispatch:
 
 permissions:

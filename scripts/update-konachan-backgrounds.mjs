@@ -1,4 +1,4 @@
-import { mkdir, readdir, rename, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -23,6 +23,27 @@ const MANIFEST_PATH = resolve(PUBLIC_DIR, "konachan-backgrounds.json");
 const MANIFEST_TEMP_PATH = `${MANIFEST_PATH}.tmp`;
 const QUALITIES = [72, 64, 56, 48, 40, 32, 24, 18, 12, 8, 6];
 const MINIMUM_IMAGE_COUNT = 8;
+
+async function readExistingManifest() {
+  try {
+    return JSON.parse(await readFile(MANIFEST_PATH, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function hasSameImages(previous, images) {
+  if (!Array.isArray(previous?.images) || previous.images.length !== images.length) return false;
+
+  return images.every((image, index) => {
+    const existing = previous.images[index];
+    return (
+      Number(existing?.id) === Number(image.id) &&
+      Number(existing?.bytes) === Number(image.bytes) &&
+      Number(existing?.quality) === Number(image.quality)
+    );
+  });
+}
 
 async function fetchImage(url) {
   const response = await fetch(url, {
@@ -122,6 +143,13 @@ async function main() {
   }
 
   images.sort((left, right) => Number(left.id) - Number(right.id));
+  const previousManifest = await readExistingManifest();
+  if (hasSameImages(previousManifest, images)) {
+    await rm(TEMP_DIR, { recursive: true, force: true });
+    console.log("Konachan assets are already up to date.");
+    return;
+  }
+
   const manifest = {
     version: 1,
     source: "https://konachan.com/help/api",

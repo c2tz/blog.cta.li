@@ -24,7 +24,7 @@ function getScrollProgress() {
     <button
       matButton="outlined"
       type="button"
-      class="site-scroll-top site-material-ripple"
+      class="site-scroll-top"
       [class.is-visible]="visible()"
       [tabIndex]="visible() ? 0 : -1"
       [attr.aria-label]="'Retour en haut, progression ' + progress() + ' %'"

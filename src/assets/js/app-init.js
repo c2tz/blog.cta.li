@@ -1,73 +1,7 @@
 import PhotoSwipeLightbox from "photoswipe/lightbox";
 import PhotoSwipe from "photoswipe";
 import "photoswipe/style.css";
-import { initMuiTooltips } from "./mui-tooltips.js";
 
-const CODE_COPY_ICON_PATH =
-  "M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z";
-const CODE_CHECK_ICON_PATH = "M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z";
-
-function createMaterialIcon(path, className = "") {
-  const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  icon.setAttribute("viewBox", "0 -960 960 960");
-  icon.setAttribute("width", "20");
-  icon.setAttribute("height", "20");
-  icon.setAttribute("fill", "currentColor");
-  icon.classList.add("site-button-icon");
-  className
-    .split(/\s+/)
-    .filter(Boolean)
-    .forEach((token) => icon.classList.add(token));
-  icon.setAttribute("matButtonIcon", "");
-  icon.setAttribute("aria-hidden", "true");
-  icon.setAttribute("focusable", "false");
-  icon.innerHTML = `<path d="${path}"/>`;
-  return icon;
-}
-
-function createMaterialButtonChrome(rippleClass = "mdc-button__ripple") {
-  const ripple = document.createElement("span");
-  ripple.className = `mat-mdc-button-persistent-ripple ${rippleClass}`;
-  ripple.setAttribute("aria-hidden", "true");
-
-  const focus = document.createElement("span");
-  focus.className = "mat-focus-indicator";
-  focus.setAttribute("aria-hidden", "true");
-
-  const touchTarget = document.createElement("span");
-  touchTarget.className = "mat-mdc-button-touch-target";
-  touchTarget.setAttribute("aria-hidden", "true");
-
-  return { focus, ripple, touchTarget };
-}
-
-function initManualMaterialRipples() {
-  if (document.documentElement.dataset.manualMaterialRipples === "true") return;
-
-  document.documentElement.dataset.manualMaterialRipples = "true";
-  document.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0) return;
-
-    const button = event.target?.closest?.(".site-material-ripple");
-    if (!button || button.matches(":disabled, [aria-disabled='true']")) return;
-
-    const rect = button.getBoundingClientRect();
-    const size = Math.max(rect.width, rect.height) * 2.2;
-    const ripple = document.createElement("span");
-
-    ripple.className = "site-material-ripple__wave";
-    ripple.style.width = `${size}px`;
-    ripple.style.height = `${size}px`;
-    ripple.style.left = `${event.clientX - rect.left}px`;
-    ripple.style.top = `${event.clientY - rect.top}px`;
-
-    button.appendChild(ripple);
-    ripple.addEventListener("animationend", () => ripple.remove(), { once: true });
-  });
-}
-
-const SCROLL_TOP_ICON_PATH =
-  "M440-727 256-544l-56-56 280-280 280 280-56 57-184-184v287h-80v-287Zm0 487v-120h80v120h-80Zm0 160v-80h80v80h-80Z";
 const DYNAMIC_ANCHOR_OFFSET = 96;
 
 let isDynamicAnchorInitialized = false;
@@ -135,139 +69,8 @@ function syncScrollUi() {
   const progress = getScrollProgress();
 
   document
-    .querySelectorAll(".site-scroll-top")
-    .forEach((button) => syncBackToTopButton(button, progress));
-  document
     .querySelectorAll(".site-scroll-progress")
     .forEach((bar) => syncScrollProgressBar(bar, progress));
-}
-
-async function copyToClipboard(text) {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    const textarea = document.createElement("textarea");
-    const selection = document.getSelection();
-    const selectedRange =
-      selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-
-    textarea.value = text;
-    textarea.setAttribute("readonly", "");
-    textarea.style.position = "fixed";
-    textarea.style.inset = "0 auto auto 0";
-    textarea.style.opacity = "0";
-
-    document.body.appendChild(textarea);
-    textarea.select();
-    textarea.setSelectionRange(0, textarea.value.length);
-
-    let copied = false;
-    try {
-      copied = document.execCommand("copy");
-    } finally {
-      textarea.remove();
-      if (selectedRange && selection) {
-        selection.removeAllRanges();
-        selection.addRange(selectedRange);
-      }
-    }
-
-    return copied;
-  }
-}
-
-function initCodeBlocks() {
-  document.querySelectorAll("pre > code").forEach((codeBlock) => {
-    const pre = codeBlock.parentElement;
-    if (!pre || pre.dataset.styled === "1") return;
-    pre.dataset.styled = "1";
-    pre.removeAttribute("tabindex");
-
-    const langClass = Array.from(codeBlock.classList).find((className) =>
-      className.startsWith("language-"),
-    );
-    const preLangClass = Array.from(pre.classList).find((className) =>
-      className.startsWith("language-"),
-    );
-    const dataLang =
-      codeBlock.getAttribute("data-language") ||
-      codeBlock.getAttribute("data-lang") ||
-      pre.getAttribute("data-language") ||
-      pre.getAttribute("data-lang");
-
-    const lang =
-      langClass?.replace("language-", "") ||
-      preLangClass?.replace("language-", "") ||
-      dataLang?.toLowerCase() ||
-      "code";
-
-    const shell = document.createElement("div");
-    shell.className = "code-shell";
-    pre.parentNode?.insertBefore(shell, pre);
-    shell.appendChild(pre);
-
-    const header = document.createElement("div");
-    header.className = "code-header";
-
-    const langEl = document.createElement("div");
-    langEl.className = "code-lang";
-    langEl.textContent = lang;
-
-    const actions = document.createElement("div");
-    actions.className = "code-actions";
-
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className =
-      "code-copy-button site-icon-button site-material-ripple mat-mdc-icon-button mat-mdc-button-base";
-    button.tabIndex = 0;
-    button.setAttribute("aria-label", "Copier le code");
-    button.setAttribute("aria-keyshortcuts", "Enter Space");
-
-    const status = document.createElement("span");
-    status.className = "sr-only code-copy-status";
-    status.setAttribute("role", "status");
-    status.setAttribute("aria-live", "polite");
-
-    const materialChrome = createMaterialButtonChrome("mdc-icon-button__ripple");
-    const copyIcon = createMaterialIcon(
-      CODE_COPY_ICON_PATH,
-      "code-copy-button__icon code-copy-button__icon--copy",
-    );
-    const checkIcon = createMaterialIcon(
-      CODE_CHECK_ICON_PATH,
-      "code-copy-button__icon code-copy-button__icon--check",
-    );
-    button.append(
-      materialChrome.ripple,
-      copyIcon,
-      checkIcon,
-      materialChrome.focus,
-      materialChrome.touchTarget,
-    );
-
-    button.addEventListener("click", async () => {
-      const mark = (className, text) => {
-        button.classList.remove("is-copied", "is-error");
-        button.classList.add(className);
-        button.setAttribute("aria-label", text);
-        status.textContent = text;
-        setTimeout(() => {
-          button.classList.remove(className);
-          button.setAttribute("aria-label", "Copier le code");
-        }, 1000);
-      };
-
-      const copied = await copyToClipboard(codeBlock.innerText);
-      mark(copied ? "is-copied" : "is-error", copied ? "Copié" : "Erreur");
-    });
-
-    actions.appendChild(button);
-    actions.appendChild(status);
-    header.append(langEl, actions);
-    shell.insertBefore(header, pre);
-  });
 }
 
 function initSiteTooltips() {
@@ -324,54 +127,6 @@ function initSiteTooltips() {
     ref.setAttribute("data-tooltip", "Voir l'explication");
     ref.classList.add("site-tooltip", "footnote-ref-tooltip");
   });
-}
-
-function initBackToTopButton() {
-  if (document.body?.dataset.scrollTopUi === "off") return;
-
-  const existingButton = document.querySelector(".site-scroll-top");
-  if (existingButton) {
-    syncBackToTopButton(existingButton);
-    return;
-  }
-
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className =
-    "site-scroll-top mdc-button mat-mdc-button-base mat-mdc-outlined-button site-material-ripple";
-  button.setAttribute("aria-label", "Retour en haut");
-  button.innerHTML = `
-    <span class="mat-mdc-button-persistent-ripple mdc-button__ripple" aria-hidden="true"></span>
-    <span class="mdc-button__label">
-      <svg matButtonIcon aria-hidden="true" viewBox="0 -960 960 960" focusable="false">
-        <path d="${SCROLL_TOP_ICON_PATH}"></path>
-      </svg>
-      <span>Haut</span>
-      <span class="site-scroll-top__count" data-scroll-progress-count aria-hidden="true">0%</span>
-    </span>
-    <span class="mat-focus-indicator" aria-hidden="true"></span>
-    <span class="mat-mdc-button-touch-target" aria-hidden="true"></span>
-  `;
-
-  button.addEventListener("click", () => {
-    hideSiteTooltip();
-    button.blur();
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  });
-  window.addEventListener("scroll", requestScrollUiSync, { passive: true });
-  window.addEventListener("resize", requestScrollUiSync, { passive: true });
-  document.body.appendChild(button);
-  syncScrollUi();
-}
-
-function syncBackToTopButton(button, progress = getScrollProgress()) {
-  const isVisible = window.scrollY > 100;
-  const count = button.querySelector("[data-scroll-progress-count]");
-
-  button.classList.toggle("is-visible", isVisible);
-  button.tabIndex = isVisible ? 0 : -1;
-  button.setAttribute("aria-label", `Retour en haut, progression ${progress} %`);
-  if (count) count.textContent = `${progress}%`;
 }
 
 function initScrollProgressBar() {
@@ -966,6 +721,7 @@ const lightbox = new PhotoSwipeLightbox({
 });
 
 let activePhotoSwipe = null;
+let activePhotoSwipeLoading = false;
 
 function dispatchPhotoSwipeState(pswp, open = true) {
   const src = pswp?.currSlide?.data?.src;
@@ -980,6 +736,7 @@ function dispatchPhotoSwipeState(pswp, open = true) {
         total: Math.max(1, total),
         isFullscreen: Boolean(document.fullscreenElement),
         fullscreenAvailable: Boolean(document.fullscreenEnabled),
+        loading: open && activePhotoSwipeLoading,
       },
     }),
   );
@@ -1046,19 +803,35 @@ lightbox.on("uiRegister", () => {
   initLightboxZoomLock(pswp);
   initLightboxDesktopImageClickClose(pswp);
 
-  ui.uiElementsData = ui.uiElementsData.filter(
-    (element) => String(element.name || "").toLowerCase() === "preloader",
-  );
+  ui.uiElementsData = [];
 
   activePhotoSwipe = pswp;
   const syncToolbar = () => dispatchPhotoSwipeState(pswp);
+  const setToolbarLoading = (loading) => {
+    activePhotoSwipeLoading = loading;
+    syncToolbar();
+  };
 
-  pswp.on("afterInit", syncToolbar);
+  pswp.on("afterInit", () => {
+    setToolbarLoading(Boolean(pswp.currSlide?.content?.isLoading?.()));
+  });
   pswp.on("bindEvents", syncToolbar);
-  pswp.on("change", syncToolbar);
+  pswp.on("change", () => {
+    setToolbarLoading(Boolean(pswp.currSlide?.content?.isLoading?.()));
+  });
+  pswp.on("contentLoadImage", ({ content }) => {
+    if (!content.slide || content.slide === pswp.currSlide) setToolbarLoading(true);
+  });
+  pswp.on("loadComplete", ({ slide }) => {
+    if (slide === pswp.currSlide) setToolbarLoading(false);
+  });
+  pswp.on("loadError", ({ slide }) => {
+    if (slide === pswp.currSlide) setToolbarLoading(false);
+  });
   pswp.on("zoomPanUpdate", () => removePhotoSwipeZoomUi(pswp));
   pswp.on("destroy", () => {
     if (activePhotoSwipe === pswp) activePhotoSwipe = null;
+    activePhotoSwipeLoading = false;
     dispatchPhotoSwipeState(pswp, false);
   });
 });
@@ -1081,19 +854,14 @@ function initLightbox() {
 
 function initApp() {
   initLocalDateTimes();
-  initManualMaterialRipples();
   initSiteTooltips();
-  initMuiTooltips();
-  initCodeBlocks();
   initLightbox();
   initKeyboardAccessibleTargets();
   initDynamicAnchors();
   if (document.body?.dataset.scrollUi === "off") {
     removeScrollUi();
-    initBackToTopButton();
   } else {
     initScrollProgressBar();
-    initBackToTopButton();
   }
 }
 

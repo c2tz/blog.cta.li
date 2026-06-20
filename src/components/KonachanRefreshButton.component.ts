@@ -5,6 +5,8 @@ import {
 } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
 import { MatButtonModule } from "@angular/material/button";
+import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
+import { MatTooltipModule } from "@angular/material/tooltip";
 
 interface RefreshState {
   busy?: boolean;
@@ -17,28 +19,33 @@ const REFRESH_ICON_PATH =
 @Component({
   selector: "konachan-refresh-button",
   standalone: true,
-  imports: [MatButtonModule],
+  imports: [MatButtonModule, MatProgressSpinnerModule, MatTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button
       matIconButton
       type="button"
-      class="home-anime-refresh site-icon-button site-tooltip site-material-ripple"
+      class="home-anime-refresh site-icon-button"
       [disabled]="busy()"
+      [attr.aria-busy]="busy()"
       [attr.aria-label]="busy() ? 'Image en cours de chargement' : 'Changer l\\'image'"
-      [attr.data-tooltip]="busy() ? 'Image en cours de chargement' : 'Changer l\\'image'"
-      data-tooltip-placement="bottom"
+      [matTooltip]="busy() ? 'Image en cours de chargement' : 'Changer l\\'image'"
+      matTooltipPosition="below"
       (click)="refresh()"
     >
-      <svg
-        matButtonIcon
-        class="site-button-icon"
-        aria-hidden="true"
-        viewBox="0 -960 960 960"
-        focusable="false"
-      >
-        <path d="${REFRESH_ICON_PATH}"></path>
-      </svg>
+      @if (busy()) {
+        <mat-spinner diameter="20" strokeWidth="3" aria-hidden="true"></mat-spinner>
+      } @else {
+        <svg
+          matButtonIcon
+          class="site-button-icon"
+          aria-hidden="true"
+          viewBox="0 -960 960 960"
+          focusable="false"
+        >
+          <path d="${REFRESH_ICON_PATH}"></path>
+        </svg>
+      }
     </button>
     <span class="sr-only" role="status" aria-live="polite" data-konachan-status>
       {{ status() }}

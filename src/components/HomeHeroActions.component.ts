@@ -10,14 +10,14 @@ import { MatButtonModule } from "@angular/material/button";
     <nav class="home-hero__actions" aria-label="Navigation d'accueil">
       <a
         matButton="tonal"
-        class="home-hero__button site-material-ripple"
+        class="home-hero__button"
         [href]="primaryActionHref()"
       >
         {{ primaryActionLabel() }}
       </a>
       <a
         matButton="outlined"
-        class="home-hero__button site-material-ripple"
+        class="home-hero__button"
         [href]="secondaryActionHref()"
       >
         {{ secondaryActionLabel() }}

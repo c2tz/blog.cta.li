@@ -50,15 +50,6 @@ function mapPost(post) {
   };
 }
 
-function shuffle(items) {
-  const copy = [...items];
-  for (let index = copy.length - 1; index > 0; index -= 1) {
-    const target = Math.floor(Math.random() * (index + 1));
-    [copy[index], copy[target]] = [copy[target], copy[index]];
-  }
-  return copy;
-}
-
 async function fetchKonachanPosts(tags, page) {
   const params = new URLSearchParams({
     limit: String(KONACHAN_FETCH_LIMIT),
@@ -95,7 +86,9 @@ export async function getKonachanBackgroundPosts() {
         if (!uniquePosts.has(post.id)) uniquePosts.set(post.id, post);
       });
 
-    cachedPosts = shuffle([...uniquePosts.values()]).slice(0, KONACHAN_MANIFEST_LIMIT);
+    cachedPosts = [...uniquePosts.values()]
+      .sort((left, right) => Number(right.id) - Number(left.id))
+      .slice(0, KONACHAN_MANIFEST_LIMIT);
     return cachedPosts;
   } catch {
     cachedPosts = [];

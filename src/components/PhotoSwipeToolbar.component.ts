@@ -5,6 +5,8 @@ import {
 } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
 import { MatButtonModule } from "@angular/material/button";
+import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
+import { MatTooltipModule } from "@angular/material/tooltip";
 
 interface PhotoSwipeToolbarState {
   open?: boolean;
@@ -13,6 +15,7 @@ interface PhotoSwipeToolbarState {
   total?: number;
   isFullscreen?: boolean;
   fullscreenAvailable?: boolean;
+  loading?: boolean;
 }
 
 type PhotoSwipeAction =
@@ -43,7 +46,7 @@ const ICON_PATHS = {
 @Component({
   selector: "site-photoswipe-toolbar",
   standalone: true,
-  imports: [MatButtonModule],
+  imports: [MatButtonModule, MatProgressSpinnerModule, MatTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     "[class.is-open]": "open()",
@@ -59,10 +62,10 @@ const ICON_PATHS = {
             <button
               matIconButton
               type="button"
-              class="site-pswp-button site-icon-button site-tooltip"
+              class="site-pswp-button site-icon-button"
               [attr.aria-label]="fullscreenLabel()"
-              [attr.data-tooltip]="fullscreenLabel()"
-              data-tooltip-placement="bottom"
+              [matTooltip]="fullscreenLabel()"
+              matTooltipPosition="below"
               (click)="act('fullscreen')"
             >
               <svg matButtonIcon aria-hidden="true" viewBox="0 -960 960 960" focusable="false">
@@ -73,13 +76,13 @@ const ICON_PATHS = {
 
           <a
             matIconButton
-            class="site-pswp-button site-icon-button site-tooltip"
+            class="site-pswp-button site-icon-button"
             [href]="src()"
             target="_blank"
             rel="noopener"
             aria-label="Ouvrir l'image"
-            data-tooltip="Ouvrir l'image"
-            data-tooltip-placement="bottom"
+            matTooltip="Ouvrir l'image"
+            matTooltipPosition="below"
             (click)="hideTooltip()"
           >
             <svg matButtonIcon aria-hidden="true" viewBox="0 -960 960 960" focusable="false">
@@ -90,10 +93,10 @@ const ICON_PATHS = {
           <button
             matIconButton
             type="button"
-            class="site-pswp-button site-icon-button site-tooltip"
+            class="site-pswp-button site-icon-button"
             aria-label="Télécharger"
-            data-tooltip="Télécharger"
-            data-tooltip-placement="bottom"
+            matTooltip="Télécharger"
+            matTooltipPosition="below"
             (click)="act('download')"
           >
             <svg matButtonIcon aria-hidden="true" viewBox="0 -960 960 960" focusable="false">
@@ -104,10 +107,10 @@ const ICON_PATHS = {
           <button
             matIconButton
             type="button"
-            class="site-pswp-button site-icon-button site-tooltip"
+            class="site-pswp-button site-icon-button"
             [attr.aria-label]="shareLabel()"
-            [attr.data-tooltip]="shareLabel()"
-            data-tooltip-placement="bottom"
+            [matTooltip]="shareLabel()"
+            matTooltipPosition="below"
             (click)="share()"
           >
             <svg matButtonIcon aria-hidden="true" viewBox="0 -960 960 960" focusable="false">
@@ -118,10 +121,10 @@ const ICON_PATHS = {
           <button
             matIconButton
             type="button"
-            class="site-pswp-button site-icon-button site-tooltip"
+            class="site-pswp-button site-icon-button"
             aria-label="Fermer"
-            data-tooltip="Fermer"
-            data-tooltip-placement="bottom"
+            matTooltip="Fermer"
+            matTooltipPosition="below"
             (click)="act('close')"
           >
             <svg matButtonIcon aria-hidden="true" viewBox="0 -960 960 960" focusable="false">
@@ -135,10 +138,10 @@ const ICON_PATHS = {
         <button
           matIconButton
           type="button"
-          class="site-pswp-button site-icon-button site-pswp-nav site-pswp-nav--previous site-tooltip"
+          class="site-pswp-button site-icon-button site-pswp-nav site-pswp-nav--previous"
           aria-label="Image précédente"
-          data-tooltip="Image précédente"
-          data-tooltip-placement="right"
+          matTooltip="Image précédente"
+          matTooltipPosition="right"
           (click)="act('previous')"
         >
           <svg matButtonIcon aria-hidden="true" viewBox="0 -960 960 960" focusable="false">
@@ -149,16 +152,23 @@ const ICON_PATHS = {
         <button
           matIconButton
           type="button"
-          class="site-pswp-button site-icon-button site-pswp-nav site-pswp-nav--next site-tooltip"
+          class="site-pswp-button site-icon-button site-pswp-nav site-pswp-nav--next"
           aria-label="Image suivante"
-          data-tooltip="Image suivante"
-          data-tooltip-placement="left"
+          matTooltip="Image suivante"
+          matTooltipPosition="left"
           (click)="act('next')"
         >
           <svg matButtonIcon aria-hidden="true" viewBox="0 -960 960 960" focusable="false">
             <path [attr.d]="icons.next"></path>
           </svg>
         </button>
+      }
+
+      @if (loading()) {
+        <div class="site-pswp-loading" role="status" aria-live="polite">
+          <mat-spinner diameter="48" strokeWidth="4" aria-hidden="true"></mat-spinner>
+          <span class="sr-only">Chargement de l'image</span>
+        </div>
       }
     }
   `,
@@ -274,6 +284,16 @@ const ICON_PATHS = {
       right: 1rem;
     }
 
+    .site-pswp-loading {
+      position: fixed;
+      inset: 50% auto auto 50%;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+    }
+
     @media (max-width: 47.99rem) {
       .site-pswp-toolbar {
         gap: 0.25rem;
@@ -302,6 +322,7 @@ export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
   readonly total = signal(1);
   readonly isFullscreen = signal(false);
   readonly fullscreenAvailable = signal(false);
+  readonly loading = signal(false);
   readonly shareLabel = signal("Partager");
 
   readonly fullscreenIcon = () =>
@@ -322,6 +343,7 @@ export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
     if (typeof detail.fullscreenAvailable === "boolean") {
       this.fullscreenAvailable.set(detail.fullscreenAvailable);
     }
+    if (typeof detail.loading === "boolean") this.loading.set(detail.loading);
   };
 
   private readonly handleShareResult = (event: Event) => {

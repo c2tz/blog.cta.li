@@ -31,5 +31,5 @@
     "allowJs": false
   },
   "files": [],
-  "include": ["src/**/*.ts", "src/**/*.tsx"]
+  "include": ["src/**/*.ts"]
 }

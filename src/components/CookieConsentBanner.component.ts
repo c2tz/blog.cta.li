@@ -93,7 +93,7 @@ function exposeConsentApi() {
           <button
             matButton="outlined"
             type="button"
-            class="cookie-consent__button site-material-ripple"
+            class="cookie-consent__button"
             (click)="reject()"
           >
             Refuser
@@ -101,7 +101,7 @@ function exposeConsentApi() {
           <button
             matButton="filled"
             type="button"
-            class="cookie-consent__button cookie-consent__accept site-material-ripple"
+            class="cookie-consent__button cookie-consent__accept"
             (click)="accept()"
           >
             Accepter

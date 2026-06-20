@@ -3,7 +3,6 @@ import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
-import react from '@astrojs/react';
 import angular from '@analogjs/astro-angular';
 import { unified } from '@astrojs/markdown-remark';
 
@@ -44,7 +43,6 @@ export default defineConfig({
   integrations: [
     mdx(),
     sitemap(),
-    react(),
     angular({
       vite: {
         fastCompile: true,

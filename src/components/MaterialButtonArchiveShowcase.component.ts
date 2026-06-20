@@ -55,7 +55,7 @@ interface IconItem {
               @if (item.href) {
                 <a
                   [matButton]="section.appearance"
-                  class="material-archive-button site-material-ripple"
+                  class="material-archive-button"
                   [href]="item.href"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -66,7 +66,7 @@ interface IconItem {
                 <button
                   [matButton]="section.appearance"
                   type="button"
-                  class="material-archive-button site-material-ripple"
+                  class="material-archive-button"
                   [disabled]="item.disabled === true"
                 >
                   {{ item.text }}
@@ -88,7 +88,7 @@ interface IconItem {
                   <button
                     matIconButton
                     type="button"
-                    class="material-archive-icon-button site-material-ripple"
+                    class="material-archive-icon-button"
                     [disabled]="item.disabled === true"
                     [attr.aria-label]="item.ariaLabel ?? null"
                   >
@@ -107,7 +107,7 @@ interface IconItem {
                   <button
                     matFab
                     type="button"
-                    class="material-archive-fab material-archive-fab--regular site-material-ripple"
+                    class="material-archive-fab material-archive-fab--regular"
                     [disabled]="item.disabled === true"
                     [attr.aria-label]="item.ariaLabel ?? null"
                   >
@@ -127,7 +127,7 @@ interface IconItem {
                   <button
                     matMiniFab
                     type="button"
-                    class="material-archive-fab material-archive-fab--mini site-material-ripple"
+                    class="material-archive-fab material-archive-fab--mini"
                     [disabled]="item.disabled === true"
                     [attr.aria-label]="item.ariaLabel ?? null"
                   >
@@ -148,7 +148,7 @@ interface IconItem {
                     <a
                       matFab
                       extended
-                      class="material-archive-extended-fab site-material-ripple"
+                      class="material-archive-extended-fab"
                       [href]="item.href"
                       target="_blank"
                       rel="noopener noreferrer"
@@ -168,7 +168,7 @@ interface IconItem {
                       matFab
                       extended
                       type="button"
-                      class="material-archive-extended-fab site-material-ripple"
+                      class="material-archive-extended-fab"
                       [disabled]="item.disabled === true"
                     >
                       <svg

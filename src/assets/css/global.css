@@ -54,11 +54,12 @@
   --site-link-contrast: #fff;
   --site-link-container: #e3f2fd;
   --site-on-link-container: #0b3d67;
+  --site-mark-bg: #ffff00;
   --site-tonal-container: #eceff1;
   --site-on-tonal-container: #263238;
   --site-tooltip-bg: #fff;
   --site-tooltip-text: #000;
-  --site-tooltip-border: #d7ff00;
+  --site-tooltip-border: var(--site-mark-bg);
   --code-surface: #f3f3f3;
   --code-block-surface: #ffffff;
   --code-pad: 1rem;
@@ -882,6 +883,12 @@
   box-decoration-break: clone;
 }
 
+.site-prose
+  :where(mark):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
+  background-color: var(--site-mark-bg);
+  color: #000;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -1086,7 +1093,7 @@ main :is(h1, h2, h3, h4, h5, h6)[tabindex="0"]:focus-visible {
   max-width: inherit;
   padding: 0.38rem 0.55rem;
   border: 1px solid var(--site-tooltip-border);
-  border-radius: 4px;
+  border-radius: 5px;
   background: var(--site-tooltip-bg);
   box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 0.18);
   color: var(--site-tooltip-text);
@@ -1489,15 +1496,18 @@ img[data-lightbox],
 }
 
 .pswp__button--arrow {
+  position: absolute !important;
   top: calc(50% - 1.25rem) !important;
   margin-top: 0 !important;
 }
 
 .pswp__button--arrow--prev {
   left: 1rem !important;
+  right: auto !important;
 }
 
 .pswp__button--arrow--next {
+  left: auto !important;
   right: 1rem !important;
 }
 
@@ -2177,7 +2187,7 @@ body.page-no-scroll-ui .site-scroll-progress {
     --site-on-tonal-container: #dfe5e8;
     --site-tooltip-bg: #000;
     --site-tooltip-text: #fff;
-    --site-tooltip-border: #d7ff00;
+    --site-tooltip-border: var(--site-mark-bg);
     --code-surface: #252526;
     --code-block-surface: #1e1e1e;
   }

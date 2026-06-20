@@ -83,20 +83,10 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
   const LANDING_SELECTOR = ".home-anime-landing";
   const STATUS_SELECTOR = "[data-konachan-status]";
   const MANIFEST_URL = "/konachan-backgrounds.json";
-  const KONACHAN_API_URL = "https://konachan.com/post.json";
-  const KONACHAN_POST_URL = "https://konachan.com/post/show/";
-  const KONACHAN_CACHE_KEY = "home_konachan_backgrounds_v3";
+  const KONACHAN_CACHE_KEY = "home_konachan_backgrounds_v4";
   const KONACHAN_CACHE_NAME = "home-konachan-backgrounds-v1";
   const KONACHAN_CACHE_TTL_MS = 14 * 24 * 60 * 60 * 1000;
-  const KONACHAN_REMOTE_LIMIT = 80;
-  const KONACHAN_REMOTE_MAX_PAGE = 18;
-  const KONACHAN_REMOTE_TIMEOUT_MS = 4500;
-  const KONACHAN_TAG_QUERIES = [
-    "rating:safe width:>=1920 height:>=1080",
-    "rating:safe width:>=1600 height:>=900 landscape",
-    "rating:safe width:>=1920 height:>=1080 scenic",
-    "rating:safe width:>=1920 height:>=1080 original",
-  ];
+  const KONACHAN_MANIFEST_RELOAD_MS = 24 * 60 * 60 * 1000;
   const EMERGENCY_IMAGES = emergencyImages;
   const state = {
     currentUrl: "",
@@ -118,8 +108,19 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
   function normalizeUrl(url) {
     if (!url) return "";
     if (url.startsWith("//")) return `https:${url}`;
-    if (url.startsWith("/")) return new URL(url, "https://konachan.com").toString();
-    return url;
+    try {
+      return new URL(url, window.location.href).toString();
+    } catch {
+      return "";
+    }
+  }
+
+  function isSameOriginUrl(url) {
+    try {
+      return new URL(url, window.location.href).origin === window.location.origin;
+    } catch {
+      return false;
+    }
   }
 
   function toCssUrl(url) {
@@ -134,20 +135,6 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
       image.onerror = reject;
       image.src = url;
     });
-  }
-
-  async function fetchWithTimeout(url, options = {}, timeout = KONACHAN_REMOTE_TIMEOUT_MS) {
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), timeout);
-
-    try {
-      return await fetch(url, {
-        ...options,
-        signal: controller.signal,
-      });
-    } finally {
-      window.clearTimeout(timer);
-    }
   }
 
   function readStoredImages() {
@@ -195,11 +182,11 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
     } catch {}
   }
 
-  async function readManifest() {
+  async function readManifest({ cache = "no-cache" } = {}) {
     try {
       const response = await fetch(MANIFEST_URL, {
         credentials: "same-origin",
-        cache: "no-cache",
+        cache,
       });
 
       if (!response.ok) throw new Error(`konachan_manifest_${response.status}`);
@@ -210,44 +197,6 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
       const cached = await readCachedJson(MANIFEST_URL);
       return Array.isArray(cached?.images) ? cached.images : [];
     }
-  }
-
-  function mapApiPost(post) {
-    const width = Number(post?.jpeg_width || post?.width || 0);
-    const height = Number(post?.jpeg_height || post?.height || 0);
-    const remoteUrl = normalizeUrl(post?.jpeg_url || post?.sample_url || post?.file_url);
-
-    if (!remoteUrl || post?.rating !== "s" || width < 1280 || height < 720) return null;
-
-    return {
-      id: post.id,
-      url: remoteUrl,
-      originalUrl: remoteUrl,
-      width,
-      height,
-      source: `${KONACHAN_POST_URL}${post.id}`,
-      author: post.author || "",
-      tags: post.tags || "",
-    };
-  }
-
-  async function readRemoteKonachan() {
-    const tags = pickRandom(KONACHAN_TAG_QUERIES);
-    const page = 1 + Math.floor(Math.random() * KONACHAN_REMOTE_MAX_PAGE);
-    const params = new URLSearchParams({
-      limit: String(KONACHAN_REMOTE_LIMIT),
-      page: String(page),
-      tags,
-    });
-
-    const response = await fetchWithTimeout(`${KONACHAN_API_URL}?${params}`, {
-      credentials: "omit",
-      cache: "no-store",
-    });
-
-    if (!response.ok) throw new Error(`konachan_remote_${response.status}`);
-    const posts = await response.json();
-    return Array.isArray(posts) ? posts.map(mapApiPost).filter(Boolean) : [];
   }
 
   function normalizeImage(image) {
@@ -309,8 +258,11 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
   }
 
   function imageCandidates(image) {
-    if (typeof image === "string") return [image];
-    return unique([image?.url, image?.originalUrl, image?.remoteUrl].map(normalizeUrl));
+    if (typeof image === "string") {
+      return unique([normalizeUrl(image)]).filter(isSameOriginUrl);
+    }
+
+    return unique([image?.url].map(normalizeUrl)).filter(isSameOriginUrl);
   }
 
   function syncViewport(target) {
@@ -337,8 +289,11 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
         images.slice(0, 8).map(async (image) => {
           const url = imageCandidates(image)[0];
           if (!url || (await cache.match(url))) return;
-          const response = await fetch(url, { mode: "no-cors", cache: "force-cache" });
-          if (response?.type === "opaque" || response?.ok) {
+          const response = await fetch(url, {
+            credentials: "same-origin",
+            cache: "force-cache",
+          });
+          if (response?.ok) {
             await cache.put(url, response.clone());
           }
         }),
@@ -346,28 +301,23 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
     } catch {}
   }
 
-  async function refreshImagePool({ forceRemote = false } = {}) {
+  async function refreshImagePool({ forceReload = false } = {}) {
     if (state.refreshPromise) return state.refreshPromise;
 
     state.refreshPromise = (async () => {
-      const cached = readStoredImages();
+      const cached = forceReload ? null : readStoredImages();
       if (cached?.images?.length && state.images.length === 0) {
         state.images = mergeImages(cached.images);
       }
 
-      const shouldFetchRemote =
-        forceRemote ||
+      const shouldReloadManifest =
+        forceReload ||
         !cached?.images?.length ||
-        Date.now() - (cached?.storedAt || 0) > 24 * 60 * 60 * 1000;
+        Date.now() - (cached?.storedAt || 0) > KONACHAN_MANIFEST_RELOAD_MS;
 
-      const results = await Promise.allSettled([
-        readManifest(),
-        shouldFetchRemote ? readRemoteKonachan() : Promise.resolve([]),
-      ]);
-
-      const freshImages = results.flatMap((result) =>
-        result.status === "fulfilled" ? result.value : [],
-      );
+      const freshImages = shouldReloadManifest
+        ? await readManifest({ cache: forceReload ? "reload" : "no-cache" })
+        : [];
       const merged = mergeImages(state.images, freshImages);
 
       if (merged.length > 0) {
@@ -458,12 +408,12 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
       );
     };
 
-    const refresh = async ({ forceRemote = false, rotateAfter = false } = {}) => {
+    const refresh = async ({ forceReload = false, rotateAfter = false } = {}) => {
       setRefreshState({ busy: true, message: "Chargement de l'image" });
       let message = "Image indisponible";
 
       try {
-        await refreshImagePool({ forceRemote });
+        await refreshImagePool({ forceReload });
         const changed =
           rotateAfter || target.dataset.loaded !== "true" ? await rotate(target) : true;
         message = changed ? "Image mise à jour" : message;
@@ -475,7 +425,7 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
     };
 
     document.addEventListener("konachan:refresh-request", () => {
-      refresh({ forceRemote: true, rotateAfter: true });
+      refresh({ forceReload: true, rotateAfter: true });
     });
 
     const cached = readStoredImages();

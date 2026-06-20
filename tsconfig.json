@@ -14,8 +14,6 @@
       ]
     },
     "strictNullChecks": true,
-    "jsx": "react-jsx",
-    "jsxImportSource": "react",
-    "types": ["astro/client", "react", "react-dom"]
+    "types": ["astro/client"]
   }
 }

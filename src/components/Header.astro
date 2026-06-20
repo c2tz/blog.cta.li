@@ -1,12 +1,12 @@
 ---
 import { SITE_TITLE } from "../consts";
+import { ThemeSwitcherComponent } from "./ThemeSwitcher.component";
 
 const isHome = Astro.url.pathname === "/";
 ---
 
 <nav
-  class="mt-8 mb-4 flex flex-col md:flex-row md:justify-between
-         [&_.header-link]:text-black dark:[&_.header-link]:text-white
+  class="site-header mt-8 mb-4 flex items-center justify-between
          [&_.header-link:hover]:underline"
 >
   <h2 class="text-lg font-medium">
@@ -18,6 +18,8 @@ const isHome = Astro.url.pathname === "/";
       {SITE_TITLE}
     </a>
   </h2>
+
+  <ThemeSwitcherComponent client:load />
 
   <!--
   <div class="leading-8 inline-block">

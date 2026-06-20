@@ -1,0 +1,80 @@
+name: Update Konachan backgrounds
+
+on:
+  schedule:
+   - cron: "0 20 * * 6"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-konachan-backgrounds
+  cancel-in-progress: false
+
+jobs:
+  update-backgrounds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout develop
+        uses: actions/checkout@v7
+        with:
+          ref: develop
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.1.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22.22.3
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Refresh backgrounds
+        run: pnpm update:konachan
+
+      - name: Validate generated assets
+        run: |
+          node --input-type=module <<'EOF'
+          import { readFile, readdir } from "node:fs/promises";
+
+          const manifest = JSON.parse(
+            await readFile("public/konachan-backgrounds.json", "utf8"),
+          );
+          const files = (await readdir("public/konachan-backgrounds")).filter((file) =>
+            file.endsWith(".webp"),
+          );
+
+          if (!Array.isArray(manifest.images) || manifest.images.length < 8) {
+            throw new Error("The Konachan manifest contains fewer than 8 images.");
+          }
+
+          if (files.length !== manifest.images.length) {
+            throw new Error(
+              `Manifest/files mismatch: ${manifest.images.length}/${files.length}`,
+            );
+          }
+
+          console.log(`Validated ${files.length} Konachan backgrounds.`);
+          EOF
+
+      - name: Commit updated backgrounds
+        run: |
+          if git diff --quiet -- public/konachan-backgrounds public/konachan-backgrounds.json; then
+            echo "Konachan backgrounds are already up to date."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/konachan-backgrounds public/konachan-backgrounds.json
+          git commit -m "chore: refresh Konachan backgrounds"
+          git pull --rebase origin develop
+          git push origin HEAD:develop

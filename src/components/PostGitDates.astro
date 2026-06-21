@@ -36,6 +36,15 @@ function formatDate(value: Date | string) {
   return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
 
+function formatNumericDate(value: Date | string) {
+  return new Intl.DateTimeFormat("fr-FR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: DISPLAY_TIME_ZONE,
+  }).format(toDate(value));
+}
+
 function formatTime(value: Date | string) {
   return timeFormatter
     .format(toDate(value))
@@ -77,7 +86,7 @@ const modifiedCommitUrl = lastModifiedCommit
     </span>
     <span class="post-git-date__text">
       <span class="post-git-date__label">Créé le :</span>
-      <time datetime={toDate(createdAt).toISOString()}>{formatDateTime(createdAt)}</time>
+      <time datetime={toDate(createdAt).toISOString()}>{formatNumericDate(createdAt)}</time>
     </span>
     {createdCommitLabel && createdCommitUrl && (
       <a

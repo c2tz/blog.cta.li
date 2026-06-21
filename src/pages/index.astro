@@ -10,16 +10,13 @@ import { getContentEntryGitDates } from "@/lib/gitDates.mjs";
 const posts = (await getCollection("blog"))
   .map((post) => ({
     ...post,
-    gitDates: getContentEntryGitDates("blog", post, {
-      createdAt: post.data.createdAt,
-      lastModified: post.data.lastModified ?? post.data.pubDate,
-    }),
+    gitDates: getContentEntryGitDates("blog", post),
   }))
-  .sort((b, a) => {
-    const aCreated = new Date(a.gitDates.createdAt ?? a.data.pubDate).valueOf();
-    const bCreated = new Date(b.gitDates.createdAt ?? b.data.pubDate).valueOf();
-    return aCreated - bCreated;
-  });
+  .sort(
+    (a, b) =>
+      new Date(b.gitDates.createdAt).valueOf() -
+      new Date(a.gitDates.createdAt).valueOf(),
+  );
 
 const latestPosts = posts.slice(0, 4);
 const contentTags = [
@@ -94,7 +91,7 @@ const homeCopy = {
         {
           latestPosts.map((post) => (
             <li class="home-post">
-              <FormattedDate date={post.gitDates.createdAt ?? post.data.pubDate} utcDetails />
+              <FormattedDate date={post.gitDates.createdAt} numeric />
               <span class="home-separator" aria-hidden="true">—</span>
               <a href={`/posts/${post.id}/`}>
                 {post.data.title}

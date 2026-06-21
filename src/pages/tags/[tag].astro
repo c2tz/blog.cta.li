@@ -8,16 +8,13 @@ export async function getStaticPaths() {
   const allPosts = (await getCollection("blog"))
     .map((post) => ({
       ...post,
-      gitDates: getContentEntryGitDates("blog", post, {
-        createdAt: post.data.createdAt,
-        lastModified: post.data.lastModified ?? post.data.pubDate,
-      }),
+      gitDates: getContentEntryGitDates("blog", post),
     }))
-    .sort((b, a) => {
-      const aCreated = new Date(a.gitDates.createdAt ?? a.data.pubDate).valueOf();
-      const bCreated = new Date(b.gitDates.createdAt ?? b.data.pubDate).valueOf();
-      return aCreated - bCreated;
-    });
+    .sort(
+      (a, b) =>
+        new Date(b.gitDates.createdAt).valueOf() -
+        new Date(a.gitDates.createdAt).valueOf(),
+    );
 
   const contentTags = [
     ...new Set(
@@ -55,7 +52,7 @@ const { posts } = Astro.props;
       {
         posts.map((post) => (
           <li class="tag-post">
-            <FormattedDate date={post.gitDates.createdAt ?? post.data.pubDate} utcDetails />
+            <FormattedDate date={post.gitDates.createdAt} numeric />
             <span class="tag-separator" aria-hidden="true">—</span>
             <a href={`/posts/${post.id}/`}>{post.data.title}</a>
           </li>

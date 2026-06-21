@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { relative, resolve } from "node:path";
 
 const cwd = process.cwd();
@@ -30,6 +30,18 @@ function gitLogEntry(args, filePath) {
   }
 }
 
+function getFileSystemDates(filePath) {
+  try {
+    const stats = statSync(filePath);
+    return {
+      createdAt: normalizeDate(stats.birthtime),
+      lastModified: normalizeDate(stats.mtime),
+    };
+  } catch {
+    return {};
+  }
+}
+
 export function getFileGitDates(filePath, fallback = {}) {
   const created = gitLogEntry(
     ["log", "--follow", "--reverse", "--format=%H%x09%aI"],
@@ -41,17 +53,24 @@ export function getFileGitDates(filePath, fallback = {}) {
   );
   const fallbackCreated = normalizeDate(fallback.createdAt);
   const fallbackModified = normalizeDate(fallback.lastModified);
+  const fileSystemDates = getFileSystemDates(filePath);
 
   return {
     // Une date de création enregistrée dans le contenu est immuable et reste
     // fiable même lorsque l'historique Git du serveur de build est incomplet.
-    createdAt: fallbackCreated || normalizeDate(created?.date) || fallbackModified,
+    createdAt:
+      fallbackCreated ||
+      normalizeDate(created?.date) ||
+      fallbackModified ||
+      fileSystemDates.createdAt,
     createdCommit: created?.commit,
     lastModified:
       normalizeDate(modified?.date) ||
       fallbackModified ||
       normalizeDate(created?.date) ||
-      fallbackCreated,
+      fallbackCreated ||
+      fileSystemDates.lastModified ||
+      fileSystemDates.createdAt,
     lastModifiedCommit: modified?.commit,
   };
 }

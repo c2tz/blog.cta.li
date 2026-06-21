@@ -18,11 +18,8 @@ type Props = CollectionEntry<"blog">;
 
 const post = Astro.props;
 const { Content, remarkPluginFrontmatter } = await render(post);
-const gitDates = getContentEntryGitDates("blog", post, {
-  createdAt: post.data.createdAt,
-  lastModified: post.data.lastModified ?? post.data.pubDate,
-});
-const createdAt = gitDates.createdAt ?? remarkPluginFrontmatter?.createdAt ?? post.data.pubDate;
+const gitDates = getContentEntryGitDates("blog", post);
+const createdAt = gitDates.createdAt ?? remarkPluginFrontmatter?.createdAt;
 const lastModified =
   gitDates.lastModified ?? remarkPluginFrontmatter?.lastModified ?? createdAt;
 const postTags = [

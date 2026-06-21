@@ -1,4 +1,5 @@
 {
+  "buildCommand": "pnpm build:vercel",
   "headers": [
     {
       "source": "/konachan-backgrounds.json",

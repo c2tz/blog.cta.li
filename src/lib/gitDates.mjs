@@ -28,15 +28,17 @@ function gitDate(args, filePath) {
 
 export function getFileGitDates(filePath, fallback = {}) {
   const createdAt = gitDate(
-    ["log", "--follow", "--reverse", "--format=%cI"],
+    ["log", "--follow", "--reverse", "--format=%aI"],
     filePath,
   );
-  const lastModified = gitDate(["log", "--follow", "-1", "--format=%cI"], filePath);
+  const lastModified = gitDate(["log", "--follow", "-1", "--format=%aI"], filePath);
   const fallbackCreated = normalizeDate(fallback.createdAt);
   const fallbackModified = normalizeDate(fallback.lastModified);
 
   return {
-    createdAt: normalizeDate(createdAt) || fallbackCreated || fallbackModified,
+    // Une date de création enregistrée dans le contenu est immuable et reste
+    // fiable même lorsque l'historique Git du serveur de build est incomplet.
+    createdAt: fallbackCreated || normalizeDate(createdAt) || fallbackModified,
     lastModified:
       normalizeDate(lastModified) ||
       fallbackModified ||

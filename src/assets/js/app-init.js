@@ -14,38 +14,6 @@ function hideSiteTooltip() {
   document.dispatchEvent(new CustomEvent("site:tooltip-hide"));
 }
 
-function padDatePart(value, length = 2) {
-  return String(value).padStart(length, "0");
-}
-
-function formatCompactLocalDateTime(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.valueOf())) return "";
-
-  const offsetMinutes = -date.getTimezoneOffset();
-  const sign = offsetMinutes >= 0 ? "+" : "-";
-  const absOffset = Math.abs(offsetMinutes);
-  const timezone = `${sign}${padDatePart(Math.floor(absOffset / 60))}${padDatePart(
-    absOffset % 60,
-  )}`;
-
-  return `${padDatePart(date.getFullYear(), 4)}${padDatePart(
-    date.getMonth() + 1,
-  )}${padDatePart(date.getDate())}T${padDatePart(date.getHours())}${padDatePart(
-    date.getMinutes(),
-  )}${padDatePart(date.getSeconds())}${timezone}`;
-}
-
-function initLocalDateTimes() {
-  document.querySelectorAll("time[data-local-date-time]").forEach((time) => {
-    const formatted = formatCompactLocalDateTime(time.dataset.localDateTime);
-    if (!formatted) return;
-
-    time.textContent = formatted;
-    time.setAttribute("aria-label", formatted);
-  });
-}
-
 function getScrollProgress() {
   const doc = document.documentElement;
   const scrollTop = window.scrollY || doc.scrollTop || document.body.scrollTop || 0;
@@ -876,7 +844,6 @@ function initLightbox() {
 }
 
 function initApp() {
-  initLocalDateTimes();
   initSiteTooltips();
   initLightbox();
   initKeyboardAccessibleTargets();

@@ -11,7 +11,7 @@ const posts = (await getCollection("blog"))
   .map((post) => ({
     ...post,
     gitDates: getContentEntryGitDates("blog", post, {
-      createdAt: post.data.createdAt ?? post.data.pubDate,
+      createdAt: post.data.createdAt,
       lastModified: post.data.lastModified ?? post.data.pubDate,
     }),
   }))

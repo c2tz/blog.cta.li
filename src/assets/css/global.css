@@ -1113,8 +1113,24 @@ main :is(h1, h2, h3, h4, h5, h6)[tabindex="0"]:focus-visible {
   line-height: 1.1rem;
 }
 
-svg.post-git-date__icon {
-  fill: currentColor;
+.post-git-commit__icon {
+  display: block;
+  width: 1.1rem;
+  height: 1.1rem;
+  font-size: 1.1rem;
+  line-height: 1.1rem;
+}
+
+.post-git-commit__link,
+.post-git-commit__link:visited {
+  margin-inline-start: 0.1rem;
+  color: var(--site-muted);
+  text-decoration: none;
+}
+
+.post-git-commit__link:is(:hover, :focus-visible) {
+  color: var(--site-muted);
+  text-decoration: none;
 }
 
 .post-date__icon-trigger {

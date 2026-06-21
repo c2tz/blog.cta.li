@@ -55,7 +55,12 @@ const postTags = [
     <Prose>
       <Content />
     </Prose>
-    <PostGitDates createdAt={createdAt} lastModified={lastModified} />
+    <PostGitDates
+      createdAt={createdAt}
+      createdCommit={gitDates.createdCommit}
+      lastModified={lastModified}
+      lastModifiedCommit={gitDates.lastModifiedCommit}
+    />
     <ul class="post-tags">
       {
         postTags.map((tag) => (

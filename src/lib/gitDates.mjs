@@ -11,9 +11,9 @@ export function normalizeDate(value) {
   return Number.isNaN(date.valueOf()) ? undefined : date.toISOString();
 }
 
-function gitDate(args, filePath) {
+function gitLogEntry(args, filePath) {
   try {
-    return execFileSync("git", [...args, "--", relative(cwd, filePath)], {
+    const line = execFileSync("git", [...args, "--", relative(cwd, filePath)], {
       cwd,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"],
@@ -21,29 +21,38 @@ function gitDate(args, filePath) {
       .trim()
       .split(/\r?\n/)
       .find(Boolean);
+    if (!line) return undefined;
+
+    const [commit, date] = line.split("\t");
+    return commit && date ? { commit, date } : undefined;
   } catch {
     return undefined;
   }
 }
 
 export function getFileGitDates(filePath, fallback = {}) {
-  const createdAt = gitDate(
-    ["log", "--follow", "--reverse", "--format=%aI"],
+  const created = gitLogEntry(
+    ["log", "--follow", "--reverse", "--format=%H%x09%aI"],
     filePath,
   );
-  const lastModified = gitDate(["log", "--follow", "-1", "--format=%aI"], filePath);
+  const modified = gitLogEntry(
+    ["log", "--follow", "-1", "--format=%H%x09%aI"],
+    filePath,
+  );
   const fallbackCreated = normalizeDate(fallback.createdAt);
   const fallbackModified = normalizeDate(fallback.lastModified);
 
   return {
     // Une date de création enregistrée dans le contenu est immuable et reste
     // fiable même lorsque l'historique Git du serveur de build est incomplet.
-    createdAt: fallbackCreated || normalizeDate(createdAt) || fallbackModified,
+    createdAt: fallbackCreated || normalizeDate(created?.date) || fallbackModified,
+    createdCommit: created?.commit,
     lastModified:
-      normalizeDate(lastModified) ||
+      normalizeDate(modified?.date) ||
       fallbackModified ||
-      normalizeDate(createdAt) ||
+      normalizeDate(created?.date) ||
       fallbackCreated,
+    lastModifiedCommit: modified?.commit,
   };
 }
 

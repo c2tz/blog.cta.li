@@ -4,7 +4,7 @@ import {
   signal,
 } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
-import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
+import { MatProgressSpinner } from "@angular/material/progress-spinner";
 
 interface LoadingEventDetail {
   key?: string;
@@ -13,7 +13,7 @@ interface LoadingEventDetail {
 @Component({
   selector: "site-page-loading-indicator",
   standalone: true,
-  imports: [MatProgressSpinnerModule],
+  imports: [MatProgressSpinner],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (visible()) {
@@ -90,7 +90,7 @@ export class PageLoadingIndicatorComponent implements OnInit, OnDestroy {
     document.addEventListener("click", this.handleDocumentClick);
     document.addEventListener("site:loading-start", this.handleStart);
     document.addEventListener("site:loading-end", this.handleEnd);
-    document.addEventListener("site:photoswipe-state", this.handlePhotoSwipeState);
+    document.addEventListener("site:photo-swipe-state", this.handlePhotoSwipeState);
   }
 
   ngOnDestroy() {
@@ -101,7 +101,7 @@ export class PageLoadingIndicatorComponent implements OnInit, OnDestroy {
     document.removeEventListener("click", this.handleDocumentClick);
     document.removeEventListener("site:loading-start", this.handleStart);
     document.removeEventListener("site:loading-end", this.handleEnd);
-    document.removeEventListener("site:photoswipe-state", this.handlePhotoSwipeState);
+    document.removeEventListener("site:photo-swipe-state", this.handlePhotoSwipeState);
   }
 
   private start(key: string) {

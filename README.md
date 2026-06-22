@@ -28,5 +28,4 @@
 
 ### Tech stack
 [![Astro](https://img.shields.io/badge/Astro-FFFFFF?logo=astro&logoColor=4E1EB5)](https://astro.build/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-FFFFFF?logo=tailwindcss&logoColor=06B6D4)](https://tailwindcss.com/)
 [![Vercel](https://img.shields.io/badge/Vercel-FFFFFF?logo=vercel&logoColor=000000)](https://vercel.com/)

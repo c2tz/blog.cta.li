@@ -1,23 +1,23 @@
 import { ChangeDetectionStrategy, Component, input } from "@angular/core";
-import { MatButtonModule } from "@angular/material/button";
+import { MatButton } from "@angular/material/button";
 
 @Component({
-  selector: "home-hero-actions",
+  selector: "site-home-hero-actions",
   standalone: true,
-  imports: [MatButtonModule],
+  imports: [MatButton],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <nav class="home-hero__actions" aria-label="Navigation d'accueil">
+    <nav class="home-hero-actions" aria-label="Navigation d'accueil">
       <a
         matButton="tonal"
-        class="home-hero__button"
+        class="home-hero-button"
         [href]="primaryActionHref()"
       >
         {{ primaryActionLabel() }}
       </a>
       <a
         matButton="outlined"
-        class="home-hero__button"
+        class="home-hero-button"
         [href]="secondaryActionHref()"
       >
         {{ secondaryActionLabel() }}
@@ -28,6 +28,6 @@ import { MatButtonModule } from "@angular/material/button";
 export class HomeHeroActionsComponent {
   readonly primaryActionHref = input("/tags/all/");
   readonly primaryActionLabel = input("Voir plus");
-  readonly secondaryActionHref = input("http://www.cta.li");
+  readonly secondaryActionHref = input("https://www.cta.li");
   readonly secondaryActionLabel = input("À propos");
 }

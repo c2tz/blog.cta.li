@@ -5,7 +5,7 @@ import { relative, resolve } from "node:path";
 const cwd = process.cwd();
 const CONTENT_EXTENSIONS = [".md", ".mdx"];
 
-export function normalizeDate(value) {
+function normalizeDate(value) {
   if (!value) return undefined;
   const date = new Date(value);
   return Number.isNaN(date.valueOf()) ? undefined : date.toISOString();
@@ -42,7 +42,7 @@ function getFileSystemDates(filePath) {
   }
 }
 
-export function getFileGitDates(filePath, fallback = {}) {
+export function getFileGitDates(filePath) {
   const created = gitLogEntry(
     ["log", "--follow", "--reverse", "--format=%H%x09%aI"],
     filePath,
@@ -51,31 +51,24 @@ export function getFileGitDates(filePath, fallback = {}) {
     ["log", "--follow", "-1", "--format=%H%x09%aI"],
     filePath,
   );
-  const fallbackCreated = normalizeDate(fallback.createdAt);
-  const fallbackModified = normalizeDate(fallback.lastModified);
   const fileSystemDates = getFileSystemDates(filePath);
 
   return {
-    // Une date de création enregistrée dans le contenu est immuable et reste
-    // fiable même lorsque l'historique Git du serveur de build est incomplet.
     createdAt:
-      fallbackCreated ||
       normalizeDate(created?.date) ||
-      fallbackModified ||
-      fileSystemDates.createdAt,
+      fileSystemDates.createdAt ||
+      fileSystemDates.lastModified,
     createdCommit: created?.commit,
     lastModified:
       normalizeDate(modified?.date) ||
-      fallbackModified ||
       normalizeDate(created?.date) ||
-      fallbackCreated ||
       fileSystemDates.lastModified ||
       fileSystemDates.createdAt,
     lastModifiedCommit: modified?.commit,
   };
 }
 
-export function resolveContentEntryPath(collection, entry) {
+function resolveContentEntryPath(collection, entry) {
   const entryPath = entry?.filePath || entry?.slug || entry?.id || entry;
   const id = String(entryPath || "");
 
@@ -99,6 +92,6 @@ export function resolveContentEntryPath(collection, entry) {
   return resolve(base, `${normalizedId}.md`);
 }
 
-export function getContentEntryGitDates(collection, entry, fallback = {}) {
-  return getFileGitDates(resolveContentEntryPath(collection, entry), fallback);
+export function getContentEntryGitDates(collection, entry) {
+  return getFileGitDates(resolveContentEntryPath(collection, entry));
 }

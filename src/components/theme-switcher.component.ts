@@ -5,10 +5,10 @@ import {
   signal,
 } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
-import { MatButtonModule } from "@angular/material/button";
-import { MatIconModule } from "@angular/material/icon";
-import { MatMenuModule } from "@angular/material/menu";
-import { MatTooltipModule } from "@angular/material/tooltip";
+import { MatIconButton } from "@angular/material/button";
+import { MatIcon } from "@angular/material/icon";
+import { MatMenu, MatMenuItem, MatMenuTrigger } from "@angular/material/menu";
+import { MatTooltip } from "@angular/material/tooltip";
 
 type ThemePreference = "system" | "light" | "dark";
 
@@ -27,10 +27,12 @@ function isThemePreference(value: string | null | undefined): value is ThemePref
   selector: "site-theme-switcher",
   standalone: true,
   imports: [
-    MatButtonModule,
-    MatIconModule,
-    MatMenuModule,
-    MatTooltipModule,
+    MatIconButton,
+    MatIcon,
+    MatMenu,
+    MatMenuItem,
+    MatMenuTrigger,
+    MatTooltip,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -65,7 +67,7 @@ function isThemePreference(value: string | null | undefined): value is ThemePref
           <mat-icon
             matMenuItemIcon
             class="site-theme-radio-icon"
-            [class.site-theme-radio-icon--checked]="preference() === option.value"
+            [class.site-theme-radio-icon-checked]="preference() === option.value"
             aria-hidden="true"
           >
             {{ preference() === option.value ? "radio_button_checked" : "radio_button_unchecked" }}
@@ -125,7 +127,7 @@ function isThemePreference(value: string | null | undefined): value is ThemePref
                 stroke-opacity="0.24"
               ></rect>
             </svg>
-            <span class="site-theme-menu-label">{{ option.label }}</span>
+            <span>{{ option.label }}</span>
           </span>
         </button>
       }

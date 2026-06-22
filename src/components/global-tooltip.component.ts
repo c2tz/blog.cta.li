@@ -8,7 +8,6 @@ import {
 import type { AfterViewInit, OnDestroy } from "@angular/core";
 import {
   MatTooltip,
-  MatTooltipModule,
   type TooltipPosition,
 } from "@angular/material/tooltip";
 
@@ -34,7 +33,7 @@ function getPosition(target: HTMLElement): TooltipPosition {
 @Component({
   selector: "site-global-tooltip",
   standalone: true,
-  imports: [MatTooltipModule],
+  imports: [MatTooltip],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <span

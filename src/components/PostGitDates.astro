@@ -1,4 +1,6 @@
 ---
+import { formatFrenchDateTime, toDate } from "@/lib/date-format.mjs";
+
 interface Props {
   createdAt: Date | string;
   createdCommit?: string;
@@ -7,54 +9,7 @@ interface Props {
 }
 
 const { createdAt, createdCommit, lastModified, lastModifiedCommit } = Astro.props as Props;
-const DISPLAY_TIME_ZONE = "Europe/Paris";
 const GITHUB_REPOSITORY_URL = "https://github.com/c2tz/ct-blog.cta.li";
-
-const formatter = new Intl.DateTimeFormat("fr-FR", {
-  weekday: "short",
-  year: "numeric",
-  month: "short",
-  day: "numeric",
-  timeZone: DISPLAY_TIME_ZONE,
-});
-
-const timeFormatter = new Intl.DateTimeFormat("fr-FR", {
-  hour: "2-digit",
-  minute: "2-digit",
-  hourCycle: "h23",
-  timeZoneName: "shortOffset",
-  timeZone: DISPLAY_TIME_ZONE,
-});
-
-function toDate(value: Date | string) {
-  return value instanceof Date ? value : new Date(value);
-}
-
-function formatDate(value: Date | string) {
-  const date = toDate(value);
-  const formatted = formatter.format(date);
-  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
-}
-
-function formatNumericDate(value: Date | string) {
-  return new Intl.DateTimeFormat("fr-FR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    timeZone: DISPLAY_TIME_ZONE,
-  }).format(toDate(value));
-}
-
-function formatTime(value: Date | string) {
-  return timeFormatter
-    .format(toDate(value))
-    .replace(/\s?UTC$/, " UTC+0")
-    .replace("UTC−", "UTC-");
-}
-
-function formatDateTime(value: Date | string) {
-  return `${formatDate(value)}, ${formatTime(value)}`;
-}
 
 const createdLabel = "Création du post";
 const modifiedLabel = "Dernière modification du post";
@@ -76,52 +31,52 @@ const modifiedCommitUrl = lastModifiedCommit
 <footer class="post-git-dates" aria-label="Dates du post">
   <span class="post-git-date">
     <span
-      class="post-icon-tooltip post-git-date__icon-trigger"
+      class="post-icon-tooltip"
       tabindex="0"
       role="img"
       aria-label={createdLabel}
       data-tooltip={createdLabel}
     >
-      <span class="material-icons post-git-date__icon" aria-hidden="true">note_add</span>
+      <span class="material-icons post-git-date-icon" aria-hidden="true">note_add</span>
     </span>
-    <span class="post-git-date__text">
-      <span class="post-git-date__label">Créé le :</span>
-      <time datetime={toDate(createdAt).toISOString()}>{formatNumericDate(createdAt)}</time>
+    <span class="post-git-date-text">
+      <span class="post-git-date-label">Créé le :</span>
+      <time datetime={toDate(createdAt).toISOString()}>{formatFrenchDateTime(createdAt)}</time>
     </span>
     {createdCommitLabel && createdCommitUrl && (
       <a
-        class="post-icon-tooltip post-git-commit__link"
+        class="post-icon-tooltip post-git-commit-link"
         href={createdCommitUrl}
         aria-label={createdCommitLabel}
         data-tooltip={createdCommitLabel}
       >
-        <span class="material-icons post-git-commit__icon" aria-hidden="true">commit</span>
+        <span class="material-icons post-git-commit-icon" aria-hidden="true">commit</span>
       </a>
     )}
   </span>
   <span class="post-git-date-divider" aria-hidden="true"></span>
   <span class="post-git-date">
     <span
-      class="post-icon-tooltip post-git-date__icon-trigger"
+      class="post-icon-tooltip"
       tabindex="0"
       role="img"
       aria-label={modifiedLabel}
       data-tooltip={modifiedLabel}
     >
-      <span class="material-icons post-git-date__icon" aria-hidden="true">edit_document</span>
+      <span class="material-icons post-git-date-icon" aria-hidden="true">edit_document</span>
     </span>
-    <span class="post-git-date__text">
-      <span class="post-git-date__label">Modifié le :</span>
-      <time datetime={toDate(lastModified).toISOString()}>{formatDateTime(lastModified)}</time>
+    <span class="post-git-date-text">
+      <span class="post-git-date-label">Modifié le :</span>
+      <time datetime={toDate(lastModified).toISOString()}>{formatFrenchDateTime(lastModified)}</time>
     </span>
     {modifiedCommitLabel && modifiedCommitUrl && (
       <a
-        class="post-icon-tooltip post-git-commit__link"
+        class="post-icon-tooltip post-git-commit-link"
         href={modifiedCommitUrl}
         aria-label={modifiedCommitLabel}
         data-tooltip={modifiedCommitLabel}
       >
-        <span class="material-icons post-git-commit__icon" aria-hidden="true">commit</span>
+        <span class="material-icons post-git-commit-icon" aria-hidden="true">commit</span>
       </a>
     )}
   </span>

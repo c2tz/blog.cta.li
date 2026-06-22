@@ -22,18 +22,18 @@ function getScrollProgress() {
   return Math.min(100, Math.max(0, Math.round((scrollTop / scrollable) * 100)));
 }
 
-let scrollUiFrame = 0;
+let readingProgressFrame = 0;
 
-function requestScrollUiSync() {
-  if (scrollUiFrame) return;
+function requestReadingProgressSync() {
+  if (readingProgressFrame) return;
 
-  scrollUiFrame = requestAnimationFrame(() => {
-    scrollUiFrame = 0;
-    syncScrollUi();
+  readingProgressFrame = requestAnimationFrame(() => {
+    readingProgressFrame = 0;
+    syncReadingProgress();
   });
 }
 
-function syncScrollUi() {
+function syncReadingProgress() {
   const progress = getScrollProgress();
 
   document
@@ -98,8 +98,6 @@ function initSiteTooltips() {
 }
 
 function initScrollProgressBar() {
-  if (document.body?.dataset.scrollProgressUi === "off") return;
-
   const existingBar = document.querySelector(".site-scroll-progress");
   if (existingBar) {
     syncScrollProgressBar(existingBar);
@@ -112,22 +110,22 @@ function initScrollProgressBar() {
   bar.setAttribute("aria-label", "Progression de lecture");
   bar.setAttribute("aria-valuemin", "0");
   bar.setAttribute("aria-valuemax", "100");
-  bar.innerHTML = '<span class="site-scroll-progress__bar"></span>';
+  bar.innerHTML = '<span class="site-scroll-progress-bar"></span>';
 
-  window.addEventListener("scroll", requestScrollUiSync, { passive: true });
-  window.addEventListener("resize", requestScrollUiSync, { passive: true });
+  window.addEventListener("scroll", requestReadingProgressSync, { passive: true });
+  window.addEventListener("resize", requestReadingProgressSync, { passive: true });
   document.body.appendChild(bar);
-  syncScrollUi();
+  syncReadingProgress();
 }
 
 function syncScrollProgressBar(bar, progress = getScrollProgress()) {
-  const fill = bar.querySelector(".site-scroll-progress__bar");
+  const fill = bar.querySelector(".site-scroll-progress-bar");
 
   bar.setAttribute("aria-valuenow", String(progress));
   fill?.style.setProperty("transform", `translate3d(0, 0, 0) scaleX(${progress / 100})`);
 }
 
-function removeScrollUi() {
+function removeReadingProgress() {
   document.querySelectorAll(".site-scroll-progress").forEach((element) => {
     element.remove();
   });
@@ -386,7 +384,7 @@ async function downloadViaFetch(url, filename) {
 
 function dispatchPhotoSwipeShareResult(message) {
   document.dispatchEvent(
-    new CustomEvent("site:photoswipe-share-result", { detail: { message } }),
+    new CustomEvent("site:photo-swipe-share-result", { detail: { message } }),
   );
 }
 
@@ -719,7 +717,7 @@ function dispatchPhotoSwipeState(pswp, open = true) {
   const total = pswp?.getNumItems?.() ?? 0;
 
   document.dispatchEvent(
-    new CustomEvent("site:photoswipe-state", {
+    new CustomEvent("site:photo-swipe-state", {
       detail: {
         open,
         src: typeof src === "string" ? src : "",
@@ -737,7 +735,7 @@ document.addEventListener("fullscreenchange", () => {
   if (activePhotoSwipe) dispatchPhotoSwipeState(activePhotoSwipe);
 });
 
-document.addEventListener("site:photoswipe-action", async (event) => {
+document.addEventListener("site:photo-swipe-action", async (event) => {
   const pswp = activePhotoSwipe;
   const action = event.detail?.action;
   if (!pswp || !action) return;
@@ -848,8 +846,8 @@ function initApp() {
   initLightbox();
   initKeyboardAccessibleTargets();
   initDynamicAnchors();
-  if (document.body?.dataset.scrollUi === "off") {
-    removeScrollUi();
+  if (document.body?.dataset.readingProgress === "off") {
+    removeReadingProgress();
   } else {
     initScrollProgressBar();
   }

@@ -4,10 +4,10 @@ import {
   signal,
 } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
-import { MatButtonModule } from "@angular/material/button";
-import { MatIconModule } from "@angular/material/icon";
-import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
-import { MatTooltipModule } from "@angular/material/tooltip";
+import { MatIconButton } from "@angular/material/button";
+import { MatIcon } from "@angular/material/icon";
+import { MatProgressSpinner } from "@angular/material/progress-spinner";
+import { MatTooltip } from "@angular/material/tooltip";
 
 interface PhotoSwipeToolbarState {
   open?: boolean;
@@ -28,9 +28,9 @@ type PhotoSwipeAction =
   | "share";
 
 @Component({
-  selector: "site-photoswipe-toolbar",
+  selector: "site-photo-swipe-toolbar",
   standalone: true,
-  imports: [MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule],
+  imports: [MatIconButton, MatIcon, MatProgressSpinner, MatTooltip],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     "[class.is-open]": "open()",
@@ -38,15 +38,15 @@ type PhotoSwipeAction =
   },
   template: `
     @if (open()) {
-      <div class="site-pswp-toolbar" role="toolbar" aria-label="Commandes de l'image">
-        <span class="site-pswp-counter" aria-live="polite">{{ index() }} / {{ total() }}</span>
+      <div class="photo-swipe-toolbar" role="toolbar" aria-label="Commandes de l'image">
+        <span class="photo-swipe-counter" aria-live="polite">{{ index() }} / {{ total() }}</span>
 
-        <span class="site-pswp-toolbar__actions">
+        <span class="photo-swipe-toolbar-actions">
           @if (fullscreenAvailable()) {
             <button
               matIconButton
               type="button"
-              class="site-pswp-button site-icon-button"
+              class="photo-swipe-button site-icon-button"
               [attr.aria-label]="fullscreenLabel()"
               [matTooltip]="fullscreenLabel()"
               matTooltipPosition="below"
@@ -58,7 +58,7 @@ type PhotoSwipeAction =
 
           <a
             matIconButton
-            class="site-pswp-button site-icon-button"
+            class="photo-swipe-button site-icon-button"
             [href]="src()"
             target="_blank"
             rel="noopener"
@@ -73,7 +73,7 @@ type PhotoSwipeAction =
           <button
             matIconButton
             type="button"
-            class="site-pswp-button site-icon-button"
+            class="photo-swipe-button site-icon-button"
             aria-label="Télécharger"
             matTooltip="Télécharger"
             matTooltipPosition="below"
@@ -85,7 +85,7 @@ type PhotoSwipeAction =
           <button
             matIconButton
             type="button"
-            class="site-pswp-button site-icon-button"
+            class="photo-swipe-button site-icon-button"
             [attr.aria-label]="shareLabel()"
             [matTooltip]="shareLabel()"
             matTooltipPosition="below"
@@ -97,7 +97,7 @@ type PhotoSwipeAction =
           <button
             matIconButton
             type="button"
-            class="site-pswp-button site-icon-button"
+            class="photo-swipe-button site-icon-button"
             aria-label="Fermer"
             matTooltip="Fermer"
             matTooltipPosition="below"
@@ -112,7 +112,7 @@ type PhotoSwipeAction =
         <button
           matIconButton
           type="button"
-          class="site-pswp-button site-icon-button site-pswp-nav site-pswp-nav--previous"
+          class="photo-swipe-button site-icon-button photo-swipe-nav photo-swipe-nav-previous"
           aria-label="Image précédente"
           matTooltip="Image précédente"
           matTooltipPosition="right"
@@ -124,7 +124,7 @@ type PhotoSwipeAction =
         <button
           matIconButton
           type="button"
-          class="site-pswp-button site-icon-button site-pswp-nav site-pswp-nav--next"
+          class="photo-swipe-button site-icon-button photo-swipe-nav photo-swipe-nav-next"
           aria-label="Image suivante"
           matTooltip="Image suivante"
           matTooltipPosition="left"
@@ -135,7 +135,7 @@ type PhotoSwipeAction =
       }
 
       @if (loading()) {
-        <div class="site-pswp-loading" role="status" aria-live="polite">
+        <div class="photo-swipe-loading" role="status" aria-live="polite">
           <mat-spinner diameter="48" strokeWidth="4" aria-hidden="true"></mat-spinner>
           <span class="sr-only">Chargement de l'image</span>
         </div>
@@ -156,7 +156,7 @@ type PhotoSwipeAction =
       display: block;
     }
 
-    .site-pswp-toolbar {
+    .photo-swipe-toolbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -169,7 +169,7 @@ type PhotoSwipeAction =
       color: #fff;
     }
 
-    .site-pswp-toolbar__actions {
+    .photo-swipe-toolbar-actions {
       display: flex;
       align-items: center;
       justify-content: flex-end;
@@ -178,7 +178,7 @@ type PhotoSwipeAction =
       line-height: 0;
     }
 
-    .site-pswp-counter {
+    .photo-swipe-counter {
       min-width: 4rem;
       padding: 0.45rem 0.625rem;
       border: 1px solid rgb(255 255 255 / 28%);
@@ -192,7 +192,7 @@ type PhotoSwipeAction =
       -webkit-backdrop-filter: blur(8px);
     }
 
-    .site-pswp-button.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base {
+    .photo-swipe-button.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base {
       display: grid;
       align-self: center;
       flex: 0 0 2.5rem;
@@ -217,7 +217,7 @@ type PhotoSwipeAction =
       --mat-icon-button-ripple-color: rgb(255 255 255 / 24%);
     }
 
-    .site-pswp-button.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base:is(
+    .photo-swipe-button.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base:is(
         :hover,
         :focus-visible
       ) {
@@ -225,12 +225,12 @@ type PhotoSwipeAction =
       background: rgb(0 0 0 / 82%);
     }
 
-    .site-pswp-button.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base:focus-visible {
+    .photo-swipe-button.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base:focus-visible {
       outline: 2px solid #fff;
       outline-offset: 2px;
     }
 
-    .site-pswp-button mat-icon {
+    .photo-swipe-button mat-icon {
       position: relative;
       z-index: 1;
       display: block;
@@ -252,7 +252,7 @@ type PhotoSwipeAction =
       filter: drop-shadow(0 1px 1px rgb(0 0 0 / 70%));
     }
 
-    .site-pswp-nav {
+    .photo-swipe-nav {
       position: fixed;
       top: 50%;
       transform: translateY(-50%);
@@ -260,15 +260,15 @@ type PhotoSwipeAction =
       color: #fff;
     }
 
-    .site-pswp-nav--previous {
+    .photo-swipe-nav-previous {
       left: 1rem;
     }
 
-    .site-pswp-nav--next {
+    .photo-swipe-nav-next {
       right: 1rem;
     }
 
-    .site-pswp-loading {
+    .photo-swipe-loading {
       position: fixed;
       inset: 50% auto auto 50%;
       z-index: 1;
@@ -279,20 +279,20 @@ type PhotoSwipeAction =
     }
 
     @media (max-width: 47.99rem) {
-      .site-pswp-toolbar {
+      .photo-swipe-toolbar {
         gap: 0.25rem;
       }
 
-      .site-pswp-counter {
+      .photo-swipe-counter {
         min-width: 2.75rem;
         padding-inline: 0.25rem;
       }
 
-      .site-pswp-nav--previous {
+      .photo-swipe-nav-previous {
         left: 0.5rem;
       }
 
-      .site-pswp-nav--next {
+      .photo-swipe-nav-next {
         right: 0.5rem;
       }
     }
@@ -340,20 +340,20 @@ export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     if (typeof document === "undefined") return;
-    document.addEventListener("site:photoswipe-state", this.handleState);
-    document.addEventListener("site:photoswipe-share-result", this.handleShareResult);
+    document.addEventListener("site:photo-swipe-state", this.handleState);
+    document.addEventListener("site:photo-swipe-share-result", this.handleShareResult);
   }
 
   ngOnDestroy() {
     if (typeof document === "undefined") return;
-    document.removeEventListener("site:photoswipe-state", this.handleState);
-    document.removeEventListener("site:photoswipe-share-result", this.handleShareResult);
+    document.removeEventListener("site:photo-swipe-state", this.handleState);
+    document.removeEventListener("site:photo-swipe-share-result", this.handleShareResult);
     window.clearTimeout(this.shareLabelTimer);
   }
 
   act(action: PhotoSwipeAction) {
     this.hideTooltip();
-    document.dispatchEvent(new CustomEvent("site:photoswipe-action", { detail: { action } }));
+    document.dispatchEvent(new CustomEvent("site:photo-swipe-action", { detail: { action } }));
   }
 
   share() {

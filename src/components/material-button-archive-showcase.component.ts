@@ -1,6 +1,12 @@
 import { ChangeDetectionStrategy, Component } from "@angular/core";
-import { MatButtonModule, type MatButtonAppearance } from "@angular/material/button";
-import { MatIconModule } from "@angular/material/icon";
+import {
+  MatButton,
+  MatFabButton,
+  MatIconButton,
+  MatMiniFabButton,
+  type MatButtonAppearance,
+} from "@angular/material/button";
+import { MatIcon } from "@angular/material/icon";
 
 const GOOGLE_LINK = "https://www.google.com/";
 
@@ -25,17 +31,17 @@ interface IconItem {
 }
 
 @Component({
-  selector: "material-button-archive-showcase",
+  selector: "site-material-button-archive-showcase",
   standalone: true,
-  imports: [MatButtonModule, MatIconModule],
+  imports: [MatButton, MatIconButton, MatFabButton, MatMiniFabButton, MatIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="material-button-template" aria-label="Boutons Angular Material de l'archive">
       @for (section of standardSections; track section.label; let sectionIndex = $index) {
         @if (sectionIndex > 0) {
-          <div class="material-button-template__divider" aria-hidden="true"></div>
+          <div class="material-button-template-divider" aria-hidden="true"></div>
         }
-        <section class="material-button-template__section">
+        <section class="material-button-template-section">
           <div class="example-label">{{ section.label }}</div>
           <div class="example-button-row">
             @for (item of section.items; track item.text) {
@@ -65,8 +71,8 @@ interface IconItem {
       }
 
       @for (section of iconSections; track section.label) {
-        <div class="material-button-template__divider" aria-hidden="true"></div>
-        <section class="material-button-template__section">
+        <div class="material-button-template-divider" aria-hidden="true"></div>
+        <section class="material-button-template-section">
           <div class="example-label">{{ section.label }}</div>
           <div class="example-button-row">
             @switch (section.kind) {
@@ -79,7 +85,7 @@ interface IconItem {
                     [disabled]="item.disabled === true"
                     [attr.aria-label]="item.ariaLabel ?? null"
                   >
-                    <mat-icon class="material-button-template__icon" aria-hidden="true">
+                    <mat-icon class="material-button-template-icon" aria-hidden="true">
                       {{ item.icon }}
                     </mat-icon>
                   </button>
@@ -90,11 +96,11 @@ interface IconItem {
                   <button
                     matFab
                     type="button"
-                    class="material-archive-fab material-archive-fab--regular"
+                    class="material-archive-fab"
                     [disabled]="item.disabled === true"
                     [attr.aria-label]="item.ariaLabel ?? null"
                   >
-                    <mat-icon class="material-button-template__icon" aria-hidden="true">
+                    <mat-icon class="material-button-template-icon" aria-hidden="true">
                       {{ item.icon }}
                     </mat-icon>
                   </button>
@@ -105,11 +111,11 @@ interface IconItem {
                   <button
                     matMiniFab
                     type="button"
-                    class="material-archive-fab material-archive-fab--mini"
+                    class="material-archive-fab material-archive-fab-mini"
                     [disabled]="item.disabled === true"
                     [attr.aria-label]="item.ariaLabel ?? null"
                   >
-                    <mat-icon class="material-button-template__icon" aria-hidden="true">
+                    <mat-icon class="material-button-template-icon" aria-hidden="true">
                       {{ item.icon }}
                     </mat-icon>
                   </button>
@@ -126,7 +132,7 @@ interface IconItem {
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      <mat-icon class="material-button-template__icon" aria-hidden="true">
+                      <mat-icon class="material-button-template-icon" aria-hidden="true">
                         {{ item.icon }}
                       </mat-icon>
                       <span>{{ item.text }}</span>
@@ -139,7 +145,7 @@ interface IconItem {
                       class="material-archive-extended-fab"
                       [disabled]="item.disabled === true"
                     >
-                      <mat-icon class="material-button-template__icon" aria-hidden="true">
+                      <mat-icon class="material-button-template-icon" aria-hidden="true">
                         {{ item.icon }}
                       </mat-icon>
                       <span>{{ item.text }}</span>
@@ -159,14 +165,14 @@ interface IconItem {
       border-block: 1px solid var(--site-border);
     }
 
-    .material-button-template__section {
+    .material-button-template-section {
       display: flex;
       align-items: center;
       gap: 1rem;
       padding-block: 1rem;
     }
 
-    .material-button-template__divider {
+    .material-button-template-divider {
       height: 1px;
       background: var(--site-border);
     }
@@ -225,7 +231,7 @@ interface IconItem {
       color: var(--site-on-link-container);
     }
 
-    .material-button-template .material-archive-fab--mini {
+    .material-button-template .material-archive-fab-mini {
       width: 2.5rem;
       height: 2.5rem;
       min-width: 2.5rem;
@@ -242,7 +248,7 @@ interface IconItem {
       transform: translateY(1px);
     }
 
-    .material-button-template .material-button-template__icon {
+    .material-button-template .material-button-template-icon {
       position: relative;
       z-index: 1;
       width: 20px;
@@ -259,7 +265,7 @@ interface IconItem {
     }
 
     @media (max-width: 640px) {
-      .material-button-template__section {
+      .material-button-template-section {
         align-items: flex-start;
         flex-direction: column;
         gap: 0.75rem;

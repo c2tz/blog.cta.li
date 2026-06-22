@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, signal } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
-import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
+import { MatProgressSpinner } from "@angular/material/progress-spinner";
 
 @Component({
-  selector: "konachan-loading-indicator",
+  selector: "site-konachan-loading-indicator",
   standalone: true,
-  imports: [MatProgressSpinnerModule],
+  imports: [MatProgressSpinner],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     "[class.is-busy]": "busy()",

@@ -4,7 +4,7 @@ import {
   signal,
 } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
-import { MatButtonModule } from "@angular/material/button";
+import { MatButton } from "@angular/material/button";
 
 const STORAGE_KEY = "ct_cookie_consent_v1";
 const COOKIE_NAME = "ct_cookie_consent";
@@ -17,7 +17,7 @@ interface ConsentState {
 
 declare global {
   interface Window {
-    CookieConsent?: {
+    cookieConsent?: {
       acceptedService: (service: string, category: string) => boolean;
       isCategoryAccepted: (category: string) => boolean;
     };
@@ -48,7 +48,7 @@ function writeConsent(functionality: boolean) {
 }
 
 function exposeConsentApi() {
-  window.CookieConsent = {
+  window.cookieConsent = {
     acceptedService: (service: string, category: string) =>
       category === "functionality" && service === "ipgeo" && Boolean(readConsent()?.functionality),
     isCategoryAccepted: (category: string) =>
@@ -58,13 +58,13 @@ function exposeConsentApi() {
 }
 
 @Component({
-  selector: "cookie-consent-banner",
+  selector: "site-cookie-consent-banner",
   standalone: true,
-  imports: [MatButtonModule],
+  imports: [MatButton],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (visible()) {
-      <div class="cookie-consent__backdrop" aria-hidden="true"></div>
+      <div class="cookie-consent-backdrop" aria-hidden="true"></div>
       <section
         class="cookie-consent"
         role="dialog"
@@ -72,7 +72,7 @@ function exposeConsentApi() {
         aria-labelledby="cookie-consent-title"
         aria-describedby="cookie-consent-desc"
       >
-        <div class="cookie-consent__content">
+        <div class="cookie-consent-content">
           <h2 id="cookie-consent-title">Cookies</h2>
           <p id="cookie-consent-desc">
             Un cookie de consentement permet d'activer la détection de votre IP
@@ -81,11 +81,10 @@ function exposeConsentApi() {
           </p>
         </div>
 
-        <div class="cookie-consent__actions">
+        <div class="cookie-consent-actions">
           <button
             matButton="text"
             type="button"
-            class="cookie-consent__button"
             (click)="reject()"
           >
             Refuser
@@ -93,7 +92,6 @@ function exposeConsentApi() {
           <button
             matButton="text"
             type="button"
-            class="cookie-consent__button cookie-consent__accept"
             (click)="accept()"
           >
             Accepter
@@ -114,6 +112,7 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
     if (typeof window === "undefined") return;
 
     exposeConsentApi();
+    document.dispatchEvent(new Event("site:consent-change"));
     this.visible.set(readConsent() === null);
     this.syncPageState();
     window.addEventListener("keydown", this.handleKeydown);
@@ -139,13 +138,12 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
     exposeConsentApi();
     this.visible.set(false);
     this.unlockPage();
-    document.dispatchEvent(new Event("cc:onConsent"));
-    document.dispatchEvent(new Event("cc:onChange"));
+    document.dispatchEvent(new Event("site:consent-change"));
   }
 
   private syncPageState() {
     if (this.visible()) {
-      document.documentElement.classList.add("disable--interaction", "show--consent");
+      document.documentElement.classList.add("interaction-disabled", "consent-visible");
       document.querySelector(".site-main")?.setAttribute("inert", "");
     } else {
       this.unlockPage();
@@ -153,7 +151,7 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
   }
 
   private unlockPage() {
-    document.documentElement.classList.remove("disable--interaction", "show--consent");
+    document.documentElement.classList.remove("interaction-disabled", "consent-visible");
     document.querySelector(".site-main")?.removeAttribute("inert");
   }
 }

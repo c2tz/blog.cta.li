@@ -1,35 +1,42 @@
 ---
-import { SITE_DESCRIPTION, SITE_TAB_TITLE, SITE_TAB_ARTICLE } from "@/consts";
+import {
+  SITE_ARTICLE_TITLE_PREFIX,
+  SITE_DESCRIPTION,
+  SITE_DEFAULT_TITLE,
+} from "@/site-config";
 
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
-import { CookieConsentBannerComponent } from "@/components/CookieConsentBanner.component";
-import { CodeBlockEnhancerComponent } from "@/components/CodeBlockEnhancer.component";
-import { GlobalTooltipComponent } from "@/components/GlobalTooltip.component";
-import { PageLoadingIndicatorComponent } from "@/components/PageLoadingIndicator.component";
-import { PhotoSwipeToolbarComponent } from "@/components/PhotoSwipeToolbar.component";
-import { ScrollTopButtonComponent } from "@/components/ScrollTopButton.component";
-import SEO, { type Props as SEOProps } from "@/components/SEO.astro";
+import { CookieConsentBannerComponent } from "@/components/cookie-consent-banner.component";
+import { CodeBlockEnhancerComponent } from "@/components/code-block-enhancer.component";
+import { GlobalTooltipComponent } from "@/components/global-tooltip.component";
+import { PageLoadingIndicatorComponent } from "@/components/page-loading-indicator.component";
+import { PhotoSwipeToolbarComponent } from "@/components/photo-swipe-toolbar.component";
+import { ScrollTopButtonComponent } from "@/components/scroll-top-button.component";
+import Seo, { type OpenGraphData } from "@/components/SEO.astro";
 import "@/assets/css/global.css";
 
-interface Props extends SEOProps {
+interface Props {
   locale?: string;
+  title?: string;
+  description?: string;
   bodyClass?: string;
-  scrollUi?: boolean;
+  readingProgress?: boolean;
+  openGraph?: OpenGraphData;
 }
 
-const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
 
 const {
   locale = "fr",
   title,
   description,
   bodyClass,
-  scrollUi = true,
-  ...seoRest
+  readingProgress = true,
+  openGraph,
 } = Astro.props as Props;
 
-const seoTitle = title ? `${SITE_TAB_ARTICLE} ${title}` : SITE_TAB_TITLE;
+const seoTitle = title ? `${SITE_ARTICLE_TITLE_PREFIX} ${title}` : SITE_DEFAULT_TITLE;
 const seoDescription = description ?? SITE_DESCRIPTION;
 ---
 
@@ -59,39 +66,29 @@ const seoDescription = description ?? SITE_DESCRIPTION;
         }
       })();
     </script>
-    <SEO
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title={SITE_DEFAULT_TITLE}
+      href={`${Astro.site}rss.xml`}
+    />
+    <Seo
       title={seoTitle}
       description={seoDescription}
-      charset="utf-8"
-      canonical={canonicalURL}
-      {...seoRest}
-      extend={{
-        meta: [
-          { name: "viewport", content: "width=device-width,initial-scale=1,viewport-fit=cover" },
-          { name: "generator", content: Astro.generator },
-          ...(Astro.props.extend?.meta ?? []),
-        ],
-        link: [
-          ...(Astro.props.extend?.link ?? []),
-          { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
-          {
-            rel: "alternate",
-            type: "application/rss+xml",
-            title: SITE_TAB_TITLE,
-            href: `${Astro.site}rss.xml`,
-          },
-        ],
-      }}
+      canonical={canonicalUrl}
+      openGraph={openGraph}
     />
 
     <slot name="head" />
   </head>
 
   <body
-    class:list={[bodyClass, { "page-no-scroll-ui": !scrollUi }]}
-    data-scroll-ui={scrollUi ? "on" : "off"}
-    data-scroll-progress-ui={scrollUi ? "on" : "off"}
-    data-scroll-top-ui="on"
+    class:list={[bodyClass, { "reading-progress-disabled": !readingProgress }]}
+    data-reading-progress={readingProgress ? "on" : "off"}
   >
     <main class="site-main">
       <Header />
@@ -105,7 +102,6 @@ const seoDescription = description ?? SITE_DESCRIPTION;
     <PhotoSwipeToolbarComponent client:load />
     <ScrollTopButtonComponent client:load />
 
-    <!-- Module applicatif packagé par Vite -->
     <script>
       import "@/assets/js/app-init.js";
     </script>

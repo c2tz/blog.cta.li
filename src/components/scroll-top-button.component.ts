@@ -4,11 +4,11 @@ import {
   signal,
 } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
-import { MatBadgeModule } from "@angular/material/badge";
-import { MatButtonModule } from "@angular/material/button";
-import { MatIconModule } from "@angular/material/icon";
-import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
-import { MatTooltipModule } from "@angular/material/tooltip";
+import { MatBadge } from "@angular/material/badge";
+import { MatIconButton } from "@angular/material/button";
+import { MatIcon } from "@angular/material/icon";
+import { MatProgressSpinner } from "@angular/material/progress-spinner";
+import { MatTooltip } from "@angular/material/tooltip";
 
 function getScrollProgress() {
   const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
@@ -20,11 +20,11 @@ function getScrollProgress() {
   selector: "site-scroll-top-button",
   standalone: true,
   imports: [
-    MatBadgeModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule,
-    MatTooltipModule,
+    MatBadge,
+    MatIconButton,
+    MatIcon,
+    MatProgressSpinner,
+    MatTooltip,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -45,14 +45,14 @@ function getScrollProgress() {
     >
       <mat-spinner
         progressIndicator
-        class="site-scroll-top__progress"
+        class="site-scroll-top-progress"
         mode="determinate"
         [value]="progress()"
         diameter="40"
         strokeWidth="3"
         aria-hidden="true"
       ></mat-spinner>
-      <mat-icon class="site-scroll-top__icon" aria-hidden="true">&#xE5D8;</mat-icon>
+      <mat-icon aria-hidden="true">&#xE5D8;</mat-icon>
     </button>
   `,
 })

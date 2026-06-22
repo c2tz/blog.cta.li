@@ -1,9 +1,9 @@
 ---
 import fallbackOne from "@/content/blog/images/konachan-396319.jpg";
 import fallbackTwo from "@/content/blog/images/konachan-382339.jpg";
-import { HomeHeroActionsComponent } from "./HomeHeroActions.component";
-import { KonachanLoadingIndicatorComponent } from "./KonachanLoadingIndicator.component";
-import { KonachanRefreshButtonComponent } from "./KonachanRefreshButton.component";
+import { HomeHeroActionsComponent } from "./home-hero-actions.component";
+import { KonachanLoadingIndicatorComponent } from "./konachan-loading-indicator.component";
+import { KonachanRefreshButtonComponent } from "./konachan-refresh-button.component";
 
 interface Props {
   title?: string;
@@ -19,27 +19,19 @@ const {
   lede = "Micro-récits, grandes émotions. Des textes courts pour lire entre deux.",
   primaryActionHref = "/tags/all/",
   primaryActionLabel = "Voir plus",
-  secondaryActionHref = "http://www.cta.li",
+  secondaryActionHref = "https://www.cta.li",
   secondaryActionLabel = "À propos",
 } = Astro.props;
 const emergencyImages = [fallbackOne.src, fallbackTwo.src];
 ---
 
 <section class="home-anime-landing" aria-labelledby="home-hero-title" aria-busy="false">
-  <div class="home-anime-bg" aria-hidden="true">
-    <img
-      class="home-anime-bg__image"
-      data-konachan-background
-      alt=""
-      decoding="async"
-      fetchpriority="high"
-    />
-  </div>
+  <div class="home-anime-background" data-konachan-background aria-hidden="true"></div>
   <KonachanLoadingIndicatorComponent client:load />
 
-  <div class="home-hero__content">
+  <div class="home-hero-content">
     <h1 id="home-hero-title">{title}</h1>
-    <p class="home-hero__lede">
+    <p class="home-hero-lede">
       {lede}
     </p>
     <HomeHeroActionsComponent
@@ -53,7 +45,7 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
 
   <aside class="home-anime-credit" data-konachan-credit>
     <a
-      class="home-anime-credit__link"
+      class="home-anime-credit-link"
       href="https://konachan.com"
       target="_blank"
       rel="noopener noreferrer"
@@ -73,7 +65,7 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
   const LANDING_SELECTOR = ".home-anime-landing";
   const STATUS_SELECTOR = "[data-konachan-status]";
   const MANIFEST_URL = "/konachan-backgrounds.json?v=1";
-  const KONACHAN_CACHE_KEY = "home_konachan_backgrounds_v5";
+  const KONACHAN_CACHE_KEY = "home_konachan_backgrounds_v6";
   const KONACHAN_CACHE_NAME = "home-konachan-backgrounds-v2";
   const KONACHAN_CACHE_TTL_MS = 14 * 24 * 60 * 60 * 1000;
   const KONACHAN_MANIFEST_RELOAD_MS = 24 * 60 * 60 * 1000;
@@ -313,7 +305,10 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
       const freshImages = shouldReloadManifest
         ? await readManifest({ cache: forceReload ? "reload" : "no-cache" })
         : [];
-      const merged = mergeImages(state.images, freshImages);
+      const merged =
+        freshImages.length > 0
+          ? mergeImages(freshImages)
+          : mergeImages(state.images);
 
       if (merged.length > 0) {
         state.images = merged;
@@ -349,17 +344,9 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
 
     if (!loadedUrl) throw new Error("konachan_image_unavailable");
 
-    const layer = target.closest(".home-anime-bg");
     const cssUrl = toCssUrl(loadedUrl);
-    document.body?.style.setProperty("--home-konachan-image", cssUrl);
-    document.body?.setAttribute("data-konachan-background-loaded", "true");
     target.style.setProperty("--home-konachan-image", cssUrl);
-    target.setAttribute("src", loadedUrl);
     target.dataset.loaded = "true";
-    if (layer) {
-      layer.style.setProperty("--home-konachan-image", cssUrl);
-      layer.dataset.loaded = "true";
-    }
     state.currentUrl = loadedUrl;
     setCredit(typeof image === "string" ? null : image);
     return true;

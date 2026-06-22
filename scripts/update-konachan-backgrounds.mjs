@@ -13,7 +13,7 @@ import {
   KONACHAN_TAG_QUERIES,
   KONACHAN_TAGS,
   getKonachanBackgroundPosts,
-} from "../src/lib/konachanBackgrounds.mjs";
+} from "../src/lib/konachan-backgrounds.mjs";
 
 const ROOT_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PUBLIC_DIR = resolve(ROOT_DIR, "public");

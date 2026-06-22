@@ -293,18 +293,16 @@ function initDynamicAnchors() {
 
 function wrapMarkdownImages() {
   document.querySelectorAll(".site-prose").forEach((container) => {
-    let imageIndex = 0;
-
     container
       .querySelectorAll("img:not([data-no-lightbox])")
       .forEach((img) => {
         if (img.closest("header, footer, nav, [data-no-lightbox], a")) return;
         if (!img.src) return;
+        const imageRect = img.getBoundingClientRect();
         const isPriorityImage =
-          imageIndex === 0 ||
           img.loading === "eager" ||
-          img.getAttribute("fetchpriority") === "high";
-        imageIndex += 1;
+          img.getAttribute("fetchpriority") === "high" ||
+          (imageRect.bottom >= -240 && imageRect.top <= window.innerHeight + 240);
 
         const link = document.createElement("a");
         link.href = img.src;
@@ -346,6 +344,67 @@ function wrapMarkdownImages() {
           img.setAttribute("fetchpriority", "high");
         }
       });
+  });
+}
+
+function revealBlogImage(img) {
+  if (img.dataset.imageRevealState === "revealed") return;
+
+  const finishReveal = () => {
+    if (img.dataset.imageRevealState === "revealed") return;
+    img.dataset.imageRevealState = "revealed";
+    img.classList.remove("is-blog-image-pending");
+    img.classList.add("is-blog-image-revealed");
+  };
+
+  if (!img.complete) {
+    img.addEventListener(
+      "load",
+      () => {
+        img.decode?.().catch(() => {}).finally(finishReveal);
+      },
+      { once: true },
+    );
+    img.addEventListener("error", finishReveal, { once: true });
+    return;
+  }
+
+  if (!img.naturalWidth) {
+    finishReveal();
+    return;
+  }
+
+  img.decode?.().catch(() => {}).finally(finishReveal);
+}
+
+function initBlogImageReveal() {
+  const images = document.querySelectorAll(
+    ".site-prose img:not([data-no-image-reveal])",
+  );
+  if (!images.length) return;
+
+  const observer =
+    "IntersectionObserver" in window
+      ? new IntersectionObserver(
+          (entries, imageObserver) => {
+            entries.forEach((entry) => {
+              if (!entry.isIntersecting) return;
+              imageObserver.unobserve(entry.target);
+              revealBlogImage(entry.target);
+            });
+          },
+          { rootMargin: "240px 0px" },
+        )
+      : null;
+
+  images.forEach((img) => {
+    if (img.dataset.imageRevealState) return;
+
+    img.dataset.imageRevealState = "pending";
+    img.classList.add("blog-image-reveal", "is-blog-image-pending");
+
+    if (observer) observer.observe(img);
+    else revealBlogImage(img);
   });
 }
 
@@ -704,6 +763,7 @@ const lightbox = new PhotoSwipeLightbox({
   closeOnVerticalDrag: true,
   imageClickAction: "close",
   doubleTapAction: false,
+  bgOpacity: 0.74,
   arrowPrevTitle: "Image précédente",
   arrowNextTitle: "Image suivante",
   closeTitle: "Fermer",
@@ -711,6 +771,7 @@ const lightbox = new PhotoSwipeLightbox({
 
 let activePhotoSwipe = null;
 let activePhotoSwipeLoading = false;
+let activePhotoSwipeClosing = false;
 
 function dispatchPhotoSwipeState(pswp, open = true) {
   const src = pswp?.currSlide?.data?.src;
@@ -726,6 +787,7 @@ function dispatchPhotoSwipeState(pswp, open = true) {
         isFullscreen: Boolean(document.fullscreenElement),
         fullscreenAvailable: Boolean(document.fullscreenEnabled),
         loading: open && activePhotoSwipeLoading,
+        closing: open && activePhotoSwipeClosing,
       },
     }),
   );
@@ -795,6 +857,7 @@ lightbox.on("uiRegister", () => {
   ui.uiElementsData = [];
 
   activePhotoSwipe = pswp;
+  activePhotoSwipeClosing = false;
   const syncToolbar = () => dispatchPhotoSwipeState(pswp);
   const setToolbarLoading = (loading) => {
     activePhotoSwipeLoading = loading;
@@ -818,9 +881,14 @@ lightbox.on("uiRegister", () => {
     if (slide === pswp.currSlide) setToolbarLoading(false);
   });
   pswp.on("zoomPanUpdate", () => removePhotoSwipeZoomUi(pswp));
+  pswp.on("closingAnimationStart", () => {
+    activePhotoSwipeClosing = true;
+    syncToolbar();
+  });
   pswp.on("destroy", () => {
     if (activePhotoSwipe === pswp) activePhotoSwipe = null;
     activePhotoSwipeLoading = false;
+    activePhotoSwipeClosing = false;
     dispatchPhotoSwipeState(pswp, false);
   });
 });
@@ -844,6 +912,7 @@ function initLightbox() {
 function initApp() {
   initSiteTooltips();
   initLightbox();
+  initBlogImageReveal();
   initKeyboardAccessibleTargets();
   initDynamicAnchors();
   if (document.body?.dataset.readingProgress === "off") {

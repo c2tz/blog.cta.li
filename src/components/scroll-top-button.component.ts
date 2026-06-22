@@ -7,7 +7,6 @@ import type { OnDestroy, OnInit } from "@angular/core";
 import { MatBadge } from "@angular/material/badge";
 import { MatIconButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
-import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatTooltip } from "@angular/material/tooltip";
 
 function getScrollProgress() {
@@ -23,7 +22,6 @@ function getScrollProgress() {
     MatBadge,
     MatIconButton,
     MatIcon,
-    MatProgressSpinner,
     MatTooltip,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -31,27 +29,17 @@ function getScrollProgress() {
     <button
       matIconButton
       type="button"
-      class="site-scroll-top site-icon-button"
+      class="site-scroll-top"
       [class.is-visible]="visible()"
       [tabIndex]="visible() ? 0 : -1"
       [attr.aria-label]="'Retour en haut, progression ' + progress() + ' %'"
       [matBadge]="progress()"
       [matBadgeHidden]="!visible()"
       matBadgePosition="above after"
-      [showProgress]="true"
       matTooltip="Retour en haut"
       matTooltipPosition="left"
       (click)="scrollToTop()"
     >
-      <mat-spinner
-        progressIndicator
-        class="site-scroll-top-progress"
-        mode="determinate"
-        [value]="progress()"
-        diameter="40"
-        strokeWidth="3"
-        aria-hidden="true"
-      ></mat-spinner>
       <mat-icon aria-hidden="true">&#xE5D8;</mat-icon>
     </button>
   `,

@@ -1,5 +1,6 @@
+@use "@angular/material" as mat;
+
 @import "@angular/material/prebuilt-themes/azure-blue.css";
-@import "@fontsource/material-icons";
 
 .material-icons {
   display: inline-block;
@@ -76,57 +77,45 @@
   --site-mark-bg: #ffff00;
   --site-tonal-container: #eceff1;
   --site-on-tonal-container: #263238;
-  --site-theme-ripple-color: rgb(21 101 192 / 0.16);
   --code-surface: #f3f3f3;
   --code-block-surface: #ffffff;
   --code-pad: 1rem;
   --code-radius: 12px;
   --image-radius: 16px;
-  --mat-sys-primary: var(--site-link);
-  --mat-sys-on-primary: var(--site-link-contrast);
-  --mat-sys-primary-container: var(--site-link-container);
-  --mat-sys-on-primary-container: var(--site-on-link-container);
-  --mat-sys-secondary-container: var(--site-tonal-container);
-  --mat-sys-on-secondary-container: var(--site-on-tonal-container);
-  --mat-sys-surface: var(--site-bg);
-  --mat-sys-on-surface: var(--site-text);
-  --mat-sys-on-surface-variant: var(--site-muted);
-  --mat-sys-outline: var(--site-link);
-  --mat-sys-hover-state-layer-opacity: 0.08;
-  --mat-sys-focus-state-layer-opacity: 0.12;
-  --mat-sys-pressed-state-layer-opacity: 0.12;
-  --mat-sys-label-large-font: var(--site-font);
-  --mat-sys-label-medium-font: var(--site-font);
-  --mat-sys-label-small-font: var(--site-font);
-  --mat-sys-body-large-font: var(--site-font);
-  --mat-sys-body-medium-font: var(--site-font);
-  --mat-sys-body-small-font: var(--site-font);
-  --mat-sys-body-small-tracking: 0;
-  --mat-sys-label-large-size: 0.875rem;
-  --mat-sys-label-large-line-height: 1.25rem;
-  --mat-sys-label-large-tracking: 0;
-  --mat-sys-label-large-weight: 600;
-  --mat-sys-corner-full: 999px;
-  --mat-sys-corner-large: 999px;
-  --mat-sys-corner-medium: 999px;
-  --mat-sys-level0: none;
-  --mat-sys-level1: 0 1px 2px rgb(0 0 0 / 0.18);
-  --mat-sys-level2: 0 2px 5px rgb(0 0 0 / 0.2);
-  --mat-sys-level3: 0 3px 7px rgb(0 0 0 / 0.22);
-  --mat-sys-level4: 0 5px 11px rgb(0 0 0 / 0.24);
-  --mat-button-text-container-height: 40px;
-  --mat-button-text-horizontal-padding: 0.9rem;
-  --mat-button-filled-container-height: 40px;
-  --mat-button-filled-horizontal-padding: 1rem;
-  --mat-button-filled-container-color: var(--site-link);
-  --mat-button-filled-label-text-color: var(--site-link-contrast);
-  --mat-button-outlined-container-height: 40px;
-  --mat-button-outlined-horizontal-padding: 1rem;
-  --mat-button-outlined-outline-color: currentColor;
-  --mat-button-outlined-label-text-color: var(--site-link);
-  --mat-button-outlined-state-layer-color: currentColor;
-  --mat-fab-small-container-color: var(--site-link-container);
-  --mat-fab-small-foreground-color: var(--site-on-link-container);
+  @include mat.theme-overrides(
+    (
+      primary: var(--site-link),
+      on-primary: var(--site-link-contrast),
+      primary-container: var(--site-link-container),
+      on-primary-container: var(--site-on-link-container),
+      secondary-container: var(--site-tonal-container),
+      on-secondary-container: var(--site-on-tonal-container),
+      surface: var(--site-bg),
+      on-surface: var(--site-text),
+      on-surface-variant: var(--site-muted),
+      outline: var(--site-link),
+      label-large-font: var(--site-font),
+    )
+  );
+
+  @include mat.button-overrides(
+    (
+      tonal-container-color: var(--site-link-container),
+      tonal-label-text-color: var(--site-on-link-container),
+      tonal-state-layer-color: var(--site-on-link-container),
+      tonal-ripple-color: color-mix(
+          in srgb,
+          var(--site-on-link-container) 12%,
+          transparent
+        ),
+    )
+  );
+
+  @include mat.tooltip-overrides(
+    (
+      supporting-text-font: var(--site-font),
+    )
+  );
 }
 
 @layer base {
@@ -373,182 +362,26 @@
   }
 }
 
-.mdc-button.mat-mdc-button-base,
-.mat-mdc-icon-button {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  border: 0;
-  outline: 0;
-  font-family: var(--site-font);
-  letter-spacing: 0;
-  text-decoration: none;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  isolation: isolate;
-}
-
-.mdc-button.mat-mdc-button-base {
-  min-width: 8rem;
-  height: 2.5rem;
-  min-height: 2.5rem;
-  padding: 0 1.25rem;
-  overflow: hidden;
-  border-radius: var(--mat-sys-corner-full);
-  background: transparent;
-  font-size: 0.875rem;
-  font-weight: 600;
-  line-height: 1;
-  vertical-align: middle;
-}
-
-.mdc-button.mat-mdc-button-base:is(:hover, :focus-visible) {
-  text-decoration: none;
-}
-
-.mat-mdc-button {
-  color: var(--mat-button-text-label-text-color, var(--site-link));
-}
-
-.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  min-width: 2.5rem;
-  padding: 0;
-  overflow: hidden;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--site-icon-button-color, var(--site-link));
-  line-height: 0;
-  vertical-align: middle;
-}
-
-.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base > svg {
-  display: block;
-  flex: 0 0 auto;
-  margin: 0;
-}
-
-.mdc-button.mat-mdc-button-base.mat-mdc-unelevated-button,
-.mat-mdc-unelevated-button {
-  height: 2.5rem;
-  min-height: 2.5rem;
-  padding-inline: 1.25rem;
-  background: var(--mat-button-filled-container-color, var(--site-link));
-  color: var(--mat-button-filled-label-text-color, var(--site-link-contrast));
-}
-
-.mdc-button.mat-mdc-button-base.mat-mdc-tonal-button,
-.mat-mdc-tonal-button {
-  height: 2.5rem;
-  min-height: 2.5rem;
-  padding-inline: 1.25rem;
-  background: var(--mat-button-tonal-container-color, var(--site-link-container));
-  color: var(--mat-button-tonal-label-text-color, var(--site-on-link-container));
-}
-
-.mdc-button.mat-mdc-button-base.mat-mdc-outlined-button,
-.mat-mdc-outlined-button {
-  height: 2.5rem;
-  min-height: 2.5rem;
-  padding-inline: 1.25rem;
-  border: 0;
-  color: var(--mat-button-outlined-label-text-color, var(--site-link));
-}
-
-.mat-mdc-button-persistent-ripple,
-.mat-mdc-button-persistent-ripple::before,
-.mat-mdc-button-base > .mat-focus-indicator,
-.mat-mdc-button-touch-target {
-  position: absolute;
-  pointer-events: none;
-}
-
-.mat-mdc-button-persistent-ripple,
-.mat-mdc-button-persistent-ripple::before,
-.mat-mdc-button-base > .mat-focus-indicator {
-  inset: 0;
-  border-radius: inherit;
-}
-
-.mat-mdc-button-persistent-ripple::before {
-  content: "";
-  background: currentColor;
-  opacity: 0;
-  transition: opacity 120ms ease;
-}
-
-.mdc-button.mat-mdc-button-base:is(:hover, :focus-visible)
-  > .mat-mdc-button-persistent-ripple::before,
-.mat-mdc-icon-button:is(:hover, :focus-visible)
-  > .mat-mdc-button-persistent-ripple::before {
-  opacity: var(--mat-sys-hover-state-layer-opacity);
-}
-
-.mdc-button.mat-mdc-button-base:active
-  > .mat-mdc-button-persistent-ripple::before,
-.mat-mdc-icon-button:active > .mat-mdc-button-persistent-ripple::before {
-  opacity: var(--mat-sys-pressed-state-layer-opacity);
-}
-
-.mat-mdc-button-touch-target {
-  top: 50%;
-  right: 0;
-  left: 0;
-  height: 48px;
-  transform: translateY(-50%);
-}
-
-.mdc-button__label {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  min-width: 0;
-}
-
-.mat-mdc-icon-button > svg {
-  position: relative;
-  z-index: 1;
-  width: 20px;
-  height: 20px;
-  fill: currentColor;
-}
-
-.mdc-button.mat-mdc-button-base:focus-visible,
-.mat-mdc-icon-button:focus-visible {
-  outline: 2px solid var(--site-link);
-  outline-offset: 2px;
-}
-
-.mdc-button.mat-mdc-button-base:disabled,
-.mat-mdc-icon-button:disabled {
-  cursor: default;
-  opacity: 0.62;
-  pointer-events: none;
-}
-
-.mdc-button.mat-mdc-button-base > svg {
-  position: relative;
-  z-index: 1;
-  width: 20px;
-  height: 20px;
-  fill: currentColor;
-}
-
 .home-anime-landing {
   --home-banner-height: clamp(
     20rem,
     calc(var(--home-viewport-height, 100vh) * 0.52),
     31rem
+  );
+  @include mat.button-overrides(
+    (
+      outlined-label-text-color: #fff,
+      outlined-outline-color: #fff,
+      outlined-state-layer-color: #fff,
+      outlined-ripple-color: rgb(255 255 255 / 12%),
+    )
+  );
+  @include mat.icon-button-overrides(
+    (
+      icon-color: #fff,
+      state-layer-color: #fff,
+      ripple-color: rgb(255 255 255 / 12%),
+    )
   );
   position: relative;
   z-index: 0;
@@ -658,19 +491,6 @@
   margin-block-start: 1.35rem;
 }
 
-.home-hero-button {
-  text-shadow: none;
-}
-
-.home-hero-button.mat-mdc-tonal-button {
-  --mat-button-tonal-container-color: var(--site-link-container);
-  --mat-button-tonal-label-text-color: var(--site-on-link-container);
-}
-
-.home-hero-button.mat-mdc-outlined-button {
-  --mat-button-outlined-label-text-color: #fff;
-}
-
 .home-anime-credit {
   position: absolute;
   top: 0.75rem;
@@ -703,11 +523,30 @@
   white-space: nowrap;
 }
 
-.home-anime-refresh.mat-mdc-icon-button.mat-mdc-button-base {
+.home-anime-refresh {
   flex: 0 0 auto;
   margin: 0;
-  --site-icon-button-color: #fff;
-  text-shadow: none;
+}
+
+.photo-swipe-button {
+  @include mat.icon-button-overrides(
+    (
+      icon-color: #fff,
+      state-layer-color: #fff,
+      ripple-color: rgb(255 255 255 / 12%),
+    )
+  );
+}
+
+.photo-swipe-counter-set {
+  @include mat.chips-overrides(
+    (
+      elevated-container-color: var(--site-link-container),
+      label-text-color: var(--site-on-link-container),
+      outline-color: transparent,
+    )
+  );
+  pointer-events: none;
 }
 
 .site-prose {
@@ -857,7 +696,37 @@
   transition:
     border-radius 180ms ease,
     transform 180ms ease,
-    opacity 180ms ease;
+    opacity 300ms cubic-bezier(0, 0, 0.2, 1),
+    filter 360ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.site-prose
+  :where(img.blog-image-reveal):not(
+      :where([class~="not-prose"], [class~="not-prose"] *)
+    ) {
+  background-color: var(--code-surface);
+}
+
+.site-prose
+  :where(img.blog-image-reveal.is-blog-image-pending):not(
+      :where([class~="not-prose"], [class~="not-prose"] *)
+    ) {
+  filter: blur(18px);
+  opacity: 0.68;
+  transition:
+    border-radius 180ms ease,
+    transform 180ms ease,
+    opacity 1ms linear,
+    filter 1ms linear;
+  will-change: filter, opacity;
+}
+
+.site-prose
+  :where(img.blog-image-reveal.is-blog-image-revealed):not(
+      :where([class~="not-prose"], [class~="not-prose"] *)
+    ) {
+  filter: blur(0);
+  opacity: 1;
 }
 
 .site-prose
@@ -1304,57 +1173,6 @@ abbr.site-tooltip {
   gap: 0.5rem;
 }
 
-.code-copy-button.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base {
-  --site-icon-button-color: #000;
-  background: transparent;
-  contain: layout paint;
-  filter: none;
-}
-
-.code-copy-button.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base:is(
-    :hover,
-    :focus-visible
-  ) {
-  background: transparent;
-  text-decoration: none;
-}
-
-.code-copy-button.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base:active {
-  background: transparent;
-  transform: none;
-}
-
-.code-copy-button.site-icon-button.mat-mdc-icon-button .code-copy-icon.mat-icon {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: 1;
-  width: 20px;
-  height: 20px;
-  font-size: 20px;
-  line-height: 20px;
-  pointer-events: none;
-  transform: translate3d(-50%, -50%, 0);
-  transition: opacity 120ms ease;
-  will-change: opacity;
-}
-
-.code-copy-button .code-copy-icon-copy {
-  opacity: 1;
-}
-
-.code-copy-button .code-copy-icon-check {
-  opacity: 0;
-}
-
-.code-copy-button.is-copied .code-copy-icon-copy {
-  opacity: 0;
-}
-
-.code-copy-button.is-copied .code-copy-icon-check {
-  opacity: 1;
-}
-
 .code-shell pre {
   font-family: var(--site-mono-font);
   margin: 0;
@@ -1472,30 +1290,15 @@ html.interaction-disabled.consent-visible body {
   transform: translateX(-50%) translateY(0);
   transform-origin: bottom center;
   animation: cookie-bottom-sheet-in 220ms cubic-bezier(0.2, 0, 0, 1) both;
-  --mat-sys-primary: var(--site-link);
-  --mat-sys-outline: var(--site-link);
-  --mat-sys-on-surface: var(--site-text);
-  --mat-sys-on-surface-variant: var(--site-muted);
-  --mat-sys-hover-state-layer-opacity: 0.08;
-  --mat-sys-focus-state-layer-opacity: 0.12;
-  --mat-sys-pressed-state-layer-opacity: 0.12;
-  --mat-sys-label-large-font: var(--site-font);
-  --mat-sys-label-large-size: 0.95rem;
-  --mat-sys-label-large-line-height: 1.25rem;
-  --mat-sys-label-large-tracking: 0;
-  --mat-sys-label-large-weight: 700;
-  --mat-sys-corner-full: 999px;
-  --mat-button-filled-container-height: 44px;
-  --mat-button-filled-horizontal-padding: 1rem;
-  --mat-button-filled-container-color: var(--site-link);
-  --mat-button-filled-label-text-color: var(--site-link-contrast);
-  --mat-button-outlined-container-height: 44px;
-  --mat-button-outlined-container-shape: 999px;
-  --mat-button-outlined-horizontal-padding: 1rem;
-  --mat-button-outlined-label-text-color: var(--site-link);
-  --mat-button-outlined-outline-color: var(--site-link);
-  --mat-button-outlined-ripple-color: rgb(21 101 192 / 0.18);
-  --mat-button-outlined-state-layer-color: var(--site-link);
+  @include mat.theme-overrides(
+    (
+      primary: var(--site-link),
+      on-primary: var(--site-link-contrast),
+      outline: var(--site-link),
+      on-surface: var(--site-text),
+      on-surface-variant: var(--site-muted),
+    )
+  );
 }
 
 .cookie-consent h2 {
@@ -1520,14 +1323,6 @@ html.interaction-disabled.consent-visible body {
   gap: 0.5rem;
 }
 
-.cookie-consent .mat-mdc-button {
-  min-width: auto;
-  height: 2.5rem;
-  padding-inline: 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
 .site-scroll-progress {
   position: fixed;
   inset: 0 0 auto;
@@ -1549,76 +1344,37 @@ html.interaction-disabled.consent-visible body {
   will-change: transform;
 }
 
-.site-scroll-top.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base {
+.site-scroll-top {
+  @include mat.icon-button-overrides(
+    (
+      icon-color: var(--site-link),
+      state-layer-color: var(--site-link),
+      ripple-color: color-mix(in srgb, var(--site-link) 12%, transparent),
+    )
+  );
+  @include mat.badge-overrides(
+    (
+      background-color: var(--site-link),
+      text-color: var(--site-link-contrast),
+    )
+  );
   position: fixed;
   right: calc(2rem + env(safe-area-inset-right, 0px));
   bottom: 1rem;
   z-index: 9000;
   overflow: visible;
-  color: var(--site-link);
   opacity: 0;
   pointer-events: none;
   transform: translateY(1rem);
   transition:
     opacity 180ms ease,
     transform 180ms ease;
-  --site-icon-button-color: var(--site-link);
-  --mat-badge-background-color: var(--site-link);
-  --mat-badge-text-color: var(--site-link-contrast);
-  --mat-icon-button-state-layer-color: var(--site-link);
-  --mat-progress-spinner-active-indicator-color: var(--site-link);
 }
 
-.site-scroll-top.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base.is-visible {
+.site-scroll-top.is-visible {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
-}
-
-.site-scroll-top.site-icon-button.mat-mdc-icon-button
-  .site-scroll-top-progress.mat-mdc-progress-spinner {
-  position: relative;
-  inset: auto;
-  margin: 0;
-  pointer-events: none;
-}
-
-.site-scroll-top .mat-mdc-button-progress-indicator-container {
-  pointer-events: none;
-}
-
-.site-scroll-top.mat-mdc-button-progress-indicator-shown .mat-icon {
-  visibility: visible;
-}
-
-.site-scroll-top-progress svg {
-  width: 100%;
-  height: 100%;
-  fill: transparent;
-}
-
-.site-scroll-top .mat-icon {
-  position: relative;
-  z-index: 1;
-  display: block;
-  width: 24px;
-  height: 24px;
-  margin: 0;
-  overflow: hidden;
-  font-family: "Material Icons";
-  font-size: 24px;
-  font-style: normal;
-  font-weight: 400;
-  line-height: 24px;
-  letter-spacing: 0;
-  text-transform: none;
-  white-space: nowrap;
-  -webkit-font-smoothing: antialiased;
-}
-
-.site-scroll-top:disabled {
-  cursor: wait;
-  opacity: 0.62;
 }
 
 html.consent-visible .site-scroll-top {
@@ -2045,7 +1801,6 @@ body.reading-progress-disabled .site-scroll-progress {
   --site-on-link-container: #d6efff;
   --site-tonal-container: #1f2528;
   --site-on-tonal-container: #dfe5e8;
-  --site-theme-ripple-color: rgb(144 202 249 / 0.2);
   --code-surface: #252526;
   --code-block-surface: #1e1e1e;
 }
@@ -2066,10 +1821,6 @@ body.reading-progress-disabled .site-scroll-progress {
   background: rgb(0 0 0 / 0.72);
 }
 
-:root[data-theme="dark"] .cookie-consent {
-  --mat-button-outlined-ripple-color: rgb(144 202 249 / 0.22);
-}
-
 :root[data-theme="dark"] .home-anime-background::after {
   background:
     linear-gradient(to bottom, rgb(0 0 0 / 0.18), rgb(0 0 0 / 0.42)),
@@ -2083,11 +1834,6 @@ body.reading-progress-disabled .site-scroll-progress {
 
 :root[data-theme="dark"] .code-shell {
   border-color: #000;
-}
-
-:root[data-theme="dark"]
-  .code-copy-button.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base {
-  --site-icon-button-color: #fff;
 }
 
 :root[data-theme="dark"] .code-shell pre.astro-code {
@@ -2106,8 +1852,7 @@ body.reading-progress-disabled .site-scroll-progress {
   .site-prose img,
   .pswp__img--radius-transition,
   .site-scroll-top,
-  .site-scroll-progress-bar,
-  .mat-mdc-button-persistent-ripple::before {
+  .site-scroll-progress-bar {
     transition-duration: 1ms;
   }
 

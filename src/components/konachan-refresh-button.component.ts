@@ -22,7 +22,7 @@ interface RefreshState {
     <button
       matIconButton
       type="button"
-      class="home-anime-refresh site-icon-button"
+      class="home-anime-refresh"
       [disabled]="busy()"
       [attr.aria-busy]="busy()"
       [attr.aria-label]="busy() ? 'Image en cours de chargement' : 'Changer l\\'image'"

@@ -39,7 +39,7 @@ function isThemePreference(value: string | null | undefined): value is ThemePref
     <button
       matIconButton
       type="button"
-      class="site-theme-trigger site-icon-button"
+      class="site-theme-trigger"
       [matMenuTriggerFor]="themeMenu"
       [matTooltip]="triggerLabel()"
       matTooltipPosition="below"
@@ -143,13 +143,6 @@ function isThemePreference(value: string | null | undefined): value is ThemePref
       width: 2.5rem;
       height: 2.5rem;
       flex: 0 0 2.5rem;
-    }
-
-    .site-theme-trigger.mat-mdc-icon-button.mat-mdc-button-base {
-      background: transparent;
-      --site-icon-button-color: var(--site-text);
-      --mat-icon-button-state-layer-color: var(--site-text);
-      --mat-icon-button-ripple-color: var(--site-theme-ripple-color);
     }
   `,
 })

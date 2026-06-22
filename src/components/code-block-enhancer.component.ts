@@ -58,23 +58,12 @@ async function copyToClipboard(text: string) {
     <button
       matIconButton
       type="button"
-      class="code-copy-button site-icon-button"
-      [class.is-copied]="state() === 'copied'"
-      [class.is-error]="state() === 'error'"
+      class="code-copy-button"
       [attr.aria-label]="label()"
       (click)="copy()"
     >
-      <mat-icon
-        class="code-copy-icon code-copy-icon-copy"
-        aria-hidden="true"
-      >
-        &#xE14D;
-      </mat-icon>
-      <mat-icon
-        class="code-copy-icon code-copy-icon-check"
-        aria-hidden="true"
-      >
-        &#xE5CA;
+      <mat-icon aria-hidden="true">
+        {{ state() === "copied" ? "check" : state() === "error" ? "error" : "content_copy" }}
       </mat-icon>
     </button>
     <span class="sr-only" role="status" aria-live="polite">

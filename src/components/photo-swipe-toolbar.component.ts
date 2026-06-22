@@ -2,9 +2,11 @@ import {
   ChangeDetectionStrategy,
   Component,
   signal,
+  viewChildren,
 } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
 import { MatIconButton } from "@angular/material/button";
+import { MatChip, MatChipSet } from "@angular/material/chips";
 import { MatIcon } from "@angular/material/icon";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatTooltip } from "@angular/material/tooltip";
@@ -17,6 +19,7 @@ interface PhotoSwipeToolbarState {
   isFullscreen?: boolean;
   fullscreenAvailable?: boolean;
   loading?: boolean;
+  closing?: boolean;
 }
 
 type PhotoSwipeAction =
@@ -30,23 +33,36 @@ type PhotoSwipeAction =
 @Component({
   selector: "site-photo-swipe-toolbar",
   standalone: true,
-  imports: [MatIconButton, MatIcon, MatProgressSpinner, MatTooltip],
+  imports: [
+    MatIconButton,
+    MatChip,
+    MatChipSet,
+    MatIcon,
+    MatProgressSpinner,
+    MatTooltip,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     "[class.is-open]": "open()",
+    "[class.is-closing]": "closing()",
     "[attr.aria-hidden]": "open() ? null : 'true'",
   },
   template: `
     @if (open()) {
       <div class="photo-swipe-toolbar" role="toolbar" aria-label="Commandes de l'image">
-        <span class="photo-swipe-counter" aria-live="polite">{{ index() }} / {{ total() }}</span>
+        <mat-chip-set class="photo-swipe-counter-set" aria-hidden="true">
+          <mat-chip>{{ index() }} / {{ total() }}</mat-chip>
+        </mat-chip-set>
+        <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+          Image {{ index() }} sur {{ total() }}
+        </span>
 
         <span class="photo-swipe-toolbar-actions">
           @if (fullscreenAvailable()) {
             <button
               matIconButton
               type="button"
-              class="photo-swipe-button site-icon-button"
+              class="photo-swipe-button"
               [attr.aria-label]="fullscreenLabel()"
               [matTooltip]="fullscreenLabel()"
               matTooltipPosition="below"
@@ -58,7 +74,7 @@ type PhotoSwipeAction =
 
           <a
             matIconButton
-            class="photo-swipe-button site-icon-button"
+            class="photo-swipe-button"
             [href]="src()"
             target="_blank"
             rel="noopener"
@@ -73,7 +89,7 @@ type PhotoSwipeAction =
           <button
             matIconButton
             type="button"
-            class="photo-swipe-button site-icon-button"
+            class="photo-swipe-button"
             aria-label="Télécharger"
             matTooltip="Télécharger"
             matTooltipPosition="below"
@@ -85,7 +101,7 @@ type PhotoSwipeAction =
           <button
             matIconButton
             type="button"
-            class="photo-swipe-button site-icon-button"
+            class="photo-swipe-button"
             [attr.aria-label]="shareLabel()"
             [matTooltip]="shareLabel()"
             matTooltipPosition="below"
@@ -97,7 +113,7 @@ type PhotoSwipeAction =
           <button
             matIconButton
             type="button"
-            class="photo-swipe-button site-icon-button"
+            class="photo-swipe-button"
             aria-label="Fermer"
             matTooltip="Fermer"
             matTooltipPosition="below"
@@ -112,7 +128,7 @@ type PhotoSwipeAction =
         <button
           matIconButton
           type="button"
-          class="photo-swipe-button site-icon-button photo-swipe-nav photo-swipe-nav-previous"
+          class="photo-swipe-button photo-swipe-nav photo-swipe-nav-previous"
           aria-label="Image précédente"
           matTooltip="Image précédente"
           matTooltipPosition="right"
@@ -124,7 +140,7 @@ type PhotoSwipeAction =
         <button
           matIconButton
           type="button"
-          class="photo-swipe-button site-icon-button photo-swipe-nav photo-swipe-nav-next"
+          class="photo-swipe-button photo-swipe-nav photo-swipe-nav-next"
           aria-label="Image suivante"
           matTooltip="Image suivante"
           matTooltipPosition="left"
@@ -144,6 +160,9 @@ type PhotoSwipeAction =
   `,
   styles: `
     :host {
+      --photo-swipe-scrim-strong: rgb(0 0 0 / 68%);
+      --photo-swipe-scrim-medium: rgb(0 0 0 / 48%);
+      --photo-swipe-scrim-side: rgb(0 0 0 / 70%);
       display: none;
       position: fixed;
       inset: 0;
@@ -156,7 +175,31 @@ type PhotoSwipeAction =
       display: block;
     }
 
+    :host.is-open::before,
+    :host.is-open::after {
+      position: fixed;
+      inset-block: calc(3.5rem + env(safe-area-inset-top, 0px)) 0;
+      z-index: 0;
+      width: clamp(5rem, 10vw, 8rem);
+      pointer-events: none;
+      content: "";
+      opacity: 1;
+      transition: opacity 120ms cubic-bezier(0.4, 0, 1, 1);
+    }
+
+    :host.is-open::before {
+      inset-inline-start: 0;
+      background: linear-gradient(to right, var(--photo-swipe-scrim-side), transparent);
+    }
+
+    :host.is-open::after {
+      inset-inline-end: 0;
+      background: linear-gradient(to left, var(--photo-swipe-scrim-side), transparent);
+    }
+
     .photo-swipe-toolbar {
+      position: relative;
+      z-index: 1;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -166,7 +209,19 @@ type PhotoSwipeAction =
       padding: 0.5rem;
       padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
       pointer-events: auto;
+      background: linear-gradient(
+        to bottom,
+        var(--photo-swipe-scrim-strong),
+        var(--photo-swipe-scrim-medium) 68%,
+        transparent
+      );
       color: #fff;
+      opacity: 1;
+      transform: translateY(0);
+      transition:
+        opacity 120ms cubic-bezier(0.4, 0, 1, 1),
+        transform 120ms cubic-bezier(0.4, 0, 1, 1);
+      animation: photo-swipe-toolbar-enter 180ms cubic-bezier(0, 0, 0.2, 1);
     }
 
     .photo-swipe-toolbar-actions {
@@ -178,86 +233,17 @@ type PhotoSwipeAction =
       line-height: 0;
     }
 
-    .photo-swipe-counter {
-      min-width: 4rem;
-      padding: 0.45rem 0.625rem;
-      border: 1px solid rgb(255 255 255 / 28%);
-      border-radius: 1rem;
-      background: rgb(0 0 0 / 68%);
-      box-shadow: 0 1px 4px rgb(0 0 0 / 35%);
-      font: 600 0.875rem/1 system-ui, sans-serif;
-      font-variant-numeric: tabular-nums;
-      text-align: center;
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-    }
-
-    .photo-swipe-button.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base {
-      display: grid;
-      align-self: center;
-      flex: 0 0 2.5rem;
-      place-items: center;
-      width: 2.5rem;
-      height: 2.5rem;
-      min-width: 2.5rem;
-      min-height: 2.5rem;
-      padding: 0;
-      margin: 0;
-      border: 1px solid rgb(255 255 255 / 28%);
-      background: rgb(0 0 0 / 68%);
-      box-shadow: 0 1px 4px rgb(0 0 0 / 35%);
-      line-height: 0;
-      vertical-align: middle;
-      color: #fff;
-      opacity: 1;
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      --mat-icon-button-icon-color: #fff;
-      --mat-icon-button-state-layer-color: #fff;
-      --mat-icon-button-ripple-color: rgb(255 255 255 / 24%);
-    }
-
-    .photo-swipe-button.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base:is(
-        :hover,
-        :focus-visible
-      ) {
-      border-color: rgb(255 255 255 / 62%);
-      background: rgb(0 0 0 / 82%);
-    }
-
-    .photo-swipe-button.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base:focus-visible {
-      outline: 2px solid #fff;
-      outline-offset: 2px;
-    }
-
-    .photo-swipe-button mat-icon {
-      position: relative;
-      z-index: 1;
-      display: block;
-      place-self: center;
-      width: 24px;
-      height: 24px;
-      margin: 0;
-      overflow: hidden;
-      font-family: "Material Icons";
-      font-size: 24px;
-      font-style: normal;
-      font-weight: 400;
-      line-height: 24px;
-      letter-spacing: 0;
-      text-align: center;
-      text-transform: none;
-      white-space: nowrap;
-      -webkit-font-smoothing: antialiased;
-      filter: drop-shadow(0 1px 1px rgb(0 0 0 / 70%));
-    }
-
     .photo-swipe-nav {
       position: fixed;
       top: 50%;
+      z-index: 1;
       transform: translateY(-50%);
       pointer-events: auto;
-      color: #fff;
+      opacity: 1;
+      transition:
+        opacity 120ms cubic-bezier(0.4, 0, 1, 1),
+        transform 120ms cubic-bezier(0.4, 0, 1, 1);
+      animation: photo-swipe-nav-enter 180ms cubic-bezier(0, 0, 0.2, 1);
     }
 
     .photo-swipe-nav-previous {
@@ -276,16 +262,44 @@ type PhotoSwipeAction =
       place-items: center;
       pointer-events: none;
       transform: translate(-50%, -50%);
+      opacity: 1;
+      transition: opacity 120ms cubic-bezier(0.4, 0, 1, 1);
+    }
+
+    :host.is-closing::before,
+    :host.is-closing::after,
+    :host.is-closing .photo-swipe-toolbar,
+    :host.is-closing .photo-swipe-nav,
+    :host.is-closing .photo-swipe-loading {
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    :host.is-closing .photo-swipe-toolbar {
+      transform: translateY(-0.25rem);
+    }
+
+    :host.is-closing .photo-swipe-nav {
+      transform: translateY(-50%) scale(0.92);
+    }
+
+    @keyframes photo-swipe-toolbar-enter {
+      from {
+        opacity: 0;
+        transform: translateY(-0.25rem);
+      }
+    }
+
+    @keyframes photo-swipe-nav-enter {
+      from {
+        opacity: 0;
+        transform: translateY(-50%) scale(0.92);
+      }
     }
 
     @media (max-width: 47.99rem) {
       .photo-swipe-toolbar {
         gap: 0.25rem;
-      }
-
-      .photo-swipe-counter {
-        min-width: 2.75rem;
-        padding-inline: 0.25rem;
       }
 
       .photo-swipe-nav-previous {
@@ -294,6 +308,25 @@ type PhotoSwipeAction =
 
       .photo-swipe-nav-next {
         right: 0.5rem;
+      }
+    }
+
+    @media (prefers-contrast: more) {
+      :host {
+        --photo-swipe-scrim-strong: rgb(0 0 0 / 86%);
+        --photo-swipe-scrim-medium: rgb(0 0 0 / 70%);
+        --photo-swipe-scrim-side: rgb(0 0 0 / 86%);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      :host.is-open::before,
+      :host.is-open::after,
+      .photo-swipe-toolbar,
+      .photo-swipe-nav,
+      .photo-swipe-loading {
+        animation: none;
+        transition-duration: 1ms;
       }
     }
   `,
@@ -306,7 +339,9 @@ export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
   readonly isFullscreen = signal(false);
   readonly fullscreenAvailable = signal(false);
   readonly loading = signal(false);
+  readonly closing = signal(false);
   readonly shareLabel = signal("Partager");
+  private readonly tooltips = viewChildren(MatTooltip);
 
   readonly fullscreenIcon = () =>
     this.isFullscreen() ? "\uE5D1" : "\uE5D0";
@@ -327,6 +362,10 @@ export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
       this.fullscreenAvailable.set(detail.fullscreenAvailable);
     }
     if (typeof detail.loading === "boolean") this.loading.set(detail.loading);
+    if (typeof detail.closing === "boolean") {
+      this.closing.set(detail.closing);
+      if (detail.closing) this.hideTooltip();
+    }
   };
 
   private readonly handleShareResult = (event: Event) => {
@@ -361,6 +400,7 @@ export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
   }
 
   hideTooltip() {
+    this.tooltips().forEach((tooltip) => tooltip.hide(0));
     document.dispatchEvent(new CustomEvent("site:tooltip-hide"));
   }
 }

@@ -167,10 +167,8 @@ type PhotoSwipeAction =
   `,
   styles: `
     :host {
-      --photo-swipe-toolbar-scrim-strong: rgb(0 0 0 / 82%);
-      --photo-swipe-toolbar-scrim-medium: rgb(0 0 0 / 50%);
-      --photo-swipe-control-scrim-strong: rgb(0 0 0 / 58%);
-      --photo-swipe-control-scrim-medium: rgb(0 0 0 / 30%);
+      --photo-swipe-control-surface: rgb(0 0 0 / 18%);
+      --photo-swipe-control-surface-hover: rgb(0 0 0 / 28%);
       display: none;
       position: fixed;
       inset: 0;
@@ -181,36 +179,6 @@ type PhotoSwipeAction =
 
     :host.is-open {
       display: block;
-    }
-
-    :host.is-open::before {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      pointer-events: none;
-      content: "";
-      background:
-        linear-gradient(
-          to bottom,
-          var(--photo-swipe-toolbar-scrim-strong),
-          var(--photo-swipe-toolbar-scrim-medium)
-            calc(3.5rem + env(safe-area-inset-top, 0px)),
-          transparent calc(7rem + env(safe-area-inset-top, 0px))
-        ),
-        radial-gradient(
-          circle at left center,
-          var(--photo-swipe-control-scrim-strong),
-          var(--photo-swipe-control-scrim-medium) 2.25rem,
-          transparent 5.5rem
-        ),
-        radial-gradient(
-          circle at right center,
-          var(--photo-swipe-control-scrim-strong),
-          var(--photo-swipe-control-scrim-medium) 2.25rem,
-          transparent 5.5rem
-        );
-      opacity: 1;
-      transition: opacity 120ms cubic-bezier(0.4, 0, 1, 1);
     }
 
     .photo-swipe-toolbar {
@@ -241,6 +209,24 @@ type PhotoSwipeAction =
       gap: 0.25rem;
       height: 2.5rem;
       line-height: 0;
+    }
+
+    .photo-swipe-button {
+      overflow: hidden;
+      border: 0;
+      background-color: var(--photo-swipe-control-surface);
+      box-shadow: none;
+      text-shadow: 0 1px 2px rgb(0 0 0 / 72%);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      transition:
+        background-color 120ms cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 120ms cubic-bezier(0.4, 0, 1, 1),
+        transform 120ms cubic-bezier(0.4, 0, 1, 1);
+    }
+
+    .photo-swipe-button:is(:hover, :focus-visible) {
+      background-color: var(--photo-swipe-control-surface-hover);
     }
 
     .photo-swipe-nav {
@@ -322,15 +308,12 @@ type PhotoSwipeAction =
 
     @media (prefers-contrast: more) {
       :host {
-        --photo-swipe-toolbar-scrim-strong: rgb(0 0 0 / 94%);
-        --photo-swipe-toolbar-scrim-medium: rgb(0 0 0 / 76%);
-        --photo-swipe-control-scrim-strong: rgb(0 0 0 / 86%);
-        --photo-swipe-control-scrim-medium: rgb(0 0 0 / 64%);
+        --photo-swipe-control-surface: rgb(0 0 0 / 34%);
+        --photo-swipe-control-surface-hover: rgb(0 0 0 / 48%);
       }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      :host.is-open::before,
       .photo-swipe-toolbar,
       .photo-swipe-nav,
       .photo-swipe-loading {

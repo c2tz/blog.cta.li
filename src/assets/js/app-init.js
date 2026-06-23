@@ -634,26 +634,56 @@ function initLightboxRadiusTransition(pswp) {
   });
 }
 
-function initLightboxZoomLock(pswp) {
+function getPhotoSwipeViewportCenter(pswp) {
+  return {
+    x: pswp.viewportSize?.x ? pswp.viewportSize.x / 2 : window.innerWidth / 2,
+    y: pswp.viewportSize?.y ? pswp.viewportSize.y / 2 : window.innerHeight / 2,
+  };
+}
+
+function getGestureCenter(event, pswp) {
+  if (Number.isFinite(event.clientX) && Number.isFinite(event.clientY)) {
+    return { x: event.clientX, y: event.clientY };
+  }
+
+  return getPhotoSwipeViewportCenter(pswp);
+}
+
+function initLightboxNativeGestureBlock(pswp) {
   const root = pswp.element;
   if (!root) return;
 
-  const preventGesture = (event) => {
+  let gestureStartZoom = 0;
+
+  const shouldUsePhotoSwipeGestureZoom = () =>
+    !pswp.gestures?.supportsTouch || !pswp.gestures?._numActivePoints;
+
+  const startNativeGesture = (event) => {
     event.preventDefault();
-  };
-  const preventZoomWheel = (event) => {
-    if (event.ctrlKey || event.metaKey) event.preventDefault();
+    gestureStartZoom = pswp.currSlide?.currZoomLevel || 0;
   };
 
-  root.addEventListener("wheel", preventZoomWheel, { passive: false });
-  root.addEventListener("gesturestart", preventGesture, { passive: false });
-  root.addEventListener("gesturechange", preventGesture, { passive: false });
-  root.addEventListener("gestureend", preventGesture, { passive: false });
+  const updateNativeGesture = (event) => {
+    event.preventDefault();
+    if (!shouldUsePhotoSwipeGestureZoom() || !pswp.currSlide || !gestureStartZoom) return;
+
+    const scale = Number(event.scale) || 1;
+    pswp.currSlide.zoomTo(gestureStartZoom * scale, getGestureCenter(event, pswp), 0);
+  };
+
+  const endNativeGesture = (event) => {
+    event.preventDefault();
+    gestureStartZoom = 0;
+  };
+
+  root.addEventListener("gesturestart", startNativeGesture, { passive: false });
+  root.addEventListener("gesturechange", updateNativeGesture, { passive: false });
+  root.addEventListener("gestureend", endNativeGesture, { passive: false });
+
   pswp.on("destroy", () => {
-    root.removeEventListener("wheel", preventZoomWheel);
-    root.removeEventListener("gesturestart", preventGesture);
-    root.removeEventListener("gesturechange", preventGesture);
-    root.removeEventListener("gestureend", preventGesture);
+    root.removeEventListener("gesturestart", startNativeGesture);
+    root.removeEventListener("gesturechange", updateNativeGesture);
+    root.removeEventListener("gestureend", endNativeGesture);
   });
 }
 
@@ -748,10 +778,10 @@ const lightbox = new PhotoSwipeLightbox({
   gallery: ".site-prose",
   children: "a[data-pswp-item]",
   pswpModule: PhotoSwipe,
-  mainClass: "pswp--system-zoom",
+  mainClass: "pswp--contained-zoom",
   initialZoomLevel: "fit",
-  secondaryZoomLevel: "fit",
-  maxZoomLevel: "fit",
+  secondaryZoomLevel: 2,
+  maxZoomLevel: 4,
   wheelToZoom: false,
   zoom: false,
   close: false,
@@ -851,7 +881,7 @@ lightbox.on("uiRegister", () => {
   if (!pswp || !ui) return;
 
   initLightboxRadiusTransition(pswp);
-  initLightboxZoomLock(pswp);
+  initLightboxNativeGestureBlock(pswp);
   initLightboxDesktopImageClickClose(pswp);
 
   ui.uiElementsData = [];

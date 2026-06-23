@@ -74,19 +74,13 @@ export class PageLoadingIndicatorComponent implements OnInit, OnDestroy {
     if (
       !target ||
       target.target ||
-      target.hasAttribute("download") ||
-      target.hasAttribute("data-pswp-item")
+      target.hasAttribute("download")
     ) return;
 
     const url = new URL(target.href, window.location.href);
     if (url.origin !== window.location.origin) return;
     if (url.pathname === location.pathname && url.search === location.search && url.hash) return;
     this.start("navigation");
-  };
-
-  private readonly handlePhotoSwipeState = (event: Event) => {
-    const open = Boolean((event as CustomEvent<{ open?: boolean }>).detail?.open);
-    if (open) this.end("navigation");
   };
 
   ngOnInit() {
@@ -99,7 +93,6 @@ export class PageLoadingIndicatorComponent implements OnInit, OnDestroy {
     document.addEventListener("click", this.handleDocumentClick);
     document.addEventListener("site:loading-start", this.handleStart);
     document.addEventListener("site:loading-end", this.handleEnd);
-    document.addEventListener("site:photo-swipe-state", this.handlePhotoSwipeState);
   }
 
   ngOnDestroy() {
@@ -110,7 +103,6 @@ export class PageLoadingIndicatorComponent implements OnInit, OnDestroy {
     document.removeEventListener("click", this.handleDocumentClick);
     document.removeEventListener("site:loading-start", this.handleStart);
     document.removeEventListener("site:loading-end", this.handleEnd);
-    document.removeEventListener("site:photo-swipe-state", this.handlePhotoSwipeState);
     this.loadingProgress.destroy();
   }
 

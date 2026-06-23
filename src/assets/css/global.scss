@@ -1247,10 +1247,10 @@ img[data-lightbox],
   border-radius: 0;
 }
 
-.pswp--system-zoom,
-.pswp--system-zoom .pswp__scroll-wrap,
-.pswp--system-zoom .pswp__container,
-.pswp--system-zoom .pswp__item {
+.pswp--contained-zoom,
+.pswp--contained-zoom .pswp__scroll-wrap,
+.pswp--contained-zoom .pswp__container,
+.pswp--contained-zoom .pswp__item {
   touch-action: none !important;
 }
 

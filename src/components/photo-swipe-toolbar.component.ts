@@ -10,6 +10,7 @@ import { MatChip, MatChipSet } from "@angular/material/chips";
 import { MatIcon } from "@angular/material/icon";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatTooltip } from "@angular/material/tooltip";
+import { SimulatedLoadingProgress } from "@/lib/simulated-loading-progress";
 
 interface PhotoSwipeToolbarState {
   open?: boolean;
@@ -152,7 +153,13 @@ type PhotoSwipeAction =
 
       @if (loading()) {
         <div class="photo-swipe-loading" role="status" aria-live="polite">
-          <mat-spinner diameter="48" strokeWidth="4" aria-hidden="true"></mat-spinner>
+          <mat-progress-spinner
+            mode="determinate"
+            [value]="progress()"
+            diameter="48"
+            strokeWidth="4"
+            aria-label="Progression du chargement de l'image"
+          ></mat-progress-spinner>
           <span class="sr-only">Chargement de l'image</span>
         </div>
       }
@@ -160,9 +167,10 @@ type PhotoSwipeAction =
   `,
   styles: `
     :host {
-      --photo-swipe-scrim-strong: rgb(0 0 0 / 68%);
-      --photo-swipe-scrim-medium: rgb(0 0 0 / 48%);
-      --photo-swipe-scrim-side: rgb(0 0 0 / 70%);
+      --photo-swipe-toolbar-scrim-strong: rgb(0 0 0 / 82%);
+      --photo-swipe-toolbar-scrim-medium: rgb(0 0 0 / 50%);
+      --photo-swipe-control-scrim-strong: rgb(0 0 0 / 58%);
+      --photo-swipe-control-scrim-medium: rgb(0 0 0 / 30%);
       display: none;
       position: fixed;
       inset: 0;
@@ -175,26 +183,34 @@ type PhotoSwipeAction =
       display: block;
     }
 
-    :host.is-open::before,
-    :host.is-open::after {
+    :host.is-open::before {
       position: fixed;
-      inset-block: calc(3.5rem + env(safe-area-inset-top, 0px)) 0;
+      inset: 0;
       z-index: 0;
-      width: clamp(5rem, 10vw, 8rem);
       pointer-events: none;
       content: "";
+      background:
+        linear-gradient(
+          to bottom,
+          var(--photo-swipe-toolbar-scrim-strong),
+          var(--photo-swipe-toolbar-scrim-medium)
+            calc(3.5rem + env(safe-area-inset-top, 0px)),
+          transparent calc(7rem + env(safe-area-inset-top, 0px))
+        ),
+        radial-gradient(
+          circle at left center,
+          var(--photo-swipe-control-scrim-strong),
+          var(--photo-swipe-control-scrim-medium) 2.25rem,
+          transparent 5.5rem
+        ),
+        radial-gradient(
+          circle at right center,
+          var(--photo-swipe-control-scrim-strong),
+          var(--photo-swipe-control-scrim-medium) 2.25rem,
+          transparent 5.5rem
+        );
       opacity: 1;
       transition: opacity 120ms cubic-bezier(0.4, 0, 1, 1);
-    }
-
-    :host.is-open::before {
-      inset-inline-start: 0;
-      background: linear-gradient(to right, var(--photo-swipe-scrim-side), transparent);
-    }
-
-    :host.is-open::after {
-      inset-inline-end: 0;
-      background: linear-gradient(to left, var(--photo-swipe-scrim-side), transparent);
     }
 
     .photo-swipe-toolbar {
@@ -209,12 +225,6 @@ type PhotoSwipeAction =
       padding: 0.5rem;
       padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
       pointer-events: auto;
-      background: linear-gradient(
-        to bottom,
-        var(--photo-swipe-scrim-strong),
-        var(--photo-swipe-scrim-medium) 68%,
-        transparent
-      );
       color: #fff;
       opacity: 1;
       transform: translateY(0);
@@ -267,7 +277,6 @@ type PhotoSwipeAction =
     }
 
     :host.is-closing::before,
-    :host.is-closing::after,
     :host.is-closing .photo-swipe-toolbar,
     :host.is-closing .photo-swipe-nav,
     :host.is-closing .photo-swipe-loading {
@@ -313,15 +322,15 @@ type PhotoSwipeAction =
 
     @media (prefers-contrast: more) {
       :host {
-        --photo-swipe-scrim-strong: rgb(0 0 0 / 86%);
-        --photo-swipe-scrim-medium: rgb(0 0 0 / 70%);
-        --photo-swipe-scrim-side: rgb(0 0 0 / 86%);
+        --photo-swipe-toolbar-scrim-strong: rgb(0 0 0 / 94%);
+        --photo-swipe-toolbar-scrim-medium: rgb(0 0 0 / 76%);
+        --photo-swipe-control-scrim-strong: rgb(0 0 0 / 86%);
+        --photo-swipe-control-scrim-medium: rgb(0 0 0 / 64%);
       }
     }
 
     @media (prefers-reduced-motion: reduce) {
       :host.is-open::before,
-      :host.is-open::after,
       .photo-swipe-toolbar,
       .photo-swipe-nav,
       .photo-swipe-loading {
@@ -341,6 +350,8 @@ export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
   readonly loading = signal(false);
   readonly closing = signal(false);
   readonly shareLabel = signal("Partager");
+  private readonly loadingProgress = new SimulatedLoadingProgress();
+  readonly progress = this.loadingProgress.value;
   private readonly tooltips = viewChildren(MatTooltip);
 
   readonly fullscreenIcon = () =>
@@ -361,7 +372,11 @@ export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
     if (typeof detail.fullscreenAvailable === "boolean") {
       this.fullscreenAvailable.set(detail.fullscreenAvailable);
     }
-    if (typeof detail.loading === "boolean") this.loading.set(detail.loading);
+    if (typeof detail.loading === "boolean" && detail.loading !== this.loading()) {
+      if (detail.loading) this.loadingProgress.start();
+      else this.loadingProgress.complete();
+      this.loading.set(detail.loading);
+    }
     if (typeof detail.closing === "boolean") {
       this.closing.set(detail.closing);
       if (detail.closing) this.hideTooltip();
@@ -388,6 +403,7 @@ export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
     document.removeEventListener("site:photo-swipe-state", this.handleState);
     document.removeEventListener("site:photo-swipe-share-result", this.handleShareResult);
     window.clearTimeout(this.shareLabelTimer);
+    this.loadingProgress.destroy();
   }
 
   act(action: PhotoSwipeAction) {

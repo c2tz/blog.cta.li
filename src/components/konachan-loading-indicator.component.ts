@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, signal } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
+import { SimulatedLoadingProgress } from "@/lib/simulated-loading-progress";
 
 @Component({
   selector: "site-konachan-loading-indicator",
@@ -14,7 +15,13 @@ import { MatProgressSpinner } from "@angular/material/progress-spinner";
   template: `
     @if (busy()) {
       <span class="home-anime-loading" role="status" aria-label="Chargement de l'image">
-        <mat-spinner diameter="48" strokeWidth="4" aria-hidden="true"></mat-spinner>
+        <mat-progress-spinner
+          mode="determinate"
+          [value]="progress()"
+          diameter="48"
+          strokeWidth="4"
+          aria-label="Progression du chargement de l'image"
+        ></mat-progress-spinner>
         <span class="sr-only">Chargement de l'image</span>
       </span>
     }
@@ -47,22 +54,30 @@ import { MatProgressSpinner } from "@angular/material/progress-spinner";
 })
 export class KonachanLoadingIndicatorComponent implements OnInit, OnDestroy {
   readonly busy = signal(false);
+  private readonly loadingProgress = new SimulatedLoadingProgress();
+  readonly progress = this.loadingProgress.value;
 
   private readonly handleRefreshState = (event: Event) => {
     const busy = (event as CustomEvent<{ busy?: boolean }>).detail?.busy;
-    if (typeof busy === "boolean") this.busy.set(busy);
+    if (typeof busy !== "boolean" || busy === this.busy()) return;
+
+    if (busy) this.loadingProgress.start();
+    else this.loadingProgress.complete();
+    this.busy.set(busy);
   };
 
   ngOnInit() {
     if (typeof document === "undefined") return;
-    this.busy.set(
-      document.querySelector(".home-anime-landing")?.getAttribute("aria-busy") === "true",
-    );
+    const busy =
+      document.querySelector(".home-anime-landing")?.getAttribute("aria-busy") === "true";
+    if (busy) this.loadingProgress.start();
+    this.busy.set(busy);
     document.addEventListener("konachan:refresh-state", this.handleRefreshState);
   }
 
   ngOnDestroy() {
     if (typeof document === "undefined") return;
     document.removeEventListener("konachan:refresh-state", this.handleRefreshState);
+    this.loadingProgress.destroy();
   }
 }

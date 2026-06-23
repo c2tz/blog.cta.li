@@ -94,7 +94,21 @@
       on-surface: var(--site-text),
       on-surface-variant: var(--site-muted),
       outline: var(--site-link),
+      body-large-font: var(--site-font),
+      body-medium-font: var(--site-font),
+      body-small-font: var(--site-font),
+      display-large-font: var(--site-font),
+      display-medium-font: var(--site-font),
+      display-small-font: var(--site-font),
+      headline-large-font: var(--site-font),
+      headline-medium-font: var(--site-font),
+      headline-small-font: var(--site-font),
       label-large-font: var(--site-font),
+      label-medium-font: var(--site-font),
+      label-small-font: var(--site-font),
+      title-large-font: var(--site-font),
+      title-medium-font: var(--site-font),
+      title-small-font: var(--site-font),
     )
   );
 
@@ -111,11 +125,6 @@
     )
   );
 
-  @include mat.tooltip-overrides(
-    (
-      supporting-text-font: var(--site-font),
-    )
-  );
 }
 
 @layer base {
@@ -489,6 +498,10 @@
   flex-wrap: wrap;
   gap: 0.75rem;
   margin-block-start: 1.35rem;
+}
+
+.home-hero-button {
+  text-shadow: none;
 }
 
 .home-anime-credit {
@@ -1344,7 +1357,7 @@ html.interaction-disabled.consent-visible body {
   will-change: transform;
 }
 
-.site-scroll-top {
+.site-scroll-top.mat-mdc-icon-button {
   @include mat.icon-button-overrides(
     (
       icon-color: var(--site-link),

@@ -5,6 +5,7 @@ import {
 } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
+import { SimulatedLoadingProgress } from "@/lib/simulated-loading-progress";
 
 interface LoadingEventDetail {
   key?: string;
@@ -18,7 +19,13 @@ interface LoadingEventDetail {
   template: `
     @if (visible()) {
       <div class="site-page-loading" role="status" aria-live="polite" aria-label="Chargement">
-        <mat-spinner diameter="44" strokeWidth="4" aria-hidden="true"></mat-spinner>
+        <mat-progress-spinner
+          mode="determinate"
+          [value]="progress()"
+          diameter="44"
+          strokeWidth="4"
+          aria-label="Progression du chargement de la page"
+        ></mat-progress-spinner>
         <span class="sr-only">Chargement</span>
       </div>
     }
@@ -37,6 +44,8 @@ interface LoadingEventDetail {
 })
 export class PageLoadingIndicatorComponent implements OnInit, OnDestroy {
   readonly visible = signal(true);
+  private readonly loadingProgress = new SimulatedLoadingProgress();
+  readonly progress = this.loadingProgress.value;
   private readonly active = new Set<string>();
 
   private readonly handleLoad = () => this.end("page");
@@ -102,20 +111,25 @@ export class PageLoadingIndicatorComponent implements OnInit, OnDestroy {
     document.removeEventListener("site:loading-start", this.handleStart);
     document.removeEventListener("site:loading-end", this.handleEnd);
     document.removeEventListener("site:photo-swipe-state", this.handlePhotoSwipeState);
+    this.loadingProgress.destroy();
   }
 
   private start(key: string) {
+    const wasInactive = this.active.size === 0;
     this.active.add(key);
+    if (wasInactive) this.loadingProgress.start();
     this.visible.set(true);
   }
 
   private end(key: string) {
     this.active.delete(key);
+    if (this.active.size === 0) this.loadingProgress.complete();
     this.visible.set(this.active.size > 0);
   }
 
   private clear() {
     this.active.clear();
+    this.loadingProgress.complete();
     this.visible.set(false);
   }
 }

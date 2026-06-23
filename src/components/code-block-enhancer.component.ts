@@ -60,6 +60,8 @@ async function copyToClipboard(text: string) {
       type="button"
       class="code-copy-button"
       [attr.aria-label]="label()"
+      data-tooltip="Copier le code source"
+      data-tooltip-placement="left"
       (click)="copy()"
     >
       <mat-icon aria-hidden="true">

@@ -2,14 +2,6 @@ import PhotoSwipeLightbox from "photoswipe/lightbox";
 import PhotoSwipe from "photoswipe";
 import "photoswipe/style.css";
 
-const DYNAMIC_ANCHOR_OFFSET = 96;
-
-let isDynamicAnchorInitialized = false;
-let dynamicAnchorFrame = 0;
-let activeHeadingLink = null;
-let activeHeadingHash = "";
-let dynamicAnchorHashPausedUntil = 0;
-
 function hideSiteTooltip() {
   document.dispatchEvent(new CustomEvent("site:tooltip-hide"));
 }
@@ -125,166 +117,6 @@ function removeReadingProgress() {
   document.querySelectorAll(".site-scroll-progress").forEach((element) => {
     element.remove();
   });
-}
-
-function getHeadingHashFromLink(link) {
-  const hash = link.getAttribute("href");
-  if (!hash?.startsWith("#") || hash === "#") return "";
-  return hash;
-}
-
-function getDynamicAnchorEntries() {
-  const postHeader = document.querySelector(".post-header");
-  const prose = document.querySelector(".site-prose");
-  if (!postHeader || !prose) return [];
-
-  const entries = [];
-  const resetHeading = postHeader.querySelector("[data-anchor-reset]");
-  if (resetHeading) {
-    entries.push({
-      hash: "",
-      heading: resetHeading,
-      link: null,
-      reset: true,
-    });
-  }
-
-  prose
-    .querySelectorAll(":is(h1, h2, h3, h4, h5, h6) > a.heading-link[href^='#']")
-    .forEach((link) => {
-      const hash = getHeadingHashFromLink(link);
-      const heading = link.closest("h1, h2, h3, h4, h5, h6");
-      if (!hash || !heading) return;
-
-      entries.push({
-        hash,
-        heading,
-        link,
-        reset: false,
-      });
-    });
-
-  return entries.sort((a, b) => {
-    const aTop = a.heading.getBoundingClientRect().top + window.scrollY;
-    const bTop = b.heading.getBoundingClientRect().top + window.scrollY;
-    return aTop - bTop;
-  });
-}
-
-function clearActiveHeading(managedHashes = new Set()) {
-  activeHeadingLink?.classList.remove("is-anchor-active");
-  activeHeadingLink?.removeAttribute("aria-current");
-  activeHeadingLink = null;
-
-  if (location.hash && (managedHashes.has(location.hash) || location.hash === activeHeadingHash)) {
-    history.replaceState(null, "", `${location.pathname}${location.search}`);
-  }
-
-  activeHeadingHash = "";
-}
-
-function setActiveHeading(entry, { updateLocation = true } = {}) {
-  if (activeHeadingLink && activeHeadingLink !== entry.link) {
-    activeHeadingLink.classList.remove("is-anchor-active");
-    activeHeadingLink.removeAttribute("aria-current");
-  }
-
-  activeHeadingLink = entry.link;
-  activeHeadingHash = entry.hash;
-  activeHeadingLink?.classList.add("is-anchor-active");
-  activeHeadingLink?.setAttribute("aria-current", "location");
-
-  if (updateLocation && location.hash !== entry.hash) {
-    history.replaceState(null, "", entry.hash);
-  }
-}
-
-function syncDynamicAnchors() {
-  dynamicAnchorFrame = 0;
-
-  const entries = getDynamicAnchorEntries();
-  if (entries.length === 0) {
-    clearActiveHeading();
-    return;
-  }
-
-  const managedHashes = new Set(
-    entries.filter((entry) => !entry.reset).map((entry) => entry.hash),
-  );
-
-  if (window.scrollY < 24) {
-    clearActiveHeading(managedHashes);
-    return;
-  }
-
-  let currentEntry = null;
-  const viewportOffset = window.visualViewport?.offsetTop || 0;
-  const activationLine = viewportOffset + DYNAMIC_ANCHOR_OFFSET;
-
-  for (const entry of entries) {
-    if (entry.heading.getBoundingClientRect().top <= activationLine) {
-      currentEntry = entry;
-    } else {
-      break;
-    }
-  }
-
-  if (!currentEntry || currentEntry.reset || !currentEntry.link) {
-    clearActiveHeading(managedHashes);
-    return;
-  }
-
-  const isPausedOnUnmanagedHash =
-    Date.now() < dynamicAnchorHashPausedUntil &&
-    location.hash &&
-    !managedHashes.has(location.hash);
-
-  setActiveHeading(currentEntry, { updateLocation: !isPausedOnUnmanagedHash });
-}
-
-function requestDynamicAnchorSync() {
-  if (dynamicAnchorFrame) return;
-  dynamicAnchorFrame = requestAnimationFrame(syncDynamicAnchors);
-}
-
-function initDynamicAnchors() {
-  requestDynamicAnchorSync();
-  if (isDynamicAnchorInitialized) return;
-
-  isDynamicAnchorInitialized = true;
-
-  document.addEventListener(
-    "click",
-    (event) => {
-      const link = event.target?.closest?.("a[href^='#']");
-      if (!link) return;
-
-      hideSiteTooltip();
-      const isHeadingLink =
-        link.matches(".heading-link") &&
-        Boolean(link.closest(".site-prose :is(h1, h2, h3, h4, h5, h6)"));
-
-      dynamicAnchorHashPausedUntil = isHeadingLink ? 0 : Date.now() + 1600;
-
-      if (event.detail > 0) {
-        requestAnimationFrame(() => link.blur?.());
-      }
-
-      requestAnimationFrame(requestDynamicAnchorSync);
-      window.setTimeout(requestDynamicAnchorSync, 420);
-    },
-    true,
-  );
-
-  window.addEventListener("scroll", requestDynamicAnchorSync, { passive: true });
-  window.addEventListener("resize", requestDynamicAnchorSync, { passive: true });
-  window.visualViewport?.addEventListener("resize", requestDynamicAnchorSync, {
-    passive: true,
-  });
-  window.visualViewport?.addEventListener("scroll", requestDynamicAnchorSync, {
-    passive: true,
-  });
-  window.addEventListener("hashchange", requestDynamicAnchorSync);
 }
 
 function wrapMarkdownImages() {
@@ -893,7 +725,7 @@ function initPhotoSwipeFullscreenClose(pswp) {
 
   icon.className = "material-symbols-rounded photo-swipe-fullscreen-close-icon";
   icon.setAttribute("aria-hidden", "true");
-  icon.textContent = "fullscreen_exit";
+  icon.textContent = "close";
 
   button.append(icon);
   root.append(button);
@@ -984,7 +816,6 @@ function initLightboxPageScrollRestore(pswp) {
     restoreScroll();
     requestAnimationFrame(() => {
       restoreScroll();
-      requestDynamicAnchorSync();
     });
   });
 }
@@ -1182,7 +1013,6 @@ function initApp() {
   initSiteTooltips();
   initLightbox();
   initBlogImageReveal();
-  initDynamicAnchors();
   if (document.body?.dataset.readingProgress === "off") {
     removeReadingProgress();
   } else {

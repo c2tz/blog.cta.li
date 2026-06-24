@@ -411,8 +411,8 @@
   @include mat.icon-button-overrides(
     (
       icon-color: #fff,
-      state-layer-color: #fff,
-      ripple-color: rgb(255 255 255 / 12%),
+      state-layer-color: #000,
+      ripple-color: rgb(0 0 0 / 10%),
     )
   );
   position: relative;
@@ -1430,19 +1430,19 @@ html.interaction-disabled.consent-visible body {
 .site-scroll-top.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base {
   @include mat.icon-button-overrides(
     (
-      icon-color: var(--site-link),
-      state-layer-color: var(--site-link),
-      ripple-color: color-mix(in srgb, var(--site-link) 12%, transparent),
+      icon-color: #fff,
+      state-layer-color: #fff,
+      ripple-color: rgb(255 255 255 / 12%),
     )
   );
   @include mat.badge-overrides(
     (
-      background-color: var(--site-link),
-      text-color: var(--site-link-contrast),
+      background-color: #fff,
+      text-color: #00131f,
     )
   );
-  --mat-progress-spinner-active-indicator-color: var(--site-link);
-  --site-icon-button-color: var(--site-link);
+  --mat-progress-spinner-active-indicator-color: #fff;
+  --site-icon-button-color: #fff;
   position: fixed;
   right: calc(2rem + env(safe-area-inset-right, 0px));
   bottom: 1rem;
@@ -1454,27 +1454,17 @@ html.interaction-disabled.consent-visible body {
   overflow: visible;
   border: 0;
   border-radius: 50%;
-  background: transparent;
-  color: var(--site-link);
+  background: rgb(0 0 0 / 32%);
+  color: #fff;
   box-shadow: 0 0.25rem 0.75rem rgb(0 0 0 / 18%);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   opacity: 0;
   pointer-events: none;
   transform: translateY(1rem);
   transition:
     opacity 180ms ease,
     transform 180ms ease;
-}
-
-.site-scroll-top.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base::before {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  border-radius: 50%;
-  background: rgb(0 0 0 / 32%);
-  content: "";
-  pointer-events: none;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
 }
 
 .site-scroll-top.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base
@@ -1487,6 +1477,11 @@ html.interaction-disabled.consent-visible body {
 }
 
 .site-scroll-top .mat-mdc-button-progress-indicator-container {
+  pointer-events: none;
+}
+
+.site-scroll-top .mat-badge-content {
+  z-index: 3;
   pointer-events: none;
 }
 

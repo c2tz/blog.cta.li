@@ -2,9 +2,18 @@
 
 @import "@angular/material/prebuilt-themes/azure-blue.css";
 
+@font-face {
+  font-family: "Material Symbols Rounded";
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: block;
+  src: url("/fonts/material-symbols-rounded.woff2") format("woff2");
+}
+
+.material-symbols-rounded,
 .material-icons {
   display: inline-block;
-  font-family: "Material Icons";
+  font-family: "Material Symbols Rounded";
   font-size: 24px;
   font-style: normal;
   font-weight: 400;
@@ -17,6 +26,13 @@
   -webkit-font-feature-settings: "liga";
   font-feature-settings: "liga";
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24;
 }
 
 @font-face {

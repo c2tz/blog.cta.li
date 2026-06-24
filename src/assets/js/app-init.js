@@ -788,7 +788,7 @@ function initPhotoSwipeFullscreenClose(pswp) {
   button.setAttribute("aria-label", "Fermer");
   button.setAttribute("title", "Fermer");
 
-  icon.className = "material-icons photo-swipe-fullscreen-close-icon";
+  icon.className = "material-symbols-rounded photo-swipe-fullscreen-close-icon";
   icon.setAttribute("aria-hidden", "true");
   icon.textContent = "\uE5CD";
 

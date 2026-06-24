@@ -125,7 +125,7 @@ type PhotoSwipeAction =
               matTooltipPosition="below"
               (click)="share()"
             >
-              <mat-icon aria-hidden="true">&#xE80D;</mat-icon>
+              <mat-icon aria-hidden="true">link</mat-icon>
             </button>
           }
 

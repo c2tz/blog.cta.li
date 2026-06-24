@@ -1,31 +1,21 @@
 ---
-import { SITE_TITLE } from "../consts";
-import { ThemeSwitcherComponent } from "./ThemeSwitcher.component";
+import { SITE_TITLE } from "@/site-config";
+import { ThemeSwitcherComponent } from "./theme-switcher.component";
 
 const isHome = Astro.url.pathname === "/";
 ---
 
-<nav
-  class="site-header mt-8 mb-4 flex items-center justify-between
-         [&_.header-link:hover]:underline"
->
-  <h2 class="text-lg font-medium">
+<header class="site-header">
+  <h2 class="site-header-title">
     <a
       href="/"
-      class:list={["header-link", "inline-block", { "header-link--glitch": isHome }]}
+      class:list={["header-link", { "header-link-glitch": isHome }]}
       data-glitch={SITE_TITLE}
+      aria-label={SITE_TITLE}
     >
       {SITE_TITLE}
     </a>
   </h2>
 
   <ThemeSwitcherComponent client:load />
-
-  <!--
-  <div class="leading-8 inline-block">
-    <a href="/posts" class="header-link">
-      Blog Posts
-    </a>
-  </div>
-  -->
-</nav>
+</header>

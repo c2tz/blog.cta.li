@@ -1,86 +1,13 @@
 ---
+import { formatFrenchDateTime, toDate } from "@/lib/date-format.mjs";
+
 interface Props {
   date: Date | string;
-  label?: string;
-  time?: string;
-  utcDetails?: boolean;
 }
 
-const { date: rawDate, label, time, utcDetails = false } = Astro.props as Props;
-const date = rawDate instanceof Date ? rawDate : new Date(rawDate);
-const pad = (value: number) => String(value).padStart(2, "0");
-const DISPLAY_TIME_ZONE = "Europe/Paris";
-
-function formatCompactParisDateTime(value: Date) {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hourCycle: "h23",
-    timeZone: DISPLAY_TIME_ZONE,
-    timeZoneName: "longOffset",
-  }).formatToParts(value);
-  const part = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((item) => item.type === type)?.value ?? "";
-  const offset = part("timeZoneName").replace("GMT", "").replace(":", "");
-
-  return `${part("year")}${part("month")}${part("day")}T${part("hour")}${part("minute")}${part("second")}${offset}`;
-}
-
-// Formatage complet en français (jour + date longue)
-const dateFrComplete = date.toLocaleDateString("fr-FR", {
-  weekday: "short",
-  year: "numeric",
-  month: "short",
-  day: "numeric",
-  timeZone: DISPLAY_TIME_ZONE,
-});
-
-const formattedDate = dateFrComplete.charAt(0).toUpperCase() + dateFrComplete.slice(1);
-const formattedDateTime = time ? `${formattedDate}, ${time}` : formattedDate;
-const localDatePart = [
-  date.getFullYear(),
-  pad(date.getMonth() + 1),
-  pad(date.getDate()),
-].join("-");
-const dateTimeValue = time ? `${localDatePart}T${time}:00` : date.toISOString();
-const displayDateTime = utcDetails
-  ? formatCompactParisDateTime(date)
-  : formattedDateTime;
-const tooltipLabel = label ? `${label} ${formattedDateTime}` : undefined;
+const { date } = Astro.props as Props;
 ---
-{
-  label ? (
-    <span class="post-date post-date--labeled">
-      <span
-        class="post-icon-tooltip post-date__icon-trigger"
-        tabindex="0"
-        role="img"
-        aria-label={tooltipLabel}
-        data-tooltip={tooltipLabel}
-      >
-        <span class="material-icons post-date__icon" aria-hidden="true">cloud_upload</span>
-      </span>
-      <time datetime={dateTimeValue}>
-        {displayDateTime}
-      </time>
-    </span>
-  ) : tooltipLabel ? (
-    <time
-      class="post-date site-tooltip"
-      datetime={dateTimeValue}
-      tabindex="0"
-      data-tooltip={tooltipLabel}
-      aria-label={tooltipLabel}
-    >
-      {displayDateTime}
-    </time>
-  ) : (
-    <time class="post-date" datetime={dateTimeValue}>
-      {displayDateTime}
-    </time>
-  )
-}
+
+<time class="post-date" datetime={toDate(date).toISOString()}>
+  {formatFrenchDateTime(date)}
+</time>

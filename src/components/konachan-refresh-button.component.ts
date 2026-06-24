@@ -4,9 +4,9 @@ import {
   signal,
 } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
-import { MatButtonModule } from "@angular/material/button";
-import { MatIconModule } from "@angular/material/icon";
-import { MatTooltipModule } from "@angular/material/tooltip";
+import { MatIconButton } from "@angular/material/button";
+import { MatIcon } from "@angular/material/icon";
+import { MatTooltip } from "@angular/material/tooltip";
 
 interface RefreshState {
   busy?: boolean;
@@ -14,15 +14,15 @@ interface RefreshState {
 }
 
 @Component({
-  selector: "konachan-refresh-button",
+  selector: "site-konachan-refresh-button",
   standalone: true,
-  imports: [MatButtonModule, MatIconModule, MatTooltipModule],
+  imports: [MatIconButton, MatIcon, MatTooltip],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button
       matIconButton
       type="button"
-      class="home-anime-refresh site-icon-button"
+      class="home-anime-refresh"
       [disabled]="busy()"
       [attr.aria-busy]="busy()"
       [attr.aria-label]="busy() ? 'Image en cours de chargement' : 'Changer l\\'image'"

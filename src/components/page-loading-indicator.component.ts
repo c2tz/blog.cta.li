@@ -4,7 +4,8 @@ import {
   signal,
 } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
-import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
+import { MatProgressSpinner } from "@angular/material/progress-spinner";
+import { SimulatedLoadingProgress } from "@/lib/simulated-loading-progress";
 
 interface LoadingEventDetail {
   key?: string;
@@ -13,12 +14,17 @@ interface LoadingEventDetail {
 @Component({
   selector: "site-page-loading-indicator",
   standalone: true,
-  imports: [MatProgressSpinnerModule],
+  imports: [MatProgressSpinner],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (visible()) {
       <div class="site-page-loading" role="status" aria-live="polite" aria-label="Chargement">
-        <mat-spinner diameter="44" strokeWidth="4" aria-hidden="true"></mat-spinner>
+        <mat-progress-spinner
+          mode="indeterminate"
+          diameter="44"
+          strokeWidth="4"
+          aria-label="Chargement de la page"
+        ></mat-progress-spinner>
         <span class="sr-only">Chargement</span>
       </div>
     }
@@ -37,6 +43,8 @@ interface LoadingEventDetail {
 })
 export class PageLoadingIndicatorComponent implements OnInit, OnDestroy {
   readonly visible = signal(true);
+  private readonly loadingProgress = new SimulatedLoadingProgress();
+  readonly progress = this.loadingProgress.value;
   private readonly active = new Set<string>();
 
   private readonly handleLoad = () => this.end("page");
@@ -65,19 +73,13 @@ export class PageLoadingIndicatorComponent implements OnInit, OnDestroy {
     if (
       !target ||
       target.target ||
-      target.hasAttribute("download") ||
-      target.hasAttribute("data-pswp-item")
+      target.hasAttribute("download")
     ) return;
 
     const url = new URL(target.href, window.location.href);
     if (url.origin !== window.location.origin) return;
     if (url.pathname === location.pathname && url.search === location.search && url.hash) return;
     this.start("navigation");
-  };
-
-  private readonly handlePhotoSwipeState = (event: Event) => {
-    const open = Boolean((event as CustomEvent<{ open?: boolean }>).detail?.open);
-    if (open) this.end("navigation");
   };
 
   ngOnInit() {
@@ -90,7 +92,6 @@ export class PageLoadingIndicatorComponent implements OnInit, OnDestroy {
     document.addEventListener("click", this.handleDocumentClick);
     document.addEventListener("site:loading-start", this.handleStart);
     document.addEventListener("site:loading-end", this.handleEnd);
-    document.addEventListener("site:photoswipe-state", this.handlePhotoSwipeState);
   }
 
   ngOnDestroy() {
@@ -101,21 +102,25 @@ export class PageLoadingIndicatorComponent implements OnInit, OnDestroy {
     document.removeEventListener("click", this.handleDocumentClick);
     document.removeEventListener("site:loading-start", this.handleStart);
     document.removeEventListener("site:loading-end", this.handleEnd);
-    document.removeEventListener("site:photoswipe-state", this.handlePhotoSwipeState);
+    this.loadingProgress.destroy();
   }
 
   private start(key: string) {
+    const wasInactive = this.active.size === 0;
     this.active.add(key);
+    if (wasInactive) this.loadingProgress.start();
     this.visible.set(true);
   }
 
   private end(key: string) {
     this.active.delete(key);
+    if (this.active.size === 0) this.loadingProgress.complete();
     this.visible.set(this.active.size > 0);
   }
 
   private clear() {
     this.active.clear();
+    this.loadingProgress.complete();
     this.visible.set(false);
   }
 }

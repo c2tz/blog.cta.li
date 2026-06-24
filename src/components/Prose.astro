@@ -1,24 +1,3 @@
----
-
----
-
-<article class="site-prose">
+<div class="site-prose">
   <slot />
-</article>
-
-<script is:inline>
-  (() => {
-    const script = document.currentScript;
-    const prose = script?.previousElementSibling;
-    const image =
-      prose?.matches?.(".site-prose") &&
-      prose.querySelector("img[data-lightbox]:not([data-no-lightbox])");
-
-    if (!image) return;
-
-    image.loading = "eager";
-    image.decoding = "async";
-    image.fetchPriority = "high";
-    image.setAttribute("fetchpriority", "high");
-  })();
-</script>
+</div>

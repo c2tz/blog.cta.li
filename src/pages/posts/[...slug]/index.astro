@@ -4,7 +4,7 @@ import { type CollectionEntry, getCollection, render } from "astro:content";
 import Layout from "@/layouts/Layout.astro";
 import PostGitDates from "@/components/PostGitDates.astro";
 import Prose from "@/components/Prose.astro";
-import { getContentEntryGitDates } from "@/lib/gitDates.mjs";
+import { getContentEntryGitDates } from "@/lib/git-dates.mjs";
 
 export async function getStaticPaths() {
   const posts = await getCollection("blog");
@@ -17,14 +17,9 @@ export async function getStaticPaths() {
 type Props = CollectionEntry<"blog">;
 
 const post = Astro.props;
-const { Content, remarkPluginFrontmatter } = await render(post);
-const gitDates = getContentEntryGitDates("blog", post, {
-  createdAt: post.data.createdAt,
-  lastModified: post.data.lastModified ?? post.data.pubDate,
-});
-const createdAt = gitDates.createdAt ?? remarkPluginFrontmatter?.createdAt ?? post.data.pubDate;
-const lastModified =
-  gitDates.lastModified ?? remarkPluginFrontmatter?.lastModified ?? createdAt;
+const { Content } = await render(post);
+const gitDates = getContentEntryGitDates("blog", post);
+const { createdAt, lastModified } = gitDates;
 const postTags = [
   "all",
   ...[...(post.data.tags ?? [])].filter((tag) => tag !== "all"),
@@ -35,37 +30,43 @@ const postTags = [
   title={post.data.title}
   description={post.data.description}
   openGraph={{
-    basic: {
-      title: post.data.title,
-      type: "website",
-      image: `${Astro.site}posts/${post.id}/og.png`,
-    },
-    optional: {
-      description: post.data.description,
-    },
+    title: post.data.title,
+    type: "article",
+    image: `${Astro.site}posts/${post.id}/og.png`,
+    description: post.data.description,
+    publishedTime: createdAt,
+    modifiedTime: lastModified,
   }}
 >
   <Fragment slot="content">
-    <div class="post-header">
-      <h1 id="post-title" class="post-title-anchor" data-anchor-reset>{post.data.title}</h1>
-      {post.data.description && (
-        <p class="hidden">{post.data.description}</p>
-      )}
-    </div>
-    <Prose>
-      <Content />
-    </Prose>
-    <PostGitDates createdAt={createdAt} lastModified={lastModified} />
-    <ul class="post-tags">
-      {
-        postTags.map((tag) => (
-          <li>
-            <a href={`/tags/${tag}/`}>
-              #{tag}
-            </a>
-          </li>
-        ))
-      }
-    </ul>
+    <article class="post">
+      <header class="post-header">
+        <h1 id="post-title" class="post-title-anchor" data-anchor-reset>
+          {post.data.title}
+        </h1>
+      </header>
+      <Prose>
+        <Content />
+      </Prose>
+      <PostGitDates
+        createdAt={createdAt}
+        createdCommit={gitDates.createdCommit}
+        lastModified={lastModified}
+        lastModifiedCommit={gitDates.lastModifiedCommit}
+      />
+      <nav aria-label="Tags de l’article">
+        <ul class="post-tags">
+          {
+            postTags.map((tag) => (
+              <li>
+                <a href={`/tags/${tag}/`}>
+                  #{tag}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+    </article>
   </Fragment>
 </Layout>

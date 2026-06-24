@@ -4,10 +4,19 @@ import {
   signal,
 } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
-import { MatButtonModule } from "@angular/material/button";
+import { MatButton } from "@angular/material/button";
 
 const STORAGE_KEY = "ct_cookie_consent_v1";
 const COOKIE_NAME = "ct_cookie_consent";
+const BACKGROUND_INTERACTION_SELECTORS = [".site-main", ".site-footer"] as const;
+const DIALOG_FOCUSABLE_SELECTOR = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+].join(",");
 
 interface ConsentState {
   functionality: boolean;
@@ -17,7 +26,7 @@ interface ConsentState {
 
 declare global {
   interface Window {
-    CookieConsent?: {
+    cookieConsent?: {
       acceptedService: (service: string, category: string) => boolean;
       isCategoryAccepted: (category: string) => boolean;
     };
@@ -48,7 +57,7 @@ function writeConsent(functionality: boolean) {
 }
 
 function exposeConsentApi() {
-  window.CookieConsent = {
+  window.cookieConsent = {
     acceptedService: (service: string, category: string) =>
       category === "functionality" && service === "ipgeo" && Boolean(readConsent()?.functionality),
     isCategoryAccepted: (category: string) =>
@@ -57,14 +66,32 @@ function exposeConsentApi() {
   };
 }
 
+function setBackgroundInteractionDisabled(disabled: boolean) {
+  for (const selector of BACKGROUND_INTERACTION_SELECTORS) {
+    document.querySelector(selector)?.toggleAttribute("inert", disabled);
+  }
+}
+
+function isFocusableElement(element: HTMLElement) {
+  const style = getComputedStyle(element);
+
+  return (
+    element.tabIndex >= 0 &&
+    !element.hasAttribute("disabled") &&
+    element.getAttribute("aria-hidden") !== "true" &&
+    style.display !== "none" &&
+    style.visibility !== "hidden"
+  );
+}
+
 @Component({
-  selector: "cookie-consent-banner",
+  selector: "site-cookie-consent-banner",
   standalone: true,
-  imports: [MatButtonModule],
+  imports: [MatButton],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (visible()) {
-      <div class="cookie-consent__backdrop" aria-hidden="true"></div>
+      <div class="cookie-consent-backdrop" aria-hidden="true"></div>
       <section
         class="cookie-consent"
         role="dialog"
@@ -72,7 +99,7 @@ function exposeConsentApi() {
         aria-labelledby="cookie-consent-title"
         aria-describedby="cookie-consent-desc"
       >
-        <div class="cookie-consent__content">
+        <div class="cookie-consent-content">
           <h2 id="cookie-consent-title">Cookies</h2>
           <p id="cookie-consent-desc">
             Un cookie de consentement permet d'activer la détection de votre IP
@@ -81,11 +108,10 @@ function exposeConsentApi() {
           </p>
         </div>
 
-        <div class="cookie-consent__actions">
+        <div class="cookie-consent-actions">
           <button
             matButton="text"
             type="button"
-            class="cookie-consent__button"
             (click)="reject()"
           >
             Refuser
@@ -93,7 +119,6 @@ function exposeConsentApi() {
           <button
             matButton="text"
             type="button"
-            class="cookie-consent__button cookie-consent__accept"
             (click)="accept()"
           >
             Accepter
@@ -105,17 +130,29 @@ function exposeConsentApi() {
 })
 export class CookieConsentBannerComponent implements OnInit, OnDestroy {
   private readonly handleKeydown = (event: KeyboardEvent) => {
-    if (event.key === "Escape" && this.visible()) this.reject();
+    if (!this.visible()) return;
+
+    if (event.key === "Escape") {
+      this.reject();
+      return;
+    }
+
+    if (event.key === "Tab") this.trapFocus(event);
   };
 
   readonly visible = signal(false);
+  private focusFrame = 0;
 
   ngOnInit() {
     if (typeof window === "undefined") return;
 
     exposeConsentApi();
-    this.visible.set(readConsent() === null);
+    document.dispatchEvent(new Event("site:consent-change"));
+    const shouldShow = readConsent() === null;
+
+    this.visible.set(shouldShow);
     this.syncPageState();
+    if (shouldShow) this.focusInitialAction();
     window.addEventListener("keydown", this.handleKeydown);
   }
 
@@ -123,6 +160,7 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
     if (typeof window === "undefined") return;
 
     window.removeEventListener("keydown", this.handleKeydown);
+    if (this.focusFrame) cancelAnimationFrame(this.focusFrame);
     this.unlockPage();
   }
 
@@ -138,22 +176,50 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
     writeConsent(functionality);
     exposeConsentApi();
     this.visible.set(false);
+    if (this.focusFrame) cancelAnimationFrame(this.focusFrame);
     this.unlockPage();
-    document.dispatchEvent(new Event("cc:onConsent"));
-    document.dispatchEvent(new Event("cc:onChange"));
+    document.dispatchEvent(new Event("site:consent-change"));
   }
 
   private syncPageState() {
     if (this.visible()) {
-      document.documentElement.classList.add("disable--interaction", "show--consent");
-      document.querySelector(".site-main")?.setAttribute("inert", "");
+      document.documentElement.classList.add("interaction-disabled", "consent-visible");
+      setBackgroundInteractionDisabled(true);
     } else {
       this.unlockPage();
     }
   }
 
   private unlockPage() {
-    document.documentElement.classList.remove("disable--interaction", "show--consent");
-    document.querySelector(".site-main")?.removeAttribute("inert");
+    document.documentElement.classList.remove("interaction-disabled", "consent-visible");
+    setBackgroundInteractionDisabled(false);
+  }
+
+  private getFocusableDialogElements() {
+    return Array.from(
+      document.querySelectorAll<HTMLElement>(`.cookie-consent ${DIALOG_FOCUSABLE_SELECTOR}`),
+    ).filter(isFocusableElement);
+  }
+
+  private focusInitialAction() {
+    if (this.focusFrame) cancelAnimationFrame(this.focusFrame);
+
+    this.focusFrame = requestAnimationFrame(() => {
+      this.focusFrame = 0;
+      this.getFocusableDialogElements()[0]?.focus();
+    });
+  }
+
+  private trapFocus(event: KeyboardEvent) {
+    const elements = this.getFocusableDialogElements();
+    if (elements.length === 0) return;
+
+    const activeIndex = elements.indexOf(document.activeElement as HTMLElement);
+    const nextIndex = event.shiftKey
+      ? activeIndex <= 0 ? elements.length - 1 : activeIndex - 1
+      : activeIndex === -1 || activeIndex >= elements.length - 1 ? 0 : activeIndex + 1;
+
+    event.preventDefault();
+    elements[nextIndex].focus();
   }
 }

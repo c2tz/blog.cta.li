@@ -10,9 +10,10 @@ import {
   signal,
 } from "@angular/core";
 import type { AfterViewInit, OnDestroy } from "@angular/core";
-import { MatButtonModule } from "@angular/material/button";
-import { MatIconModule } from "@angular/material/icon";
-import { MatSnackBar, MatSnackBarModule } from "@angular/material/snack-bar";
+import { MatIconButton } from "@angular/material/button";
+import { MatIcon } from "@angular/material/icon";
+import { MatSnackBar } from "@angular/material/snack-bar";
+import { MatTooltip } from "@angular/material/tooltip";
 
 const COPY_FEEDBACK_DURATION_MS = 2200;
 
@@ -52,32 +53,23 @@ async function copyToClipboard(text: string) {
 @Component({
   selector: "site-code-copy-button",
   standalone: true,
-  imports: [MatButtonModule, MatIconModule, MatSnackBarModule],
+  imports: [MatIconButton, MatIcon, MatTooltip],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button
       matIconButton
       type="button"
-      class="code-copy-button site-icon-button"
-      [class.is-copied]="state() === 'copied'"
-      [class.is-error]="state() === 'error'"
+      class="code-copy-button"
       [attr.aria-label]="label()"
+      matTooltip="Copier le code source"
+      matTooltipPosition="left"
       (click)="copy()"
     >
-      <mat-icon
-        class="code-copy-button__icon code-copy-button__icon--copy"
-        aria-hidden="true"
-      >
-        &#xE14D;
-      </mat-icon>
-      <mat-icon
-        class="code-copy-button__icon code-copy-button__icon--check"
-        aria-hidden="true"
-      >
-        &#xE5CA;
+      <mat-icon aria-hidden="true">
+        {{ state() === "copied" ? "check" : state() === "error" ? "error" : "content_copy" }}
       </mat-icon>
     </button>
-    <span class="sr-only code-copy-status" role="status" aria-live="polite">
+    <span class="sr-only" role="status" aria-live="polite">
       {{ status() }}
     </span>
   `,
@@ -109,6 +101,7 @@ class CodeCopyButtonComponent implements OnDestroy {
   }
 
   async copy() {
+    document.dispatchEvent(new CustomEvent("site:tooltip-hide"));
     const copied = await copyToClipboard(this.code());
     this.state.set(copied ? "copied" : "error");
     const message = copied ? "Code copié" : "Impossible de copier le code";
@@ -198,7 +191,7 @@ export class CodeBlockEnhancerComponent implements AfterViewInit, OnDestroy {
       const header = document.createElement("div");
       header.className = "code-header";
       const languageLabel = document.createElement("div");
-      languageLabel.className = "code-lang";
+      languageLabel.className = "code-language";
       languageLabel.textContent = language;
       const actions = document.createElement("div");
       actions.className = "code-actions";

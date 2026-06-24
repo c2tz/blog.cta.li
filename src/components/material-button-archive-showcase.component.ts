@@ -1,6 +1,13 @@
 import { ChangeDetectionStrategy, Component } from "@angular/core";
-import { MatButtonModule, type MatButtonAppearance } from "@angular/material/button";
-import { MatIconModule } from "@angular/material/icon";
+import {
+  MatButton,
+  MatFabButton,
+  MatIconButton,
+  MatMiniFabButton,
+  type MatButtonAppearance,
+} from "@angular/material/button";
+import { MatDivider } from "@angular/material/divider";
+import { MatIcon } from "@angular/material/icon";
 
 const GOOGLE_LINK = "https://www.google.com/";
 
@@ -25,24 +32,23 @@ interface IconItem {
 }
 
 @Component({
-  selector: "material-button-archive-showcase",
+  selector: "site-material-button-archive-showcase",
   standalone: true,
-  imports: [MatButtonModule, MatIconModule],
+  imports: [MatButton, MatIconButton, MatFabButton, MatMiniFabButton, MatDivider, MatIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="material-button-template" aria-label="Boutons Angular Material de l'archive">
       @for (section of standardSections; track section.label; let sectionIndex = $index) {
         @if (sectionIndex > 0) {
-          <div class="material-button-template__divider" aria-hidden="true"></div>
+          <mat-divider></mat-divider>
         }
-        <section class="material-button-template__section">
+        <section class="material-button-template-section">
           <div class="example-label">{{ section.label }}</div>
           <div class="example-button-row">
             @for (item of section.items; track item.text) {
               @if (item.href) {
                 <a
                   [matButton]="section.appearance"
-                  class="material-archive-button"
                   [href]="item.href"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -53,7 +59,6 @@ interface IconItem {
                 <button
                   [matButton]="section.appearance"
                   type="button"
-                  class="material-archive-button"
                   [disabled]="item.disabled === true"
                 >
                   {{ item.text }}
@@ -65,21 +70,21 @@ interface IconItem {
       }
 
       @for (section of iconSections; track section.label) {
-        <div class="material-button-template__divider" aria-hidden="true"></div>
-        <section class="material-button-template__section">
+        <mat-divider></mat-divider>
+        <section class="material-button-template-section">
           <div class="example-label">{{ section.label }}</div>
           <div class="example-button-row">
-            @switch (section.kind) {
+            <div class="example-flex-container">
+              @switch (section.kind) {
               @case ("icon") {
                 @for (item of section.items; track item.ariaLabel) {
                   <button
                     matIconButton
                     type="button"
-                    class="material-archive-icon-button"
                     [disabled]="item.disabled === true"
                     [attr.aria-label]="item.ariaLabel ?? null"
                   >
-                    <mat-icon class="material-button-template__icon" aria-hidden="true">
+                    <mat-icon aria-hidden="true">
                       {{ item.icon }}
                     </mat-icon>
                   </button>
@@ -90,11 +95,10 @@ interface IconItem {
                   <button
                     matFab
                     type="button"
-                    class="material-archive-fab material-archive-fab--regular"
                     [disabled]="item.disabled === true"
                     [attr.aria-label]="item.ariaLabel ?? null"
                   >
-                    <mat-icon class="material-button-template__icon" aria-hidden="true">
+                    <mat-icon aria-hidden="true">
                       {{ item.icon }}
                     </mat-icon>
                   </button>
@@ -105,11 +109,10 @@ interface IconItem {
                   <button
                     matMiniFab
                     type="button"
-                    class="material-archive-fab material-archive-fab--mini"
                     [disabled]="item.disabled === true"
                     [attr.aria-label]="item.ariaLabel ?? null"
                   >
-                    <mat-icon class="material-button-template__icon" aria-hidden="true">
+                    <mat-icon aria-hidden="true">
                       {{ item.icon }}
                     </mat-icon>
                   </button>
@@ -121,12 +124,11 @@ interface IconItem {
                     <a
                       matFab
                       extended
-                      class="material-archive-extended-fab"
                       [href]="item.href"
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      <mat-icon class="material-button-template__icon" aria-hidden="true">
+                      <mat-icon aria-hidden="true">
                         {{ item.icon }}
                       </mat-icon>
                       <span>{{ item.text }}</span>
@@ -136,10 +138,9 @@ interface IconItem {
                       matFab
                       extended
                       type="button"
-                      class="material-archive-extended-fab"
                       [disabled]="item.disabled === true"
                     >
-                      <mat-icon class="material-button-template__icon" aria-hidden="true">
+                      <mat-icon aria-hidden="true">
                         {{ item.icon }}
                       </mat-icon>
                       <span>{{ item.text }}</span>
@@ -147,127 +148,37 @@ interface IconItem {
                   }
                 }
               }
-            }
+              }
+            </div>
           </div>
         </section>
       }
     </div>
   `,
   styles: [`
-    .material-button-template {
-      margin-block: 1.5rem;
-      border-block: 1px solid var(--site-border);
-    }
-
-    .material-button-template__section {
+    .material-button-template-section {
       display: flex;
       align-items: center;
-      gap: 1rem;
-      padding-block: 1rem;
-    }
-
-    .material-button-template__divider {
-      height: 1px;
-      background: var(--site-border);
     }
 
     .example-label {
-      flex: 0 0 7.5rem;
-      color: var(--site-muted);
-      font-size: 0.875rem;
-      font-weight: 600;
-      line-height: 1.25;
+      min-width: 120px;
+      margin: 0 16px 0 8px;
+      font-size: 14px;
     }
 
     .example-button-row {
+      max-width: 600px;
+    }
+
+    .example-button-row .mat-mdc-button-base {
+      margin: 8px 8px 8px 0;
+    }
+
+    .example-flex-container {
       display: flex;
-      flex: 1 1 auto;
       flex-wrap: wrap;
-      align-items: center;
-      gap: 0.5rem;
-      min-width: 0;
-    }
-
-    .material-button-template .material-archive-button {
-      margin: 0;
-      white-space: nowrap;
-    }
-
-    .material-button-template .mat-mdc-elevated-button {
-      background: var(--site-bg);
-      box-shadow: var(--mat-sys-level1);
-      color: var(--site-link);
-    }
-
-    .material-button-template .mat-mdc-elevated-button:is(:hover, :focus-visible) {
-      box-shadow: var(--mat-sys-level2);
-    }
-
-    .material-button-template .mat-mdc-outlined-button {
-      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--site-link) 56%, transparent);
-    }
-
-    .material-button-template .material-archive-icon-button,
-    .material-button-template .material-archive-fab,
-    .material-button-template .material-archive-extended-fab {
-      position: relative;
-      isolation: isolate;
-    }
-
-    .material-button-template .material-archive-icon-button {
-      color: var(--site-link);
-    }
-
-    .material-button-template .material-archive-fab,
-    .material-button-template .material-archive-extended-fab {
-      background: var(--site-link-container);
-      box-shadow: var(--mat-sys-level3);
-      color: var(--site-on-link-container);
-    }
-
-    .material-button-template .material-archive-fab--mini {
-      width: 2.5rem;
-      height: 2.5rem;
-      min-width: 2.5rem;
-    }
-
-    .material-button-template
-      :is(.material-archive-fab, .material-archive-extended-fab):is(:hover, :focus-visible) {
-      box-shadow: var(--mat-sys-level4);
-    }
-
-    .material-button-template
-      :is(.material-archive-fab, .material-archive-extended-fab):active {
-      box-shadow: var(--mat-sys-level3);
-      transform: translateY(1px);
-    }
-
-    .material-button-template .material-button-template__icon {
-      position: relative;
-      z-index: 1;
-      width: 20px;
-      height: 20px;
-      flex: 0 0 auto;
-      font-size: 20px;
-      line-height: 20px;
-    }
-
-    .material-button-template :disabled {
-      cursor: default;
-      opacity: 0.62;
-      pointer-events: none;
-    }
-
-    @media (max-width: 640px) {
-      .material-button-template__section {
-        align-items: flex-start;
-        flex-direction: column;
-        gap: 0.75rem;
-      }
-
-      .example-label {
-        flex-basis: auto;
-      }
+      justify-content: space-between;
     }
   `],
 })

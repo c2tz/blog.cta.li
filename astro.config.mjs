@@ -1,14 +1,33 @@
-import { defineConfig } from 'astro/config';
+import angular from "@analogjs/astro-angular";
+import mdx from "@astrojs/mdx";
+import { unified } from "@astrojs/markdown-remark";
+import sitemap from "@astrojs/sitemap";
+import { defineConfig } from "astro/config";
+import rehypeAutolinkHeadings from "rehype-autolink-headings";
+import rehypeSlug from "rehype-slug";
 
-import mdx from '@astrojs/mdx';
-import sitemap from '@astrojs/sitemap';
-import tailwindcss from '@tailwindcss/vite';
-import angular from '@analogjs/astro-angular';
-import { unified } from '@astrojs/markdown-remark';
+const ANGULAR_DECORATOR_IMPORTS = new Set([
+  "ChangeDetectionStrategy",
+  "Component",
+]);
 
-import rehypeSlug from 'rehype-slug';
-import rehypeAutolinkHeadings from 'rehype-autolink-headings';
-import remarkGitDates from './src/remark/remarkGitDates.mjs';
+function isCompiledAngularDecoratorWarning(warning) {
+  return (
+    warning.code === "UNUSED_EXTERNAL_IMPORT" &&
+    warning.exporter === "@angular/core" &&
+    warning.names?.every((name) => ANGULAR_DECORATOR_IMPORTS.has(name)) &&
+    warning.ids?.every((id) => id.includes("/src/components/"))
+  );
+}
+
+function isKnownAngularSourcemapWarning(message) {
+  return (
+    typeof message === "string" &&
+    message.includes("@angular+platform-server") &&
+    message.includes("_server-chunk.mjs") &&
+    message.includes("points to missing source files")
+  );
+}
 
 const viteLogger = {
   hasWarned: false,
@@ -20,92 +39,90 @@ const viteLogger = {
     this.warn(message);
   },
   warn(message) {
-    if (
-      typeof message === 'string' &&
-      message.includes('"ChangeDetectionStrategy" and "Component"') &&
-      message.includes('"@angular/core"') &&
-      message.includes('"src/components/CookieConsentBanner.component.ts"')
-    ) {
-      return;
-    }
-
+    if (isKnownAngularSourcemapWarning(message)) return;
     this.hasWarned = true;
     console.warn(message);
   },
 };
 
+const removeCodeBlockTabindex = {
+  name: "remove-code-block-tabindex",
+  pre(node) {
+    delete node.properties?.tabindex;
+    delete node.properties?.tabIndex;
+  },
+};
+
 export default defineConfig({
-  site: 'https://ct-blog.cta.li/',
+  site: "https://ct-blog.cta.li/",
   devToolbar: {
     enabled: false,
   },
-
   integrations: [
     mdx(),
     sitemap(),
     angular({
       vite: {
         fastCompile: true,
-        transformFilter: (_code, id) =>
-          id.includes('src/components'),
+        transformFilter: (_code, id) => id.includes("src/components"),
       },
     }),
   ],
-
   vite: {
     customLogger: viteLogger,
-    plugins: [tailwindcss()],
+    build: {
+      rollupOptions: {
+        onwarn(warning, warn) {
+          if (!isCompiledAngularDecoratorWarning(warning)) warn(warning);
+        },
+      },
+    },
   },
-
   markdown: {
-    syntaxHighlight: 'shiki',
+    syntaxHighlight: "shiki",
     shikiConfig: {
       themes: {
-        light: 'light-plus',
-        dark: 'dark-plus',
+        light: "light-plus",
+        dark: "dark-plus",
       },
       defaultColor: false,
       wrap: true,
+      transformers: [removeCodeBlockTabindex],
     },
     processor: unified({
-      remarkPlugins: [remarkGitDates],
       rehypePlugins: [
         rehypeSlug,
         [
           rehypeAutolinkHeadings,
           {
-            behavior: 'wrap',
+            behavior: "wrap",
             properties: {
-              class: 'heading-link',
+              class: "heading-link",
             },
           },
         ],
-
         () => (tree) => {
           let firstMarkdownImage = true;
 
           const walk = (node) => {
-            if (node && typeof node === 'object') {
-              if (node.type === 'element' && node.tagName === 'img') {
-                node.properties ||= {};
-                node.properties['data-lightbox'] = '';
-                node.properties.decoding = 'async';
+            if (!node || typeof node !== "object") return;
 
-                if (firstMarkdownImage) {
-                  node.properties.loading = 'eager';
-                  node.properties.fetchpriority = 'high';
-                  firstMarkdownImage = false;
-                } else {
-                  node.properties.loading = 'lazy';
-                }
-              }
+            if (node.type === "element" && node.tagName === "img") {
+              node.properties ||= {};
+              node.properties["data-lightbox"] = "";
+              node.properties.decoding = "async";
 
-              if (Array.isArray(node.children)) {
-                for (const child of node.children) {
-                  walk(child);
-                }
+              if (firstMarkdownImage) {
+                node.properties.loading = "eager";
+                node.properties.fetchpriority = "high";
+                firstMarkdownImage = false;
+              } else {
+                node.properties.loading = "lazy";
               }
             }
+
+            if (!Array.isArray(node.children)) return;
+            for (const child of node.children) walk(child);
           };
 
           walk(tree);

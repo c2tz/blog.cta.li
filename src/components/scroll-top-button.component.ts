@@ -4,11 +4,11 @@ import {
   signal,
 } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
-import { MatBadgeModule } from "@angular/material/badge";
-import { MatButtonModule } from "@angular/material/button";
-import { MatIconModule } from "@angular/material/icon";
-import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
-import { MatTooltipModule } from "@angular/material/tooltip";
+import { MatBadge } from "@angular/material/badge";
+import { MatIconButton } from "@angular/material/button";
+import { MatIcon } from "@angular/material/icon";
+import { MatProgressSpinner } from "@angular/material/progress-spinner";
+import { MatTooltip } from "@angular/material/tooltip";
 
 function getScrollProgress() {
   const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
@@ -16,15 +16,19 @@ function getScrollProgress() {
   return Math.min(100, Math.max(0, Math.round((scrollTop / scrollable) * 100)));
 }
 
+function isScrollTopDisabledPage() {
+  return document.body.classList.contains("home-page");
+}
+
 @Component({
   selector: "site-scroll-top-button",
   standalone: true,
   imports: [
-    MatBadgeModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule,
-    MatTooltipModule,
+    MatBadge,
+    MatIconButton,
+    MatIcon,
+    MatProgressSpinner,
+    MatTooltip,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -33,7 +37,8 @@ function getScrollProgress() {
       type="button"
       class="site-scroll-top site-icon-button"
       [class.is-visible]="visible()"
-      [tabIndex]="visible() ? 0 : -1"
+      [disabled]="!visible()"
+      [hidden]="!visible()"
       [attr.aria-label]="'Retour en haut, progression ' + progress() + ' %'"
       [matBadge]="progress()"
       [matBadgeHidden]="!visible()"
@@ -45,14 +50,14 @@ function getScrollProgress() {
     >
       <mat-spinner
         progressIndicator
-        class="site-scroll-top__progress"
+        class="site-scroll-top-progress"
         mode="determinate"
         [value]="progress()"
         diameter="40"
         strokeWidth="3"
         aria-hidden="true"
       ></mat-spinner>
-      <mat-icon class="site-scroll-top__icon" aria-hidden="true">&#xE5D8;</mat-icon>
+      <mat-icon class="site-scroll-top-icon" aria-hidden="true">&#xE5D8;</mat-icon>
     </button>
   `,
 })
@@ -88,6 +93,8 @@ export class ScrollTopButtonComponent implements OnInit, OnDestroy {
   }
 
   scrollToTop() {
+    if (isScrollTopDisabledPage()) return;
+
     document.dispatchEvent(new CustomEvent("site:tooltip-hide"));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -95,6 +102,6 @@ export class ScrollTopButtonComponent implements OnInit, OnDestroy {
   private sync() {
     const progress = getScrollProgress();
     this.progress.set(progress);
-    this.visible.set(window.scrollY > 100);
+    this.visible.set(!isScrollTopDisabledPage() && window.scrollY > 100);
   }
 }

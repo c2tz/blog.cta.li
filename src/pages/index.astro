@@ -4,22 +4,19 @@ import { getCollection, getEntry } from "astro:content";
 import Layout from "../layouts/Layout.astro";
 import HomeKonachanBackground from "../components/HomeKonachanBackground.astro";
 import FormattedDate from "@/components/FormattedDate.astro";
-import { SITE_DESCRIPTION, SITE_TITLE } from "@/consts";
-import { getContentEntryGitDates } from "@/lib/gitDates.mjs";
+import { SITE_DESCRIPTION, SITE_TITLE } from "@/site-config";
+import { getContentEntryGitDates } from "@/lib/git-dates.mjs";
 
 const posts = (await getCollection("blog"))
   .map((post) => ({
     ...post,
-    gitDates: getContentEntryGitDates("blog", post, {
-      createdAt: post.data.createdAt,
-      lastModified: post.data.lastModified ?? post.data.pubDate,
-    }),
+    gitDates: getContentEntryGitDates("blog", post),
   }))
-  .sort((b, a) => {
-    const aCreated = new Date(a.gitDates.createdAt ?? a.data.pubDate).valueOf();
-    const bCreated = new Date(b.gitDates.createdAt ?? b.data.pubDate).valueOf();
-    return aCreated - bCreated;
-  });
+  .sort(
+    (a, b) =>
+      new Date(b.gitDates.createdAt).valueOf() -
+      new Date(a.gitDates.createdAt).valueOf(),
+  );
 
 const latestPosts = posts.slice(0, 4);
 const contentTags = [
@@ -48,7 +45,7 @@ const homeCopy = {
   secondaryActionHref:
     typeof introData.secondaryActionHref === "string"
       ? introData.secondaryActionHref
-      : "http://www.cta.li",
+      : "https://www.cta.li",
   secondaryActionLabel:
     typeof introData.secondaryActionLabel === "string"
       ? introData.secondaryActionLabel
@@ -61,16 +58,12 @@ const homeCopy = {
 
 <Layout
   bodyClass="home-page"
-  scrollUi={false}
+  readingProgress={false}
   openGraph={{
-    basic: {
-      title: SITE_TITLE,
-      type: "website",
-      image: `${Astro.site}og.png`,
-    },
-    optional: {
-      description: SITE_DESCRIPTION,
-    },
+    title: SITE_TITLE,
+    type: "website",
+    image: `${Astro.site}og.png`,
+    description: SITE_DESCRIPTION,
   }}
 >
   <Fragment slot="content">
@@ -83,18 +76,16 @@ const homeCopy = {
       secondaryActionLabel={homeCopy.secondaryActionLabel}
     />
 
-    <section class="home-section home-section--posts" aria-labelledby="blog-posts">
+    <section class="home-section" aria-labelledby="blog-posts">
       <h2 id="blog-posts">
-        <a href="#blog-posts" class="heading-link" style="color:inherit"
-          >{homeCopy.latestPostsTitle}</a
-        >
+        <a href="#blog-posts" class="heading-link">{homeCopy.latestPostsTitle}</a>
       </h2>
 
       <ul class="home-posts">
         {
           latestPosts.map((post) => (
             <li class="home-post">
-              <FormattedDate date={post.gitDates.createdAt ?? post.data.pubDate} utcDetails />
+              <FormattedDate date={post.gitDates.createdAt} />
               <span class="home-separator" aria-hidden="true">—</span>
               <a href={`/posts/${post.id}/`}>
                 {post.data.title}
@@ -105,9 +96,9 @@ const homeCopy = {
       </ul>
     </section>
 
-    <section class="home-section home-section--tags" aria-labelledby="tags">
+    <section class="home-section" aria-labelledby="tags">
       <h3 id="tags">
-        <a href="#tags" class="heading-link" style="color:inherit">{homeCopy.tagsTitle}</a>
+        <a href="#tags" class="heading-link">{homeCopy.tagsTitle}</a>
       </h3>
 
       <ul class="home-tags">

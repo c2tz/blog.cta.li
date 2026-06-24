@@ -45,6 +45,14 @@ const viteLogger = {
   },
 };
 
+const removeCodeBlockTabindex = {
+  name: "remove-code-block-tabindex",
+  pre(node) {
+    delete node.properties?.tabindex;
+    delete node.properties?.tabIndex;
+  },
+};
+
 export default defineConfig({
   site: "https://ct-blog.cta.li/",
   devToolbar: {
@@ -79,6 +87,7 @@ export default defineConfig({
       },
       defaultColor: false,
       wrap: true,
+      transformers: [removeCodeBlockTabindex],
     },
     processor: unified({
       rehypePlugins: [

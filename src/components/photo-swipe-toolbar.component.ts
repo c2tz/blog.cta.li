@@ -21,6 +21,7 @@ interface PhotoSwipeToolbarState {
   total?: number;
   isFullscreen?: boolean;
   fullscreenAvailable?: boolean;
+  zoomed?: boolean;
   loading?: boolean;
   closing?: boolean;
 }
@@ -31,7 +32,8 @@ type PhotoSwipeAction =
   | "fullscreen"
   | "next"
   | "previous"
-  | "share";
+  | "share"
+  | "zoom";
 
 @Component({
   selector: "site-photo-swipe-toolbar",
@@ -90,6 +92,19 @@ type PhotoSwipeAction =
           }
 
           @if (!isFullscreen()) {
+            <button
+              matIconButton
+              type="button"
+              class="photo-swipe-button"
+              [attr.aria-label]="zoomLabel()"
+              [attr.aria-pressed]="zoomed()"
+              [matTooltip]="zoomLabel()"
+              matTooltipPosition="below"
+              (click)="act('zoom')"
+            >
+              <mat-icon aria-hidden="true">{{ zoomIcon() }}</mat-icon>
+            </button>
+
             <a
               matIconButton
               class="photo-swipe-button"
@@ -172,11 +187,10 @@ type PhotoSwipeAction =
       @if (loading()) {
         <div class="photo-swipe-loading" role="status" aria-live="polite">
           <mat-progress-spinner
-            mode="determinate"
-            [value]="progress()"
+            mode="indeterminate"
             diameter="48"
             strokeWidth="4"
-            aria-label="Progression du chargement de l'image"
+            aria-label="Chargement de l'image"
           ></mat-progress-spinner>
           <span class="sr-only">Chargement de l'image</span>
         </div>
@@ -345,6 +359,7 @@ export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
   readonly total = signal(1);
   readonly isFullscreen = signal(false);
   readonly fullscreenAvailable = signal(false);
+  readonly zoomed = signal(false);
   readonly loading = signal(false);
   readonly closing = signal(false);
   readonly shareLabel = signal("Partager");
@@ -355,6 +370,9 @@ export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
 
   readonly fullscreenIcon = () => "\uF1CE";
   readonly fullscreenLabel = () => "Plein écran";
+  readonly zoomIcon = () => "fit_screen";
+  readonly zoomLabel = () =>
+    this.zoomed() ? "Réinitialiser l'alignement" : "Aligner l'image";
 
   private shareLabelTimer = 0;
   private counterTooltipHovered = false;
@@ -376,6 +394,7 @@ export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
     if (typeof detail.fullscreenAvailable === "boolean") {
       this.fullscreenAvailable.set(detail.fullscreenAvailable);
     }
+    if (typeof detail.zoomed === "boolean") this.zoomed.set(detail.zoomed);
     if (typeof detail.loading === "boolean" && detail.loading !== this.loading()) {
       if (detail.loading) this.loadingProgress.start();
       else this.loadingProgress.complete();

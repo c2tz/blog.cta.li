@@ -13,6 +13,9 @@ import {
 
 const TOOLTIP_SELECTOR = "[data-tooltip]";
 const TOUCH_HIDE_DELAY = 6000;
+const TOUCH_FOCUS_GUARD_MS = 2500;
+
+type RecentTouchMode = "off" | "temporary";
 
 function getTarget(start: EventTarget | null) {
   const element = start instanceof Element ? start : null;
@@ -28,6 +31,10 @@ function getPosition(target: HTMLElement): TooltipPosition {
   if (placement === "bottom") return "below";
   if (placement === "left" || placement === "right") return placement;
   return "above";
+}
+
+function allowsTouchTooltip(target: HTMLElement) {
+  return target.dataset["tooltipTouchGestures"] !== "off";
 }
 
 @Component({
@@ -71,10 +78,24 @@ export class GlobalTooltipComponent implements AfterViewInit, OnDestroy {
   private activeTarget: HTMLElement | null = null;
   private showFrame = 0;
   private touchTimer = 0;
+  private recentTouchTarget: HTMLElement | null = null;
+  private recentTouchMode: RecentTouchMode | null = null;
+  private recentTouchUntil = 0;
 
   private readonly handlePointerOver = (event: PointerEvent) => {
-    if (event.pointerType === "touch" || event.pointerType === "pen") return;
     const target = getTarget(event.target);
+    if (event.pointerType === "touch" || event.pointerType === "pen") return;
+
+    const recentTouchMode = target ? this.getRecentTouchMode(target) : null;
+    if (recentTouchMode === "off") {
+      this.hide();
+      return;
+    }
+    if (recentTouchMode === "temporary") {
+      this.show(target, true);
+      return;
+    }
+
     if (target && target !== this.activeTarget) this.show(target);
   };
 
@@ -88,13 +109,48 @@ export class GlobalTooltipComponent implements AfterViewInit, OnDestroy {
   private readonly handlePointerDown = (event: PointerEvent) => {
     const target = getTarget(event.target);
     if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
-    if (target) this.show(target, true);
-    else this.hide();
+    if (!target) {
+      this.clearRecentTouchTarget();
+      this.hide();
+      return;
+    }
+
+    this.rememberTouchTarget(target);
+    if (!allowsTouchTooltip(target)) {
+      this.hide();
+      return;
+    }
+
+    this.show(target, true);
+  };
+
+  private readonly handleTouchStart = (event: TouchEvent) => {
+    const target = getTarget(event.target);
+    if (!target) {
+      this.clearRecentTouchTarget();
+      this.hide();
+      return;
+    }
+
+    this.rememberTouchTarget(target);
+    if (!allowsTouchTooltip(target)) this.hide();
   };
 
   private readonly handleFocusIn = (event: FocusEvent) => {
     const target = getTarget(event.target);
-    if (target) this.show(target);
+    if (!target) return;
+
+    const recentTouchMode = this.getRecentTouchMode(target);
+    if (recentTouchMode === "off") {
+      this.hide();
+      return;
+    }
+    if (recentTouchMode === "temporary") {
+      this.show(target, true);
+      return;
+    }
+
+    this.show(target);
   };
 
   private readonly handleFocusOut = (event: FocusEvent) => {
@@ -122,6 +178,7 @@ export class GlobalTooltipComponent implements AfterViewInit, OnDestroy {
     document.addEventListener("pointerover", this.handlePointerOver, true);
     document.addEventListener("pointerout", this.handlePointerOut, true);
     document.addEventListener("pointerdown", this.handlePointerDown, true);
+    document.addEventListener("touchstart", this.handleTouchStart, true);
     document.addEventListener("focusin", this.handleFocusIn, true);
     document.addEventListener("focusout", this.handleFocusOut, true);
     document.addEventListener("keydown", this.handleKeyDown);
@@ -136,6 +193,7 @@ export class GlobalTooltipComponent implements AfterViewInit, OnDestroy {
     document.removeEventListener("pointerover", this.handlePointerOver, true);
     document.removeEventListener("pointerout", this.handlePointerOut, true);
     document.removeEventListener("pointerdown", this.handlePointerDown, true);
+    document.removeEventListener("touchstart", this.handleTouchStart, true);
     document.removeEventListener("focusin", this.handleFocusIn, true);
     document.removeEventListener("focusout", this.handleFocusOut, true);
     document.removeEventListener("keydown", this.handleKeyDown);
@@ -183,5 +241,26 @@ export class GlobalTooltipComponent implements AfterViewInit, OnDestroy {
     if (this.touchTimer) window.clearTimeout(this.touchTimer);
     this.showFrame = 0;
     this.touchTimer = 0;
+  }
+
+  private rememberTouchTarget(target: HTMLElement) {
+    this.recentTouchTarget = target;
+    this.recentTouchMode = allowsTouchTooltip(target) ? "temporary" : "off";
+    this.recentTouchUntil = Date.now() + TOUCH_FOCUS_GUARD_MS;
+  }
+
+  private getRecentTouchMode(target: HTMLElement): RecentTouchMode | null {
+    if (this.recentTouchTarget !== target || Date.now() > this.recentTouchUntil) {
+      this.clearRecentTouchTarget();
+      return null;
+    }
+
+    return this.recentTouchMode;
+  }
+
+  private clearRecentTouchTarget() {
+    this.recentTouchTarget = null;
+    this.recentTouchMode = null;
+    this.recentTouchUntil = 0;
   }
 }

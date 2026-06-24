@@ -20,11 +20,10 @@ interface LoadingEventDetail {
     @if (visible()) {
       <div class="site-page-loading" role="status" aria-live="polite" aria-label="Chargement">
         <mat-progress-spinner
-          mode="determinate"
-          [value]="progress()"
+          mode="indeterminate"
           diameter="44"
           strokeWidth="4"
-          aria-label="Progression du chargement de la page"
+          aria-label="Chargement de la page"
         ></mat-progress-spinner>
         <span class="sr-only">Chargement</span>
       </div>

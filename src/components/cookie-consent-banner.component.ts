@@ -8,6 +8,15 @@ import { MatButton } from "@angular/material/button";
 
 const STORAGE_KEY = "ct_cookie_consent_v1";
 const COOKIE_NAME = "ct_cookie_consent";
+const BACKGROUND_INTERACTION_SELECTORS = [".site-main", ".site-footer"] as const;
+const DIALOG_FOCUSABLE_SELECTOR = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+].join(",");
 
 interface ConsentState {
   functionality: boolean;
@@ -57,6 +66,24 @@ function exposeConsentApi() {
   };
 }
 
+function setBackgroundInteractionDisabled(disabled: boolean) {
+  for (const selector of BACKGROUND_INTERACTION_SELECTORS) {
+    document.querySelector(selector)?.toggleAttribute("inert", disabled);
+  }
+}
+
+function isFocusableElement(element: HTMLElement) {
+  const style = getComputedStyle(element);
+
+  return (
+    element.tabIndex >= 0 &&
+    !element.hasAttribute("disabled") &&
+    element.getAttribute("aria-hidden") !== "true" &&
+    style.display !== "none" &&
+    style.visibility !== "hidden"
+  );
+}
+
 @Component({
   selector: "site-cookie-consent-banner",
   standalone: true,
@@ -103,18 +130,29 @@ function exposeConsentApi() {
 })
 export class CookieConsentBannerComponent implements OnInit, OnDestroy {
   private readonly handleKeydown = (event: KeyboardEvent) => {
-    if (event.key === "Escape" && this.visible()) this.reject();
+    if (!this.visible()) return;
+
+    if (event.key === "Escape") {
+      this.reject();
+      return;
+    }
+
+    if (event.key === "Tab") this.trapFocus(event);
   };
 
   readonly visible = signal(false);
+  private focusFrame = 0;
 
   ngOnInit() {
     if (typeof window === "undefined") return;
 
     exposeConsentApi();
     document.dispatchEvent(new Event("site:consent-change"));
-    this.visible.set(readConsent() === null);
+    const shouldShow = readConsent() === null;
+
+    this.visible.set(shouldShow);
     this.syncPageState();
+    if (shouldShow) this.focusInitialAction();
     window.addEventListener("keydown", this.handleKeydown);
   }
 
@@ -122,6 +160,7 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
     if (typeof window === "undefined") return;
 
     window.removeEventListener("keydown", this.handleKeydown);
+    if (this.focusFrame) cancelAnimationFrame(this.focusFrame);
     this.unlockPage();
   }
 
@@ -137,6 +176,7 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
     writeConsent(functionality);
     exposeConsentApi();
     this.visible.set(false);
+    if (this.focusFrame) cancelAnimationFrame(this.focusFrame);
     this.unlockPage();
     document.dispatchEvent(new Event("site:consent-change"));
   }
@@ -144,7 +184,7 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
   private syncPageState() {
     if (this.visible()) {
       document.documentElement.classList.add("interaction-disabled", "consent-visible");
-      document.querySelector(".site-main")?.setAttribute("inert", "");
+      setBackgroundInteractionDisabled(true);
     } else {
       this.unlockPage();
     }
@@ -152,6 +192,34 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
 
   private unlockPage() {
     document.documentElement.classList.remove("interaction-disabled", "consent-visible");
-    document.querySelector(".site-main")?.removeAttribute("inert");
+    setBackgroundInteractionDisabled(false);
+  }
+
+  private getFocusableDialogElements() {
+    return Array.from(
+      document.querySelectorAll<HTMLElement>(`.cookie-consent ${DIALOG_FOCUSABLE_SELECTOR}`),
+    ).filter(isFocusableElement);
+  }
+
+  private focusInitialAction() {
+    if (this.focusFrame) cancelAnimationFrame(this.focusFrame);
+
+    this.focusFrame = requestAnimationFrame(() => {
+      this.focusFrame = 0;
+      this.getFocusableDialogElements()[0]?.focus();
+    });
+  }
+
+  private trapFocus(event: KeyboardEvent) {
+    const elements = this.getFocusableDialogElements();
+    if (elements.length === 0) return;
+
+    const activeIndex = elements.indexOf(document.activeElement as HTMLElement);
+    const nextIndex = event.shiftKey
+      ? activeIndex <= 0 ? elements.length - 1 : activeIndex - 1
+      : activeIndex === -1 || activeIndex >= elements.length - 1 ? 0 : activeIndex + 1;
+
+    event.preventDefault();
+    elements[nextIndex].focus();
   }
 }

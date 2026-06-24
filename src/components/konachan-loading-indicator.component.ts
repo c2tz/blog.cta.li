@@ -16,11 +16,10 @@ import { SimulatedLoadingProgress } from "@/lib/simulated-loading-progress";
     @if (busy()) {
       <span class="home-anime-loading" role="status" aria-label="Chargement de l'image">
         <mat-progress-spinner
-          mode="determinate"
-          [value]="progress()"
+          mode="indeterminate"
           diameter="48"
           strokeWidth="4"
-          aria-label="Progression du chargement de l'image"
+          aria-label="Chargement de l'image"
         ></mat-progress-spinner>
         <span class="sr-only">Chargement de l'image</span>
       </span>

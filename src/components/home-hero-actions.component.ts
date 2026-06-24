@@ -16,7 +16,7 @@ import { MatButton } from "@angular/material/button";
         {{ primaryActionLabel() }}
       </a>
       <a
-        matButton="outlined"
+        matButton="text"
         class="home-hero-button"
         [href]="secondaryActionHref()"
       >

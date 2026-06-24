@@ -56,9 +56,9 @@ function initSiteTooltips() {
 
     if (
       !element.matches("a, button, input, select, textarea, summary") &&
-      !element.hasAttribute("tabindex")
+      element.getAttribute("tabindex") === "0"
     ) {
-      element.setAttribute("tabindex", "0");
+      element.removeAttribute("tabindex");
     }
   });
 
@@ -78,11 +78,7 @@ function initSiteTooltips() {
 
         requestAnimationFrame(() => {
           const target = document.getElementById(decodeURIComponent(hash.slice(1)));
-          if (target && !target.hasAttribute("tabindex")) {
-            target.setAttribute("tabindex", "-1");
-          }
           target?.scrollIntoView({ behavior: "smooth", block: "center" });
-          target?.focus?.({ preventScroll: true });
         });
       });
     }
@@ -313,7 +309,6 @@ function wrapMarkdownImages() {
         };
 
         link.href = initialSrc;
-        link.tabIndex = 0;
         link.setAttribute("data-pswp-item", "");
         setLightboxLabel(initialSrc);
 
@@ -415,17 +410,6 @@ function initBlogImageReveal() {
   });
 }
 
-function initKeyboardAccessibleTargets() {
-  document.querySelectorAll("a[href]").forEach((link) => {
-    if (!link.hasAttribute("tabindex")) link.setAttribute("tabindex", "0");
-  });
-
-  document.querySelectorAll("main :is(h1, h2, h3, h4, h5, h6)").forEach((heading) => {
-    if (heading.closest("nav") || heading.querySelector("a[href]")) return;
-    if (!heading.hasAttribute("tabindex")) heading.setAttribute("tabindex", "0");
-  });
-}
-
 function fileNameFromURL(url) {
   try {
     const parsed = new URL(url, location.href);
@@ -474,6 +458,33 @@ async function getPhotoSwipeShareFile(url) {
   });
 }
 
+async function copyTextToClipboard(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(text);
+    return true;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.inset = "0 auto auto 0";
+  textarea.style.width = "1px";
+  textarea.style.height = "1px";
+  textarea.style.opacity = "0";
+
+  document.body.appendChild(textarea);
+  textarea.select();
+  textarea.setSelectionRange(0, text.length);
+
+  try {
+    return document.execCommand("copy");
+  } finally {
+    textarea.remove();
+    window.getSelection()?.removeAllRanges();
+  }
+}
+
 async function sharePhotoSwipeImage(src) {
   const url = new URL(src, location.href).href;
 
@@ -495,10 +506,11 @@ async function sharePhotoSwipeImage(src) {
   }
 
   try {
-    await navigator.clipboard.writeText(url);
+    const copied = await copyTextToClipboard(url);
+    if (!copied) throw new Error("copy_failed");
     dispatchPhotoSwipeShareResult("Lien copié");
   } catch {
-    window.open(url, "_blank", "noopener");
+    dispatchPhotoSwipeShareResult("Copie impossible");
   }
 }
 
@@ -646,26 +658,129 @@ function initLightboxRadiusTransition(pswp) {
   });
 }
 
-function initLightboxZoomLock(pswp) {
-  const root = pswp.element;
-  if (!root) return;
+function getPhotoSwipeToolbarRoot() {
+  return document.querySelector(
+    'astro-island[component-export="PhotoSwipeToolbarComponent"], site-photo-swipe-toolbar',
+  );
+}
 
-  const preventGesture = (event) => {
+function isVisibleFocusableElement(element) {
+  return (
+    element instanceof HTMLElement &&
+    element.tabIndex >= 0 &&
+    !element.hidden &&
+    element.getAttribute("aria-hidden") !== "true" &&
+    Boolean(element.offsetWidth || element.offsetHeight || element.getClientRects().length)
+  );
+}
+
+function getPhotoSwipeFocusableElements(pswp) {
+  const selector = [
+    "a[href]",
+    "button:not([disabled])",
+    "input:not([disabled])",
+    "select:not([disabled])",
+    "textarea:not([disabled])",
+    '[tabindex]:not([tabindex="-1"])',
+  ].join(",");
+  const roots = [getPhotoSwipeToolbarRoot(), pswp.element].filter(Boolean);
+  const elements = roots.flatMap((root) => Array.from(root.querySelectorAll(selector)));
+
+  return [...new Set(elements)].filter(isVisibleFocusableElement);
+}
+
+function initLightboxFocusTrap(pswp) {
+  const returnFocusTarget =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+  const focusControl = (reverse = false) => {
+    const elements = getPhotoSwipeFocusableElements(pswp);
+    if (!elements.length) {
+      pswp.element?.focus({ preventScroll: true });
+      return;
+    }
+
+    const activeIndex = elements.indexOf(document.activeElement);
+    const nextIndex =
+      activeIndex === -1
+        ? reverse
+          ? elements.length - 1
+          : 0
+        : (activeIndex + (reverse ? -1 : 1) + elements.length) % elements.length;
+
+    elements[nextIndex].focus({ preventScroll: true });
+  };
+
+  const isInsideLightboxFocusScope = (target) => {
+    if (!(target instanceof Node)) return false;
+    const toolbar = getPhotoSwipeToolbarRoot();
+    return Boolean(pswp.element?.contains(target) || toolbar?.contains(target));
+  };
+
+  const handleFocusIn = (event) => {
+    if (isInsideLightboxFocusScope(event.target)) return;
+    requestAnimationFrame(() => focusControl(false));
+  };
+
+  pswp.on("keydown", (event) => {
+    const originalEvent = event.originalEvent;
+    if (
+      originalEvent.key !== "Tab" ||
+      originalEvent.altKey ||
+      originalEvent.ctrlKey ||
+      originalEvent.metaKey
+    ) {
+      return;
+    }
+
     event.preventDefault();
-  };
-  const preventZoomWheel = (event) => {
-    if (event.ctrlKey || event.metaKey) event.preventDefault();
+    originalEvent.preventDefault();
+    focusControl(originalEvent.shiftKey);
+  });
+
+  pswp.on("bindEvents", () => {
+    document.addEventListener("focusin", handleFocusIn, true);
+    if (!pswp.options.initialPointerPos) requestAnimationFrame(() => focusControl(false));
+  });
+
+  pswp.on("destroy", () => {
+    document.removeEventListener("focusin", handleFocusIn, true);
+    if (returnFocusTarget?.isConnected) {
+      requestAnimationFrame(() => returnFocusTarget.focus({ preventScroll: true }));
+    }
+  });
+}
+
+function initLightboxGestureZoomBlock(pswp) {
+  const isInsideLightbox = (target) => {
+    if (!(target instanceof Node)) return false;
+    const toolbar = getPhotoSwipeToolbarRoot();
+    return Boolean(pswp.element?.contains(target) || toolbar?.contains(target));
   };
 
-  root.addEventListener("wheel", preventZoomWheel, { passive: false });
-  root.addEventListener("gesturestart", preventGesture, { passive: false });
-  root.addEventListener("gesturechange", preventGesture, { passive: false });
-  root.addEventListener("gestureend", preventGesture, { passive: false });
+  const stopZoomGesture = (event) => {
+    if (!isInsideLightbox(event.target)) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation?.();
+  };
+
+  const onWheel = (event) => {
+    if (!event.ctrlKey && !event.metaKey) return;
+    stopZoomGesture(event);
+  };
+
+  document.addEventListener("wheel", onWheel, { capture: true, passive: false });
+  document.addEventListener("gesturestart", stopZoomGesture, { capture: true, passive: false });
+  document.addEventListener("gesturechange", stopZoomGesture, { capture: true, passive: false });
+  document.addEventListener("gestureend", stopZoomGesture, { capture: true, passive: false });
+
   pswp.on("destroy", () => {
-    root.removeEventListener("wheel", preventZoomWheel);
-    root.removeEventListener("gesturestart", preventGesture);
-    root.removeEventListener("gesturechange", preventGesture);
-    root.removeEventListener("gestureend", preventGesture);
+    document.removeEventListener("wheel", onWheel, true);
+    document.removeEventListener("gesturestart", stopZoomGesture, true);
+    document.removeEventListener("gesturechange", stopZoomGesture, true);
+    document.removeEventListener("gestureend", stopZoomGesture, true);
   });
 }
 
@@ -676,6 +791,11 @@ function initLightboxDesktopImageClickClose(pswp) {
     event.pointerType === "mouse" || event.type === "mousedown" || event.type === "mouseup";
   const isLightboxImage = (target) =>
     target instanceof Element && target.classList.contains("pswp__img");
+  const canCurrentImageZoom = () => {
+    const slide = pswp.currSlide;
+    if (!slide?.isZoomable?.()) return false;
+    return Math.abs((slide.zoomLevels?.secondary ?? 1) - (slide.zoomLevels?.initial ?? 1)) > 0.01;
+  };
   const setGrabCursor = (active) => {
     pswp.element?.classList.toggle("pswp--image-pressing", active);
   };
@@ -712,6 +832,7 @@ function initLightboxDesktopImageClickClose(pswp) {
     imagePointer = null;
 
     if (!samePointer || moved) return;
+    if (canCurrentImageZoom()) return;
 
     event.preventDefault();
     event.stopPropagation();
@@ -757,24 +878,6 @@ function initLightboxDesktopImageClickClose(pswp) {
   });
 }
 
-function removePhotoSwipeZoomUi(pswp) {
-  const root = pswp.element;
-  if (!root) return;
-
-  root.classList.remove("pswp--zoom-allowed", "pswp--click-to-zoom", "pswp--zoomed-in");
-  root
-    .querySelectorAll(
-      [
-        ".pswp__button--zoom",
-        ".pswp__button--zoom-in",
-        ".pswp__button--zoom-out",
-        "[aria-label='Zoom']",
-        "[title='Zoom']",
-      ].join(","),
-    )
-    .forEach((element) => element.remove());
-}
-
 function initPhotoSwipeFullscreenClose(pswp) {
   const root = pswp.element;
   if (!root) return;
@@ -785,12 +888,12 @@ function initPhotoSwipeFullscreenClose(pswp) {
   button.type = "button";
   button.className = "photo-swipe-fullscreen-close";
   button.hidden = true;
-  button.setAttribute("aria-label", "Fermer");
-  button.setAttribute("title", "Fermer");
+  button.setAttribute("aria-label", "Quitter le plein écran");
+  button.setAttribute("title", "Quitter le plein écran");
 
   icon.className = "material-symbols-rounded photo-swipe-fullscreen-close-icon";
   icon.setAttribute("aria-hidden", "true");
-  icon.textContent = "\uE5CD";
+  icon.textContent = "fullscreen_exit";
 
   button.append(icon);
   root.append(button);
@@ -798,19 +901,27 @@ function initPhotoSwipeFullscreenClose(pswp) {
   const sync = () => {
     button.hidden = document.fullscreenElement !== root;
   };
-  const close = async (event) => {
+  const exitFullscreen = async (event) => {
     event.preventDefault();
     event.stopPropagation();
     await exitPhotoSwipeFullscreen();
-    pswp.close();
+    dispatchPhotoSwipeState(pswp);
+  };
+  const keepFullscreenEscapeInPreview = (event) => {
+    if (event.key !== "Escape" || document.fullscreenElement !== root) return;
+
+    event.stopPropagation();
+    event.stopImmediatePropagation?.();
   };
 
-  button.addEventListener("click", close);
+  button.addEventListener("click", exitFullscreen);
+  document.addEventListener("keydown", keepFullscreenEscapeInPreview, true);
   document.addEventListener("fullscreenchange", sync);
   sync();
 
   pswp.on("destroy", () => {
-    button.removeEventListener("click", close);
+    button.removeEventListener("click", exitFullscreen);
+    document.removeEventListener("keydown", keepFullscreenEscapeInPreview, true);
     document.removeEventListener("fullscreenchange", sync);
     button.remove();
   });
@@ -822,8 +933,6 @@ const lightbox = new PhotoSwipeLightbox({
   pswpModule: PhotoSwipe,
   mainClass: "pswp--system-zoom",
   initialZoomLevel: "fit",
-  secondaryZoomLevel: "fit",
-  maxZoomLevel: "fit",
   wheelToZoom: false,
   zoom: false,
   close: false,
@@ -835,6 +944,7 @@ const lightbox = new PhotoSwipeLightbox({
   closeOnVerticalDrag: true,
   imageClickAction: "close",
   doubleTapAction: false,
+  trapFocus: false,
   bgOpacity: 0.74,
   arrowPrevTitle: "Image précédente",
   arrowNextTitle: "Image suivante",
@@ -846,8 +956,56 @@ let activePhotoSwipeLoading = false;
 let activePhotoSwipeClosing = false;
 let activePhotoSwipeFullscreenRoot = null;
 
+function initLightboxPageScrollRestore(pswp) {
+  const scrollX = window.scrollX;
+  const scrollY = window.scrollY;
+  const htmlOverflow = document.documentElement.style.overflow;
+  const htmlTouchAction = document.documentElement.style.touchAction;
+  const bodyOverflow = document.body.style.overflow;
+  const bodyTouchAction = document.body.style.touchAction;
+
+  const restoreScroll = () => {
+    if (
+      Math.abs(window.scrollX - scrollX) > 1 ||
+      Math.abs(window.scrollY - scrollY) > 1
+    ) {
+      window.scrollTo(scrollX, scrollY);
+    }
+  };
+
+  pswp.on("close", restoreScroll);
+
+  pswp.on("destroy", () => {
+    document.documentElement.style.overflow = htmlOverflow;
+    document.documentElement.style.touchAction = htmlTouchAction;
+    document.body.style.overflow = bodyOverflow;
+    document.body.style.touchAction = bodyTouchAction;
+
+    restoreScroll();
+    requestAnimationFrame(() => {
+      restoreScroll();
+      requestDynamicAnchorSync();
+    });
+  });
+}
+
 function getPhotoSwipeFullscreenRoot(pswp) {
   return pswp?.element || document.documentElement;
+}
+
+function getPhotoSwipeZoomState(pswp) {
+  const slide = pswp?.currSlide;
+  if (!slide?.isZoomable?.()) return { zoomable: false, zoomed: false };
+
+  const initial = slide.zoomLevels?.initial ?? slide.zoomLevels?.fit ?? 1;
+  const secondary = slide.zoomLevels?.secondary ?? initial;
+  const current = slide.currZoomLevel ?? initial;
+  const zoomable = Math.abs(secondary - initial) > 0.01;
+
+  return {
+    zoomable,
+    zoomed: zoomable && current > initial + 0.01,
+  };
 }
 
 async function exitPhotoSwipeFullscreen() {
@@ -864,6 +1022,7 @@ function dispatchPhotoSwipeState(pswp, open = true) {
   const src = pswp?.currSlide?.data?.src;
   const source = typeof src === "string" ? src : "";
   const total = pswp?.getNumItems?.() ?? 0;
+  const zoom = getPhotoSwipeZoomState(pswp);
 
   document.dispatchEvent(
     new CustomEvent("site:photo-swipe-state", {
@@ -875,6 +1034,8 @@ function dispatchPhotoSwipeState(pswp, open = true) {
         total: Math.max(1, total),
         isFullscreen: Boolean(document.fullscreenElement),
         fullscreenAvailable: Boolean(document.fullscreenEnabled),
+        zoomable: zoom.zoomable,
+        zoomed: zoom.zoomed,
         loading: open && activePhotoSwipeLoading,
         closing: open && activePhotoSwipeClosing,
       },
@@ -927,6 +1088,12 @@ document.addEventListener("site:photo-swipe-action", async (event) => {
     return;
   }
 
+  if (action === "zoom") {
+    pswp.toggleZoom();
+    dispatchPhotoSwipeState(pswp);
+    return;
+  }
+
   const src = pswp.currSlide?.data?.src;
   if (!src) return;
 
@@ -948,7 +1115,9 @@ lightbox.on("uiRegister", () => {
   if (!pswp || !ui) return;
 
   initLightboxRadiusTransition(pswp);
-  initLightboxZoomLock(pswp);
+  initLightboxPageScrollRestore(pswp);
+  initLightboxFocusTrap(pswp);
+  initLightboxGestureZoomBlock(pswp);
   initLightboxDesktopImageClickClose(pswp);
   initPhotoSwipeFullscreenClose(pswp);
 
@@ -978,8 +1147,9 @@ lightbox.on("uiRegister", () => {
   pswp.on("loadError", ({ slide }) => {
     if (slide === pswp.currSlide) setToolbarLoading(false);
   });
-  pswp.on("zoomPanUpdate", () => removePhotoSwipeZoomUi(pswp));
+  pswp.on("zoomPanUpdate", syncToolbar);
   pswp.on("closingAnimationStart", () => {
+    pswp.element?.style.setProperty("pointer-events", "none");
     activePhotoSwipeClosing = true;
     syncToolbar();
   });
@@ -1012,7 +1182,6 @@ function initApp() {
   initSiteTooltips();
   initLightbox();
   initBlogImageReveal();
-  initKeyboardAccessibleTargets();
   initDynamicAnchors();
   if (document.body?.dataset.readingProgress === "off") {
     removeReadingProgress();

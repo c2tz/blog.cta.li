@@ -13,6 +13,7 @@ import type { AfterViewInit, OnDestroy } from "@angular/core";
 import { MatIconButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
 import { MatSnackBar } from "@angular/material/snack-bar";
+import { MatTooltip } from "@angular/material/tooltip";
 
 const COPY_FEEDBACK_DURATION_MS = 2200;
 
@@ -52,7 +53,7 @@ async function copyToClipboard(text: string) {
 @Component({
   selector: "site-code-copy-button",
   standalone: true,
-  imports: [MatIconButton, MatIcon],
+  imports: [MatIconButton, MatIcon, MatTooltip],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button
@@ -60,8 +61,8 @@ async function copyToClipboard(text: string) {
       type="button"
       class="code-copy-button"
       [attr.aria-label]="label()"
-      data-tooltip="Copier le code source"
-      data-tooltip-placement="left"
+      matTooltip="Copier le code source"
+      matTooltipPosition="left"
       (click)="copy()"
     >
       <mat-icon aria-hidden="true">
@@ -100,6 +101,7 @@ class CodeCopyButtonComponent implements OnDestroy {
   }
 
   async copy() {
+    document.dispatchEvent(new CustomEvent("site:tooltip-hide"));
     const copied = await copyToClipboard(this.code());
     this.state.set(copied ? "copied" : "error");
     const message = copied ? "Code copié" : "Impossible de copier le code";

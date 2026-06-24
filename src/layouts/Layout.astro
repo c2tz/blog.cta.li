@@ -92,7 +92,9 @@ const seoDescription = description ?? SITE_DESCRIPTION;
   >
     <main class="site-main">
       <Header />
-      <slot name="content" />
+      <div id="main-content" class="site-content">
+        <slot name="content" />
+      </div>
     </main>
     <Footer />
     <CookieConsentBannerComponent client:load />

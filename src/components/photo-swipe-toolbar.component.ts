@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   signal,
+  viewChild,
   viewChildren,
 } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
@@ -15,6 +16,7 @@ import { SimulatedLoadingProgress } from "@/lib/simulated-loading-progress";
 interface PhotoSwipeToolbarState {
   open?: boolean;
   src?: string;
+  fileName?: string;
   index?: number;
   total?: number;
   isFullscreen?: boolean;
@@ -46,20 +48,34 @@ type PhotoSwipeAction =
   host: {
     "[class.is-open]": "open()",
     "[class.is-closing]": "closing()",
+    "[class.is-fullscreen]": "isFullscreen()",
     "[attr.aria-hidden]": "open() ? null : 'true'",
   },
   template: `
     @if (open()) {
       <div class="photo-swipe-toolbar" role="toolbar" aria-label="Commandes de l'image">
-        <mat-chip-set class="photo-swipe-counter-set" aria-hidden="true">
-          <mat-chip>{{ index() }} / {{ total() }}</mat-chip>
-        </mat-chip-set>
-        <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
-          Image {{ index() }} sur {{ total() }}
-        </span>
+        @if (!isFullscreen()) {
+          <mat-chip-set class="photo-swipe-counter-set" aria-hidden="true">
+            <mat-chip
+              #counterTooltip="matTooltip"
+              [matTooltip]="fileName()"
+              matTooltipPosition="below"
+              [matTooltipShowDelay]="120"
+              [matTooltipHideDelay]="0"
+              matTooltipTouchGestures="off"
+              (mouseenter)="onCounterTooltipEnter()"
+              (mouseleave)="onCounterTooltipLeave()"
+            >
+              {{ index() }} / {{ total() }}
+            </mat-chip>
+          </mat-chip-set>
+          <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            Image {{ index() }} sur {{ total() }}
+          </span>
+        }
 
         <span class="photo-swipe-toolbar-actions">
-          @if (fullscreenAvailable()) {
+          @if (!isFullscreen() && fullscreenAvailable()) {
             <button
               matIconButton
               type="button"
@@ -73,43 +89,45 @@ type PhotoSwipeAction =
             </button>
           }
 
-          <a
-            matIconButton
-            class="photo-swipe-button"
-            [href]="src()"
-            target="_blank"
-            rel="noopener"
-            aria-label="Ouvrir l'image"
-            matTooltip="Ouvrir l'image"
-            matTooltipPosition="below"
-            (click)="hideTooltip()"
-          >
-            <mat-icon aria-hidden="true">&#xE8F4;</mat-icon>
-          </a>
+          @if (!isFullscreen()) {
+            <a
+              matIconButton
+              class="photo-swipe-button"
+              [href]="src()"
+              target="_blank"
+              rel="noopener"
+              aria-label="Ouvrir l'image"
+              matTooltip="Ouvrir l'image"
+              matTooltipPosition="below"
+              (click)="hideTooltip()"
+            >
+              <mat-icon aria-hidden="true">&#xE89E;</mat-icon>
+            </a>
 
-          <button
-            matIconButton
-            type="button"
-            class="photo-swipe-button"
-            aria-label="Télécharger"
-            matTooltip="Télécharger"
-            matTooltipPosition="below"
-            (click)="act('download')"
-          >
-            <mat-icon aria-hidden="true">&#xE2C4;</mat-icon>
-          </button>
+            <button
+              matIconButton
+              type="button"
+              class="photo-swipe-button"
+              aria-label="Télécharger"
+              matTooltip="Télécharger"
+              matTooltipPosition="below"
+              (click)="act('download')"
+            >
+              <mat-icon aria-hidden="true">&#xE2C4;</mat-icon>
+            </button>
 
-          <button
-            matIconButton
-            type="button"
-            class="photo-swipe-button"
-            [attr.aria-label]="shareLabel()"
-            [matTooltip]="shareLabel()"
-            matTooltipPosition="below"
-            (click)="share()"
-          >
-            <mat-icon aria-hidden="true">&#xE80D;</mat-icon>
-          </button>
+            <button
+              matIconButton
+              type="button"
+              class="photo-swipe-button"
+              [attr.aria-label]="shareLabel()"
+              [matTooltip]="shareLabel()"
+              matTooltipPosition="below"
+              (click)="share()"
+            >
+              <mat-icon aria-hidden="true">&#xE80D;</mat-icon>
+            </button>
+          }
 
           <button
             matIconButton
@@ -125,7 +143,7 @@ type PhotoSwipeAction =
         </span>
       </div>
 
-      @if (total() > 1) {
+      @if (!isFullscreen() && total() > 1) {
         <button
           matIconButton
           type="button"
@@ -167,8 +185,6 @@ type PhotoSwipeAction =
   `,
   styles: `
     :host {
-      --photo-swipe-control-surface: rgb(0 0 0 / 18%);
-      --photo-swipe-control-surface-hover: rgb(0 0 0 / 28%);
       display: none;
       position: fixed;
       inset: 0;
@@ -202,6 +218,10 @@ type PhotoSwipeAction =
       animation: photo-swipe-toolbar-enter 180ms cubic-bezier(0, 0, 0.2, 1);
     }
 
+    :host.is-fullscreen .photo-swipe-toolbar {
+      justify-content: flex-end;
+    }
+
     .photo-swipe-toolbar-actions {
       display: flex;
       align-items: center;
@@ -211,22 +231,17 @@ type PhotoSwipeAction =
       line-height: 0;
     }
 
-    .photo-swipe-button {
-      overflow: hidden;
-      border: 0;
-      background-color: var(--photo-swipe-control-surface);
-      box-shadow: none;
-      text-shadow: 0 1px 2px rgb(0 0 0 / 72%);
+    .photo-swipe-counter-set .mat-mdc-chip {
+      background-color: rgb(0 0 0 / 32%);
+      color: #fff;
       backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
-      transition:
-        background-color 120ms cubic-bezier(0.4, 0, 0.2, 1),
-        opacity 120ms cubic-bezier(0.4, 0, 1, 1),
-        transform 120ms cubic-bezier(0.4, 0, 1, 1);
     }
 
-    .photo-swipe-button:is(:hover, :focus-visible) {
-      background-color: var(--photo-swipe-control-surface-hover);
+    .photo-swipe-button {
+      background-color: rgb(0 0 0 / 32%);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
     }
 
     .photo-swipe-nav {
@@ -262,7 +277,6 @@ type PhotoSwipeAction =
       transition: opacity 120ms cubic-bezier(0.4, 0, 1, 1);
     }
 
-    :host.is-closing::before,
     :host.is-closing .photo-swipe-toolbar,
     :host.is-closing .photo-swipe-nav,
     :host.is-closing .photo-swipe-loading {
@@ -307,9 +321,9 @@ type PhotoSwipeAction =
     }
 
     @media (prefers-contrast: more) {
-      :host {
-        --photo-swipe-control-surface: rgb(0 0 0 / 34%);
-        --photo-swipe-control-surface-hover: rgb(0 0 0 / 48%);
+      .photo-swipe-counter-set .mat-mdc-chip,
+      .photo-swipe-button {
+        background-color: rgb(0 0 0 / 58%);
       }
     }
 
@@ -326,6 +340,7 @@ type PhotoSwipeAction =
 export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
   readonly open = signal(false);
   readonly src = signal("");
+  readonly fileName = signal("image");
   readonly index = signal(1);
   readonly total = signal(1);
   readonly isFullscreen = signal(false);
@@ -335,22 +350,28 @@ export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
   readonly shareLabel = signal("Partager");
   private readonly loadingProgress = new SimulatedLoadingProgress();
   readonly progress = this.loadingProgress.value;
+  private readonly counterTooltip = viewChild<MatTooltip>("counterTooltip");
   private readonly tooltips = viewChildren(MatTooltip);
 
-  readonly fullscreenIcon = () =>
-    this.isFullscreen() ? "\uE5D1" : "\uE5D0";
-  readonly fullscreenLabel = () =>
-    this.isFullscreen() ? "Quitter le plein écran" : "Plein écran";
+  readonly fullscreenIcon = () => "\uF1CE";
+  readonly fullscreenLabel = () => "Plein écran";
 
   private shareLabelTimer = 0;
+  private counterTooltipHovered = false;
+  private counterTooltipFrame = 0;
 
   private readonly handleState = (event: Event) => {
     const detail = (event as CustomEvent<PhotoSwipeToolbarState>).detail ?? {};
+    const previousFileName = this.fileName();
 
     if (typeof detail.open === "boolean") this.open.set(detail.open);
     if (typeof detail.src === "string") this.src.set(detail.src);
+    if (typeof detail.fileName === "string") {
+      this.fileName.set(detail.fileName || "image");
+    }
     if (typeof detail.index === "number") this.index.set(detail.index);
     if (typeof detail.total === "number") this.total.set(detail.total);
+    if (this.fileName() !== previousFileName) this.refreshCounterTooltip();
     if (typeof detail.isFullscreen === "boolean") this.isFullscreen.set(detail.isFullscreen);
     if (typeof detail.fullscreenAvailable === "boolean") {
       this.fullscreenAvailable.set(detail.fullscreenAvailable);
@@ -386,6 +407,7 @@ export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
     document.removeEventListener("site:photo-swipe-state", this.handleState);
     document.removeEventListener("site:photo-swipe-share-result", this.handleShareResult);
     window.clearTimeout(this.shareLabelTimer);
+    this.clearCounterTooltipFrame();
     this.loadingProgress.destroy();
   }
 
@@ -398,8 +420,38 @@ export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
     this.act("share");
   }
 
+  onCounterTooltipEnter() {
+    this.counterTooltipHovered = true;
+  }
+
+  onCounterTooltipLeave() {
+    this.counterTooltipHovered = false;
+    this.clearCounterTooltipFrame();
+  }
+
   hideTooltip() {
+    this.clearCounterTooltipFrame();
     this.tooltips().forEach((tooltip) => tooltip.hide(0));
     document.dispatchEvent(new CustomEvent("site:tooltip-hide"));
+  }
+
+  private refreshCounterTooltip() {
+    this.clearCounterTooltipFrame();
+    const tooltip = this.counterTooltip();
+    if (!tooltip) return;
+
+    tooltip.hide(0);
+    if (!this.open() || !this.counterTooltipHovered) return;
+
+    this.counterTooltipFrame = requestAnimationFrame(() => {
+      this.counterTooltipFrame = 0;
+      this.counterTooltip()?.show(0);
+    });
+  }
+
+  private clearCounterTooltipFrame() {
+    if (!this.counterTooltipFrame) return;
+    cancelAnimationFrame(this.counterTooltipFrame);
+    this.counterTooltipFrame = 0;
   }
 }

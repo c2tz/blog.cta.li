@@ -549,17 +549,49 @@
       ripple-color: rgb(255 255 255 / 12%),
     )
   );
+  background: rgb(0 0 0 / 32%);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.photo-swipe-fullscreen-close {
+  position: fixed;
+  top: calc(0.5rem + env(safe-area-inset-top, 0px));
+  right: 0.5rem;
+  z-index: 100011;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 32%);
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.photo-swipe-fullscreen-close[hidden] {
+  display: none !important;
+}
+
+.photo-swipe-fullscreen-close-icon {
+  color: inherit;
+  pointer-events: none;
 }
 
 .photo-swipe-counter-set {
   @include mat.chips-overrides(
     (
       elevated-container-color: var(--site-link-container),
-      label-text-color: var(--site-on-link-container),
+      label-text-color: #fff,
       outline-color: transparent,
     )
   );
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .site-prose {
@@ -1244,13 +1276,34 @@ img[data-lightbox],
 }
 
 .pswp__img {
+  cursor: grab !important;
   border-radius: 0;
 }
 
-.pswp--contained-zoom,
-.pswp--contained-zoom .pswp__scroll-wrap,
-.pswp--contained-zoom .pswp__container,
-.pswp--contained-zoom .pswp__item {
+.pswp--click-to-zoom.pswp--zoom-allowed .pswp__img,
+.pswp--click-to-zoom.pswp--zoomed-in .pswp__img,
+.pswp--no-mouse-drag.pswp--zoomed-in .pswp__img,
+.pswp__zoom-wrap {
+  cursor: grab !important;
+}
+
+.pswp__img:active,
+.pswp__zoom-wrap:active,
+.pswp__item:active,
+.pswp__container:active,
+.pswp__scroll-wrap:active,
+.pswp.pswp--image-pressing .pswp__img,
+.pswp.pswp--image-pressing .pswp__zoom-wrap,
+.pswp.pswp--image-pressing .pswp__container,
+.pswp.pswp--dragging .pswp__img,
+.pswp.pswp--dragging .pswp__zoom-wrap {
+  cursor: grabbing !important;
+}
+
+.pswp--system-zoom,
+.pswp--system-zoom .pswp__scroll-wrap,
+.pswp--system-zoom .pswp__container,
+.pswp--system-zoom .pswp__item {
   touch-action: none !important;
 }
 

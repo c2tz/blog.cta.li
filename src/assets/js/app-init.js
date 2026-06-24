@@ -304,14 +304,18 @@ function wrapMarkdownImages() {
           img.getAttribute("fetchpriority") === "high" ||
           (imageRect.bottom >= -240 && imageRect.top <= window.innerHeight + 240);
 
+        const initialSrc = img.currentSrc || img.src;
         const link = document.createElement("a");
-        link.href = img.src;
+        const setLightboxLabel = (src) => {
+          const filename = fileNameFromURL(src);
+          link.setAttribute("aria-label", `Agrandir l'image : ${filename}`);
+          link.setAttribute("title", filename);
+        };
+
+        link.href = initialSrc;
         link.tabIndex = 0;
         link.setAttribute("data-pswp-item", "");
-        link.setAttribute(
-          "aria-label",
-          img.alt ? `Agrandir l'image : ${img.alt}` : `Agrandir l'image ${fileNameFromURL(img.src)}`,
-        );
+        setLightboxLabel(initialSrc);
 
         link.addEventListener("keydown", (event) => {
           if (event.key !== " ") return;
@@ -321,12 +325,15 @@ function wrapMarkdownImages() {
         link.addEventListener("click", hideSiteTooltip);
 
         const setSize = () => {
+          const src = img.currentSrc || img.src;
           const width =
             img.naturalWidth || parseInt(img.getAttribute("width") || "0") || 1400;
           const height =
             img.naturalHeight || parseInt(img.getAttribute("height") || "0") || 933;
+          link.href = src;
           link.setAttribute("data-pswp-width", String(width));
           link.setAttribute("data-pswp-height", String(height));
+          setLightboxLabel(src);
         };
 
         if (img.complete) {
@@ -422,6 +429,11 @@ function initKeyboardAccessibleTargets() {
 function fileNameFromURL(url) {
   try {
     const parsed = new URL(url, location.href);
+    const sourceUrl = parsed.searchParams.get("href");
+    if (sourceUrl && parsed.pathname.endsWith("/_image")) {
+      return fileNameFromURL(sourceUrl);
+    }
+
     return decodeURIComponent(parsed.pathname.split("/").pop() || "image");
   } catch {
     return "image";
@@ -634,56 +646,26 @@ function initLightboxRadiusTransition(pswp) {
   });
 }
 
-function getPhotoSwipeViewportCenter(pswp) {
-  return {
-    x: pswp.viewportSize?.x ? pswp.viewportSize.x / 2 : window.innerWidth / 2,
-    y: pswp.viewportSize?.y ? pswp.viewportSize.y / 2 : window.innerHeight / 2,
-  };
-}
-
-function getGestureCenter(event, pswp) {
-  if (Number.isFinite(event.clientX) && Number.isFinite(event.clientY)) {
-    return { x: event.clientX, y: event.clientY };
-  }
-
-  return getPhotoSwipeViewportCenter(pswp);
-}
-
-function initLightboxNativeGestureBlock(pswp) {
+function initLightboxZoomLock(pswp) {
   const root = pswp.element;
   if (!root) return;
 
-  let gestureStartZoom = 0;
-
-  const shouldUsePhotoSwipeGestureZoom = () =>
-    !pswp.gestures?.supportsTouch || !pswp.gestures?._numActivePoints;
-
-  const startNativeGesture = (event) => {
+  const preventGesture = (event) => {
     event.preventDefault();
-    gestureStartZoom = pswp.currSlide?.currZoomLevel || 0;
+  };
+  const preventZoomWheel = (event) => {
+    if (event.ctrlKey || event.metaKey) event.preventDefault();
   };
 
-  const updateNativeGesture = (event) => {
-    event.preventDefault();
-    if (!shouldUsePhotoSwipeGestureZoom() || !pswp.currSlide || !gestureStartZoom) return;
-
-    const scale = Number(event.scale) || 1;
-    pswp.currSlide.zoomTo(gestureStartZoom * scale, getGestureCenter(event, pswp), 0);
-  };
-
-  const endNativeGesture = (event) => {
-    event.preventDefault();
-    gestureStartZoom = 0;
-  };
-
-  root.addEventListener("gesturestart", startNativeGesture, { passive: false });
-  root.addEventListener("gesturechange", updateNativeGesture, { passive: false });
-  root.addEventListener("gestureend", endNativeGesture, { passive: false });
-
+  root.addEventListener("wheel", preventZoomWheel, { passive: false });
+  root.addEventListener("gesturestart", preventGesture, { passive: false });
+  root.addEventListener("gesturechange", preventGesture, { passive: false });
+  root.addEventListener("gestureend", preventGesture, { passive: false });
   pswp.on("destroy", () => {
-    root.removeEventListener("gesturestart", startNativeGesture);
-    root.removeEventListener("gesturechange", updateNativeGesture);
-    root.removeEventListener("gestureend", endNativeGesture);
+    root.removeEventListener("wheel", preventZoomWheel);
+    root.removeEventListener("gesturestart", preventGesture);
+    root.removeEventListener("gesturechange", preventGesture);
+    root.removeEventListener("gestureend", preventGesture);
   });
 }
 
@@ -694,13 +676,18 @@ function initLightboxDesktopImageClickClose(pswp) {
     event.pointerType === "mouse" || event.type === "mousedown" || event.type === "mouseup";
   const isLightboxImage = (target) =>
     target instanceof Element && target.classList.contains("pswp__img");
+  const setGrabCursor = (active) => {
+    pswp.element?.classList.toggle("pswp--image-pressing", active);
+  };
 
   const onPointerDown = (event) => {
     if (event.button !== 0 || !isMousePointer(event) || !isLightboxImage(event.target)) {
       imagePointer = null;
+      setGrabCursor(false);
       return;
     }
 
+    setGrabCursor(true);
     imagePointer = {
       id: event.pointerId,
       x: event.clientX,
@@ -709,6 +696,8 @@ function initLightboxDesktopImageClickClose(pswp) {
   };
 
   const onPointerUp = (event) => {
+    setGrabCursor(false);
+
     if (!imagePointer || !isMousePointer(event) || !isLightboxImage(event.target)) {
       imagePointer = null;
       return;
@@ -729,6 +718,11 @@ function initLightboxDesktopImageClickClose(pswp) {
     pswp.close();
   };
 
+  const onPointerCancel = () => {
+    imagePointer = null;
+    setGrabCursor(false);
+  };
+
   const bind = () => {
     const root = pswp.element;
     if (!root || cleanup) return;
@@ -737,13 +731,20 @@ function initLightboxDesktopImageClickClose(pswp) {
     root.addEventListener("pointerdown", onPointerDown, true);
     root.addEventListener("pointerup", onPointerUp, true);
     root.addEventListener("mouseup", onPointerUp, true);
+    root.addEventListener("pointercancel", onPointerCancel, true);
+    root.addEventListener("mouseleave", onPointerCancel, true);
+    window.addEventListener("blur", onPointerCancel);
 
     cleanup = () => {
       root.removeEventListener("mousedown", onPointerDown, true);
       root.removeEventListener("pointerdown", onPointerDown, true);
       root.removeEventListener("pointerup", onPointerUp, true);
       root.removeEventListener("mouseup", onPointerUp, true);
+      root.removeEventListener("pointercancel", onPointerCancel, true);
+      root.removeEventListener("mouseleave", onPointerCancel, true);
+      window.removeEventListener("blur", onPointerCancel);
       imagePointer = null;
+      setGrabCursor(false);
     };
   };
 
@@ -774,14 +775,55 @@ function removePhotoSwipeZoomUi(pswp) {
     .forEach((element) => element.remove());
 }
 
+function initPhotoSwipeFullscreenClose(pswp) {
+  const root = pswp.element;
+  if (!root) return;
+
+  const button = document.createElement("button");
+  const icon = document.createElement("span");
+
+  button.type = "button";
+  button.className = "photo-swipe-fullscreen-close";
+  button.hidden = true;
+  button.setAttribute("aria-label", "Fermer");
+  button.setAttribute("title", "Fermer");
+
+  icon.className = "material-icons photo-swipe-fullscreen-close-icon";
+  icon.setAttribute("aria-hidden", "true");
+  icon.textContent = "\uE5CD";
+
+  button.append(icon);
+  root.append(button);
+
+  const sync = () => {
+    button.hidden = document.fullscreenElement !== root;
+  };
+  const close = async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    await exitPhotoSwipeFullscreen();
+    pswp.close();
+  };
+
+  button.addEventListener("click", close);
+  document.addEventListener("fullscreenchange", sync);
+  sync();
+
+  pswp.on("destroy", () => {
+    button.removeEventListener("click", close);
+    document.removeEventListener("fullscreenchange", sync);
+    button.remove();
+  });
+}
+
 const lightbox = new PhotoSwipeLightbox({
   gallery: ".site-prose",
   children: "a[data-pswp-item]",
   pswpModule: PhotoSwipe,
-  mainClass: "pswp--contained-zoom",
+  mainClass: "pswp--system-zoom",
   initialZoomLevel: "fit",
-  secondaryZoomLevel: 2,
-  maxZoomLevel: 4,
+  secondaryZoomLevel: "fit",
+  maxZoomLevel: "fit",
   wheelToZoom: false,
   zoom: false,
   close: false,
@@ -802,16 +844,33 @@ const lightbox = new PhotoSwipeLightbox({
 let activePhotoSwipe = null;
 let activePhotoSwipeLoading = false;
 let activePhotoSwipeClosing = false;
+let activePhotoSwipeFullscreenRoot = null;
+
+function getPhotoSwipeFullscreenRoot(pswp) {
+  return pswp?.element || document.documentElement;
+}
+
+async function exitPhotoSwipeFullscreen() {
+  if (activePhotoSwipeFullscreenRoot && document.fullscreenElement === activePhotoSwipeFullscreenRoot) {
+    try {
+      await document.exitFullscreen?.();
+    } catch {}
+  }
+
+  activePhotoSwipeFullscreenRoot = null;
+}
 
 function dispatchPhotoSwipeState(pswp, open = true) {
   const src = pswp?.currSlide?.data?.src;
+  const source = typeof src === "string" ? src : "";
   const total = pswp?.getNumItems?.() ?? 0;
 
   document.dispatchEvent(
     new CustomEvent("site:photo-swipe-state", {
       detail: {
         open,
-        src: typeof src === "string" ? src : "",
+        src: source,
+        fileName: source ? fileNameFromURL(source) : "",
         index: Math.min(total, Math.max(1, (pswp?.currIndex ?? 0) + 1)),
         total: Math.max(1, total),
         isFullscreen: Boolean(document.fullscreenElement),
@@ -824,6 +883,10 @@ function dispatchPhotoSwipeState(pswp, open = true) {
 }
 
 document.addEventListener("fullscreenchange", () => {
+  if (activePhotoSwipeFullscreenRoot && document.fullscreenElement !== activePhotoSwipeFullscreenRoot) {
+    activePhotoSwipeFullscreenRoot = null;
+  }
+
   if (activePhotoSwipe) dispatchPhotoSwipeState(activePhotoSwipe);
 });
 
@@ -833,6 +896,7 @@ document.addEventListener("site:photo-swipe-action", async (event) => {
   if (!pswp || !action) return;
 
   if (action === "close") {
+    await exitPhotoSwipeFullscreen();
     pswp.close();
     return;
   }
@@ -848,12 +912,15 @@ document.addEventListener("site:photo-swipe-action", async (event) => {
   }
 
   if (action === "fullscreen") {
-    const root = pswp.element || document.documentElement;
+    const root = getPhotoSwipeFullscreenRoot(pswp);
     try {
       if (document.fullscreenElement) {
-        await document.exitFullscreen?.();
+        await exitPhotoSwipeFullscreen();
       } else {
         await root.requestFullscreen?.();
+        if (document.fullscreenElement) {
+          activePhotoSwipeFullscreenRoot = document.fullscreenElement;
+        }
       }
     } catch {}
     dispatchPhotoSwipeState(pswp);
@@ -881,8 +948,9 @@ lightbox.on("uiRegister", () => {
   if (!pswp || !ui) return;
 
   initLightboxRadiusTransition(pswp);
-  initLightboxNativeGestureBlock(pswp);
+  initLightboxZoomLock(pswp);
   initLightboxDesktopImageClickClose(pswp);
+  initPhotoSwipeFullscreenClose(pswp);
 
   ui.uiElementsData = [];
 
@@ -916,6 +984,7 @@ lightbox.on("uiRegister", () => {
     syncToolbar();
   });
   pswp.on("destroy", () => {
+    void exitPhotoSwipeFullscreen();
     if (activePhotoSwipe === pswp) activePhotoSwipe = null;
     activePhotoSwipeLoading = false;
     activePhotoSwipeClosing = false;

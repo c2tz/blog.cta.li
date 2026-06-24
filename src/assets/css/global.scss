@@ -1427,12 +1427,12 @@ html.interaction-disabled.consent-visible body {
   will-change: transform;
 }
 
-.site-scroll-top.site-icon-button.mat-mdc-icon-button {
+.site-scroll-top.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base {
   @include mat.icon-button-overrides(
     (
-      icon-color: #fff,
-      state-layer-color: #fff,
-      ripple-color: rgb(255 255 255 / 12%),
+      icon-color: var(--site-link),
+      state-layer-color: var(--site-link),
+      ripple-color: color-mix(in srgb, var(--site-link) 12%, transparent),
     )
   );
   @include mat.badge-overrides(
@@ -1441,7 +1441,8 @@ html.interaction-disabled.consent-visible body {
       text-color: var(--site-link-contrast),
     )
   );
-  --mat-progress-spinner-active-indicator-color: #fff;
+  --mat-progress-spinner-active-indicator-color: var(--site-link);
+  --site-icon-button-color: var(--site-link);
   position: fixed;
   right: calc(2rem + env(safe-area-inset-right, 0px));
   bottom: 1rem;
@@ -1451,13 +1452,11 @@ html.interaction-disabled.consent-visible body {
   min-width: 2.5rem;
   padding: 0;
   overflow: visible;
-  border: 1px solid rgb(255 255 255 / 24%);
+  border: 0;
   border-radius: 50%;
-  background: rgb(0 0 0 / 32%);
-  color: #fff;
+  background: transparent;
+  color: var(--site-link);
   box-shadow: 0 0.25rem 0.75rem rgb(0 0 0 / 18%);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
   opacity: 0;
   pointer-events: none;
   transform: translateY(1rem);
@@ -1466,10 +1465,23 @@ html.interaction-disabled.consent-visible body {
     transform 180ms ease;
 }
 
-.site-scroll-top.site-icon-button.mat-mdc-icon-button
+.site-scroll-top.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 32%);
+  content: "";
+  pointer-events: none;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.site-scroll-top.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base
   .site-scroll-top-progress.mat-mdc-progress-spinner {
   position: relative;
   inset: auto;
+  z-index: 1;
   margin: 0;
   pointer-events: none;
 }
@@ -1488,7 +1500,8 @@ html.interaction-disabled.consent-visible body {
   fill: transparent;
 }
 
-.site-scroll-top.site-icon-button.mat-mdc-icon-button .site-scroll-top-icon.mat-icon {
+.site-scroll-top.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base
+  .site-scroll-top-icon.mat-icon {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -1502,7 +1515,7 @@ html.interaction-disabled.consent-visible body {
   transform: translate(-50%, -50%);
 }
 
-.site-scroll-top.site-icon-button.mat-mdc-icon-button.is-visible {
+.site-scroll-top.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base.is-visible {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);

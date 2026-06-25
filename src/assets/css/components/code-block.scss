@@ -1,0 +1,60 @@
+.code-shell {
+  margin-block: 1rem;
+  overflow: hidden;
+  border: 1px solid var(--site-border);
+  border-radius: var(--code-radius);
+  background: var(--code-surface);
+}
+
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 3rem;
+  padding-inline: var(--code-pad);
+  background: var(--code-surface);
+  color: var(--site-text);
+  font-family: var(--site-mono-font);
+  font-size: 0.75rem;
+  user-select: none;
+}
+
+.code-language {
+  text-transform: lowercase;
+}
+
+.code-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.code-shell pre {
+  font-family: var(--site-mono-font);
+  margin: 0;
+  padding: var(--code-pad);
+  overflow: auto;
+  background-color: var(--code-block-surface) !important;
+}
+
+.code-shell pre *,
+.code-shell pre code,
+.code-shell pre code * {
+  font-family: inherit;
+}
+
+.code-shell pre.astro-code {
+  background-color: var(--shiki-light-bg, var(--code-block-surface)) !important;
+  color: var(--shiki-light, var(--site-text)) !important;
+}
+
+.astro-code span {
+  color: var(--shiki-light, inherit);
+  font-style: var(--shiki-light-font-style, inherit);
+  font-weight: var(--shiki-light-font-weight, inherit);
+  text-decoration: var(--shiki-light-text-decoration, inherit);
+}
+
+.code-shell pre code {
+  background: transparent !important;
+}

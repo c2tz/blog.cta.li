@@ -23,6 +23,7 @@ const MANIFEST_PATH = resolve(PUBLIC_DIR, "konachan-backgrounds.json");
 const MANIFEST_TEMP_PATH = `${MANIFEST_PATH}.tmp`;
 const QUALITIES = [72, 64, 56, 48, 40, 32, 24, 18, 12, 8, 6];
 const MINIMUM_IMAGE_COUNT = 8;
+const RESPONSIVE_VARIANT_WIDTHS = [960];
 
 async function readExistingManifest() {
   try {
@@ -86,6 +87,22 @@ async function generateImage(post) {
 
   const filename = `${post.id}.webp`;
   await writeFile(resolve(TEMP_DIR, filename), result.buffer);
+  const variants = [];
+
+  for (const width of RESPONSIVE_VARIANT_WIDTHS) {
+    const variantBuffer = await sharp(result.buffer, { failOnError: false })
+      .resize({ width, withoutEnlargement: true })
+      .webp({ quality: result.quality, effort: 6 })
+      .toBuffer();
+    const variantFilename = `${post.id}-${width}.webp`;
+    await writeFile(resolve(TEMP_DIR, variantFilename), variantBuffer);
+    variants.push({
+      url: `/konachan-backgrounds/${variantFilename}`,
+      width,
+      height: Math.round((KONACHAN_OUTPUT_HEIGHT / KONACHAN_OUTPUT_WIDTH) * width),
+      bytes: variantBuffer.byteLength,
+    });
+  }
 
   return {
     id: post.id,
@@ -99,6 +116,7 @@ async function generateImage(post) {
     source: post.source,
     author: post.author,
     tags: post.tags,
+    variants,
   };
 }
 

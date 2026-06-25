@@ -1,9 +1,9 @@
 ---
 import { type CollectionEntry, getCollection, render } from "astro:content";
 
-import Layout from "@/layouts/Layout.astro";
-import PostGitDates from "@/components/PostGitDates.astro";
-import Prose from "@/components/Prose.astro";
+import PostGitDates from "@/components/post/post-git-dates.astro";
+import Prose from "@/components/post/prose.astro";
+import Layout from "@/layouts/site-layout.astro";
 import { getContentEntryGitDates } from "@/lib/git-dates.mjs";
 
 export async function getStaticPaths() {

@@ -41,9 +41,6 @@ importers:
       '@angular/forms':
         specifier: 22.0.2
         version: 22.0.2(@angular/common@22.0.2(@angular/core@22.0.2(@angular/compiler@22.0.2)(rxjs@7.8.2)(zone.js@0.16.2))(rxjs@7.8.2))(@angular/core@22.0.2(@angular/compiler@22.0.2)(rxjs@7.8.2)(zone.js@0.16.2))(@angular/platform-browser@22.0.2(@angular/animations@22.0.2(@angular/core@22.0.2(@angular/compiler@22.0.2)(rxjs@7.8.2)(zone.js@0.16.2)))(@angular/common@22.0.2(@angular/core@22.0.2(@angular/compiler@22.0.2)(rxjs@7.8.2)(zone.js@0.16.2))(rxjs@7.8.2))(@angular/core@22.0.2(@angular/compiler@22.0.2)(rxjs@7.8.2)(zone.js@0.16.2)))(rxjs@7.8.2)
-      '@angular/language-service':
-        specifier: ^22.0.2
-        version: 22.0.2
       '@angular/material':
         specifier: ^22.0.2
         version: 22.0.2(fde409e5abac0f374c491d860a55bdd6)
@@ -96,6 +93,9 @@ importers:
         specifier: ^0.16.2
         version: 0.16.2
     devDependencies:
+      '@angular/language-service':
+        specifier: ^22.0.2
+        version: 22.0.2
       sass:
         specifier: ^1.99.0
         version: 1.99.0

@@ -1,0 +1,126 @@
+---
+import {
+  SITE_ARTICLE_TITLE_PREFIX,
+  SITE_DESCRIPTION,
+  SITE_DEFAULT_TITLE,
+} from "@/site-config";
+
+import Seo, { type OpenGraphData } from "@/components/layout/seo.astro";
+import Footer from "@/components/layout/site-footer.astro";
+import Header from "@/components/layout/site-header.astro";
+import { CodeBlockEnhancerComponent } from "@/components/post/code-block-enhancer.component";
+import { CookieConsentBannerComponent } from "@/components/feedback/cookie-consent-banner.component";
+import { GlobalTooltipComponent } from "@/components/feedback/global-tooltip.component";
+import { PageLoadingIndicatorComponent } from "@/components/feedback/page-loading-indicator.component";
+import { PhotoSwipeToolbarComponent } from "@/components/lightbox/photo-swipe-toolbar.component";
+import { ScrollTopButtonComponent } from "@/components/navigation/scroll-top-button.component";
+import { SITE_LEGACY_STORAGE_KEYS, SITE_STORAGE_KEYS } from "@/lib/site-contracts";
+import "@/assets/css/global.scss";
+
+interface Props {
+  locale?: string;
+  title?: string;
+  description?: string;
+  bodyClass?: string;
+  readingProgress?: boolean;
+  openGraph?: OpenGraphData;
+}
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
+
+const {
+  locale = "fr",
+  title,
+  description,
+  bodyClass,
+  readingProgress = true,
+  openGraph,
+} = Astro.props as Props;
+
+const seoTitle = title ? `${SITE_ARTICLE_TITLE_PREFIX} ${title}` : SITE_DEFAULT_TITLE;
+const seoDescription = description ?? SITE_DESCRIPTION;
+const themeStorageKey = SITE_STORAGE_KEYS.themePreference;
+const legacyThemeStorageKey = SITE_LEGACY_STORAGE_KEYS.themePreference;
+const isPost = Astro.url.pathname.startsWith("/posts/");
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <script is:inline define:vars={{ legacyThemeStorageKey, themeStorageKey }}>
+      (() => {
+        try {
+          const key = themeStorageKey;
+          const legacyKey = legacyThemeStorageKey;
+          const preferences = ["system", "light", "dark"];
+          const stored = localStorage.getItem(key);
+          const legacyStored = localStorage.getItem(legacyKey);
+          const preference = preferences.includes(stored)
+            ? stored
+            : preferences.includes(legacyStored)
+              ? legacyStored
+              : "system";
+
+          if (stored === null && preferences.includes(legacyStored)) {
+            localStorage.setItem(key, preference);
+            localStorage.removeItem(legacyKey);
+          }
+
+          const resolved =
+            preference === "system"
+              ? matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light"
+              : preference;
+
+          document.documentElement.dataset.theme = resolved;
+          document.documentElement.dataset.themePreference = preference;
+          document.documentElement.style.colorScheme = resolved;
+        } catch {
+          document.documentElement.dataset.theme = "light";
+        }
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title={SITE_DEFAULT_TITLE}
+      href={`${Astro.site}rss.xml`}
+    />
+    <Seo
+      title={seoTitle}
+      description={seoDescription}
+      canonical={canonicalUrl}
+      openGraph={openGraph}
+    />
+
+    <slot name="head" />
+  </head>
+
+  <body
+    class:list={[bodyClass, { "reading-progress-disabled": !readingProgress }]}
+    data-reading-progress={readingProgress ? "on" : "off"}
+  >
+    <main class="site-main">
+      <Header />
+      <div id="main-content" class="site-content">
+        <slot name="content" />
+      </div>
+    </main>
+    <Footer />
+    <CookieConsentBannerComponent client:idle />
+    {isPost && <CodeBlockEnhancerComponent client:idle />}
+    {isPost && <GlobalTooltipComponent client:idle />}
+    <PageLoadingIndicatorComponent client:idle />
+    {isPost && <PhotoSwipeToolbarComponent client:idle />}
+    {readingProgress && <ScrollTopButtonComponent client:idle />}
+
+    <script>
+      import "@/assets/js/app-init.js";
+    </script>
+  </body>
+</html>

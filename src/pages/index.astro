@@ -1,9 +1,9 @@
 ---
 import { getCollection, getEntry } from "astro:content";
 
-import Layout from "../layouts/Layout.astro";
-import HomeKonachanBackground from "../components/HomeKonachanBackground.astro";
-import FormattedDate from "@/components/FormattedDate.astro";
+import HomeKonachanBackground from "@/components/home/home-konachan-background.astro";
+import FormattedDate from "@/components/post/formatted-date.astro";
+import Layout from "@/layouts/site-layout.astro";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/site-config";
 import { getContentEntryGitDates } from "@/lib/git-dates.mjs";
 

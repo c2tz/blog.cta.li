@@ -1,0 +1,57 @@
+@use "@angular/material" as mat;
+
+.photo-swipe-button {
+  @include mat.icon-button-overrides(
+    (
+      icon-color: #fff,
+      state-layer-color: #fff,
+      ripple-color: rgb(255 255 255 / 12%),
+    )
+  );
+  background: rgb(0 0 0 / 32%);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.photo-swipe-fullscreen-close {
+  position: fixed;
+  top: calc(0.5rem + env(safe-area-inset-top, 0px));
+  right: 0.5rem;
+  z-index: 100011;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 32%);
+  color: #fff;
+  cursor: pointer;
+  touch-action: manipulation;
+  transform: scale(var(--photo-swipe-system-zoom-inverse-scale, 1));
+  transform-origin: top right;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.photo-swipe-fullscreen-close[hidden] {
+  display: none !important;
+}
+
+.photo-swipe-fullscreen-close-icon {
+  color: inherit;
+  pointer-events: none;
+}
+
+.photo-swipe-counter-set {
+  @include mat.chips-overrides(
+    (
+      elevated-container-color: var(--site-link-container),
+      label-text-color: #fff,
+      outline-color: transparent,
+    )
+  );
+  pointer-events: auto;
+}

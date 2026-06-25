@@ -1,0 +1,578 @@
+---
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
+import fallbackOne from "@/content/blog/images/konachan-396319.jpg";
+import fallbackTwo from "@/content/blog/images/konachan-382339.jpg";
+import { HomeHeroActionsComponent } from "./home-hero-actions.component";
+import { KonachanLoadingIndicatorComponent } from "@/components/konachan/konachan-loading-indicator.component";
+import { KonachanRefreshButtonComponent } from "@/components/konachan/konachan-refresh-button.component";
+import {
+  SITE_CACHE_NAMES,
+  SITE_EVENTS,
+  SITE_LEGACY_STORAGE_KEYS,
+  SITE_STORAGE_KEYS,
+} from "@/lib/site-contracts";
+
+interface Props {
+  title?: string;
+  lede?: string;
+  primaryActionHref?: string;
+  primaryActionLabel?: string;
+  secondaryActionHref?: string;
+  secondaryActionLabel?: string;
+}
+
+interface ManifestImage {
+  author?: string;
+  bytes?: number;
+  height?: number;
+  id?: number | string;
+  source?: string;
+  tags?: string;
+  url?: string;
+  variants?: Array<{
+    bytes?: number;
+    height?: number;
+    url?: string;
+    width?: number;
+  }>;
+  width?: number;
+}
+
+function readManifestImages() {
+  try {
+    const manifestPath = fileURLToPath(
+      new URL("../../../public/konachan-backgrounds.json", import.meta.url),
+    );
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+    return Array.isArray(manifest.images) ? manifest.images : [];
+  } catch {
+    return [];
+  }
+}
+
+function isUsableManifestImage(image: unknown): image is ManifestImage {
+  return (
+    typeof image === "object" &&
+    image !== null &&
+    typeof (image as ManifestImage).url === "string" &&
+    (image as ManifestImage).url?.startsWith("/") === true
+  );
+}
+
+function isHeroFriendlyImage(image: ManifestImage) {
+  return /\b(building|city|clouds|landscape|scenic|sky)\b/.test(image.tags ?? "");
+}
+
+function pickInitialBackground() {
+  const manifestImages = readManifestImages().filter(isUsableManifestImage);
+  const preferredImages = manifestImages.filter(isHeroFriendlyImage);
+  const candidates = preferredImages.length > 0 ? preferredImages : manifestImages;
+  const selected = [...candidates].sort(
+    (left, right) =>
+      (left.bytes ?? Number.POSITIVE_INFINITY) -
+      (right.bytes ?? Number.POSITIVE_INFINITY),
+  )[0];
+
+  if (selected?.url) {
+    return {
+      ...selected,
+      height: selected.height ?? 1080,
+      src: selected.url,
+      width: selected.width ?? 1920,
+    };
+  }
+
+  return {
+    height: fallbackOne.height,
+    src: fallbackOne.src,
+    url: fallbackOne.src,
+    width: fallbackOne.width,
+  };
+}
+
+function formatInitialCredit(image: ManifestImage) {
+  const parts = [];
+  if (image.author) parts.push(image.author);
+  if (image.id) parts.push(`#${image.id}`);
+
+  return parts.length > 0 ? parts.join(" · ") : "Voir la source";
+}
+
+function formatInitialSrcset(image: ManifestImage) {
+  const variants = (image.variants ?? [])
+    .filter((variant) => variant.url?.startsWith("/") && variant.width)
+    .sort((left, right) => (left.width ?? 0) - (right.width ?? 0));
+
+  if (variants.length === 0 || !image.url || !image.width) return undefined;
+
+  return [
+    ...variants.map((variant) => `${variant.url} ${variant.width}w`),
+    `${image.url} ${image.width}w`,
+  ].join(", ");
+}
+
+const {
+  title = "Court Teplaye",
+  lede = "Micro-récits, grandes émotions. Des textes courts pour lire entre deux.",
+  primaryActionHref = "/tags/all/",
+  primaryActionLabel = "Voir plus",
+  secondaryActionHref = "https://www.cta.li",
+  secondaryActionLabel = "À propos",
+} = Astro.props;
+const initialBackground = pickInitialBackground();
+const initialCreditLabel = formatInitialCredit(initialBackground);
+const initialSrcset = formatInitialSrcset(initialBackground);
+const emergencyImages = [fallbackOne.src, fallbackTwo.src];
+const konachanClientConfig = {
+  cacheName: SITE_CACHE_NAMES.homeKonachanBackgrounds,
+  events: {
+    refreshRequest: SITE_EVENTS.konachanRefreshRequest,
+    refreshState: SITE_EVENTS.konachanRefreshState,
+  },
+  legacyStorageKey: SITE_LEGACY_STORAGE_KEYS.homeKonachanBackgrounds,
+  storageKey: SITE_STORAGE_KEYS.homeKonachanBackgrounds,
+};
+---
+
+<section class="home-anime-landing" aria-labelledby="home-hero-title" aria-busy="false">
+  <div
+    class="home-anime-background"
+    data-konachan-background
+    data-konachan-current-url={initialBackground.url}
+    data-loaded="true"
+    aria-hidden="true"
+  >
+    <img
+      class="home-anime-background-image"
+      data-konachan-background-image
+      src={initialBackground.src}
+      srcset={initialSrcset}
+      sizes="(max-width: 735px) calc(100vw - 2rem), 800px"
+      width={initialBackground.width}
+      height={initialBackground.height}
+      alt=""
+      loading="eager"
+      decoding="async"
+      fetchpriority="high"
+    />
+  </div>
+  <KonachanLoadingIndicatorComponent client:idle />
+
+  <div class="home-hero-content">
+    <h1 id="home-hero-title">{title}</h1>
+    <p class="home-hero-lede">
+      {lede}
+    </p>
+    <HomeHeroActionsComponent
+      client:idle
+      primaryActionHref={primaryActionHref}
+      primaryActionLabel={primaryActionLabel}
+      secondaryActionHref={secondaryActionHref}
+      secondaryActionLabel={secondaryActionLabel}
+    />
+  </div>
+
+  <aside class="home-anime-credit" data-konachan-credit>
+    <a
+      class="home-anime-credit-link"
+      href="https://konachan.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      data-konachan-credit-link
+      hidden={!initialBackground.source}
+    >
+      {initialCreditLabel}
+    </a>
+    <KonachanRefreshButtonComponent client:idle />
+  </aside>
+</section>
+
+<script is:inline define:vars={{ emergencyImages, initialBackground, konachanClientConfig }}>
+  const TARGET_SELECTOR = "[data-konachan-background]";
+  const IMAGE_SELECTOR = "[data-konachan-background-image]";
+  const CREDIT_SELECTOR = "[data-konachan-credit]";
+  const CREDIT_LINK_SELECTOR = "[data-konachan-credit-link]";
+  const LANDING_SELECTOR = ".home-anime-landing";
+  const STATUS_SELECTOR = "[data-konachan-status]";
+  const MANIFEST_URL = "/konachan-backgrounds.json?v=1";
+  const KONACHAN_CACHE_KEY = konachanClientConfig.storageKey;
+  const KONACHAN_LEGACY_CACHE_KEY = konachanClientConfig.legacyStorageKey;
+  const KONACHAN_CACHE_NAME = konachanClientConfig.cacheName;
+  const KONACHAN_CACHE_TTL_MS = 14 * 24 * 60 * 60 * 1000;
+  const KONACHAN_MANIFEST_RELOAD_MS = 24 * 60 * 60 * 1000;
+  const EMERGENCY_IMAGES = emergencyImages;
+  const INITIAL_BACKGROUND = initialBackground;
+  const state = {
+    currentUrl: "",
+    images: [],
+    refreshPromise: null,
+  };
+
+  const pickRandom = (items) => items[Math.floor(Math.random() * items.length)];
+  const shuffle = (items) => {
+    const copy = [...items];
+    for (let index = copy.length - 1; index > 0; index -= 1) {
+      const target = Math.floor(Math.random() * (index + 1));
+      [copy[index], copy[target]] = [copy[target], copy[index]];
+    }
+    return copy;
+  };
+  const unique = (items) => [...new Set(items.filter(Boolean))];
+
+  function normalizeUrl(url) {
+    if (!url) return "";
+    if (url.startsWith("//")) return `https:${url}`;
+    try {
+      return new URL(url, window.location.href).toString();
+    } catch {
+      return "";
+    }
+  }
+
+  function isSameOriginUrl(url) {
+    try {
+      return new URL(url, window.location.href).origin === window.location.origin;
+    } catch {
+      return false;
+    }
+  }
+
+  function toCssUrl(url) {
+    return `url("${url.replace(/["\\]/g, "\\$&")}")`;
+  }
+
+  function setBackgroundImage(target, url) {
+    const image = target.querySelector(IMAGE_SELECTOR);
+    if (image instanceof HTMLImageElement) {
+      target.dataset.loaded = "false";
+      image.removeAttribute("srcset");
+      image.removeAttribute("sizes");
+      image.src = url;
+      return;
+    }
+
+    target.style.setProperty("--home-konachan-image", toCssUrl(url));
+  }
+
+  function preload(url) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.decoding = "async";
+      image.onload = () => resolve(url);
+      image.onerror = reject;
+      image.src = url;
+    });
+  }
+
+  function readStoredImages() {
+    try {
+      const current = localStorage.getItem(KONACHAN_CACHE_KEY);
+      const legacy = localStorage.getItem(KONACHAN_LEGACY_CACHE_KEY);
+      const cached = JSON.parse((current ?? legacy) || "null");
+      if (!cached?.storedAt || !Array.isArray(cached.images)) return null;
+      if (Date.now() - cached.storedAt > KONACHAN_CACHE_TTL_MS) return null;
+      if (current === null && legacy !== null) {
+        localStorage.setItem(KONACHAN_CACHE_KEY, legacy);
+        localStorage.removeItem(KONACHAN_LEGACY_CACHE_KEY);
+      }
+      return cached;
+    } catch {
+      return null;
+    }
+  }
+
+  function writeStoredImages(images) {
+    try {
+      localStorage.setItem(
+        KONACHAN_CACHE_KEY,
+        JSON.stringify({
+          storedAt: Date.now(),
+          images: images.slice(0, 96),
+        }),
+      );
+      localStorage.removeItem(KONACHAN_LEGACY_CACHE_KEY);
+    } catch {}
+  }
+
+  async function readCachedJson(url) {
+    if (!("caches" in window)) return null;
+
+    try {
+      const cache = await caches.open(KONACHAN_CACHE_NAME);
+      const response = await cache.match(url);
+      if (!response?.ok) return null;
+      return response.json();
+    } catch {
+      return null;
+    }
+  }
+
+  async function cacheJsonResponse(url, response) {
+    if (!("caches" in window)) return;
+
+    try {
+      const cache = await caches.open(KONACHAN_CACHE_NAME);
+      await cache.put(url, response.clone());
+    } catch {}
+  }
+
+  async function readManifest({ cache = "no-cache" } = {}) {
+    try {
+      const response = await fetch(MANIFEST_URL, {
+        credentials: "same-origin",
+        cache,
+      });
+
+      if (!response.ok) throw new Error(`konachan_manifest_${response.status}`);
+      await cacheJsonResponse(MANIFEST_URL, response);
+      const manifest = await response.json();
+      const images = Array.isArray(manifest.images) ? manifest.images : [];
+      if (images.length === 0) {
+        console.warn("[Konachan] The deployed manifest contains no images.");
+      }
+      return images;
+    } catch (error) {
+      console.warn("[Konachan] Unable to load the deployed manifest.", error);
+      const cached = await readCachedJson(MANIFEST_URL);
+      return Array.isArray(cached?.images) ? cached.images : [];
+    }
+  }
+
+  function normalizeImage(image) {
+    if (typeof image === "string") return image;
+    if (!image || typeof image !== "object") return null;
+
+    const url = normalizeUrl(image.url);
+    const originalUrl = normalizeUrl(image.originalUrl || image.remoteUrl);
+    if (!url && !originalUrl) return null;
+
+    return {
+      ...image,
+      url: url || originalUrl,
+      originalUrl,
+    };
+  }
+
+  function mergeImages(...groups) {
+    const byKey = new Map();
+
+    for (const image of groups.flat().map(normalizeImage).filter(Boolean)) {
+      const key =
+        typeof image === "string"
+          ? image
+          : String(image.id || image.originalUrl || image.url);
+      if (!byKey.has(key)) byKey.set(key, image);
+    }
+
+    return shuffle([...byKey.values()]);
+  }
+
+  function formatCredit(image) {
+    if (!image) return "Voir la source";
+
+    const parts = [];
+    if (image.author) parts.push(image.author);
+    if (image.id) parts.push(`#${image.id}`);
+
+    return parts.length > 0 ? parts.join(" · ") : "Voir la source";
+  }
+
+  function setCredit(image) {
+    const credit = document.querySelector(CREDIT_SELECTOR);
+    const link = document.querySelector(CREDIT_LINK_SELECTOR);
+    if (!credit || !link) return;
+
+    credit.hidden = false;
+
+    if (!image?.source) {
+      link.removeAttribute("data-tooltip");
+      link.hidden = true;
+      return;
+    }
+
+    link.href = image.source;
+    link.textContent = formatCredit(image);
+    link.removeAttribute("data-tooltip");
+    link.hidden = false;
+  }
+
+  function imageCandidates(image) {
+    if (typeof image === "string") {
+      return unique([normalizeUrl(image)]).filter(isSameOriginUrl);
+    }
+
+    return unique([image?.url].map(normalizeUrl)).filter(isSameOriginUrl);
+  }
+
+  function syncViewport(target) {
+    const landing = target.closest(LANDING_SELECTOR);
+    if (!landing) return;
+
+    const viewport = window.visualViewport;
+    const width = Math.round(viewport?.width || window.innerWidth || landing.clientWidth);
+    const height = Math.round(viewport?.height || window.innerHeight || landing.clientHeight);
+    const ratio = width / Math.max(height, 1);
+
+    landing.style.setProperty("--home-viewport-width", `${width}px`);
+    landing.style.setProperty("--home-viewport-height", `${height}px`);
+    landing.dataset.homeViewport =
+      ratio < 0.78 ? "portrait" : ratio > 1.55 ? "wide" : "landscape";
+  }
+
+  async function refreshImagePool({ forceReload = false } = {}) {
+    if (state.refreshPromise) return state.refreshPromise;
+
+    state.refreshPromise = (async () => {
+      const cached = forceReload ? null : readStoredImages();
+      if (cached?.images?.length && state.images.length === 0) {
+        state.images = mergeImages(cached.images);
+      }
+
+      const shouldReloadManifest =
+        forceReload ||
+        !cached?.images?.length ||
+        Date.now() - (cached?.storedAt || 0) > KONACHAN_MANIFEST_RELOAD_MS;
+
+      const freshImages = shouldReloadManifest
+        ? await readManifest({ cache: forceReload ? "reload" : "no-cache" })
+        : [];
+      const merged =
+        freshImages.length > 0
+          ? mergeImages(freshImages)
+          : mergeImages(state.images);
+
+      if (merged.length > 0) {
+        state.images = merged;
+        writeStoredImages(merged);
+      }
+
+      if (state.images.length === 0) {
+        state.images = mergeImages(EMERGENCY_IMAGES);
+      }
+
+      return state.images;
+    })().finally(() => {
+      state.refreshPromise = null;
+    });
+
+    return state.refreshPromise;
+  }
+
+  async function setBackground(target, image) {
+    const candidates = imageCandidates(image);
+    if (candidates.length === 0) return false;
+
+    let loadedUrl = "";
+    for (const candidate of candidates) {
+      try {
+        loadedUrl = await preload(candidate);
+        break;
+      } catch (error) {
+        console.warn(`[Konachan] Unable to preload ${candidate}.`, error);
+      }
+    }
+
+    if (!loadedUrl) throw new Error("konachan_image_unavailable");
+
+    setBackgroundImage(target, loadedUrl);
+    target.dataset.loaded = "true";
+    state.currentUrl = loadedUrl;
+    setCredit(typeof image === "string" ? null : image);
+    return true;
+  }
+
+  async function rotate(target) {
+    const pool = state.images.length > 0 ? state.images : mergeImages(EMERGENCY_IMAGES);
+    const candidates = pool.filter((image) => !imageCandidates(image).includes(state.currentUrl));
+    const selected = pickRandom(candidates.length > 0 ? candidates : pool);
+    if (!selected) return false;
+
+    try {
+      return await setBackground(target, selected);
+    } catch {
+      state.images = state.images.filter((image) => image !== selected);
+      const next = pickRandom(state.images);
+      return next ? setBackground(target, next).catch(() => false) : false;
+    }
+  }
+
+  function initKonachanBackground() {
+    const target = document.querySelector(TARGET_SELECTOR);
+    if (!target || !("style" in target) || target.dataset.ready === "true") return;
+
+    target.dataset.ready = "true";
+    state.currentUrl = normalizeUrl(target.dataset.konachanCurrentUrl || INITIAL_BACKGROUND?.url);
+    setCredit(INITIAL_BACKGROUND);
+    syncViewport(target);
+    const handleViewportChange = () => syncViewport(target);
+    window.addEventListener("resize", handleViewportChange, { passive: true });
+    window.visualViewport?.addEventListener("resize", handleViewportChange, {
+      passive: true,
+    });
+    window.visualViewport?.addEventListener("scroll", handleViewportChange, {
+      passive: true,
+    });
+    const landing = target.closest(LANDING_SELECTOR);
+    const status = document.querySelector(STATUS_SELECTOR);
+
+    const setRefreshState = ({ busy, message }) => {
+      if (status) status.textContent = message;
+      landing?.setAttribute("aria-busy", String(busy));
+
+      document.dispatchEvent(
+        new CustomEvent(konachanClientConfig.events.refreshState, {
+          detail: { busy, status: message },
+        }),
+      );
+    };
+
+    const refresh = async ({ forceReload = false, rotateAfter = false } = {}) => {
+      setRefreshState({ busy: true, message: "Chargement de l'image" });
+      let message = "Image indisponible";
+
+      try {
+        await refreshImagePool({ forceReload });
+        const changed =
+          rotateAfter || target.dataset.loaded !== "true" ? await rotate(target) : true;
+        message = changed ? "Image mise à jour" : message;
+      } catch {
+        message = target.dataset.loaded === "true" ? "Image prête" : message;
+      } finally {
+        setRefreshState({ busy: false, message });
+      }
+    };
+
+    document.addEventListener(konachanClientConfig.events.refreshRequest, () => {
+      refresh({ forceReload: true, rotateAfter: true });
+    });
+
+    const cached = readStoredImages();
+    if (cached?.images?.length) {
+      state.images = mergeImages(cached.images);
+    } else {
+      window.setTimeout(() => {
+        if (target.dataset.loaded === "true") return;
+        state.images = mergeImages(EMERGENCY_IMAGES);
+        rotate(target);
+      }, 800);
+    }
+
+    const scheduleRefresh =
+      "requestIdleCallback" in window
+        ? (callback) => window.requestIdleCallback(callback, { timeout: 2200 })
+        : (callback) => window.setTimeout(callback, 1200);
+    scheduleRefresh(() => {
+      refresh();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initKonachanBackground, { once: true });
+  } else {
+    initKonachanBackground();
+  }
+
+  addEventListener("astro:page-load", initKonachanBackground);
+</script>

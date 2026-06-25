@@ -1,4 +1,11 @@
-const CACHE_KEY = "site_ip_geolocation_v2";
+import {
+  SITE_EVENTS,
+  SITE_LEGACY_STORAGE_KEYS,
+  SITE_STORAGE_KEYS,
+} from "@/lib/site-contracts";
+
+const CACHE_KEY = SITE_STORAGE_KEYS.ipGeolocation;
+const LEGACY_CACHE_KEY = SITE_LEGACY_STORAGE_KEYS.ipGeolocation;
 const CACHE_MAX_AGE_MS = 60 * 60 * 1000;
 const MIN_REQUEST_INTERVAL_MS = 5000;
 
@@ -58,9 +65,15 @@ function renderLocation(data) {
 
 function readCache() {
   try {
-    const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
+    const current = localStorage.getItem(CACHE_KEY);
+    const legacy = localStorage.getItem(LEGACY_CACHE_KEY);
+    const cached = JSON.parse((current ?? legacy) || "null");
     if (!cached?.updatedAt || Date.now() - cached.updatedAt > CACHE_MAX_AGE_MS) {
       return null;
+    }
+    if (current === null && legacy !== null) {
+      localStorage.setItem(CACHE_KEY, legacy);
+      localStorage.removeItem(LEGACY_CACHE_KEY);
     }
     return cached;
   } catch {
@@ -76,6 +89,7 @@ function writeCache(data) {
       CACHE_KEY,
       JSON.stringify({ ...data, updatedAt: Date.now() }),
     );
+    localStorage.removeItem(LEGACY_CACHE_KEY);
   } catch {}
 }
 
@@ -143,6 +157,6 @@ function handleVisibilityChange() {
 }
 
 updateLocation();
-document.addEventListener("site:consent-change", updateLocation);
+document.addEventListener(SITE_EVENTS.consentChange, updateLocation);
 document.addEventListener("visibilitychange", handleVisibilityChange);
 window.addEventListener("online", updateLocation);

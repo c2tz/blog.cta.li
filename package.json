@@ -7,9 +7,14 @@
   },
   "scripts": {
     "dev": "astro dev",
+    "dev:local": "astro dev --host 127.0.0.1 --port 4321",
     "build": "astro build",
     "build:vercel": "node scripts/ensure-git-history.mjs && astro build",
     "preview": "astro preview",
+    "preview:local": "astro preview --host 127.0.0.1 --port 4322",
+    "check": "pnpm check:angular",
+    "check:angular": "astro sync && ngc -p tsconfig.app.json --noEmit",
+    "verify": "pnpm check && pnpm build",
     "astro": "astro",
     "update:konachan": "node scripts/update-konachan-backgrounds.mjs"
   },

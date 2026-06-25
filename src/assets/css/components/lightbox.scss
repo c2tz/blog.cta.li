@@ -1,0 +1,75 @@
+img[data-lightbox],
+.site-prose a[data-pswp-item] img {
+  cursor: pointer;
+}
+
+.site-prose a[data-pswp-item] {
+  display: block;
+  border-radius: var(--image-radius);
+}
+
+.site-prose a[data-pswp-item]:focus-visible {
+  outline: 2px solid var(--site-link);
+  outline-offset: 4px;
+}
+
+.site-prose img.is-lightbox-radius-flat {
+  border-radius: 0;
+}
+
+.site-prose img.is-lightbox-radius-instant {
+  transition: none;
+}
+
+.site-prose img.is-lightbox-thumb-hidden {
+  visibility: hidden;
+}
+
+.pswp__img {
+  cursor: grab !important;
+  border-radius: 0;
+}
+
+.pswp--click-to-zoom.pswp--zoom-allowed .pswp__img,
+.pswp--click-to-zoom.pswp--zoomed-in .pswp__img,
+.pswp--no-mouse-drag.pswp--zoomed-in .pswp__img,
+.pswp__zoom-wrap {
+  cursor: grab !important;
+}
+
+.pswp__img:active,
+.pswp__zoom-wrap:active,
+.pswp__item:active,
+.pswp__container:active,
+.pswp__scroll-wrap:active,
+.pswp.pswp--image-pressing .pswp__img,
+.pswp.pswp--image-pressing .pswp__zoom-wrap,
+.pswp.pswp--image-pressing .pswp__container,
+.pswp.pswp--dragging .pswp__img,
+.pswp.pswp--dragging .pswp__zoom-wrap {
+  cursor: grabbing !important;
+}
+
+.pswp--system-zoom,
+.pswp--system-zoom .pswp__scroll-wrap,
+.pswp--system-zoom .pswp__container,
+.pswp--system-zoom .pswp__item,
+.pswp--system-zoom .pswp__zoom-wrap,
+.pswp--system-zoom .pswp__img {
+  touch-action: pinch-zoom !important;
+}
+
+.pswp__img--radius-transition {
+  transition:
+    border-radius var(--pswp-transition-duration, 180ms) cubic-bezier(0.4, 0, 0.22, 1),
+    transform var(--pswp-transition-duration, 180ms) cubic-bezier(0.4, 0, 0.22, 1),
+    opacity var(--pswp-transition-duration, 180ms) cubic-bezier(0.4, 0, 0.22, 1);
+}
+
+.pswp__top-bar,
+.pswp__button--arrow,
+.pswp__button--close,
+.pswp__button--zoom,
+.pswp__counter {
+  display: none !important;
+}

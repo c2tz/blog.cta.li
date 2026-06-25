@@ -1,0 +1,72 @@
+@use "@angular/material" as mat;
+
+:root {
+  color-scheme: light;
+  font-family: "Roboto Flex", sans-serif;
+  font-optical-sizing: auto;
+  --site-font: "Roboto Flex", sans-serif;
+  --site-mono-font: "Roboto Mono", monospace;
+  --font-sans: var(--site-font);
+  --font-mono: var(--site-mono-font);
+  --default-font-family: var(--site-font);
+  --default-mono-font-family: var(--site-mono-font);
+  --site-bg: #fff;
+  --site-text: #000;
+  --site-border: #ddd;
+  --site-muted: #616161;
+  --site-link: #1565c0;
+  --site-link-contrast: #fff;
+  --site-link-container: #e3f2fd;
+  --site-on-link-container: #0b3d67;
+  --site-mark-bg: #ffff00;
+  --site-tonal-container: #eceff1;
+  --site-on-tonal-container: #263238;
+  --code-surface: #f3f3f3;
+  --code-block-surface: #ffffff;
+  --code-pad: 1rem;
+  --code-radius: 12px;
+  --image-radius: 16px;
+  @include mat.theme-overrides(
+    (
+      primary: var(--site-link),
+      on-primary: var(--site-link-contrast),
+      primary-container: var(--site-link-container),
+      on-primary-container: var(--site-on-link-container),
+      secondary-container: var(--site-tonal-container),
+      on-secondary-container: var(--site-on-tonal-container),
+      surface: var(--site-bg),
+      on-surface: var(--site-text),
+      on-surface-variant: var(--site-muted),
+      outline: var(--site-link),
+      body-large-font: var(--site-font),
+      body-medium-font: var(--site-font),
+      body-small-font: var(--site-font),
+      display-large-font: var(--site-font),
+      display-medium-font: var(--site-font),
+      display-small-font: var(--site-font),
+      headline-large-font: var(--site-font),
+      headline-medium-font: var(--site-font),
+      headline-small-font: var(--site-font),
+      label-large-font: var(--site-font),
+      label-medium-font: var(--site-font),
+      label-small-font: var(--site-font),
+      title-large-font: var(--site-font),
+      title-medium-font: var(--site-font),
+      title-small-font: var(--site-font),
+    )
+  );
+
+  @include mat.button-overrides(
+    (
+      tonal-container-color: var(--site-link-container),
+      tonal-label-text-color: var(--site-on-link-container),
+      tonal-state-layer-color: var(--site-on-link-container),
+      tonal-ripple-color: color-mix(
+          in srgb,
+          var(--site-on-link-container) 12%,
+          transparent
+        ),
+    )
+  );
+
+}

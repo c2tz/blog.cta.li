@@ -1,0 +1,57 @@
+:root[data-theme="dark"] {
+  --site-bg: #000;
+  --site-text: #fff;
+  --site-border: #222;
+  --site-muted: #9f9f9f;
+  --site-link: #90caf9;
+  --site-link-contrast: #00131f;
+  --site-link-container: #12344a;
+  --site-on-link-container: #d6efff;
+  --site-tonal-container: #1f2528;
+  --site-on-tonal-container: #dfe5e8;
+  --code-surface: #252526;
+  --code-block-surface: #1e1e1e;
+}
+
+:root[data-theme="dark"] kbd {
+  border-color: #555;
+  background-color: #1e1e1e;
+  color: #fff;
+  box-shadow: inset 0 -1px 0 #555;
+}
+
+:root[data-theme="dark"] .site-footer-link,
+:root[data-theme="dark"] .site-footer-link:visited {
+  color: var(--site-muted);
+}
+
+:root[data-theme="dark"] .cookie-consent-backdrop {
+  background: transparent;
+}
+
+:root[data-theme="dark"] .home-anime-background::after {
+  background:
+    linear-gradient(to bottom, rgb(0 0 0 / 0.18), rgb(0 0 0 / 0.42)),
+    linear-gradient(90deg, rgb(0 0 0 / 0.48), rgb(0 0 0 / 0.08) 70%);
+}
+
+:root[data-theme="dark"] body.home-page {
+  --home-image-filter: brightness(0.72) saturate(0.88) contrast(1);
+  --home-media-surface: #050505;
+}
+
+:root[data-theme="dark"] .code-shell {
+  border-color: #000;
+}
+
+:root[data-theme="dark"] .code-shell pre.astro-code {
+  background-color: var(--shiki-dark-bg, var(--code-block-surface)) !important;
+  color: var(--shiki-dark, var(--site-text)) !important;
+}
+
+:root[data-theme="dark"] .astro-code span {
+  color: var(--shiki-dark) !important;
+  font-style: var(--shiki-dark-font-style) !important;
+  font-weight: var(--shiki-dark-font-weight) !important;
+  text-decoration: var(--shiki-dark-text-decoration) !important;
+}

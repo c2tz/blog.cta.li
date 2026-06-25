@@ -1,0 +1,95 @@
+@media (max-width: 735px) {
+  .home-anime-landing {
+    --home-banner-height: clamp(
+      22rem,
+      calc(var(--home-viewport-height, 100vh) * 0.58),
+      28rem
+    );
+    margin-block-start: 0.5rem;
+    margin-block-end: 1.5rem;
+  }
+
+  .home-hero-content {
+    padding: 1.25rem;
+  }
+
+  .home-hero-content h1 {
+    font-size: 2.25rem;
+    line-height: 1.06;
+  }
+
+  .home-hero-lede {
+    font-size: 1rem;
+  }
+
+  .post-header {
+    text-align: center;
+  }
+
+  .post-header h1 {
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: center;
+    text-align: center;
+  }
+
+  .home-hero-actions {
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+
+  .home-hero-button {
+    width: auto;
+  }
+
+  .home-anime-credit {
+    top: 0.65rem;
+    right: 0.65rem;
+    bottom: auto;
+    left: auto;
+    justify-content: flex-end;
+    max-width: min(18rem, calc(100vw - 1.3rem));
+  }
+
+  .home-post,
+  .tag-post {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.5em;
+  }
+
+  .home-separator,
+  .tag-separator {
+    display: inline;
+  }
+
+  .post-git-dates {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .post-git-date-divider {
+    width: 100%;
+    height: 1px;
+    min-height: 0;
+  }
+
+  .cookie-consent-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 430px) {
+  .home-hero-actions {
+    flex-wrap: nowrap;
+    align-items: stretch;
+  }
+
+  .home-hero-button {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+  }
+}

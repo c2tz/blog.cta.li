@@ -1,0 +1,32 @@
+.site-prose a.data-footnote-backref,
+.site-prose a[data-footnote-backref] {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  margin-inline-start: 0.2em;
+  color: inherit;
+  font-size: 0;
+  line-height: inherit;
+  text-decoration: none;
+  vertical-align: baseline;
+}
+
+.site-prose a.data-footnote-backref::before,
+.site-prose a[data-footnote-backref]::before {
+  content: "\21A9\FE0E";
+  font-family: var(--site-font);
+  font-size: 0.7rem;
+  line-height: inherit;
+}
+
+.site-prose a.data-footnote-backref:is(:hover, :focus-visible),
+.site-prose a[data-footnote-backref]:is(:hover, :focus-visible) {
+  text-decoration-line: underline;
+  text-decoration-thickness: from-font;
+  text-underline-offset: 0.16em;
+}
+
+.site-prose .footnote-ref-tooltip {
+  border-radius: 3px;
+  font-weight: 500;
+}

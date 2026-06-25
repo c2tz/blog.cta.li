@@ -1,0 +1,81 @@
+---
+import { formatFrenchDateTime, toDate } from "@/lib/date-format.mjs";
+
+interface Props {
+  createdAt: Date | string;
+  createdCommit?: string;
+  lastModified: Date | string;
+  lastModifiedCommit?: string;
+}
+
+const { createdAt, createdCommit, lastModified, lastModifiedCommit } = Astro.props as Props;
+const GITHUB_REPOSITORY_URL = "https://github.com/c2tz/ct-blog.cta.li";
+
+const createdLabel = "Création du post";
+const modifiedLabel = "Dernière modification du post";
+const shortCommit = (commit: string) => commit.slice(0, 7);
+const createdCommitLabel = createdCommit
+  ? `Commit de création : ${shortCommit(createdCommit)}`
+  : undefined;
+const modifiedCommitLabel = lastModifiedCommit
+  ? `Commit de modification : ${shortCommit(lastModifiedCommit)}`
+  : undefined;
+const createdCommitUrl = createdCommit
+  ? `${GITHUB_REPOSITORY_URL}/commit/${createdCommit}`
+  : undefined;
+const modifiedCommitUrl = lastModifiedCommit
+  ? `${GITHUB_REPOSITORY_URL}/commit/${lastModifiedCommit}`
+  : undefined;
+---
+
+<footer class="post-git-dates" aria-label="Dates du post">
+  <span class="post-git-date">
+    <span
+      class="post-icon-tooltip"
+      role="img"
+      aria-label={createdLabel}
+      data-tooltip={createdLabel}
+    >
+      <span class="material-symbols-rounded post-git-date-icon" aria-hidden="true">&#xE89C;</span>
+    </span>
+    <span class="post-git-date-text">
+      <span class="post-git-date-label">Créé le :</span>
+      <time datetime={toDate(createdAt).toISOString()}>{formatFrenchDateTime(createdAt)}</time>
+    </span>
+    {createdCommitLabel && createdCommitUrl && (
+      <a
+        class="post-icon-tooltip post-git-commit-link"
+        href={createdCommitUrl}
+        aria-label={createdCommitLabel}
+        data-tooltip={createdCommitLabel}
+      >
+        <span class="material-symbols-rounded post-git-commit-icon" aria-hidden="true">&#xEAF5;</span>
+      </a>
+    )}
+  </span>
+  <span class="post-git-date-divider" aria-hidden="true"></span>
+  <span class="post-git-date">
+    <span
+      class="post-icon-tooltip"
+      role="img"
+      aria-label={modifiedLabel}
+      data-tooltip={modifiedLabel}
+    >
+      <span class="material-symbols-rounded post-git-date-icon" aria-hidden="true">&#xF88C;</span>
+    </span>
+    <span class="post-git-date-text">
+      <span class="post-git-date-label">Modifié le :</span>
+      <time datetime={toDate(lastModified).toISOString()}>{formatFrenchDateTime(lastModified)}</time>
+    </span>
+    {modifiedCommitLabel && modifiedCommitUrl && (
+      <a
+        class="post-icon-tooltip post-git-commit-link"
+        href={modifiedCommitUrl}
+        aria-label={modifiedCommitLabel}
+        data-tooltip={modifiedCommitLabel}
+      >
+        <span class="material-symbols-rounded post-git-commit-icon" aria-hidden="true">&#xEAF5;</span>
+      </a>
+    )}
+  </span>
+</footer>

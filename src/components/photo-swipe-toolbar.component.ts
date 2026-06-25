@@ -181,6 +181,8 @@ type PhotoSwipeAction =
       inset: 0;
       z-index: 100010;
       pointer-events: none;
+      touch-action: pinch-zoom;
+      --photo-swipe-system-zoom-inverse-scale: 1;
       color: #fff;
     }
 
@@ -200,6 +202,7 @@ type PhotoSwipeAction =
       padding: 0.5rem;
       padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
       pointer-events: auto;
+      touch-action: pinch-zoom;
       color: #fff;
       opacity: 1;
       transform: translateY(0);
@@ -220,6 +223,13 @@ type PhotoSwipeAction =
       gap: 0.25rem;
       height: 2.5rem;
       line-height: 0;
+      transform: scale(var(--photo-swipe-system-zoom-inverse-scale, 1));
+      transform-origin: top right;
+    }
+
+    .photo-swipe-counter-set {
+      transform: scale(var(--photo-swipe-system-zoom-inverse-scale, 1));
+      transform-origin: top left;
     }
 
     .photo-swipe-counter-set .mat-mdc-chip {
@@ -231,6 +241,7 @@ type PhotoSwipeAction =
 
     .photo-swipe-button {
       background-color: rgb(0 0 0 / 32%);
+      touch-action: manipulation;
       backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
     }
@@ -239,8 +250,10 @@ type PhotoSwipeAction =
       position: fixed;
       top: 50%;
       z-index: 1;
-      transform: translateY(-50%);
+      transform: translateY(-50%) scale(var(--photo-swipe-system-zoom-inverse-scale, 1));
+      transform-origin: center;
       pointer-events: auto;
+      touch-action: manipulation;
       opacity: 1;
       transition:
         opacity 120ms cubic-bezier(0.4, 0, 1, 1),
@@ -263,7 +276,8 @@ type PhotoSwipeAction =
       display: grid;
       place-items: center;
       pointer-events: none;
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%) scale(var(--photo-swipe-system-zoom-inverse-scale, 1));
+      transform-origin: center;
       opacity: 1;
       transition: opacity 120ms cubic-bezier(0.4, 0, 1, 1);
     }
@@ -280,7 +294,7 @@ type PhotoSwipeAction =
     }
 
     :host.is-closing .photo-swipe-nav {
-      transform: translateY(-50%) scale(0.92);
+      transform: translateY(-50%) scale(var(--photo-swipe-system-zoom-inverse-scale, 1)) scale(0.92);
     }
 
     @keyframes photo-swipe-toolbar-enter {
@@ -293,7 +307,8 @@ type PhotoSwipeAction =
     @keyframes photo-swipe-nav-enter {
       from {
         opacity: 0;
-        transform: translateY(-50%) scale(0.92);
+        transform: translateY(-50%) scale(var(--photo-swipe-system-zoom-inverse-scale, 1))
+          scale(0.92);
       }
     }
 

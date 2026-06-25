@@ -496,23 +496,13 @@ function getPhotoSwipeToolbarRoot() {
   );
 }
 
-function getLightboxViewportRect() {
-  const viewport = window.visualViewport;
-
-  return {
-    left: viewport?.offsetLeft ?? 0,
-    top: viewport?.offsetTop ?? 0,
-    width: viewport?.width ?? document.documentElement.clientWidth,
-    height: viewport?.height ?? window.innerHeight,
-  };
-}
-
 function getLightboxViewportSize() {
-  const viewport = getLightboxViewportRect();
+  const viewport = window.visualViewport;
+  const scale = Math.max(1, viewport?.scale || 1);
 
   return {
-    x: Math.max(1, Math.round(viewport.width)),
-    y: Math.max(1, Math.round(viewport.height)),
+    x: Math.max(1, Math.round((viewport?.width ?? document.documentElement.clientWidth) * scale)),
+    y: Math.max(1, Math.round((viewport?.height ?? window.innerHeight) * scale)),
   };
 }
 
@@ -520,62 +510,79 @@ function getDisabledPhotoSwipeZoomLevel(zoomLevel) {
   return zoomLevel.initial || zoomLevel.fit || 1;
 }
 
-function fitElementToLightboxViewport(element) {
-  const viewport = getLightboxViewportRect();
-
-  element.style.left = `${viewport.left}px`;
-  element.style.top = `${viewport.top}px`;
-  element.style.right = "auto";
-  element.style.bottom = "auto";
-  element.style.width = `${Math.max(1, viewport.width)}px`;
-  element.style.height = `${Math.max(1, viewport.height)}px`;
+function getLightboxSystemZoomInverseScale() {
+  return 1 / Math.max(1, window.visualViewport?.scale || 1);
 }
 
-function resetElementViewportFit(element) {
-  ["left", "top", "right", "bottom", "width", "height"].forEach((property) => {
-    element.style.removeProperty(property);
-  });
+function setLightboxControlScale(element) {
+  element.style.setProperty(
+    "--photo-swipe-system-zoom-inverse-scale",
+    `${getLightboxSystemZoomInverseScale()}`,
+  );
+}
+
+function resetLightboxControlScale(element) {
+  element.style.removeProperty("--photo-swipe-system-zoom-inverse-scale");
 }
 
 function initLightboxVisualViewport(pswp) {
   let frame = 0;
+  let controlFrame = 0;
+  let lastPhotoSwipeViewportSize = getLightboxViewportSize();
 
-  const applyViewport = () => {
-    if (pswp.element) fitElementToLightboxViewport(pswp.element);
+  const applyControlScale = () => {
+    if (pswp.element) setLightboxControlScale(pswp.element);
 
     const toolbar = getPhotoSwipeToolbarRoot();
-    if (toolbar instanceof HTMLElement) fitElementToLightboxViewport(toolbar);
+    if (toolbar instanceof HTMLElement) setLightboxControlScale(toolbar);
   };
 
-  const requestSync = () => {
+  const requestControlScale = () => {
+    if (controlFrame) return;
+
+    controlFrame = requestAnimationFrame(() => {
+      controlFrame = 0;
+      applyControlScale();
+    });
+  };
+
+  const requestPhotoSwipeResize = () => {
     if (frame) return;
 
     frame = requestAnimationFrame(() => {
       frame = 0;
-      applyViewport();
-      pswp.updateSize?.(true);
+
+      const viewportSize = getLightboxViewportSize();
+      const layoutChanged =
+        viewportSize.x !== lastPhotoSwipeViewportSize.x ||
+        viewportSize.y !== lastPhotoSwipeViewportSize.y;
+
+      if (layoutChanged) {
+        lastPhotoSwipeViewportSize = viewportSize;
+        pswp.updateSize?.(true);
+      }
+
       dispatchPhotoSwipeState(pswp);
     });
   };
 
-  applyViewport();
+  applyControlScale();
+  pswp.on("firstUpdate", applyControlScale);
+  pswp.on("bindEvents", applyControlScale);
 
-  pswp.on("firstUpdate", applyViewport);
-  pswp.on("initialLayout", applyViewport);
-  pswp.on("bindEvents", applyViewport);
-
-  window.addEventListener("resize", requestSync, { passive: true });
-  window.visualViewport?.addEventListener("resize", requestSync, { passive: true });
-  window.visualViewport?.addEventListener("scroll", requestSync, { passive: true });
+  window.addEventListener("resize", requestPhotoSwipeResize, { passive: true });
+  window.visualViewport?.addEventListener("resize", requestControlScale, { passive: true });
 
   pswp.on("destroy", () => {
     if (frame) cancelAnimationFrame(frame);
-    window.removeEventListener("resize", requestSync);
-    window.visualViewport?.removeEventListener("resize", requestSync);
-    window.visualViewport?.removeEventListener("scroll", requestSync);
+    if (controlFrame) cancelAnimationFrame(controlFrame);
+    window.removeEventListener("resize", requestPhotoSwipeResize);
+    window.visualViewport?.removeEventListener("resize", requestControlScale);
+
+    if (pswp.element) resetLightboxControlScale(pswp.element);
 
     const toolbar = getPhotoSwipeToolbarRoot();
-    if (toolbar instanceof HTMLElement) resetElementViewportFit(toolbar);
+    if (toolbar instanceof HTMLElement) resetLightboxControlScale(toolbar);
   });
 }
 
@@ -747,100 +754,6 @@ function initLightboxPhotoSwipeZoomDisable(pswp) {
   pswp.on("keydown", blockKeyboardZoom);
 }
 
-function initLightboxDesktopImageClickClose(pswp) {
-  let cleanup = null;
-  let imagePointer = null;
-  const isMousePointer = (event) =>
-    event.pointerType === "mouse" || event.type === "mousedown" || event.type === "mouseup";
-  const isLightboxImage = (target) =>
-    target instanceof Element && target.classList.contains("pswp__img");
-  const canCurrentImageZoom = () => {
-    const slide = pswp.currSlide;
-    if (!slide?.isZoomable?.()) return false;
-    return Math.abs((slide.zoomLevels?.secondary ?? 1) - (slide.zoomLevels?.initial ?? 1)) > 0.01;
-  };
-  const setGrabCursor = (active) => {
-    pswp.element?.classList.toggle("pswp--image-pressing", active);
-  };
-
-  const onPointerDown = (event) => {
-    if (event.button !== 0 || !isMousePointer(event) || !isLightboxImage(event.target)) {
-      imagePointer = null;
-      setGrabCursor(false);
-      return;
-    }
-
-    setGrabCursor(true);
-    imagePointer = {
-      id: event.pointerId,
-      x: event.clientX,
-      y: event.clientY,
-    };
-  };
-
-  const onPointerUp = (event) => {
-    setGrabCursor(false);
-
-    if (!imagePointer || !isMousePointer(event) || !isLightboxImage(event.target)) {
-      imagePointer = null;
-      return;
-    }
-
-    const samePointer =
-      event.pointerId === imagePointer.id || event.type === "mouseup";
-    const moved =
-      Math.abs(event.clientX - imagePointer.x) > 8 ||
-      Math.abs(event.clientY - imagePointer.y) > 8;
-
-    imagePointer = null;
-
-    if (!samePointer || moved) return;
-    if (canCurrentImageZoom()) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-    pswp.close();
-  };
-
-  const onPointerCancel = () => {
-    imagePointer = null;
-    setGrabCursor(false);
-  };
-
-  const bind = () => {
-    const root = pswp.element;
-    if (!root || cleanup) return;
-
-    root.addEventListener("mousedown", onPointerDown, true);
-    root.addEventListener("pointerdown", onPointerDown, true);
-    root.addEventListener("pointerup", onPointerUp, true);
-    root.addEventListener("mouseup", onPointerUp, true);
-    root.addEventListener("pointercancel", onPointerCancel, true);
-    root.addEventListener("mouseleave", onPointerCancel, true);
-    window.addEventListener("blur", onPointerCancel);
-
-    cleanup = () => {
-      root.removeEventListener("mousedown", onPointerDown, true);
-      root.removeEventListener("pointerdown", onPointerDown, true);
-      root.removeEventListener("pointerup", onPointerUp, true);
-      root.removeEventListener("mouseup", onPointerUp, true);
-      root.removeEventListener("pointercancel", onPointerCancel, true);
-      root.removeEventListener("mouseleave", onPointerCancel, true);
-      window.removeEventListener("blur", onPointerCancel);
-      imagePointer = null;
-      setGrabCursor(false);
-    };
-  };
-
-  bind();
-  pswp.on("afterInit", bind);
-  pswp.on("bindEvents", bind);
-  pswp.on("destroy", () => {
-    cleanup?.();
-    cleanup = null;
-  });
-}
-
 function initPhotoSwipeFullscreenClose(pswp) {
   const root = pswp.element;
   if (!root) return;
@@ -908,7 +821,9 @@ const lightbox = new PhotoSwipeLightbox({
   allowPanToNext: true,
   pinchToClose: false,
   closeOnVerticalDrag: true,
-  imageClickAction: "close",
+  imageClickAction: false,
+  bgClickAction: false,
+  tapAction: false,
   doubleTapAction: false,
   trapFocus: false,
   bgOpacity: 0.74,
@@ -1154,7 +1069,6 @@ lightbox.on("uiRegister", () => {
   initLightboxPageScrollRestore(pswp);
   initLightboxFocusTrap(pswp);
   initLightboxSystemZoomPassThrough(pswp);
-  initLightboxDesktopImageClickClose(pswp);
   initPhotoSwipeFullscreenClose(pswp);
 
   ui.uiElementsData = [];

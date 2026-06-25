@@ -593,6 +593,9 @@
   background: rgb(0 0 0 / 32%);
   color: #fff;
   cursor: pointer;
+  touch-action: manipulation;
+  transform: scale(var(--photo-swipe-system-zoom-inverse-scale, 1));
+  transform-origin: top right;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
@@ -1320,7 +1323,9 @@ img[data-lightbox],
 .pswp--system-zoom,
 .pswp--system-zoom .pswp__scroll-wrap,
 .pswp--system-zoom .pswp__container,
-.pswp--system-zoom .pswp__item {
+.pswp--system-zoom .pswp__item,
+.pswp--system-zoom .pswp__zoom-wrap,
+.pswp--system-zoom .pswp__img {
   touch-action: pinch-zoom !important;
 }
 

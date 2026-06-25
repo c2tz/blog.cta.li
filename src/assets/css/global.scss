@@ -1321,7 +1321,7 @@ img[data-lightbox],
 .pswp--system-zoom .pswp__scroll-wrap,
 .pswp--system-zoom .pswp__container,
 .pswp--system-zoom .pswp__item {
-  touch-action: none !important;
+  touch-action: pinch-zoom !important;
 }
 
 .pswp__img--radius-transition {

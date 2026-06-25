@@ -82,19 +82,6 @@ type PhotoSwipeAction =
           }
 
           @if (!isFullscreen()) {
-            <button
-              matIconButton
-              type="button"
-              class="photo-swipe-button"
-              [attr.aria-label]="zoomLabel()"
-              [attr.aria-pressed]="zoomed()"
-              [matTooltip]="zoomLabel()"
-              matTooltipPosition="below"
-              (click)="act('zoom')"
-            >
-              <mat-icon aria-hidden="true">{{ zoomIcon() }}</mat-icon>
-            </button>
-
             <a
               matIconButton
               class="photo-swipe-button"
@@ -359,10 +346,6 @@ export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
 
   readonly fullscreenIcon = () => "\uF1CE";
   readonly fullscreenLabel = () => "Plein écran";
-  readonly zoomIcon = () => "fit_screen";
-  readonly zoomLabel = () =>
-    this.zoomed() ? "Réinitialiser l'alignement" : "Aligner l'image";
-
   private shareLabelTimer = 0;
 
   private readonly handleState = (event: Event) => {

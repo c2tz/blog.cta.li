@@ -496,6 +496,89 @@ function getPhotoSwipeToolbarRoot() {
   );
 }
 
+function getLightboxViewportRect() {
+  const viewport = window.visualViewport;
+
+  return {
+    left: viewport?.offsetLeft ?? 0,
+    top: viewport?.offsetTop ?? 0,
+    width: viewport?.width ?? document.documentElement.clientWidth,
+    height: viewport?.height ?? window.innerHeight,
+  };
+}
+
+function getLightboxViewportSize() {
+  const viewport = getLightboxViewportRect();
+
+  return {
+    x: Math.max(1, Math.round(viewport.width)),
+    y: Math.max(1, Math.round(viewport.height)),
+  };
+}
+
+function getDisabledPhotoSwipeZoomLevel(zoomLevel) {
+  return zoomLevel.initial || zoomLevel.fit || 1;
+}
+
+function fitElementToLightboxViewport(element) {
+  const viewport = getLightboxViewportRect();
+
+  element.style.left = `${viewport.left}px`;
+  element.style.top = `${viewport.top}px`;
+  element.style.right = "auto";
+  element.style.bottom = "auto";
+  element.style.width = `${Math.max(1, viewport.width)}px`;
+  element.style.height = `${Math.max(1, viewport.height)}px`;
+}
+
+function resetElementViewportFit(element) {
+  ["left", "top", "right", "bottom", "width", "height"].forEach((property) => {
+    element.style.removeProperty(property);
+  });
+}
+
+function initLightboxVisualViewport(pswp) {
+  let frame = 0;
+
+  const applyViewport = () => {
+    if (pswp.element) fitElementToLightboxViewport(pswp.element);
+
+    const toolbar = getPhotoSwipeToolbarRoot();
+    if (toolbar instanceof HTMLElement) fitElementToLightboxViewport(toolbar);
+  };
+
+  const requestSync = () => {
+    if (frame) return;
+
+    frame = requestAnimationFrame(() => {
+      frame = 0;
+      applyViewport();
+      pswp.updateSize?.(true);
+      dispatchPhotoSwipeState(pswp);
+    });
+  };
+
+  applyViewport();
+
+  pswp.on("firstUpdate", applyViewport);
+  pswp.on("initialLayout", applyViewport);
+  pswp.on("bindEvents", applyViewport);
+
+  window.addEventListener("resize", requestSync, { passive: true });
+  window.visualViewport?.addEventListener("resize", requestSync, { passive: true });
+  window.visualViewport?.addEventListener("scroll", requestSync, { passive: true });
+
+  pswp.on("destroy", () => {
+    if (frame) cancelAnimationFrame(frame);
+    window.removeEventListener("resize", requestSync);
+    window.visualViewport?.removeEventListener("resize", requestSync);
+    window.visualViewport?.removeEventListener("scroll", requestSync);
+
+    const toolbar = getPhotoSwipeToolbarRoot();
+    if (toolbar instanceof HTMLElement) resetElementViewportFit(toolbar);
+  });
+}
+
 function isVisibleFocusableElement(element) {
   return (
     element instanceof HTMLElement &&
@@ -583,40 +666,85 @@ function initLightboxFocusTrap(pswp) {
   });
 }
 
-function initLightboxGestureZoomBlock(pswp) {
+function initLightboxSystemZoomPassThrough(pswp) {
   const isInsideLightbox = (target) => {
     if (!(target instanceof Node)) return false;
     const toolbar = getPhotoSwipeToolbarRoot();
     return Boolean(pswp.element?.contains(target) || toolbar?.contains(target));
   };
 
-  const stopZoomGesture = (event) => {
+  const passSystemZoomGesture = (event) => {
     if (!isInsideLightbox(event.target)) return;
 
-    event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation?.();
   };
 
   const onWheel = (event) => {
     if (!event.ctrlKey && !event.metaKey) return;
-    stopZoomGesture(event);
+    passSystemZoomGesture(event);
   };
 
+  const allowNativeMultitouch = (prevent, event) => {
+    if (
+      event?.touches?.length > 1 ||
+      event?.ctrlKey ||
+      event?.metaKey ||
+      (event?.pointerType === "touch" && pswp.gestures?._numActivePoints > 1)
+    ) {
+      return false;
+    }
+
+    return prevent;
+  };
+
+  pswp.addFilter("preventPointerEvent", allowNativeMultitouch);
   document.addEventListener("wheel", onWheel, { capture: true, passive: false });
-  document.addEventListener("gesturestart", stopZoomGesture, { capture: true, passive: false });
-  document.addEventListener("gesturechange", stopZoomGesture, { capture: true, passive: false });
-  document.addEventListener("gestureend", stopZoomGesture, { capture: true, passive: false });
+  document.addEventListener("gesturestart", passSystemZoomGesture, { capture: true, passive: false });
+  document.addEventListener("gesturechange", passSystemZoomGesture, { capture: true, passive: false });
+  document.addEventListener("gestureend", passSystemZoomGesture, { capture: true, passive: false });
 
   const cleanup = () => {
+    pswp.removeFilter("preventPointerEvent", allowNativeMultitouch);
     document.removeEventListener("wheel", onWheel, true);
-    document.removeEventListener("gesturestart", stopZoomGesture, true);
-    document.removeEventListener("gesturechange", stopZoomGesture, true);
-    document.removeEventListener("gestureend", stopZoomGesture, true);
+    document.removeEventListener("gesturestart", passSystemZoomGesture, true);
+    document.removeEventListener("gesturechange", passSystemZoomGesture, true);
+    document.removeEventListener("gestureend", passSystemZoomGesture, true);
   };
 
   pswp.on("close", cleanup);
   pswp.on("destroy", cleanup);
+}
+
+function initLightboxPhotoSwipeZoomDisable(pswp) {
+  const lockZoomLevels = ({ zoomLevels }) => {
+    const lockedZoom = getDisabledPhotoSwipeZoomLevel(zoomLevels);
+    zoomLevels.secondary = lockedZoom;
+    zoomLevels.max = lockedZoom;
+    zoomLevels.min = lockedZoom;
+  };
+
+  const blockInternalMultitouchZoom = (event) => {
+    const originalEvent = event.originalEvent;
+    if (
+      originalEvent?.touches?.length > 1 ||
+      (originalEvent?.pointerType === "touch" && pswp.gestures?._numActivePoints > 1)
+    ) {
+      event.preventDefault();
+    }
+  };
+
+  const blockKeyboardZoom = (event) => {
+    const originalEvent = event.originalEvent;
+    if (originalEvent?.key?.toLowerCase() !== "z") return;
+
+    event.preventDefault();
+    originalEvent.preventDefault();
+  };
+
+  pswp.on("zoomLevelsUpdate", lockZoomLevels);
+  pswp.on("pointerMove", blockInternalMultitouchZoom);
+  pswp.on("keydown", blockKeyboardZoom);
 }
 
 function initLightboxDesktopImageClickClose(pswp) {
@@ -767,7 +895,10 @@ const lightbox = new PhotoSwipeLightbox({
   children: "a[data-pswp-item]",
   pswpModule: PhotoSwipe,
   mainClass: "pswp--system-zoom",
+  getViewportSizeFn: getLightboxViewportSize,
   initialZoomLevel: "fit",
+  secondaryZoomLevel: getDisabledPhotoSwipeZoomLevel,
+  maxZoomLevel: getDisabledPhotoSwipeZoomLevel,
   wheelToZoom: false,
   zoom: false,
   close: false,
@@ -1017,10 +1148,12 @@ lightbox.on("uiRegister", () => {
   const ui = pswp?.ui;
   if (!pswp || !ui) return;
 
+  initLightboxVisualViewport(pswp);
+  initLightboxPhotoSwipeZoomDisable(pswp);
   initLightboxRadiusTransition(pswp);
   initLightboxPageScrollRestore(pswp);
   initLightboxFocusTrap(pswp);
-  initLightboxGestureZoomBlock(pswp);
+  initLightboxSystemZoomPassThrough(pswp);
   initLightboxDesktopImageClickClose(pswp);
   initPhotoSwipeFullscreenClose(pswp);
 

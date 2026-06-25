@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   signal,
-  viewChild,
   viewChildren,
 } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
@@ -58,16 +57,7 @@ type PhotoSwipeAction =
       <div class="photo-swipe-toolbar" role="toolbar" aria-label="Commandes de l'image">
         @if (!isFullscreen()) {
           <mat-chip-set class="photo-swipe-counter-set" aria-hidden="true">
-            <mat-chip
-              #counterTooltip="matTooltip"
-              [matTooltip]="fileName()"
-              matTooltipPosition="below"
-              [matTooltipShowDelay]="120"
-              [matTooltipHideDelay]="0"
-              matTooltipTouchGestures="off"
-              (mouseenter)="onCounterTooltipEnter()"
-              (mouseleave)="onCounterTooltipLeave()"
-            >
+            <mat-chip>
               {{ index() }} / {{ total() }}
             </mat-chip>
           </mat-chip-set>
@@ -365,7 +355,6 @@ export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
   readonly shareLabel = signal("Partager");
   private readonly loadingProgress = new SimulatedLoadingProgress();
   readonly progress = this.loadingProgress.value;
-  private readonly counterTooltip = viewChild<MatTooltip>("counterTooltip");
   private readonly tooltips = viewChildren(MatTooltip);
 
   readonly fullscreenIcon = () => "\uF1CE";
@@ -375,21 +364,22 @@ export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
     this.zoomed() ? "Réinitialiser l'alignement" : "Aligner l'image";
 
   private shareLabelTimer = 0;
-  private counterTooltipHovered = false;
-  private counterTooltipFrame = 0;
 
   private readonly handleState = (event: Event) => {
     const detail = (event as CustomEvent<PhotoSwipeToolbarState>).detail ?? {};
-    const previousFileName = this.fileName();
 
-    if (typeof detail.open === "boolean") this.open.set(detail.open);
+    if (detail.open === false) {
+      this.resetClosedState();
+      return;
+    }
+
+    if (detail.open === true) this.open.set(true);
     if (typeof detail.src === "string") this.src.set(detail.src);
     if (typeof detail.fileName === "string") {
       this.fileName.set(detail.fileName || "image");
     }
     if (typeof detail.index === "number") this.index.set(detail.index);
     if (typeof detail.total === "number") this.total.set(detail.total);
-    if (this.fileName() !== previousFileName) this.refreshCounterTooltip();
     if (typeof detail.isFullscreen === "boolean") this.isFullscreen.set(detail.isFullscreen);
     if (typeof detail.fullscreenAvailable === "boolean") {
       this.fullscreenAvailable.set(detail.fullscreenAvailable);
@@ -426,7 +416,8 @@ export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
     document.removeEventListener("site:photo-swipe-state", this.handleState);
     document.removeEventListener("site:photo-swipe-share-result", this.handleShareResult);
     window.clearTimeout(this.shareLabelTimer);
-    this.clearCounterTooltipFrame();
+    this.hideTooltip();
+    this.loadingProgress.reset();
     this.loadingProgress.destroy();
   }
 
@@ -439,38 +430,27 @@ export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
     this.act("share");
   }
 
-  onCounterTooltipEnter() {
-    this.counterTooltipHovered = true;
-  }
-
-  onCounterTooltipLeave() {
-    this.counterTooltipHovered = false;
-    this.clearCounterTooltipFrame();
-  }
-
   hideTooltip() {
-    this.clearCounterTooltipFrame();
     this.tooltips().forEach((tooltip) => tooltip.hide(0));
     document.dispatchEvent(new CustomEvent("site:tooltip-hide"));
   }
 
-  private refreshCounterTooltip() {
-    this.clearCounterTooltipFrame();
-    const tooltip = this.counterTooltip();
-    if (!tooltip) return;
+  private resetClosedState() {
+    this.hideTooltip();
+    window.clearTimeout(this.shareLabelTimer);
+    this.shareLabelTimer = 0;
+    this.loadingProgress.reset();
 
-    tooltip.hide(0);
-    if (!this.open() || !this.counterTooltipHovered) return;
-
-    this.counterTooltipFrame = requestAnimationFrame(() => {
-      this.counterTooltipFrame = 0;
-      this.counterTooltip()?.show(0);
-    });
-  }
-
-  private clearCounterTooltipFrame() {
-    if (!this.counterTooltipFrame) return;
-    cancelAnimationFrame(this.counterTooltipFrame);
-    this.counterTooltipFrame = 0;
+    this.open.set(false);
+    this.src.set("");
+    this.fileName.set("image");
+    this.index.set(1);
+    this.total.set(1);
+    this.isFullscreen.set(false);
+    this.fullscreenAvailable.set(false);
+    this.zoomed.set(false);
+    this.loading.set(false);
+    this.closing.set(false);
+    this.shareLabel.set("Partager");
   }
 }

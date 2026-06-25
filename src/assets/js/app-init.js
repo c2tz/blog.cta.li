@@ -608,12 +608,15 @@ function initLightboxGestureZoomBlock(pswp) {
   document.addEventListener("gesturechange", stopZoomGesture, { capture: true, passive: false });
   document.addEventListener("gestureend", stopZoomGesture, { capture: true, passive: false });
 
-  pswp.on("destroy", () => {
+  const cleanup = () => {
     document.removeEventListener("wheel", onWheel, true);
     document.removeEventListener("gesturestart", stopZoomGesture, true);
     document.removeEventListener("gesturechange", stopZoomGesture, true);
     document.removeEventListener("gestureend", stopZoomGesture, true);
-  });
+  };
+
+  pswp.on("close", cleanup);
+  pswp.on("destroy", cleanup);
 }
 
 function initLightboxDesktopImageClickClose(pswp) {
@@ -788,6 +791,25 @@ let activePhotoSwipeLoading = false;
 let activePhotoSwipeClosing = false;
 let activePhotoSwipeFullscreenRoot = null;
 
+function restoreInlineStyle(element, property, value) {
+  const cssProperty = property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+
+  if (value) {
+    element.style[property] = value;
+  } else {
+    element.style.removeProperty(cssProperty);
+  }
+}
+
+function clearLightboxScrollLock() {
+  if (document.documentElement.classList.contains("consent-visible")) return;
+
+  [document.documentElement, document.body].forEach((element) => {
+    if (element.style.overflow === "hidden") element.style.removeProperty("overflow");
+    if (element.style.touchAction === "none") element.style.removeProperty("touch-action");
+  });
+}
+
 function initLightboxPageScrollRestore(pswp) {
   const scrollX = window.scrollX;
   const scrollY = window.scrollY;
@@ -795,8 +817,43 @@ function initLightboxPageScrollRestore(pswp) {
   const htmlTouchAction = document.documentElement.style.touchAction;
   const bodyOverflow = document.body.style.overflow;
   const bodyTouchAction = document.body.style.touchAction;
+  let isClosing = false;
+  let userScrolledAfterClose = false;
+  let cleanupFallback = 0;
+
+  const markUserScrollIntent = () => {
+    if (isClosing) userScrolledAfterClose = true;
+  };
+
+  const markUserScrollKeyIntent = (event) => {
+    if (
+      ![
+        " ",
+        "ArrowDown",
+        "ArrowUp",
+        "End",
+        "Home",
+        "PageDown",
+        "PageUp",
+      ].includes(event.key)
+    ) {
+      return;
+    }
+
+    markUserScrollIntent();
+  };
+
+  const restorePageStyles = () => {
+    restoreInlineStyle(document.documentElement, "overflow", htmlOverflow);
+    restoreInlineStyle(document.documentElement, "touchAction", htmlTouchAction);
+    restoreInlineStyle(document.body, "overflow", bodyOverflow);
+    restoreInlineStyle(document.body, "touchAction", bodyTouchAction);
+    clearLightboxScrollLock();
+  };
 
   const restoreScroll = () => {
+    if (userScrolledAfterClose) return;
+
     if (
       Math.abs(window.scrollX - scrollX) > 1 ||
       Math.abs(window.scrollY - scrollY) > 1
@@ -805,16 +862,31 @@ function initLightboxPageScrollRestore(pswp) {
     }
   };
 
-  pswp.on("close", restoreScroll);
+  const scheduleFallbackCleanup = () => {
+    window.clearTimeout(cleanupFallback);
+    cleanupFallback = window.setTimeout(restorePageStyles, 600);
+  };
+
+  window.addEventListener("wheel", markUserScrollIntent, { capture: true, passive: true });
+  window.addEventListener("touchmove", markUserScrollIntent, { capture: true, passive: true });
+  window.addEventListener("keydown", markUserScrollKeyIntent, true);
+
+  pswp.on("close", () => {
+    isClosing = true;
+    restoreScroll();
+    scheduleFallbackCleanup();
+  });
 
   pswp.on("destroy", () => {
-    document.documentElement.style.overflow = htmlOverflow;
-    document.documentElement.style.touchAction = htmlTouchAction;
-    document.body.style.overflow = bodyOverflow;
-    document.body.style.touchAction = bodyTouchAction;
+    window.clearTimeout(cleanupFallback);
+    window.removeEventListener("wheel", markUserScrollIntent, true);
+    window.removeEventListener("touchmove", markUserScrollIntent, true);
+    window.removeEventListener("keydown", markUserScrollKeyIntent, true);
 
+    restorePageStyles();
     restoreScroll();
     requestAnimationFrame(() => {
+      restorePageStyles();
       restoreScroll();
     });
   });
@@ -863,10 +935,10 @@ function dispatchPhotoSwipeState(pswp, open = true) {
         fileName: source ? fileNameFromURL(source) : "",
         index: Math.min(total, Math.max(1, (pswp?.currIndex ?? 0) + 1)),
         total: Math.max(1, total),
-        isFullscreen: Boolean(document.fullscreenElement),
+        isFullscreen: open && Boolean(document.fullscreenElement),
         fullscreenAvailable: Boolean(document.fullscreenEnabled),
-        zoomable: zoom.zoomable,
-        zoomed: zoom.zoomed,
+        zoomable: open && zoom.zoomable,
+        zoomed: open && zoom.zoomed,
         loading: open && activePhotoSwipeLoading,
         closing: open && activePhotoSwipeClosing,
       },
@@ -989,6 +1061,7 @@ lightbox.on("uiRegister", () => {
     if (activePhotoSwipe === pswp) activePhotoSwipe = null;
     activePhotoSwipeLoading = false;
     activePhotoSwipeClosing = false;
+    pswp.element?.style.removeProperty("pointer-events");
     dispatchPhotoSwipeState(pswp, false);
   });
 });

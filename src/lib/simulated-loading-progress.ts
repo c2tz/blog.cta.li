@@ -29,6 +29,11 @@ export class SimulatedLoadingProgress {
     this.value.set(100);
   }
 
+  reset() {
+    this.stopTimer();
+    this.value.set(0);
+  }
+
   destroy() {
     this.stopTimer();
   }

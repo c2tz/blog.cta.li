@@ -16,7 +16,8 @@
     "check:angular": "astro sync && ngc -p tsconfig.app.json --noEmit",
     "verify": "pnpm check && pnpm build",
     "astro": "astro",
-    "update:konachan": "node scripts/update-konachan-backgrounds.mjs"
+    "update:konachan": "node scripts/update-konachan-backgrounds.mjs",
+    "update:material-symbols": "node scripts/update-material-symbols.mjs"
   },
   "dependencies": {
     "@analogjs/astro-angular": "^2.6.1",

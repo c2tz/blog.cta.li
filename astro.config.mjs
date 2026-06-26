@@ -1,7 +1,6 @@
 import angular from "@analogjs/astro-angular";
 import mdx from "@astrojs/mdx";
 import { unified } from "@astrojs/markdown-remark";
-import sitemap from "@astrojs/sitemap";
 import { defineConfig } from "astro/config";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeSlug from "rehype-slug";
@@ -60,7 +59,6 @@ export default defineConfig({
   },
   integrations: [
     mdx(),
-    sitemap(),
     angular({
       vite: {
         fastCompile: true,

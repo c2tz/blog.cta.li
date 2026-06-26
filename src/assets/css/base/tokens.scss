@@ -2,9 +2,10 @@
 
 :root {
   color-scheme: light;
-  font-family: "Roboto Flex", sans-serif;
+  font-family: "Roboto", sans-serif;
   font-optical-sizing: auto;
-  --site-font: "Roboto Flex", sans-serif;
+  --site-font: "Roboto", sans-serif;
+  --site-heading-font: "Google Sans Flex", var(--site-font);
   --site-mono-font: "Roboto Mono", monospace;
   --font-sans: var(--site-font);
   --font-mono: var(--site-mono-font);

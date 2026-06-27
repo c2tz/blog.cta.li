@@ -10,6 +10,12 @@ import {
   KONACHAN_MIN_ASPECT_RATIO,
   KONACHAN_OUTPUT_HEIGHT,
   KONACHAN_OUTPUT_WIDTH,
+  KONACHAN_BLOCKED_ADULT_TAGS,
+  KONACHAN_BLOCKED_SENSITIVE_TAGS,
+  KONACHAN_EXPLICIT_TAG_QUERIES,
+  KONACHAN_QUESTIONABLE_TAG_QUERIES,
+  KONACHAN_SAFE_TAG_QUERIES,
+  KONACHAN_SENSITIVE_TAG_QUERIES,
   KONACHAN_TAG_QUERIES,
   KONACHAN_TAGS,
   getKonachanBackgroundPosts,
@@ -41,7 +47,8 @@ function hasSameImages(previous, images) {
     return (
       Number(existing?.id) === Number(image.id) &&
       Number(existing?.bytes) === Number(image.bytes) &&
-      Number(existing?.quality) === Number(image.quality)
+      Number(existing?.quality) === Number(image.quality) &&
+      (existing?.rating ?? "safe") === image.rating
     );
   });
 }
@@ -112,6 +119,7 @@ async function generateImage(post) {
     height: KONACHAN_OUTPUT_HEIGHT,
     bytes: result.buffer.byteLength,
     quality: result.quality,
+    rating: post.rating,
     format: "webp",
     source: post.source,
     author: post.author,
@@ -173,6 +181,12 @@ async function main() {
     source: "https://konachan.com/help/api",
     tags: KONACHAN_TAGS,
     tagQueries: KONACHAN_TAG_QUERIES,
+    safeTagQueries: KONACHAN_SAFE_TAG_QUERIES,
+    questionableTagQueries: KONACHAN_QUESTIONABLE_TAG_QUERIES,
+    explicitTagQueries: KONACHAN_EXPLICIT_TAG_QUERIES,
+    blockedAdultTags: KONACHAN_BLOCKED_ADULT_TAGS,
+    sensitiveTagQueries: KONACHAN_SENSITIVE_TAG_QUERIES,
+    blockedSensitiveTags: KONACHAN_BLOCKED_SENSITIVE_TAGS,
     minWidth: KONACHAN_OUTPUT_WIDTH,
     minHeight: KONACHAN_OUTPUT_HEIGHT,
     minAspectRatio: KONACHAN_MIN_ASPECT_RATIO,

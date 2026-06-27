@@ -15,14 +15,14 @@ import { SITE_EVENTS } from "@/lib/site-contracts";
   },
   template: `
     @if (busy()) {
-      <span class="home-anime-loading" role="status" aria-label="Chargement de l'image">
+      <span class="home-anime-loading" role="status" aria-label="Chargement de l'image Konachan">
         <mat-progress-spinner
           mode="indeterminate"
           diameter="48"
           strokeWidth="4"
-          aria-label="Chargement de l'image"
+          aria-label="Chargement de l'image Konachan"
         ></mat-progress-spinner>
-        <span class="sr-only">Chargement de l'image</span>
+        <span class="sr-only">Chargement de l'image Konachan</span>
       </span>
     }
   `,

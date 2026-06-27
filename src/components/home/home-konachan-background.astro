@@ -3,10 +3,13 @@ import fallbackOne from "@/content/blog/images/konachan-396319.jpg";
 import fallbackTwo from "@/content/blog/images/konachan-382339.jpg";
 import { HomeHeroActionsComponent } from "./home-hero-actions.component";
 import { KonachanLoadingIndicatorComponent } from "@/components/konachan/konachan-loading-indicator.component";
+import { KonachanRatingToggleComponent } from "@/components/konachan/konachan-rating-toggle.component";
 import { KonachanRefreshButtonComponent } from "@/components/konachan/konachan-refresh-button.component";
 import {
+  SITE_COOKIE_NAMES,
   SITE_CACHE_NAMES,
   SITE_EVENTS,
+  SITE_LEGACY_COOKIE_NAMES,
   SITE_LEGACY_STORAGE_KEYS,
   SITE_STORAGE_KEYS,
 } from "@/lib/site-contracts";
@@ -33,10 +36,15 @@ const emergencyImages = [fallbackOne.src, fallbackTwo.src];
 const konachanClientConfig = {
   cacheName: SITE_CACHE_NAMES.homeKonachanBackgrounds,
   events: {
+    ratingChange: SITE_EVENTS.konachanRatingChange,
     refreshRequest: SITE_EVENTS.konachanRefreshRequest,
     refreshState: SITE_EVENTS.konachanRefreshState,
   },
+  legacyRatingCookieName: SITE_LEGACY_COOKIE_NAMES.homeKonachanRatingPreference,
+  legacyRatingStorageKey: SITE_LEGACY_STORAGE_KEYS.homeKonachanRatingPreference,
   legacyStorageKey: SITE_LEGACY_STORAGE_KEYS.homeKonachanBackgrounds,
+  ratingCookieName: SITE_COOKIE_NAMES.homeKonachanRatingPreference,
+  ratingStorageKey: SITE_STORAGE_KEYS.homeKonachanRatingPreference,
   storageKey: SITE_STORAGE_KEYS.homeKonachanBackgrounds,
 };
 ---
@@ -59,6 +67,7 @@ const konachanClientConfig = {
     />
   </div>
   <KonachanLoadingIndicatorComponent client:idle />
+  <KonachanRatingToggleComponent client:idle />
 
   <div class="home-hero-content">
     <h1 id="home-hero-title">{title}</h1>
@@ -66,7 +75,6 @@ const konachanClientConfig = {
       {lede}
     </p>
     <HomeHeroActionsComponent
-      client:idle
       primaryActionHref={primaryActionHref}
       primaryActionLabel={primaryActionLabel}
       secondaryActionHref={secondaryActionHref}
@@ -96,17 +104,28 @@ const konachanClientConfig = {
   const CREDIT_LINK_SELECTOR = "[data-konachan-credit-link]";
   const LANDING_SELECTOR = ".home-anime-landing";
   const STATUS_SELECTOR = "[data-konachan-status]";
-  const MANIFEST_URL = "/konachan-backgrounds.json?v=1";
+  const MANIFEST_URL = "/konachan-backgrounds.json?v=2";
   const KONACHAN_CACHE_KEY = konachanClientConfig.storageKey;
   const KONACHAN_LEGACY_CACHE_KEY = konachanClientConfig.legacyStorageKey;
+  const KONACHAN_RATING_COOKIE = konachanClientConfig.ratingCookieName;
+  const KONACHAN_LEGACY_RATING_COOKIE = konachanClientConfig.legacyRatingCookieName;
+  const KONACHAN_RATING_KEY = konachanClientConfig.ratingStorageKey;
+  const KONACHAN_LEGACY_RATING_KEY = konachanClientConfig.legacyRatingStorageKey;
   const KONACHAN_CACHE_NAME = konachanClientConfig.cacheName;
   const KONACHAN_CACHE_TTL_MS = 14 * 24 * 60 * 60 * 1000;
   const KONACHAN_MANIFEST_RELOAD_MS = 24 * 60 * 60 * 1000;
   const EMERGENCY_IMAGES = emergencyImages;
   const INITIAL_BACKGROUND = initialBackground;
+  const RATING_RANK = {
+    safe: 0,
+    questionable: 1,
+    explicit: 2,
+  };
   const state = {
+    currentImage: null,
     currentUrl: "",
     images: [],
+    ratingPreference: "safe",
     refreshPromise: null,
   };
 
@@ -246,13 +265,63 @@ const konachanClientConfig = {
 
     const url = normalizeUrl(image.url);
     const originalUrl = normalizeUrl(image.originalUrl || image.remoteUrl);
+    const rating = normalizeRating(image.rating);
     if (!url && !originalUrl) return null;
 
     return {
       ...image,
+      rating,
       url: url || originalUrl,
       originalUrl,
     };
+  }
+
+  function normalizeRating(value) {
+    if (value === "explicit" || value === "e") return "explicit";
+    if (value === "questionable" || value === "q" || value === "sensitive") {
+      return "questionable";
+    }
+
+    return "safe";
+  }
+
+  function normalizeRatingPreference(value) {
+    const rating = normalizeRating(value);
+    return rating in RATING_RANK ? rating : "safe";
+  }
+
+  function readCookie(name) {
+    if (!name) return null;
+
+    const encodedName = `${encodeURIComponent(name)}=`;
+    const cookie = document.cookie
+      .split(";")
+      .map((part) => part.trim())
+      .find((part) => part.startsWith(encodedName));
+
+    if (!cookie) return null;
+
+    try {
+      return decodeURIComponent(cookie.slice(encodedName.length));
+    } catch {
+      return null;
+    }
+  }
+
+  function readRatingPreference() {
+    try {
+      return normalizeRatingPreference(
+        localStorage.getItem(KONACHAN_RATING_KEY) ||
+          localStorage.getItem(KONACHAN_LEGACY_RATING_KEY) ||
+          readCookie(KONACHAN_RATING_COOKIE) ||
+          readCookie(KONACHAN_LEGACY_RATING_COOKIE),
+      );
+    } catch {
+      return normalizeRatingPreference(
+        readCookie(KONACHAN_RATING_COOKIE) ||
+          readCookie(KONACHAN_LEGACY_RATING_COOKIE),
+      );
+    }
   }
 
   function mergeImages(...groups) {
@@ -306,6 +375,53 @@ const konachanClientConfig = {
     return unique([image?.url].map(normalizeUrl)).filter(isSameOriginUrl);
   }
 
+  function ratingAllowed(image) {
+    if (typeof image === "string") return true;
+    return RATING_RANK[normalizeRating(image?.rating)] <= RATING_RANK[state.ratingPreference];
+  }
+
+  function allowedImages(images) {
+    return images.filter(ratingAllowed);
+  }
+
+  function preferredImages(images) {
+    return images.filter((image) => {
+      if (typeof image === "string") return state.ratingPreference === "safe";
+
+      return normalizeRating(image?.rating) === state.ratingPreference;
+    });
+  }
+
+  function refreshCandidates(images) {
+    const preferred = preferredImages(images);
+    return preferred.length > 0 ? preferred : allowedImages(images);
+  }
+
+  function readLocalImagePool() {
+    const cached = readStoredImages();
+    if (cached?.images?.length) {
+      state.images = mergeImages(state.images, cached.images);
+    }
+
+    return state.images;
+  }
+
+  function currentImage() {
+    if (state.currentImage) return state.currentImage;
+
+    const match = state.images.find((image) =>
+      imageCandidates(image).includes(state.currentUrl),
+    );
+    state.currentImage = match || null;
+    return state.currentImage;
+  }
+
+  function currentImageAllowed() {
+    if (!state.currentUrl) return true;
+    const image = currentImage();
+    return image ? ratingAllowed(image) : true;
+  }
+
   function syncViewport(target) {
     const landing = target.closest(LANDING_SELECTOR);
     if (!landing) return;
@@ -348,11 +464,11 @@ const konachanClientConfig = {
         writeStoredImages(merged);
       }
 
-      if (state.images.length === 0) {
+      if (allowedImages(state.images).length === 0) {
         state.images = mergeImages(EMERGENCY_IMAGES);
       }
 
-      return state.images;
+      return refreshCandidates(state.images);
     })().finally(() => {
       state.refreshPromise = null;
     });
@@ -378,22 +494,24 @@ const konachanClientConfig = {
 
     setBackgroundImage(target, loadedUrl);
     target.dataset.loaded = "true";
+    state.currentImage = image;
     state.currentUrl = loadedUrl;
     setCredit(typeof image === "string" ? null : image);
     return true;
   }
 
   async function rotate(target) {
-    const pool = state.images.length > 0 ? state.images : mergeImages(EMERGENCY_IMAGES);
+    const pool = refreshCandidates(state.images);
+    const fallbackPool = pool.length > 0 ? pool : mergeImages(EMERGENCY_IMAGES);
     const candidates = pool.filter((image) => !imageCandidates(image).includes(state.currentUrl));
-    const selected = pickRandom(candidates.length > 0 ? candidates : pool);
+    const selected = pickRandom(candidates.length > 0 ? candidates : fallbackPool);
     if (!selected) return false;
 
     try {
       return await setBackground(target, selected);
     } catch {
       state.images = state.images.filter((image) => image !== selected);
-      const next = pickRandom(state.images);
+      const next = pickRandom(allowedImages(state.images));
       return next ? setBackground(target, next).catch(() => false) : false;
     }
   }
@@ -403,6 +521,7 @@ const konachanClientConfig = {
     if (!target || !("style" in target) || target.dataset.ready === "true") return;
 
     target.dataset.ready = "true";
+    state.ratingPreference = readRatingPreference();
     state.currentUrl = normalizeUrl(target.dataset.konachanCurrentUrl || INITIAL_BACKGROUND?.url);
     setCredit(INITIAL_BACKGROUND);
     syncViewport(target);
@@ -448,8 +567,50 @@ const konachanClientConfig = {
       }
     };
 
+    const enforceRatingFilter = async () => {
+      if (target.dataset.loaded !== "true" || currentImageAllowed()) {
+        setRefreshState({
+          busy: false,
+          message: target.dataset.loaded === "true" ? "Image prête" : "",
+        });
+        return;
+      }
+
+      setRefreshState({ busy: true, message: "Chargement d'une image autorisée" });
+      let message = "Image indisponible";
+
+      try {
+        readLocalImagePool();
+        const pool = refreshCandidates(state.images);
+        const fallbackPool = pool.length > 0 ? pool : mergeImages(EMERGENCY_IMAGES);
+        const candidates = fallbackPool.filter(
+          (image) => !imageCandidates(image).includes(state.currentUrl),
+        );
+        const selected = pickRandom(candidates.length > 0 ? candidates : fallbackPool);
+        message = selected && (await setBackground(target, selected))
+          ? "Image autorisée"
+          : message;
+      } catch {
+        message = target.dataset.loaded === "true" ? "Image prête" : message;
+      } finally {
+        setRefreshState({ busy: false, message });
+      }
+    };
+
     document.addEventListener(konachanClientConfig.events.refreshRequest, () => {
       refresh({ forceReload: true, rotateAfter: true });
+    });
+
+    document.addEventListener(konachanClientConfig.events.ratingChange, (event) => {
+      state.ratingPreference = normalizeRatingPreference(
+        event.detail?.ratingPreference ??
+          (event.detail?.allowExplicit
+            ? "explicit"
+            : event.detail?.allowSensitive
+              ? "questionable"
+              : "safe"),
+      );
+      enforceRatingFilter();
     });
   }
 

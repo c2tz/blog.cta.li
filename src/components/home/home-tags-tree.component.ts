@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, input, signal } from "@angular/core
 import { MatButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
 import { MatProgressBar } from "@angular/material/progress-bar";
-import { MatTooltip } from "@angular/material/tooltip";
 import { MatTreeModule } from "@angular/material/tree";
 
 interface HomeTagsTreeNode {
@@ -21,7 +20,7 @@ interface ExpandableTree<T> {
 @Component({
   selector: "site-home-tags-tree",
   standalone: true,
-  imports: [MatButton, MatIcon, MatProgressBar, MatTooltip, MatTreeModule],
+  imports: [MatButton, MatIcon, MatProgressBar, MatTreeModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h2 id="tags">
@@ -29,6 +28,7 @@ interface ExpandableTree<T> {
     </h2>
 
     <mat-tree
+      aria-labelledby="tags"
       #tree
       class="home-tags-tree"
       [dataSource]="rootNodes"
@@ -43,13 +43,12 @@ interface ExpandableTree<T> {
           matButton="elevated"
           class="home-tags-tree-toggle"
           type="button"
-          [attr.aria-label]="tree.isExpanded(node) ? 'Replier ' + title() : 'Afficher ' + title()"
+          aria-controls="home-tags-list"
+          [attr.aria-label]="tree.isExpanded(node) ? 'Masquer les tags' : 'Afficher les tags'"
           [attr.aria-expanded]="tree.isExpanded(node)"
-          [matTooltip]="tree.isExpanded(node) ? 'Masquer les tags' : 'Afficher les tags'"
-          matTooltipPosition="below"
           (click)="toggle(tree, node)"
         >
-          <span>{{ tree.isExpanded(node) ? "Masquer les tags" : "Afficher les tags" }}</span>
+          <span>{{ tree.isExpanded(node) ? "Afficher moins" : "Afficher plus" }}</span>
           <mat-icon iconPositionEnd class="mat-icon-rtl-mirror" aria-hidden="true">
             {{ tree.isExpanded(node) ? expandLessIcon : expandMoreIcon }}
           </mat-icon>
@@ -66,10 +65,16 @@ interface ExpandableTree<T> {
     }
 
     @if (loaded() && tree.isExpanded(rootNode)) {
-      <ul class="home-tags-tree-links">
+      <ul id="home-tags-list" class="home-tags-tree-links" aria-label="Tous les tags">
         @for (tag of tags(); track tag) {
           <li>
-            <a class="home-tags-tree-link" [href]="'/tags/' + tag + '/'">#{{ tag }}</a>
+            <a
+              class="home-tags-tree-link"
+              [href]="'/tags/' + tag + '/'"
+              [attr.aria-label]="'Voir les articles du tag ' + tag"
+            >
+              #{{ tag }}
+            </a>
           </li>
         }
       </ul>
@@ -86,6 +91,7 @@ interface ExpandableTree<T> {
 
     .home-tags-tree {
       display: block;
+      margin-block-end: 0.75rem;
       background: transparent;
       color: var(--site-text);
     }
@@ -138,7 +144,7 @@ interface ExpandableTree<T> {
       display: flex;
       flex-wrap: wrap;
       gap: 0 0.5em;
-      margin-block: 0.75rem 1em;
+      margin-block: 0 1em;
       padding: 0;
       list-style-type: none;
     }

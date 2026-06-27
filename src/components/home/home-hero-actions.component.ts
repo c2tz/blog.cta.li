@@ -12,6 +12,7 @@ import { MatButton } from "@angular/material/button";
         matButton="tonal"
         class="home-hero-button"
         [href]="primaryActionHref()"
+        [attr.aria-label]="primaryActionAriaLabel()"
       >
         {{ primaryActionLabel() }}
       </a>
@@ -19,6 +20,7 @@ import { MatButton } from "@angular/material/button";
         matButton="text"
         class="home-hero-button"
         [href]="secondaryActionHref()"
+        [attr.aria-label]="secondaryActionAriaLabel()"
       >
         {{ secondaryActionLabel() }}
       </a>
@@ -30,4 +32,15 @@ export class HomeHeroActionsComponent {
   readonly primaryActionLabel = input("Voir plus");
   readonly secondaryActionHref = input("https://www.cta.li");
   readonly secondaryActionLabel = input("À propos");
+
+  readonly primaryActionAriaLabel = () => {
+    return this.primaryActionLabel().toLocaleLowerCase("fr") === "voir plus"
+      ? "Voir plus d’articles"
+      : this.primaryActionLabel();
+  };
+  readonly secondaryActionAriaLabel = () => {
+    return this.secondaryActionLabel().toLocaleLowerCase("fr") === "à propos"
+      ? "À propos de ce site"
+      : this.secondaryActionLabel();
+  };
 }

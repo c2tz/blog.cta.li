@@ -86,9 +86,11 @@ const homeCopy = {
         {
           latestPosts.map((post) => (
             <li class="home-post">
-              <FormattedDate date={post.gitDates.createdAt} />
-              <span class="home-separator" aria-hidden="true">—</span>
-              <a href={`/posts/${post.id}/`}>
+              <span class="home-post-date">
+                <FormattedDate date={post.gitDates.createdAt} />
+              </span>
+              <span class="home-separator" aria-hidden="true">·</span>
+              <a class="home-post-title" href={`/posts/${post.id}/`}>
                 {post.data.title}
               </a>
             </li>
@@ -98,7 +100,7 @@ const homeCopy = {
     </section>
 
     <section class="home-section home-tags-section" aria-labelledby="tags">
-      <HomeTagsTreeComponent client:idle title={homeCopy.tagsTitle} tags={uniqueTags} />
+      <HomeTagsTreeComponent client:visible title={homeCopy.tagsTitle} tags={uniqueTags} />
     </section>
   </Fragment>
 </Layout>

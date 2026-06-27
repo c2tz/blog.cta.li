@@ -12,7 +12,6 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { FormControl, ReactiveFormsModule } from "@angular/forms";
 import { MatButton, MatIconButton } from "@angular/material/button";
 import { MatChipsModule } from "@angular/material/chips";
-import { MatRippleModule } from "@angular/material/core";
 import { MatDialogModule } from "@angular/material/dialog";
 import { MatIcon, MatIconModule } from "@angular/material/icon";
 import { MatProgressBarModule } from "@angular/material/progress-bar";
@@ -83,6 +82,7 @@ const MIN_QUERY_LENGTH = 2;
 const RESULT_LIMIT = 12;
 const EXPANDED_RESULT_FETCH_LIMIT = 100;
 const TAG_FILTER_LIMIT = 18;
+const MAX_SELECTED_TAGS = 3;
 const SEARCH_TIMEOUT_MS = 12000;
 const MAX_PRIORITY = 100;
 const RELEVANCE_PRIORITY_WEIGHT = 0.01;
@@ -108,7 +108,6 @@ function isSearchSortMode(value: unknown): value is SearchSortMode {
     MatIconButton,
     MatIconModule,
     MatProgressBarModule,
-    MatRippleModule,
     MatSelectModule,
     MatTooltip,
     ReactiveFormsModule,
@@ -126,6 +125,8 @@ function isSearchSortMode(value: unknown): value is SearchSortMode {
           autocomplete="off"
           spellcheck="false"
           aria-label="Mot-clé, titre ou contenu"
+          aria-controls="site-search-panel-results site-search-panel-tags"
+          aria-describedby="site-search-panel-status site-search-panel-filter-limit"
           placeholder="Mot-clé, titre ou contenu"
           [formControl]="query"
         />
@@ -145,18 +146,13 @@ function isSearchSortMode(value: unknown): value is SearchSortMode {
         }
 
         <span class="site-search-panel-divider" aria-hidden="true"></span>
-        <div #sortTrigger class="site-search-panel-sort">
-          <span
-            class="site-search-panel-sort-state"
-            matRipple
-            [matRippleTrigger]="sortTrigger"
-            aria-hidden="true"
-          ></span>
+        <div class="site-search-panel-sort">
           <mat-select
             class="site-search-panel-sort-select"
             aria-label="Trier les résultats"
             panelClass="site-search-panel-sort-menu"
             panelWidth="14rem"
+            hideSingleSelectionIndicator
             [value]="sortMode()"
             (selectionChange)="setSortMode($event.value)"
           >
@@ -167,7 +163,14 @@ function isSearchSortMode(value: unknown): value is SearchSortMode {
               </span>
             </mat-select-trigger>
             @for (option of sortOptions; track option.value) {
-              <mat-option [value]="option.value">{{ option.label }}</mat-option>
+              <mat-option [value]="option.value">
+                <span class="site-search-panel-sort-option">
+                  <span>{{ option.label }}</span>
+                  @if (option.value === sortMode()) {
+                    <mat-icon aria-hidden="true">{{ doneIcon }}</mat-icon>
+                  }
+                </span>
+              </mat-option>
             }
           </mat-select>
         </div>
@@ -175,11 +178,42 @@ function isSearchSortMode(value: unknown): value is SearchSortMode {
       </div>
     </form>
 
-    @if (status() || loading()) {
+    @if (status() || loading() || hasFilterState()) {
       <div class="site-search-panel-state">
-        <p class="site-search-panel-status" role="status" aria-live="polite">
-          {{ status() }}
-        </p>
+        @if (status()) {
+          <p
+            id="site-search-panel-status"
+            class="site-search-panel-status"
+            role="status"
+            aria-live="polite"
+          >
+            {{ status() }}
+          </p>
+        }
+        @if (hasFilterState()) {
+          <div class="site-search-panel-filter-actions">
+            <button
+              matButton="tonal"
+              class="site-search-panel-filter-button site-search-panel-clear-filters"
+              type="button"
+              aria-label="Effacer les filtres sélectionnés"
+              (click)="clearFilters()"
+            >
+              <mat-icon aria-hidden="true">{{ closeIcon }}</mat-icon>
+              <span>Filtres</span>
+            </button>
+          </div>
+        }
+        @if (selectedTagLimitReached()) {
+          <p
+            id="site-search-panel-filter-limit"
+            class="site-search-panel-filter-limit"
+            role="status"
+            aria-live="polite"
+          >
+            Limite atteinte : 3 tags maximum.
+          </p>
+        }
         @if (loading()) {
           <mat-progress-bar
             class="site-search-panel-progress"
@@ -192,37 +226,37 @@ function isSearchSortMode(value: unknown): value is SearchSortMode {
 
     <div class="site-search-panel-filters">
       @if (tagFilters().length > 0) {
-        <mat-chip-listbox class="site-search-panel-tags" multiple aria-label="Filtrer par tags">
+        <mat-chip-listbox
+          id="site-search-panel-tags"
+          class="site-search-panel-tags"
+          multiple
+          aria-label="Filtrer par tags"
+          [value]="selectedTags()"
+          (change)="setSelectedTags($event.value)"
+        >
           @for (tag of tagFilters(); track tag.value) {
             <mat-chip-option
+              [disabled]="isTagDisabled(tag.value)"
               [value]="tag.value"
-              [selected]="selectedTags().includes(tag.value)"
-              (selectionChange)="setTagSelected(tag.value, $event.selected, $event.isUserInput)"
+              [attr.aria-label]="tagAriaLabel(tag.value)"
+              (click)="releaseTouchFocus($event)"
             >
               #{{ tag.value }}
             </mat-chip-option>
           }
         </mat-chip-listbox>
       }
-
-      @if (hasFilterState()) {
-        <button
-          matButton="tonal"
-          class="site-search-panel-filter-button site-search-panel-clear-filters"
-          type="button"
-          (click)="clearFilters()"
-        >
-          <mat-icon aria-hidden="true">{{ closeIcon }}</mat-icon>
-          <span>Filtres</span>
-        </button>
-      }
     </div>
 
-    <ol class="site-search-panel-results">
+    <ol id="site-search-panel-results" class="site-search-panel-results" aria-live="polite">
       @for (result of results(); track result.url) {
         <li class="site-search-panel-result">
           <div class="site-search-panel-result-body">
-            <a class="site-search-panel-result-title" [href]="result.url" [innerHTML]="result.titleHtml"></a>
+            <a
+              class="site-search-panel-result-title"
+              [href]="result.url"
+              [innerHTML]="result.titleHtml"
+            ></a>
             <div class="site-search-panel-result-meta">
               @if (result.createdLabel) {
                 <span>
@@ -260,7 +294,7 @@ function isSearchSortMode(value: unknown): value is SearchSortMode {
             matIconButton
             class="site-search-panel-result-arrow"
             [href]="result.url"
-            aria-label="Ouvrir l’article"
+            [attr.aria-label]="'Ouvrir ' + result.title"
           >
             <mat-icon aria-hidden="true">{{ arrowIcon }}</mat-icon>
           </a>
@@ -318,7 +352,9 @@ function isSearchSortMode(value: unknown): value is SearchSortMode {
       background: transparent;
       color: var(--site-text);
       font: inherit;
-      font-size: 1rem;
+      font-size: 16px;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
     }
 
     .site-search-panel-input::placeholder {
@@ -399,19 +435,19 @@ function isSearchSortMode(value: unknown): value is SearchSortMode {
       row-gap: 0.05rem;
     }
 
-    .site-search-panel-sort-state.mat-ripple {
+    .site-search-panel-sort::before {
       position: absolute;
       inset: 0.35rem 0.55rem 0.35rem 0.5rem;
       display: block;
-      overflow: hidden;
       border-radius: 8px;
       background: color-mix(in srgb, var(--site-muted) 10%, transparent);
+      content: "";
       opacity: 0;
       pointer-events: none;
       transition: opacity 160ms ease;
     }
 
-    .site-search-panel-sort:hover .site-search-panel-sort-state {
+    .site-search-panel-sort:hover::before {
       opacity: 1;
     }
 
@@ -495,6 +531,24 @@ function isSearchSortMode(value: unknown): value is SearchSortMode {
       --mat-pseudo-checkbox-minimal-selected-checkmark-color: var(--site-link);
     }
 
+    .site-search-panel-sort-option {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .site-search-panel-sort-option .mat-icon {
+      flex: 0 0 auto;
+      width: 1.4rem;
+      height: 1.4rem;
+      color: var(--site-link);
+      font-size: 1.4rem;
+      line-height: 1;
+    }
+
     .site-search-panel-progress.mat-mdc-progress-bar {
       width: 100%;
       height: 0.18rem;
@@ -510,11 +564,8 @@ function isSearchSortMode(value: unknown): value is SearchSortMode {
 
     .site-search-panel-filters {
       position: relative;
-      display: flex;
-      align-items: flex-start;
-      gap: 0.5rem;
       min-width: 0;
-      margin-block-start: 0.65rem;
+      margin-block-start: 0.55rem;
       padding-block-end: 0.7rem;
       overflow: visible;
     }
@@ -526,54 +577,89 @@ function isSearchSortMode(value: unknown): value is SearchSortMode {
 
     .site-search-panel-tags .mdc-evolution-chip-set__chips {
       flex-wrap: wrap;
-      gap: 0.45rem;
       margin: 0;
     }
 
     .site-search-panel-tags .mat-mdc-chip-option {
-      --site-search-chip-selected-bg: color-mix(
-        in srgb,
-        var(--site-link) 15%,
-        var(--site-bg)
-      );
+      --site-search-chip-selected-bg: var(--site-link-container);
+      --site-search-chip-selected-fg: var(--site-on-link-container);
+      --site-search-chip-label-fg: var(--site-muted);
+      --site-search-chip-outline: color-mix(in srgb, var(--site-link) 78%, transparent);
       --mdc-chip-container-color: transparent;
       --mdc-chip-container-height: 2rem;
       --mdc-chip-elevated-container-color: transparent;
       --mdc-chip-flat-selected-container-color: var(--site-search-chip-selected-bg);
-      --mdc-chip-label-text-color: var(--site-muted);
-      --mdc-chip-outline-color: var(--site-link);
+      --mdc-chip-label-text-color: var(--site-search-chip-label-fg);
+      --mdc-chip-outline-color: var(--site-search-chip-outline);
       --mdc-chip-selected-container-color: var(--site-search-chip-selected-bg);
-      --mdc-chip-selected-label-text-color: var(--site-text);
-      --mdc-chip-with-icon-selected-icon-color: var(--site-text);
+      --mdc-chip-selected-label-text-color: var(--site-search-chip-selected-fg);
+      --mdc-chip-with-icon-selected-icon-color: var(--site-search-chip-selected-fg);
+      --mat-chip-focus-outline-color: var(--site-search-chip-outline);
+      --mat-chip-focus-state-layer-opacity: 0;
+      --mat-chip-hover-state-layer-opacity: 0.08;
+      --mat-chip-label-text-color: var(--site-search-chip-label-fg);
+      --mat-chip-outline-color: var(--site-search-chip-outline);
+      --mat-chip-pressed-state-layer-opacity: 0.08;
       --mat-chip-selected-container-color: var(--site-search-chip-selected-bg);
-      --mat-chip-selected-label-text-color: var(--site-text);
-      --mat-chip-selected-trailing-icon-color: var(--site-text);
-      --mat-chip-with-selected-icon-selected-icon-color: var(--site-text);
-      --mat-chip-hover-state-layer-color: color-mix(
-        in srgb,
-        var(--site-link) 10%,
-        transparent
-      );
-      --mat-chip-focus-state-layer-color: transparent;
-      --mat-chip-pressed-state-layer-color: transparent;
+      --mat-chip-selected-focus-state-layer-opacity: 0;
+      --mat-chip-selected-hover-state-layer-opacity: 0.08;
+      --mat-chip-selected-label-text-color: var(--site-search-chip-selected-fg);
+      --mat-chip-selected-pressed-state-layer-opacity: 0.08;
+      --mat-chip-selected-trailing-icon-color: var(--site-search-chip-selected-fg);
+      --mat-chip-with-icon-icon-color: var(--site-search-chip-label-fg);
+      --mat-chip-with-icon-selected-icon-color: var(--site-search-chip-selected-fg);
+      --mat-chip-with-selected-icon-selected-icon-color: var(--site-search-chip-selected-fg);
+      --mat-chip-hover-state-layer-color: var(--site-search-chip-label-fg);
+      --mat-chip-focus-state-layer-color: var(--site-search-chip-label-fg);
+      --mat-chip-selected-hover-state-layer-color: var(--site-search-chip-selected-fg);
+      --mat-chip-selected-focus-state-layer-color: var(--site-search-chip-selected-fg);
       flex: 0 0 auto;
       font-size: 0.88rem;
+      touch-action: manipulation;
     }
 
-    .site-search-panel-tags .mat-mdc-chip-option.mat-mdc-chip-selected {
+    .site-search-panel-tags .mat-mdc-chip-option.mdc-evolution-chip--disabled {
+      opacity: 0.52;
+    }
+
+    .site-search-panel-tags
+      .mat-mdc-chip-option:is(.mat-mdc-chip-selected, .mdc-evolution-chip--selected) {
       --mdc-chip-container-color: var(--site-search-chip-selected-bg);
       --mdc-chip-elevated-container-color: var(--site-search-chip-selected-bg);
       --mdc-chip-outline-color: transparent;
+      --mat-chip-elevated-selected-container-color: var(--site-search-chip-selected-bg);
       background-color: var(--site-search-chip-selected-bg);
-      color: var(--site-text);
+      color: var(--site-search-chip-selected-fg);
     }
 
-    .site-search-panel-tags .mat-mdc-chip-option.mat-mdc-chip-selected .mdc-evolution-chip__action {
+    .site-search-panel-tags
+      .mat-mdc-chip-option:is(.mat-mdc-chip-selected, .mdc-evolution-chip--selected)
+      .mdc-evolution-chip__action {
       background-color: transparent;
     }
 
-    .site-search-panel-tags .mat-mdc-chip-option.mat-mdc-chip-selected .mat-mdc-chip-focus-overlay {
+    .site-search-panel-tags
+      .mat-mdc-chip-option:is(.mat-mdc-chip-selected, .mdc-evolution-chip--selected)
+      .mat-mdc-chip-focus-overlay {
       opacity: 0;
+    }
+
+    .site-search-panel-tags
+      .mat-mdc-chip-option:not(.mat-mdc-chip-selected):not(.mdc-evolution-chip--selected)
+      .mat-mdc-chip-focus-overlay {
+      opacity: 0;
+    }
+
+    .site-search-panel-tags
+      .mat-mdc-chip-option:not(.mat-mdc-chip-selected):not(.mdc-evolution-chip--selected) {
+      --mdc-chip-container-color: transparent;
+      --mdc-chip-elevated-container-color: transparent;
+      --mdc-chip-outline-color: var(--site-search-chip-outline);
+      --mat-chip-focus-outline-color: var(--site-search-chip-outline);
+      background-color: transparent;
+      border-color: var(--site-search-chip-outline);
+      color: var(--site-search-chip-label-fg);
+      outline-color: var(--site-search-chip-outline);
     }
 
     .site-search-panel-filter-button.mat-mdc-button-base {
@@ -596,15 +682,28 @@ function isSearchSortMode(value: unknown): value is SearchSortMode {
 
     .site-search-panel-state {
       display: grid;
-      gap: 0.45rem;
+      justify-items: start;
+      gap: 0.5rem;
       min-height: 2.5rem;
-      margin-block: 0.6rem 0.7rem;
+      margin-block: 0.6rem 0.45rem;
     }
 
     .site-search-panel-status {
       margin: 0;
       color: var(--site-muted);
       font-size: 0.9rem;
+    }
+
+    .site-search-panel-filter-limit {
+      margin: -0.2rem 0 0;
+      color: var(--site-link);
+      font-size: 0.84rem;
+    }
+
+    .site-search-panel-filter-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
     }
 
     .site-search-panel-results {
@@ -734,16 +833,29 @@ function isSearchSortMode(value: unknown): value is SearchSortMode {
       .site-search-panel-result-arrow {
         display: none;
       }
+    }
 
+    @media (max-width: 720px), (pointer: coarse) {
       .site-search-panel-filters {
-        align-items: center;
         overflow-x: auto;
         scrollbar-width: thin;
       }
 
       .site-search-panel-tags .mdc-evolution-chip-set__chips {
         flex-wrap: nowrap;
-        gap: 0.35rem;
+      }
+
+      .site-search-panel-tags .mat-mdc-chip-option {
+        --mat-chip-focus-state-layer-opacity: 0;
+        --mat-chip-hover-state-layer-opacity: 0;
+        --mat-chip-pressed-state-layer-opacity: 0;
+        --mat-chip-selected-focus-state-layer-opacity: 0;
+        --mat-chip-selected-hover-state-layer-opacity: 0;
+        --mat-chip-selected-pressed-state-layer-opacity: 0;
+      }
+
+      .site-search-panel-tags .mat-mdc-chip-focus-overlay {
+        opacity: 0 !important;
       }
     }
 
@@ -755,7 +867,7 @@ function isSearchSortMode(value: unknown): value is SearchSortMode {
       }
 
       .site-search-panel-input {
-        font-size: 0.95rem;
+        font-size: 16px;
       }
 
       .site-search-panel-state {
@@ -772,6 +884,9 @@ export class SiteSearchPanelComponent implements AfterViewInit {
     return this.selectedTags().length > 0;
   });
   readonly hasSearchText = computed(() => this.queryValue().trim().length > 0);
+  readonly selectedTagLimitReached = computed(() => {
+    return this.selectedTags().length >= MAX_SELECTED_TAGS;
+  });
   readonly loading = signal(false);
   readonly query = new FormControl("", { nonNullable: true });
   readonly queryValue = signal("");
@@ -782,6 +897,7 @@ export class SiteSearchPanelComponent implements AfterViewInit {
   readonly closeIcon = "\uE5CD";
   readonly createdIcon = "\uE89C";
   readonly createdTooltip = "Création du post";
+  readonly doneIcon = "\uE876";
   readonly modifiedIcon = "\uF88C";
   readonly modifiedTooltip = "Dernière modification du post";
   readonly searchIcon = "\uE8B6";
@@ -825,7 +941,9 @@ export class SiteSearchPanelComponent implements AfterViewInit {
 
     void this.loadTagFilters();
     void this.search(this.query.value.trim());
-    window.setTimeout(() => this.searchInput?.nativeElement.focus());
+    if (this.shouldAutofocusSearch()) {
+      window.setTimeout(() => this.searchInput?.nativeElement.focus({ preventScroll: true }));
+    }
   }
 
   submit(event: SubmitEvent) {
@@ -853,20 +971,38 @@ export class SiteSearchPanelComponent implements AfterViewInit {
     void this.search(this.query.value.trim());
   }
 
-  setTagSelected(tag: string, selected: boolean, isUserInput: boolean) {
-    if (!isUserInput) return;
-
+  setSelectedTags(value: unknown) {
+    const nextTags = this.normalizeSelectedTags(value);
     const selectedTags = this.selectedTags();
-    if (selected && !selectedTags.includes(tag)) {
-      this.selectedTags.set([...selectedTags, tag]);
-      void this.search(this.query.value.trim());
-      return;
-    }
 
-    if (!selected && selectedTags.includes(tag)) {
-      this.selectedTags.set(selectedTags.filter((selectedTag) => selectedTag !== tag));
-      void this.search(this.query.value.trim());
-    }
+    if (
+      nextTags.length === selectedTags.length &&
+      nextTags.every((tag, index) => tag === selectedTags[index])
+    ) return;
+
+    this.selectedTags.set(nextTags);
+    void this.search(this.query.value.trim());
+  }
+
+  isTagDisabled(tag: string) {
+    return this.selectedTagLimitReached() && !this.selectedTags().includes(tag);
+  }
+
+  tagAriaLabel(tag: string) {
+    return this.selectedTags().includes(tag)
+      ? `Retirer le tag ${tag}`
+      : `Ajouter le tag ${tag}`;
+  }
+
+  releaseTouchFocus(event: Event) {
+    if (typeof window === "undefined") return;
+    if (!window.matchMedia("(pointer: coarse)").matches) return;
+
+    window.setTimeout(() => {
+      const target = event.currentTarget;
+      if (target instanceof HTMLElement) target.blur();
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    });
   }
 
   private async loadPagefind() {
@@ -1140,7 +1276,23 @@ export class SiteSearchPanelComponent implements AfterViewInit {
     return tags
       .split(",")
       .map((tag) => tag.trim())
-      .filter(Boolean);
+      .filter(Boolean)
+      .slice(0, MAX_SELECTED_TAGS);
+  }
+
+  private normalizeSelectedTags(value: unknown) {
+    const tags = Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
+
+    return [...new Set(tags.filter((tag): tag is string => typeof tag === "string"))].slice(
+      0,
+      MAX_SELECTED_TAGS,
+    );
+  }
+
+  private shouldAutofocusSearch() {
+    if (typeof window === "undefined") return false;
+
+    return !window.matchMedia("(max-width: 720px), (pointer: coarse)").matches;
   }
 
   private dateValue(value?: string) {
@@ -1303,7 +1455,7 @@ export class SiteSearchPanelComponent implements AfterViewInit {
   template: `
     <div class="site-search-dialog-header">
       <h2 mat-dialog-title>Recherche</h2>
-      <button matIconButton type="button" mat-dialog-close aria-label="Fermer">
+      <button matIconButton type="button" mat-dialog-close aria-label="Fermer la recherche">
         <mat-icon aria-hidden="true">{{ closeIcon }}</mat-icon>
       </button>
     </div>
@@ -1318,10 +1470,21 @@ export class SiteSearchPanelComponent implements AfterViewInit {
       border-radius: var(--image-radius);
     }
 
+    .site-search-dialog-panel .mat-mdc-dialog-container {
+      max-height: inherit;
+    }
+
     .site-search-dialog-panel .mat-mdc-dialog-surface {
       background: var(--site-bg);
       color: var(--site-text);
       overflow: hidden;
+    }
+
+    .site-search-dialog-panel .mat-mdc-dialog-content {
+      max-height: min(72vh, 42rem);
+      overflow: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
     }
 
     .site-search-dialog-header {
@@ -1335,6 +1498,34 @@ export class SiteSearchPanelComponent implements AfterViewInit {
     .site-search-dialog-header [mat-dialog-title] {
       margin: 0;
       font-family: var(--site-heading-font);
+    }
+
+    @media (max-width: 720px), (pointer: coarse) {
+      .site-search-dialog-panel.cdk-overlay-pane {
+        position: fixed !important;
+        top: calc(0.75rem + env(safe-area-inset-top, 0px)) !important;
+        right: calc(0.75rem + env(safe-area-inset-right, 0px)) !important;
+        left: calc(0.75rem + env(safe-area-inset-left, 0px)) !important;
+        width: auto !important;
+        max-width: none !important;
+        max-height: calc(
+          100dvh - 1.5rem - env(safe-area-inset-top, 0px) -
+            env(safe-area-inset-bottom, 0px)
+        ) !important;
+        transform: none !important;
+      }
+
+      .site-search-dialog-panel .mat-mdc-dialog-container,
+      .site-search-dialog-panel .mat-mdc-dialog-surface {
+        max-height: inherit;
+      }
+
+      .site-search-dialog-panel .mat-mdc-dialog-content {
+        max-height: calc(
+          100dvh - 7.5rem - env(safe-area-inset-top, 0px) -
+            env(safe-area-inset-bottom, 0px)
+        );
+      }
     }
   `,
 })

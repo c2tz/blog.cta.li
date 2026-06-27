@@ -16,6 +16,7 @@ import { MatTooltip } from "@angular/material/tooltip";
       matTooltip="Rechercher"
       matTooltipPosition="below"
       aria-label="Rechercher"
+      aria-haspopup="dialog"
       (click)="open()"
     >
       <mat-icon aria-hidden="true">{{ searchIcon }}</mat-icon>
@@ -42,6 +43,7 @@ export class SiteSearchTriggerComponent {
     const dialog = this.injector.get(MatDialog);
 
     dialog.open(SiteSearchDialogComponent, {
+      ariaLabel: "Recherche",
       autoFocus: false,
       maxWidth: "calc(100vw - 2rem)",
       panelClass: "site-search-dialog-panel",

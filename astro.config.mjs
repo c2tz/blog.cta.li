@@ -86,8 +86,11 @@ const removeCodeBlockTabindex = {
 
 export default defineConfig({
   site: "https://ct-blog.cta.li/",
+  build: {
+    inlineStylesheets: "always",
+  },
   devToolbar: {
-    enabled: false,
+    enabled: true,
   },
   integrations: [
     mdx(),

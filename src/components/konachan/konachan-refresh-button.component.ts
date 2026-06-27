@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   signal,
 } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
@@ -11,6 +12,7 @@ import { SITE_EVENTS } from "@/lib/site-contracts";
 
 interface RefreshState {
   busy?: boolean;
+  loaded?: boolean;
   status?: string;
 }
 
@@ -26,8 +28,8 @@ interface RefreshState {
       class="home-anime-refresh"
       [disabled]="busy()"
       [attr.aria-busy]="busy()"
-      [attr.aria-label]="busy() ? 'Image en cours de chargement' : 'Changer l\\'image'"
-      [matTooltip]="busy() ? 'Image en cours de chargement' : 'Changer l\\'image'"
+      [attr.aria-label]="buttonLabel()"
+      [matTooltip]="buttonLabel()"
       matTooltipPosition="below"
       (click)="refresh()"
     >
@@ -40,17 +42,28 @@ interface RefreshState {
 })
 export class KonachanRefreshButtonComponent implements OnInit, OnDestroy {
   readonly busy = signal(false);
+  readonly loaded = signal(false);
   readonly status = signal("");
+  readonly buttonLabel = computed(() => {
+    if (this.busy()) return "Image en cours de chargement";
+
+    return this.loaded() ? "Changer l'image" : "Afficher une image";
+  });
 
   private readonly handleRefreshState = (event: Event) => {
     const detail = (event as CustomEvent<RefreshState>).detail ?? {};
 
     if (typeof detail.busy === "boolean") this.busy.set(detail.busy);
+    if (typeof detail.loaded === "boolean") this.loaded.set(detail.loaded);
     if (typeof detail.status === "string") this.status.set(detail.status);
   };
 
   ngOnInit() {
     if (typeof document === "undefined") return;
+    this.loaded.set(
+      document.querySelector("[data-konachan-background]")?.getAttribute("data-loaded") ===
+        "true",
+    );
     document.addEventListener(SITE_EVENTS.konachanRefreshState, this.handleRefreshState);
   }
 

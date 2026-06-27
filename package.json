@@ -8,13 +8,14 @@
   "scripts": {
     "dev": "astro dev",
     "dev:local": "astro dev --host 127.0.0.1 --port 4321",
-    "build": "astro build",
-    "build:vercel": "node scripts/ensure-git-history.mjs && astro build",
+    "build": "astro build && pnpm index:search",
+    "build:vercel": "node scripts/ensure-git-history.mjs && pnpm build",
     "preview": "astro preview",
     "preview:local": "astro preview --host 127.0.0.1 --port 4322",
     "check": "pnpm check:angular",
     "check:angular": "astro sync && ngc -p tsconfig.app.json --noEmit",
     "verify": "pnpm check && pnpm build",
+    "index:search": "node scripts/clean-pagefind.mjs && pagefind --site dist --glob \"posts/**/index.html\" --silent && node scripts/sync-pagefind-dev.mjs",
     "astro": "astro",
     "update:konachan": "node scripts/update-konachan-backgrounds.mjs",
     "update:material-symbols": "node scripts/update-material-symbols.mjs"
@@ -54,6 +55,7 @@
   },
   "devDependencies": {
     "@angular/language-service": "^22.0.2",
+    "pagefind": "^1.5.2",
     "sass": "^1.99.0",
     "typescript": "6.0.3"
   }

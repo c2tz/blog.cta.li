@@ -21,6 +21,12 @@
   text-decoration: underline;
 }
 
+.site-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
 .not-found {
   display: flex;
   flex-direction: column;

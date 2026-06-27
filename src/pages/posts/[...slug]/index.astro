@@ -20,9 +20,11 @@ const post = Astro.props;
 const { Content } = await render(post);
 const gitDates = getContentEntryGitDates("blog", post);
 const { createdAt, lastModified } = gitDates;
+const postPriority = post.data.priority ?? 0;
+const visiblePostTags = [...(post.data.tags ?? [])].filter((tag) => tag !== "all");
 const postTags = [
   "all",
-  ...[...(post.data.tags ?? [])].filter((tag) => tag !== "all"),
+  ...visiblePostTags,
 ];
 ---
 
@@ -39,22 +41,53 @@ const postTags = [
   }}
 >
   <Fragment slot="content">
-    <article class="post">
+    <article class="post" data-pagefind-body>
       <header class="post-header">
         <h1 id="post-title" class="post-title-anchor" data-anchor-reset>
           {post.data.title}
         </h1>
       </header>
+      <div data-pagefind-ignore aria-hidden="true" style="display: none;">
+        <time
+          datetime={createdAt}
+          data-pagefind-meta="created[datetime]"
+          data-pagefind-sort="created[datetime]"
+        >
+          {createdAt}
+        </time>
+        <time
+          datetime={lastModified}
+          data-pagefind-meta="modified[datetime]"
+          data-pagefind-sort="modified[datetime]"
+        >
+          {lastModified}
+        </time>
+        <span data-pagefind-meta="tags">
+          {visiblePostTags.join(", ")}
+        </span>
+        <span data-pagefind-meta="priority">
+          {postPriority}
+        </span>
+        {
+          visiblePostTags.map((tag) => (
+            <span data-pagefind-filter="tag">
+              {tag}
+            </span>
+          ))
+        }
+      </div>
       <Prose>
         <Content />
       </Prose>
-      <PostGitDates
-        createdAt={createdAt}
-        createdCommit={gitDates.createdCommit}
-        lastModified={lastModified}
-        lastModifiedCommit={gitDates.lastModifiedCommit}
-      />
-      <nav aria-label="Tags de l’article">
+      <div data-pagefind-ignore>
+        <PostGitDates
+          createdAt={createdAt}
+          createdCommit={gitDates.createdCommit}
+          lastModified={lastModified}
+          lastModifiedCommit={gitDates.lastModifiedCommit}
+        />
+      </div>
+      <nav aria-label="Tags de l’article" data-pagefind-ignore>
         <ul class="post-tags">
           {
             postTags.map((tag) => (

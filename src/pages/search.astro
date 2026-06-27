@@ -1,0 +1,36 @@
+---
+import searchHeroImage from "@/content/blog/images/konachan-396319.jpg";
+import { SiteSearchPanelComponent } from "@/components/search/site-search-panel.component";
+import Layout from "@/layouts/site-layout.astro";
+---
+
+<Layout
+  title="Recherche"
+  description="Recherche interne des articles du blog."
+  bodyClass="search-page"
+  readingProgress={false}
+>
+  <Fragment slot="content">
+    <section class="site-search-page not-prose" aria-labelledby="search-title">
+      <header class="site-search-page-hero">
+        <img
+          src={searchHeroImage.src}
+          width={searchHeroImage.width}
+          height={searchHeroImage.height}
+          alt=""
+          loading="eager"
+          decoding="async"
+          fetchpriority="high"
+        />
+        <div class="site-search-page-hero-content">
+          <p>Articles</p>
+          <h1 id="search-title">Recherche</h1>
+        </div>
+      </header>
+
+      <div class="site-search-page-panel">
+        <SiteSearchPanelComponent client:load />
+      </div>
+    </section>
+  </Fragment>
+</Layout>

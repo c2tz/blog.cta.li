@@ -4,9 +4,14 @@
   border-block-start: 1px solid var(--site-border);
 }
 
-.home-section > h2,
-.home-section > h3 {
+.home-section > h2 {
   margin-block: 0 0.75rem;
+}
+
+.home-tags-section {
+  margin-block-end: 2.5rem;
+  padding-block-end: 1.25rem;
+  border-block-end: 1px solid var(--site-border);
 }
 
 .home-posts,

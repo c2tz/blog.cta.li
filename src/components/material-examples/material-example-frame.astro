@@ -1,0 +1,27 @@
+---
+interface Props {
+  example: string;
+  importPath: string;
+  slug: string;
+  title: string;
+}
+
+const { example, importPath, slug, title } = Astro.props as Props;
+---
+
+<article class="material-example-frame" id={slug}>
+  <header class="material-example-frame__header">
+    <div>
+      <h2>{title}</h2>
+      <p>{example}</p>
+    </div>
+    <a href={`#${slug}`} aria-label={`Lien vers ${title}`}>#</a>
+  </header>
+  <div class="material-example-frame__body">
+    <slot />
+  </div>
+  <details class="material-example-frame__usage">
+    <summary>MDX</summary>
+    <pre><code>{`import ${title.replaceAll(/[^a-zA-Z0-9]+/g, "")}Example from "${importPath}";\n\n<${title.replaceAll(/[^a-zA-Z0-9]+/g, "")}Example />`}</code></pre>
+  </details>
+</article>

@@ -1,7 +1,4 @@
 ---
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-
 import fallbackOne from "@/content/blog/images/konachan-396319.jpg";
 import fallbackTwo from "@/content/blog/images/konachan-382339.jpg";
 import { HomeHeroActionsComponent } from "./home-hero-actions.component";
@@ -23,96 +20,6 @@ interface Props {
   secondaryActionLabel?: string;
 }
 
-interface ManifestImage {
-  author?: string;
-  bytes?: number;
-  height?: number;
-  id?: number | string;
-  source?: string;
-  tags?: string;
-  url?: string;
-  variants?: Array<{
-    bytes?: number;
-    height?: number;
-    url?: string;
-    width?: number;
-  }>;
-  width?: number;
-}
-
-function readManifestImages() {
-  try {
-    const manifestPath = fileURLToPath(
-      new URL("../../../public/konachan-backgrounds.json", import.meta.url),
-    );
-    const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
-    return Array.isArray(manifest.images) ? manifest.images : [];
-  } catch {
-    return [];
-  }
-}
-
-function isUsableManifestImage(image: unknown): image is ManifestImage {
-  return (
-    typeof image === "object" &&
-    image !== null &&
-    typeof (image as ManifestImage).url === "string" &&
-    (image as ManifestImage).url?.startsWith("/") === true
-  );
-}
-
-function isHeroFriendlyImage(image: ManifestImage) {
-  return /\b(building|city|clouds|landscape|scenic|sky)\b/.test(image.tags ?? "");
-}
-
-function pickInitialBackground() {
-  const manifestImages = readManifestImages().filter(isUsableManifestImage);
-  const preferredImages = manifestImages.filter(isHeroFriendlyImage);
-  const candidates = preferredImages.length > 0 ? preferredImages : manifestImages;
-  const selected = [...candidates].sort(
-    (left, right) =>
-      (left.bytes ?? Number.POSITIVE_INFINITY) -
-      (right.bytes ?? Number.POSITIVE_INFINITY),
-  )[0];
-
-  if (selected?.url) {
-    return {
-      ...selected,
-      height: selected.height ?? 1080,
-      src: selected.url,
-      width: selected.width ?? 1920,
-    };
-  }
-
-  return {
-    height: fallbackOne.height,
-    src: fallbackOne.src,
-    url: fallbackOne.src,
-    width: fallbackOne.width,
-  };
-}
-
-function formatInitialCredit(image: ManifestImage) {
-  const parts = [];
-  if (image.author) parts.push(image.author);
-  if (image.id) parts.push(`#${image.id}`);
-
-  return parts.length > 0 ? parts.join(" · ") : "Voir la source";
-}
-
-function formatInitialSrcset(image: ManifestImage) {
-  const variants = (image.variants ?? [])
-    .filter((variant) => variant.url?.startsWith("/") && variant.width)
-    .sort((left, right) => (left.width ?? 0) - (right.width ?? 0));
-
-  if (variants.length === 0 || !image.url || !image.width) return undefined;
-
-  return [
-    ...variants.map((variant) => `${variant.url} ${variant.width}w`),
-    `${image.url} ${image.width}w`,
-  ].join(", ");
-}
-
 const {
   title = "Court Teplaye",
   lede = "Micro-récits, grandes émotions. Des textes courts pour lire entre deux.",
@@ -121,9 +28,7 @@ const {
   secondaryActionHref = "https://www.cta.li",
   secondaryActionLabel = "À propos",
 } = Astro.props;
-const initialBackground = pickInitialBackground();
-const initialCreditLabel = formatInitialCredit(initialBackground);
-const initialSrcset = formatInitialSrcset(initialBackground);
+const initialBackground = null;
 const emergencyImages = [fallbackOne.src, fallbackTwo.src];
 const konachanClientConfig = {
   cacheName: SITE_CACHE_NAMES.homeKonachanBackgrounds,
@@ -140,22 +45,17 @@ const konachanClientConfig = {
   <div
     class="home-anime-background"
     data-konachan-background
-    data-konachan-current-url={initialBackground.url}
-    data-loaded="true"
+    data-konachan-current-url=""
+    data-loaded="false"
     aria-hidden="true"
   >
     <img
       class="home-anime-background-image"
       data-konachan-background-image
-      src={initialBackground.src}
-      srcset={initialSrcset}
-      sizes="(max-width: 735px) calc(100vw - 2rem), 800px"
-      width={initialBackground.width}
-      height={initialBackground.height}
+      width={fallbackOne.width}
+      height={fallbackOne.height}
       alt=""
-      loading="eager"
       decoding="async"
-      fetchpriority="high"
     />
   </div>
   <KonachanLoadingIndicatorComponent client:idle />
@@ -181,9 +81,9 @@ const konachanClientConfig = {
       target="_blank"
       rel="noopener noreferrer"
       data-konachan-credit-link
-      hidden={!initialBackground.source}
+      hidden
     >
-      {initialCreditLabel}
+      Voir la source
     </a>
     <KonachanRefreshButtonComponent client:idle />
   </aside>
@@ -523,7 +423,11 @@ const konachanClientConfig = {
 
       document.dispatchEvent(
         new CustomEvent(konachanClientConfig.events.refreshState, {
-          detail: { busy, status: message },
+          detail: {
+            busy,
+            loaded: target.dataset.loaded === "true",
+            status: message,
+          },
         }),
       );
     };
@@ -546,25 +450,6 @@ const konachanClientConfig = {
 
     document.addEventListener(konachanClientConfig.events.refreshRequest, () => {
       refresh({ forceReload: true, rotateAfter: true });
-    });
-
-    const cached = readStoredImages();
-    if (cached?.images?.length) {
-      state.images = mergeImages(cached.images);
-    } else {
-      window.setTimeout(() => {
-        if (target.dataset.loaded === "true") return;
-        state.images = mergeImages(EMERGENCY_IMAGES);
-        rotate(target);
-      }, 800);
-    }
-
-    const scheduleRefresh =
-      "requestIdleCallback" in window
-        ? (callback) => window.requestIdleCallback(callback, { timeout: 2200 })
-        : (callback) => window.setTimeout(callback, 1200);
-    scheduleRefresh(() => {
-      refresh();
     });
   }
 

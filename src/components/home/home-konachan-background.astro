@@ -104,7 +104,7 @@ const konachanClientConfig = {
   const CREDIT_LINK_SELECTOR = "[data-konachan-credit-link]";
   const LANDING_SELECTOR = ".home-anime-landing";
   const STATUS_SELECTOR = "[data-konachan-status]";
-  const MANIFEST_URL = "/konachan-backgrounds.json?v=2";
+  const MANIFEST_URL = "/konachan-backgrounds.json?v=3";
   const KONACHAN_CACHE_KEY = konachanClientConfig.storageKey;
   const KONACHAN_LEGACY_CACHE_KEY = konachanClientConfig.legacyStorageKey;
   const KONACHAN_RATING_COOKIE = konachanClientConfig.ratingCookieName;
@@ -188,14 +188,9 @@ const konachanClientConfig = {
   function readStoredImages() {
     try {
       const current = localStorage.getItem(KONACHAN_CACHE_KEY);
-      const legacy = localStorage.getItem(KONACHAN_LEGACY_CACHE_KEY);
-      const cached = JSON.parse((current ?? legacy) || "null");
+      const cached = JSON.parse(current || "null");
       if (!cached?.storedAt || !Array.isArray(cached.images)) return null;
       if (Date.now() - cached.storedAt > KONACHAN_CACHE_TTL_MS) return null;
-      if (current === null && legacy !== null) {
-        localStorage.setItem(KONACHAN_CACHE_KEY, legacy);
-        localStorage.removeItem(KONACHAN_LEGACY_CACHE_KEY);
-      }
       return cached;
     } catch {
       return null;

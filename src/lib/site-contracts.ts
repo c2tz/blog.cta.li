@@ -13,7 +13,7 @@ export const SITE_EVENTS = Object.freeze({
 
 export const SITE_STORAGE_KEYS = Object.freeze({
   cookieConsent: "ct-cookie-consent-v1",
-  homeKonachanBackgrounds: "home-konachan-backgrounds-v7",
+  homeKonachanBackgrounds: "home-konachan-backgrounds-v8",
   homeKonachanRatingPreference: "home-konachan-rating-preference-v1",
   ipGeolocation: "site-ip-geolocation-v2",
   themePreference: "site-theme-preference",
@@ -38,5 +38,5 @@ export const SITE_LEGACY_COOKIE_NAMES = Object.freeze({
 });
 
 export const SITE_CACHE_NAMES = Object.freeze({
-  homeKonachanBackgrounds: "home-konachan-backgrounds-v3",
+  homeKonachanBackgrounds: "home-konachan-backgrounds-v4",
 });

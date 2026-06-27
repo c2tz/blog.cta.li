@@ -5,11 +5,19 @@ import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
 import {
+  KONACHAN_API_ORIGINS,
   KONACHAN_MANIFEST_LIMIT,
   KONACHAN_MAX_BYTES,
   KONACHAN_MIN_ASPECT_RATIO,
   KONACHAN_OUTPUT_HEIGHT,
   KONACHAN_OUTPUT_WIDTH,
+  KONACHAN_BLOCKED_ADULT_TAGS,
+  KONACHAN_BLOCKED_SENSITIVE_TAGS,
+  KONACHAN_EXPLICIT_TAG_QUERIES,
+  KONACHAN_QUESTIONABLE_TAG_QUERIES,
+  KONACHAN_RATING_TARGETS,
+  KONACHAN_SAFE_TAG_QUERIES,
+  KONACHAN_SENSITIVE_TAG_QUERIES,
   KONACHAN_TAG_QUERIES,
   KONACHAN_TAGS,
   getKonachanBackgroundPosts,
@@ -22,8 +30,8 @@ const TEMP_DIR = resolve(PUBLIC_DIR, ".konachan-backgrounds-tmp");
 const MANIFEST_PATH = resolve(PUBLIC_DIR, "konachan-backgrounds.json");
 const MANIFEST_TEMP_PATH = `${MANIFEST_PATH}.tmp`;
 const QUALITIES = [72, 64, 56, 48, 40, 32, 24, 18, 12, 8, 6];
-const MINIMUM_IMAGE_COUNT = 8;
 const RESPONSIVE_VARIANT_WIDTHS = [960];
+const RATING_ORDER = Object.keys(KONACHAN_RATING_TARGETS);
 
 async function readExistingManifest() {
   try {
@@ -41,9 +49,49 @@ function hasSameImages(previous, images) {
     return (
       Number(existing?.id) === Number(image.id) &&
       Number(existing?.bytes) === Number(image.bytes) &&
-      Number(existing?.quality) === Number(image.quality)
+      Number(existing?.quality) === Number(image.quality) &&
+      (existing?.rating ?? "safe") === image.rating
     );
   });
+}
+
+function countByRating(images) {
+  return images.reduce((counts, image) => {
+    const rating = image.rating ?? "safe";
+    counts[rating] = (counts[rating] ?? 0) + 1;
+    return counts;
+  }, {});
+}
+
+function hasUsableExistingManifest(manifest) {
+  return Array.isArray(manifest?.images) && manifest.images.length > 0;
+}
+
+function expectedFileNames(images) {
+  const names = new Set();
+
+  for (const image of images) {
+    if (image.url) names.add(image.url.split("/").pop());
+    for (const variant of image.variants ?? []) {
+      if (variant.url) names.add(variant.url.split("/").pop());
+    }
+  }
+
+  return names;
+}
+
+function sortImages(images) {
+  return images.sort((left, right) => {
+    const ratingDelta =
+      RATING_ORDER.indexOf(left.rating) - RATING_ORDER.indexOf(right.rating);
+    if (ratingDelta !== 0) return ratingDelta;
+
+    return Number(right.id) - Number(left.id);
+  });
+}
+
+function logPreservedAssets(message) {
+  console.warn(`${message} Existing Konachan assets were preserved.`);
 }
 
 async function fetchImage(url) {
@@ -112,6 +160,7 @@ async function generateImage(post) {
     height: KONACHAN_OUTPUT_HEIGHT,
     bytes: result.buffer.byteLength,
     quality: result.quality,
+    rating: post.rating,
     format: "webp",
     source: post.source,
     author: post.author,
@@ -120,48 +169,64 @@ async function generateImage(post) {
   };
 }
 
-async function runPool(items, concurrency, worker) {
-  const results = [];
-  let cursor = 0;
+async function generateRatingImages(posts, rating, targetCount) {
+  const candidates = posts.filter((post) => post.rating === rating);
+  const images = [];
 
-  async function runWorker() {
-    while (cursor < items.length) {
-      const item = items[cursor];
-      cursor += 1;
+  for (const post of candidates) {
+    if (images.length >= targetCount) break;
 
-      try {
-        results.push(await worker(item));
-        process.stdout.write(`Generated ${results.length}/${items.length}\r`);
-      } catch (error) {
-        console.warn(`\nSkipped Konachan post ${item.id}:`, error.message);
-      }
+    try {
+      images.push(await generateImage(post));
+      console.log(`Generated ${rating} ${images.length}/${targetCount}`);
+    } catch (error) {
+      console.warn(`Skipped Konachan post ${post.id}:`, error.message);
     }
   }
 
-  await Promise.all(Array.from({ length: concurrency }, runWorker));
-  process.stdout.write("\n");
-  return results;
+  return images;
 }
 
 async function main() {
   const posts = await getKonachanBackgroundPosts();
+  const previousManifest = await readExistingManifest();
+
   if (posts.length === 0) {
-    throw new Error("Konachan returned no usable posts; existing assets were preserved.");
+    if (!hasUsableExistingManifest(previousManifest)) {
+      throw new Error("Konachan returned no usable posts and no existing manifest is available.");
+    }
+
+    logPreservedAssets("Konachan returned no usable posts.");
+    return;
   }
 
   await rm(TEMP_DIR, { recursive: true, force: true });
   await mkdir(TEMP_DIR, { recursive: true });
 
-  const images = await runPool(posts.slice(0, KONACHAN_MANIFEST_LIMIT), 4, generateImage);
-  if (images.length < MINIMUM_IMAGE_COUNT) {
-    await rm(TEMP_DIR, { recursive: true, force: true });
-    throw new Error(
-      `Only ${images.length} images were generated; existing assets were preserved.`,
-    );
+  const images = [];
+
+  for (const rating of RATING_ORDER) {
+    const targetCount = KONACHAN_RATING_TARGETS[rating];
+    const ratingImages = await generateRatingImages(posts, rating, targetCount);
+    images.push(...ratingImages);
+
+    if (ratingImages.length < targetCount) {
+      await rm(TEMP_DIR, { recursive: true, force: true });
+
+      if (!hasUsableExistingManifest(previousManifest)) {
+        throw new Error(
+          `Only ${ratingImages.length}/${targetCount} ${rating} images were generated and no existing manifest is available.`,
+        );
+      }
+
+      logPreservedAssets(
+        `Only ${ratingImages.length}/${targetCount} ${rating} images were generated.`,
+      );
+      return;
+    }
   }
 
-  images.sort((left, right) => Number(left.id) - Number(right.id));
-  const previousManifest = await readExistingManifest();
+  sortImages(images);
   if (hasSameImages(previousManifest, images)) {
     await rm(TEMP_DIR, { recursive: true, force: true });
     console.log("Konachan assets are already up to date.");
@@ -169,10 +234,18 @@ async function main() {
   }
 
   const manifest = {
-    version: 1,
+    version: 2,
     source: "https://konachan.com/help/api",
+    sources: KONACHAN_API_ORIGINS.map((origin) => `${origin}/help/api`),
     tags: KONACHAN_TAGS,
     tagQueries: KONACHAN_TAG_QUERIES,
+    safeTagQueries: KONACHAN_SAFE_TAG_QUERIES,
+    questionableTagQueries: KONACHAN_QUESTIONABLE_TAG_QUERIES,
+    explicitTagQueries: KONACHAN_EXPLICIT_TAG_QUERIES,
+    ratingTargets: KONACHAN_RATING_TARGETS,
+    blockedAdultTags: KONACHAN_BLOCKED_ADULT_TAGS,
+    sensitiveTagQueries: KONACHAN_SENSITIVE_TAG_QUERIES,
+    blockedSensitiveTags: KONACHAN_BLOCKED_SENSITIVE_TAGS,
     minWidth: KONACHAN_OUTPUT_WIDTH,
     minHeight: KONACHAN_OUTPUT_HEIGHT,
     minAspectRatio: KONACHAN_MIN_ASPECT_RATIO,
@@ -188,7 +261,11 @@ async function main() {
   await rename(MANIFEST_TEMP_PATH, MANIFEST_PATH);
 
   const files = await readdir(OUTPUT_DIR);
-  console.log(`Konachan assets updated: ${files.length} images.`);
+  const expectedFiles = expectedFileNames(images);
+  console.log(
+    `Konachan assets updated: ${images.length}/${KONACHAN_MANIFEST_LIMIT} images, ${files.length}/${expectedFiles.size} files.`,
+  );
+  console.log(`Ratings: ${JSON.stringify(countByRating(images))}`);
 }
 
 main().catch(async (error) => {

@@ -8,13 +8,45 @@ import rehypeSlug from "rehype-slug";
 const ANGULAR_DECORATOR_IMPORTS = new Set([
   "ChangeDetectionStrategy",
   "Component",
+  "ViewEncapsulation",
 ]);
+
+const VITE_OPTIMIZE_DEPS = [
+  "@angular/material/autocomplete",
+  "@angular/material/badge",
+  "@angular/material/button",
+  "@angular/material/button-toggle",
+  "@angular/material/chips",
+  "@angular/material/core",
+  "@angular/material/datepicker",
+  "@angular/material/dialog",
+  "@angular/material/form-field",
+  "@angular/material/icon",
+  "@angular/material/input",
+  "@angular/material/menu",
+  "@angular/material/progress-spinner",
+  "@angular/material/select",
+  "@angular/material/snack-bar",
+  "@angular/material/tooltip",
+  "photoswipe",
+  "photoswipe/lightbox",
+];
 
 function isCompiledAngularDecoratorWarning(warning) {
   return (
     warning.code === "UNUSED_EXTERNAL_IMPORT" &&
     warning.exporter === "@angular/core" &&
     warning.names?.every((name) => ANGULAR_DECORATOR_IMPORTS.has(name)) &&
+    warning.ids?.every((id) => id.includes("/src/components/"))
+  );
+}
+
+function isCompiledAngularMetadataImportWarning(warning) {
+  return (
+    warning.code === "UNUSED_EXTERNAL_IMPORT" &&
+    (warning.exporter === "@angular/forms" ||
+      warning.exporter?.startsWith("@angular/material/")) &&
+    warning.names?.every((name) => name.endsWith("Module")) &&
     warning.ids?.every((id) => id.includes("/src/components/"))
   );
 }
@@ -54,8 +86,11 @@ const removeCodeBlockTabindex = {
 
 export default defineConfig({
   site: "https://ct-blog.cta.li/",
+  build: {
+    inlineStylesheets: "always",
+  },
   devToolbar: {
-    enabled: false,
+    enabled: true,
   },
   integrations: [
     mdx(),
@@ -68,10 +103,18 @@ export default defineConfig({
   ],
   vite: {
     customLogger: viteLogger,
+    optimizeDeps: {
+      include: VITE_OPTIMIZE_DEPS,
+    },
     build: {
       rollupOptions: {
         onwarn(warning, warn) {
-          if (!isCompiledAngularDecoratorWarning(warning)) warn(warning);
+          if (
+            !isCompiledAngularDecoratorWarning(warning) &&
+            !isCompiledAngularMetadataImportWarning(warning)
+          ) {
+            warn(warning);
+          }
         },
       },
     },

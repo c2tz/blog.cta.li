@@ -2,6 +2,7 @@
 import { getCollection, getEntry } from "astro:content";
 
 import HomeKonachanBackground from "@/components/home/home-konachan-background.astro";
+import { HomeTagsTreeComponent } from "@/components/home/home-tags-tree.component";
 import FormattedDate from "@/components/post/formatted-date.astro";
 import Layout from "@/layouts/site-layout.astro";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/site-config";
@@ -18,7 +19,7 @@ const posts = (await getCollection("blog"))
       new Date(a.gitDates.createdAt).valueOf(),
   );
 
-const latestPosts = posts.slice(0, 4);
+const latestPosts = posts.slice(0, 3);
 const contentTags = [
   ...new Set(
     posts
@@ -37,7 +38,7 @@ const homeCopy = {
   heroLede:
     typeof introData.heroLede === "string"
       ? introData.heroLede
-      : "Micro-récits, grandes émotions. Des textes courts pour lire entre deux.",
+      : "Simple blog-note.",
   primaryActionHref:
     typeof introData.primaryActionHref === "string" ? introData.primaryActionHref : "/tags/all/",
   primaryActionLabel:
@@ -85,9 +86,11 @@ const homeCopy = {
         {
           latestPosts.map((post) => (
             <li class="home-post">
-              <FormattedDate date={post.gitDates.createdAt} />
-              <span class="home-separator" aria-hidden="true">—</span>
-              <a href={`/posts/${post.id}/`}>
+              <span class="home-post-date">
+                <FormattedDate date={post.gitDates.createdAt} />
+              </span>
+              <span class="home-separator" aria-hidden="true">·</span>
+              <a class="home-post-title" href={`/posts/${post.id}/`}>
                 {post.data.title}
               </a>
             </li>
@@ -96,22 +99,8 @@ const homeCopy = {
       </ul>
     </section>
 
-    <section class="home-section" aria-labelledby="tags">
-      <h3 id="tags">
-        <a href="#tags" class="heading-link">{homeCopy.tagsTitle}</a>
-      </h3>
-
-      <ul class="home-tags">
-        {
-          uniqueTags.map((tag) => (
-            <li>
-              <a href={`/tags/${tag}/`}>
-                #{tag}
-              </a>
-            </li>
-          ))
-        }
-      </ul>
+    <section class="home-section home-tags-section" aria-labelledby="tags">
+      <HomeTagsTreeComponent client:visible title={homeCopy.tagsTitle} tags={uniqueTags} />
     </section>
   </Fragment>
 </Layout>

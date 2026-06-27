@@ -1,6 +1,7 @@
 ---
-import FormattedDate from "@/components/post/formatted-date.astro";
+import { TagPostsPaginatorComponent } from "@/components/tags/tag-posts-paginator.component";
 import Layout from "@/layouts/site-layout.astro";
+import { formatFrenchDateTime, toDate } from "@/lib/date-format.mjs";
 import { getContentEntryGitDates } from "@/lib/git-dates.mjs";
 import { getCollection } from "astro:content";
 
@@ -41,25 +42,21 @@ export async function getStaticPaths() {
   });
 }
 
-const { tag } = Astro.params;
+const tag = Astro.params.tag ?? "all";
 const { posts } = Astro.props;
+const tagPosts = posts.map((post) => ({
+  createdIso: toDate(post.gitDates.createdAt).toISOString(),
+  createdLabel: formatFrenchDateTime(post.gitDates.createdAt),
+  title: post.data.title,
+  url: `/posts/${post.id}/`,
+}));
 ---
 
 <Layout title={`Articles avec le tag « ${tag} »`} bodyClass="tag-page" readingProgress={false}>
   <Fragment slot="content">
     <section aria-labelledby="tag-posts-title">
       <h1 id="tag-posts-title">Articles avec le tag « {tag} »</h1>
-      <ul class="tag-posts">
-        {
-          posts.map((post) => (
-            <li class="tag-post">
-              <FormattedDate date={post.gitDates.createdAt} />
-              <span class="tag-separator" aria-hidden="true">—</span>
-              <a href={`/posts/${post.id}/`}>{post.data.title}</a>
-            </li>
-          ))
-        }
-      </ul>
+      <TagPostsPaginatorComponent client:load posts={tagPosts} tag={tag} />
     </section>
   </Fragment>
 </Layout>

@@ -207,5 +207,5 @@
 .site-prose
   :where(mark):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
   background-color: var(--site-mark-bg);
-  color: #000;
+  color: var(--site-mark-text);
 }

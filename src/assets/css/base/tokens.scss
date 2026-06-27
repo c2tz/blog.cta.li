@@ -19,7 +19,10 @@
   --site-link-contrast: #fff;
   --site-link-container: #e3f2fd;
   --site-on-link-container: #0b3d67;
+  --site-warning-container: #ffefb2;
+  --site-on-warning-container: #3f2e00;
   --site-mark-bg: #ffff00;
+  --site-mark-text: #000;
   --site-tonal-container: #eceff1;
   --site-on-tonal-container: #263238;
   --code-surface: #f3f3f3;
@@ -35,6 +38,8 @@
       on-primary-container: var(--site-on-link-container),
       secondary-container: var(--site-tonal-container),
       on-secondary-container: var(--site-on-tonal-container),
+      tertiary-container: var(--site-warning-container),
+      on-tertiary-container: var(--site-on-warning-container),
       surface: var(--site-bg),
       on-surface: var(--site-text),
       on-surface-variant: var(--site-muted),
@@ -67,6 +72,37 @@
           var(--site-on-link-container) 12%,
           transparent
         ),
+    )
+  );
+
+  @include mat.paginator-overrides(
+    (
+      container-background-color: transparent,
+      container-text-color: var(--site-text),
+      disabled-icon-color: color-mix(in srgb, var(--site-text) 38%, transparent),
+      enabled-icon-color: var(--site-muted),
+    )
+  );
+
+  @include mat.select-overrides(
+    (
+      disabled-arrow-color: color-mix(in srgb, var(--site-text) 38%, transparent),
+      disabled-trigger-text-color: color-mix(in srgb, var(--site-text) 38%, transparent),
+      enabled-arrow-color: var(--site-muted),
+      enabled-trigger-text-color: var(--site-text),
+      focused-arrow-color: var(--site-link),
+      panel-background-color: var(--site-bg),
+      placeholder-text-color: var(--site-muted),
+    )
+  );
+
+  @include mat.option-overrides(
+    (
+      focus-state-layer-color: color-mix(in srgb, var(--site-text) 12%, transparent),
+      hover-state-layer-color: color-mix(in srgb, var(--site-text) 8%, transparent),
+      label-text-color: var(--site-text),
+      selected-state-label-text-color: var(--site-on-link-container),
+      selected-state-layer-color: var(--site-link-container),
     )
   );
 

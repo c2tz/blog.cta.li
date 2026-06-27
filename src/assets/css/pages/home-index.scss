@@ -4,9 +4,13 @@
   border-block-start: 1px solid var(--site-border);
 }
 
-.home-section > h2,
-.home-section > h3 {
+.home-section > h2 {
   margin-block: 0 0.75rem;
+}
+
+.home-tags-section {
+  margin-block-end: 0;
+  border-block-end: 1px solid var(--site-border);
 }
 
 .home-posts,
@@ -20,7 +24,7 @@
 .tag-post {
   display: flex;
   align-items: baseline;
-  gap: 0.5em;
+  gap: 0 0.5em;
   margin-block: 0.25em;
 }
 
@@ -30,7 +34,21 @@
   gap: 0 0.5em;
 }
 
-.home-separator {
+.home-post-date,
+.tag-post-date {
+  color: var(--site-muted);
+}
+
+.home-post-title,
+.tag-post-title {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
+
+.home-separator,
+.tag-separator {
+  display: inline;
   color: var(--site-muted);
   user-select: none;
 }

@@ -1,5 +1,6 @@
 ---
 import { SITE_TITLE } from "@/site-config";
+import { SiteSearchTriggerComponent } from "@/components/search/site-search.component";
 import { ThemeSwitcherComponent } from "./theme-switcher.component";
 
 const isHome = Astro.url.pathname === "/";
@@ -17,5 +18,8 @@ const isHome = Astro.url.pathname === "/";
     </a>
   </h2>
 
-  <ThemeSwitcherComponent client:idle />
+  <div class="site-header-actions">
+    <SiteSearchTriggerComponent client:idle />
+    <ThemeSwitcherComponent client:idle />
+  </div>
 </header>

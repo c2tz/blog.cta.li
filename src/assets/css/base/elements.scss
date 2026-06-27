@@ -70,7 +70,7 @@
   .site-footer {
     max-width: 100vw;
     margin-top: auto;
-    padding: 1em;
+    padding: 20px;
     overflow-wrap: break-word;
     text-align: center;
   }
@@ -153,12 +153,6 @@
     color: inherit;
     font-weight: bold;
     letter-spacing: 0;
-  }
-
-  h1,
-  h2 {
-    font-family: var(--site-heading-font);
-    font-optical-sizing: auto;
   }
 
   h1 {

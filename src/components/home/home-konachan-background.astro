@@ -104,7 +104,7 @@ const konachanClientConfig = {
   const CREDIT_LINK_SELECTOR = "[data-konachan-credit-link]";
   const LANDING_SELECTOR = ".home-anime-landing";
   const STATUS_SELECTOR = "[data-konachan-status]";
-  const MANIFEST_URL = new URL("/konachan-backgrounds.json?v=4", window.location.href).toString();
+  const MANIFEST_URL = new URL("/konachan-backgrounds.json?v=5", window.location.href).toString();
   const KONACHAN_CACHE_KEY = konachanClientConfig.storageKey;
   const KONACHAN_LEGACY_CACHE_KEY = konachanClientConfig.legacyStorageKey;
   const KONACHAN_RATING_COOKIE = konachanClientConfig.ratingCookieName;
@@ -250,7 +250,13 @@ const konachanClientConfig = {
       throw new Error("konachan_manifest_not_json");
     }
 
-    const manifest = JSON.parse(normalizedText);
+    let manifest;
+    try {
+      manifest = JSON.parse(normalizedText);
+    } catch {
+      throw new Error("konachan_manifest_invalid_json");
+    }
+
     await cacheJsonResponse(MANIFEST_URL, text);
     return Array.isArray(manifest.images) ? manifest.images : [];
   }
@@ -268,7 +274,10 @@ const konachanClientConfig = {
       }
       return images;
     } catch (error) {
-      console.warn("[Konachan] Unable to load the deployed manifest.", error);
+      console.warn(
+        "[Konachan] Unable to load the deployed manifest.",
+        error instanceof Error ? error.message : error,
+      );
       const cached = await readCachedJson(MANIFEST_URL);
       return Array.isArray(cached?.images) ? cached.images : [];
     }

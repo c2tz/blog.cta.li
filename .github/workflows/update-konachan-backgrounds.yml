@@ -2,7 +2,7 @@ name: Update Konachan backgrounds
 
 on:
   schedule:
-   - cron: "0 20 * * 6"
+    - cron: "0 20 * * 6"
   workflow_dispatch:
 
 permissions:
@@ -52,12 +52,15 @@ jobs:
             file.endsWith(".webp"),
           );
           const expectedRatings = { safe: 10, questionable: 10, explicit: 10 };
+          const minIdDistance = manifest.minIdDistance ?? 10;
           const expectedFiles = new Set();
           const ratings = {};
+          const ids = [];
 
           for (const image of manifest.images ?? []) {
             const rating = image.rating ?? "safe";
             ratings[rating] = (ratings[rating] ?? 0) + 1;
+            ids.push(Number(image.id));
             if (image.url) expectedFiles.add(image.url.split("/").pop());
             for (const variant of image.variants ?? []) {
               if (variant.url) expectedFiles.add(variant.url.split("/").pop());
@@ -82,6 +85,16 @@ jobs:
             throw new Error(
               `Manifest/files mismatch: ${expectedFiles.size}/${files.length}`,
             );
+          }
+
+          ids.sort((left, right) => left - right);
+          for (let index = 1; index < ids.length; index += 1) {
+            const gap = ids[index] - ids[index - 1];
+            if (gap < minIdDistance) {
+              throw new Error(
+                `Konachan image IDs ${ids[index - 1]} and ${ids[index]} are too close: ${gap}/${minIdDistance}.`,
+              );
+            }
           }
 
           console.log(`Validated ${manifest.images.length} Konachan backgrounds and ${files.length} files.`);

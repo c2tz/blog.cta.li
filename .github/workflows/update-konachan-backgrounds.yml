@@ -104,7 +104,7 @@ jobs:
       - name: Open pull request if backgrounds changed
         uses: peter-evans/create-pull-request@v8
         with:
-          token: ${{ secrets.BOT_TOKEN || github.token }}
+          token: ${{ secrets.BOT_TOKEN }}
           base: develop
           branch: automation/update-konachan-backgrounds
           delete-branch: true

@@ -2,59 +2,36 @@ import { ChangeDetectionStrategy, Component, input, signal } from "@angular/core
 import { MatButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
 import { MatProgressBar } from "@angular/material/progress-bar";
-import { MatTreeModule } from "@angular/material/tree";
-
-interface HomeTagsTreeNode {
-  children?: HomeTagsTreeNode[];
-  href?: string;
-  kind: "root" | "tag";
-  name: string;
-}
-
-interface ExpandableTree<T> {
-  collapse: (node: T) => void;
-  expand: (node: T) => void;
-  isExpanded: (node: T) => boolean;
-}
 
 @Component({
   selector: "site-home-tags-tree",
   standalone: true,
-  imports: [MatButton, MatIcon, MatProgressBar, MatTreeModule],
+  imports: [MatButton, MatIcon, MatProgressBar],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h2 id="tags">
       <a href="#tags" class="heading-link">{{ title() }}</a>
     </h2>
 
-    <mat-tree
+    <div
       aria-labelledby="tags"
-      #tree
       class="home-tags-tree"
-      [dataSource]="rootNodes"
-      [childrenAccessor]="childrenAccessor"
     >
-      <mat-tree-node
-        *matTreeNodeDef="let node; when: hasChild"
-        matTreeNodePadding
-        [cdkTreeNodeTypeaheadLabel]="title()"
+      <button
+        matButton="elevated"
+        class="home-tags-tree-toggle"
+        type="button"
+        aria-controls="home-tags-list"
+        [attr.aria-label]="expanded() ? 'Masquer les tags' : 'Afficher les tags'"
+        [attr.aria-expanded]="expanded()"
+        (click)="toggle()"
       >
-        <button
-          matButton="elevated"
-          class="home-tags-tree-toggle"
-          type="button"
-          aria-controls="home-tags-list"
-          [attr.aria-label]="tree.isExpanded(node) ? 'Masquer les tags' : 'Afficher les tags'"
-          [attr.aria-expanded]="tree.isExpanded(node)"
-          (click)="toggle(tree, node)"
-        >
-          <span>{{ tree.isExpanded(node) ? "Afficher moins" : "Afficher plus" }}</span>
-          <mat-icon iconPositionEnd class="mat-icon-rtl-mirror" aria-hidden="true">
-            {{ tree.isExpanded(node) ? expandLessIcon : expandMoreIcon }}
-          </mat-icon>
-        </button>
-      </mat-tree-node>
-    </mat-tree>
+        <span>{{ expanded() ? "Afficher moins" : "Afficher plus" }}</span>
+        <mat-icon iconPositionEnd class="mat-icon-rtl-mirror" aria-hidden="true">
+          {{ expanded() ? expandLessIcon : expandMoreIcon }}
+        </mat-icon>
+      </button>
+    </div>
 
     @if (loading()) {
       <mat-progress-bar
@@ -64,7 +41,7 @@ interface ExpandableTree<T> {
       />
     }
 
-    @if (loaded() && tree.isExpanded(rootNode)) {
+    @if (loaded() && expanded()) {
       <ul id="home-tags-list" class="home-tags-tree-links" aria-label="Tous les tags">
         @for (tag of tags(); track tag) {
           <li>
@@ -86,26 +63,12 @@ interface ExpandableTree<T> {
     }
 
     :host > h2 {
-      margin-block: 0 0.75rem;
+      margin-block: 0 1em;
     }
 
     .home-tags-tree {
       display: block;
       margin-block-end: 0.75rem;
-      background: transparent;
-      color: var(--site-text);
-    }
-
-    .home-tags-tree .mat-tree-node {
-      min-height: 0;
-      color: var(--site-text);
-      font: inherit;
-    }
-
-    .home-tags-tree mat-tree-node {
-      display: flex;
-      align-items: center;
-      padding-inline-start: 0 !important;
     }
 
     .home-tags-tree-toggle.mat-mdc-button-base {
@@ -168,29 +131,20 @@ interface ExpandableTree<T> {
 export class HomeTagsTreeComponent {
   readonly tags = input<string[]>([]);
   readonly title = input("les tags");
+  readonly expanded = signal(false);
   readonly loaded = signal(false);
   readonly loading = signal(false);
   readonly expandLessIcon = "\uE5CE";
   readonly expandMoreIcon = "\uE5CF";
 
-  readonly rootNode: HomeTagsTreeNode = {
-    kind: "root",
-    name: "Tags",
-    children: [],
-  };
-  readonly rootNodes = [this.rootNode];
-
-  readonly childrenAccessor = (node: HomeTagsTreeNode) => node.children ?? [];
-  readonly hasChild = (_: number, node: HomeTagsTreeNode) => node.kind === "root";
-
-  toggle(tree: ExpandableTree<HomeTagsTreeNode>, node: HomeTagsTreeNode) {
-    if (tree.isExpanded(node)) {
-      tree.collapse(node);
+  toggle() {
+    if (this.expanded()) {
+      this.expanded.set(false);
       return;
     }
 
     if (this.loaded()) {
-      tree.expand(node);
+      this.expanded.set(true);
       return;
     }
 
@@ -198,7 +152,7 @@ export class HomeTagsTreeComponent {
     window.setTimeout(() => {
       this.loaded.set(true);
       this.loading.set(false);
-      tree.expand(node);
+      this.expanded.set(true);
     }, 140);
   }
 }

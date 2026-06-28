@@ -45,7 +45,8 @@ export const KONACHAN_RATING_TARGETS = Object.freeze({
   questionable: 10,
   explicit: 10,
 });
-export const KONACHAN_RATING_CANDIDATE_LIMIT = 28;
+export const KONACHAN_MIN_ID_DISTANCE = 10;
+export const KONACHAN_RATING_CANDIDATE_LIMIT = 48;
 export const KONACHAN_MANIFEST_LIMIT = Object.values(KONACHAN_RATING_TARGETS).reduce(
   (total, count) => total + count,
   0,

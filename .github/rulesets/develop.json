@@ -37,18 +37,11 @@
         "strict_required_status_checks_policy": true,
         "required_status_checks": [
           {
-            "context": "verify",
-            "integration_id": 15368
+            "context": "verify"
           }
         ]
       }
     }
   ],
-  "bypass_actors": [
-    {
-      "actor_id": 15368,
-      "actor_type": "Integration",
-      "bypass_mode": "always"
-    }
-  ]
+  "bypass_actors": []
 }

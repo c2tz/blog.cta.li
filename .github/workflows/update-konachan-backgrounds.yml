@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: update-konachan-backgrounds
@@ -100,16 +101,17 @@ jobs:
           console.log(`Validated ${manifest.images.length} Konachan backgrounds and ${files.length} files.`);
           EOF
 
-      - name: Commit updated backgrounds
-        run: |
-          if git diff --quiet -- public/konachan-backgrounds public/konachan-backgrounds.json; then
-            echo "Konachan backgrounds are already up to date."
-            exit 0
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/konachan-backgrounds public/konachan-backgrounds.json
-          git commit -m "chore: refresh Konachan backgrounds"
-          git pull --rebase origin develop
-          git push origin HEAD:develop
+      - name: Open pull request if backgrounds changed
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.BOT_TOKEN || github.token }}
+          base: develop
+          branch: automation/update-konachan-backgrounds
+          delete-branch: true
+          add-paths: |
+            public/konachan-backgrounds
+            public/konachan-backgrounds.json
+          commit-message: "chore: refresh Konachan backgrounds"
+          title: "chore: refresh Konachan backgrounds"
+          body: "Automated Konachan background refresh."
+          labels: automation

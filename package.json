@@ -55,6 +55,7 @@
   },
   "devDependencies": {
     "@angular/language-service": "^22.0.2",
+    "@types/node": "^22.20.0",
     "pagefind": "^1.5.2",
     "sass": "^1.99.0",
     "typescript": "6.0.3"

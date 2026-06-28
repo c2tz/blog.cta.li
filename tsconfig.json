@@ -14,6 +14,6 @@
       ]
     },
     "strictNullChecks": true,
-    "types": ["astro/client"]
+    "types": ["astro/client", "node"]
   }
 }

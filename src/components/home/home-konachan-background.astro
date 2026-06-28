@@ -244,13 +244,13 @@ const konachanClientConfig = {
     if (!response.ok) throw new Error(`konachan_manifest_${response.status}`);
 
     const text = await response.text();
-    const contentType = response.headers.get("content-type") || "";
+    const normalizedText = text.trim();
 
-    if (!contentType.includes("json") && !text.trim().startsWith("{")) {
+    if (!normalizedText.startsWith("{")) {
       throw new Error("konachan_manifest_not_json");
     }
 
-    const manifest = JSON.parse(text);
+    const manifest = JSON.parse(normalizedText);
     await cacheJsonResponse(MANIFEST_URL, text);
     return Array.isArray(manifest.images) ? manifest.images : [];
   }

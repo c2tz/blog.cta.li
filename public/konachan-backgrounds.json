@@ -76,7 +76,11 @@
   "minAspectRatio": 1.6,
   "maxBytes": 1048576,
   "format": "webp",
+<<<<<<< HEAD
   "generatedAt": "2026-06-28T22:26:38.603Z",
+=======
+  "generatedAt": "2026-06-28T16:47:35.240Z",
+>>>>>>> origin/develop
   "images": [
     {
       "id": 405473,
@@ -348,7 +352,11 @@
       "originalUrl": "https://konachan.com/jpeg/074a3068e092b0610b5984926001c848/Konachan.com%20-%20405303%20all_male%20black_hair%20chinese_clothes%20forest%20gray_eyes%20green%20heiyizhushenxia%20leaves%20long_hair%20male%20ponytail%20sword%20tree%20weapon%20wuthering_waves.jpg",
       "width": 1920,
       "height": 1080,
+<<<<<<< HEAD
       "bytes": 168422,
+=======
+      "bytes": 183312,
+>>>>>>> origin/develop
       "quality": 72,
       "rating": "safe",
       "format": "webp",
@@ -360,7 +368,11 @@
           "url": "/konachan-backgrounds/405303-960.webp",
           "width": 960,
           "height": 540,
+<<<<<<< HEAD
           "bytes": 67624
+=======
+          "bytes": 67934
+>>>>>>> origin/develop
         }
       ]
     },
@@ -2130,7 +2142,7 @@
       "originalUrl": "https://konachan.com/image/a578f54ecad005be8fd5a5ba699b9cf7/Konachan.com%20-%20404542%20anus%20ass%20bed%20black_hair%20blue_eyes%20blush%20breasts%20cum%20gweda%20heart%20long_hair%20nipples%20nude%20penis%20pussy%20sex%20tears%20twintails%20uncensored%20watermark.jpg",
       "width": 1920,
       "height": 1080,
-      "bytes": 89334,
+      "bytes": 89264,
       "quality": 72,
       "rating": "explicit",
       "format": "webp",
@@ -2142,7 +2154,7 @@
           "url": "/konachan-backgrounds/404542-960.webp",
           "width": 960,
           "height": 540,
-          "bytes": 33464
+          "bytes": 33410
         }
       ]
     },

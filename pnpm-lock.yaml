@@ -16,7 +16,7 @@ importers:
     dependencies:
       '@analogjs/astro-angular':
         specifier: ^2.6.1
-        version: 2.6.1(3b8ccad659b949ebd63495db95c74e19)
+        version: 2.6.1(e630453986f03e6efe86c54ef0e11644)
       '@angular/animations':
         specifier: ^22.0.2
         version: 22.0.2(@angular/core@22.0.2(@angular/compiler@22.0.2)(rxjs@7.8.2)(zone.js@0.16.2))
@@ -94,8 +94,8 @@ importers:
         version: 0.16.2
     devDependencies:
       '@angular/language-service':
-        specifier: ^22.0.2
-        version: 22.0.2
+        specifier: ^22.0.4
+        version: 22.0.4
       '@types/node':
         specifier: ^22.20.0
         version: 22.20.0
@@ -266,8 +266,8 @@ packages:
       '@angular/platform-browser': 22.0.2
       rxjs: ^6.5.3 || ^7.4.0
 
-  '@angular/language-service@22.0.2':
-    resolution: {integrity: sha512-J7QXjv9R/wFVwK4CZBjzE6B1owFQTKsb0KWVhuuPcglD3jtVAJ5xipUI9gco93GmCT3EU9oANmN8jQcAn67h4A==}
+  '@angular/language-service@22.0.4':
+    resolution: {integrity: sha512-os/30s+drTMnKa4sc8O5iK9WI02z6Lg8gMu5Ob1KwjOctB1Be+BLvuDC0JLM5SbJSd/yld1/jbxGfcYoHcqHbw==}
     engines: {node: ^22.22.3 || ^24.15.0 || >=26.0.0}
 
   '@angular/material@22.0.2':
@@ -3028,7 +3028,7 @@ snapshots:
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/trace-mapping': 0.3.31
 
-  '@analogjs/astro-angular@2.6.1(3b8ccad659b949ebd63495db95c74e19)':
+  '@analogjs/astro-angular@2.6.1(e630453986f03e6efe86c54ef0e11644)':
     dependencies:
       '@analogjs/vite-plugin-angular': 2.6.1(@angular/build@22.0.3(5ee5f36901ae8c801d5feb9327e84542))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(vite@7.3.5(@types/node@22.20.0)(sass@1.99.0))
       '@angular/animations': 22.0.2(@angular/core@22.0.2(@angular/compiler@22.0.2)(rxjs@7.8.2)(zone.js@0.16.2))
@@ -3037,7 +3037,7 @@ snapshots:
       '@angular/compiler': 22.0.2
       '@angular/compiler-cli': 22.0.2(@angular/compiler@22.0.2)(typescript@6.0.3)
       '@angular/core': 22.0.2(@angular/compiler@22.0.2)(rxjs@7.8.2)(zone.js@0.16.2)
-      '@angular/language-service': 22.0.2
+      '@angular/language-service': 22.0.4
       '@angular/platform-browser': 22.0.2(@angular/animations@22.0.2(@angular/core@22.0.2(@angular/compiler@22.0.2)(rxjs@7.8.2)(zone.js@0.16.2)))(@angular/common@22.0.2(@angular/core@22.0.2(@angular/compiler@22.0.2)(rxjs@7.8.2)(zone.js@0.16.2))(rxjs@7.8.2))(@angular/core@22.0.2(@angular/compiler@22.0.2)(rxjs@7.8.2)(zone.js@0.16.2))
       '@angular/platform-server': 22.0.2(@angular/common@22.0.2(@angular/core@22.0.2(@angular/compiler@22.0.2)(rxjs@7.8.2)(zone.js@0.16.2))(rxjs@7.8.2))(@angular/compiler@22.0.2)(@angular/core@22.0.2(@angular/compiler@22.0.2)(rxjs@7.8.2)(zone.js@0.16.2))(@angular/platform-browser@22.0.2(@angular/animations@22.0.2(@angular/core@22.0.2(@angular/compiler@22.0.2)(rxjs@7.8.2)(zone.js@0.16.2)))(@angular/common@22.0.2(@angular/core@22.0.2(@angular/compiler@22.0.2)(rxjs@7.8.2)(zone.js@0.16.2))(rxjs@7.8.2))(@angular/core@22.0.2(@angular/compiler@22.0.2)(rxjs@7.8.2)(zone.js@0.16.2)))(rxjs@7.8.2)
       rehype: 13.0.2
@@ -3189,7 +3189,7 @@ snapshots:
       tslib: 2.8.1
       zod: 4.4.3
 
-  '@angular/language-service@22.0.2': {}
+  '@angular/language-service@22.0.4': {}
 
   '@angular/material@22.0.2(fde409e5abac0f374c491d860a55bdd6)':
     dependencies:

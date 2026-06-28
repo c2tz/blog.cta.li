@@ -133,7 +133,7 @@ jobs:
       - name: Open pull request if README changed
         uses: peter-evans/create-pull-request@v8
         with:
-          token: ${{ secrets.BOT_TOKEN || github.token }}
+          token: ${{ secrets.BOT_TOKEN }}
           base: develop
           branch: automation/update-readme
           delete-branch: true

@@ -39,17 +39,22 @@ export const KONACHAN_BLOCKED_ADULT_TAGS = [
 ];
 export const KONACHAN_BLOCKED_SENSITIVE_TAGS = KONACHAN_BLOCKED_ADULT_TAGS;
 export const KONACHAN_FETCH_LIMIT = 80;
-export const KONACHAN_FETCH_PAGES = [1, 2, 3];
+export const KONACHAN_FETCH_PAGES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 export const KONACHAN_RATING_TARGETS = Object.freeze({
-  safe: 10,
-  questionable: 10,
-  explicit: 10,
+  safe: 20,
+  questionable: 70,
+  explicit: 60,
 });
-export const KONACHAN_RATING_CANDIDATE_LIMIT = 28;
+export const KONACHAN_MIN_ID_DISTANCE = 10;
+<<<<<<< HEAD
+=======
+export const KONACHAN_RATING_CANDIDATE_LIMIT = 160;
+>>>>>>> origin/develop
 export const KONACHAN_MANIFEST_LIMIT = Object.values(KONACHAN_RATING_TARGETS).reduce(
   (total, count) => total + count,
   0,
 );
+export const KONACHAN_RATING_CANDIDATE_LIMIT = KONACHAN_MANIFEST_LIMIT * 3;
 export const KONACHAN_OUTPUT_WIDTH = 1920;
 export const KONACHAN_OUTPUT_HEIGHT = 1080;
 export const KONACHAN_MAX_BYTES = 1024 * 1024;

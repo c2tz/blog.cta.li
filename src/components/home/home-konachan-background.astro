@@ -104,7 +104,7 @@ const konachanClientConfig = {
   const CREDIT_LINK_SELECTOR = "[data-konachan-credit-link]";
   const LANDING_SELECTOR = ".home-anime-landing";
   const STATUS_SELECTOR = "[data-konachan-status]";
-  const MANIFEST_URL = "/konachan-backgrounds.json?v=3";
+  const MANIFEST_URL = new URL("/konachan-backgrounds.json?v=5", window.location.href).toString();
   const KONACHAN_CACHE_KEY = konachanClientConfig.storageKey;
   const KONACHAN_LEGACY_CACHE_KEY = konachanClientConfig.legacyStorageKey;
   const KONACHAN_RATING_COOKIE = konachanClientConfig.ratingCookieName;
@@ -217,19 +217,48 @@ const konachanClientConfig = {
       const cache = await caches.open(KONACHAN_CACHE_NAME);
       const response = await cache.match(url);
       if (!response?.ok) return null;
-      return response.json();
+      const text = await response.text();
+      return JSON.parse(text);
     } catch {
       return null;
     }
   }
 
-  async function cacheJsonResponse(url, response) {
+  async function cacheJsonResponse(url, text) {
     if (!("caches" in window)) return;
 
     try {
       const cache = await caches.open(KONACHAN_CACHE_NAME);
-      await cache.put(url, response.clone());
+      await cache.put(
+        url,
+        new Response(text, {
+          headers: {
+            "content-type": "application/json; charset=utf-8",
+          },
+        }),
+      );
     } catch {}
+  }
+
+  async function readManifestResponse(response) {
+    if (!response.ok) throw new Error(`konachan_manifest_${response.status}`);
+
+    const text = await response.text();
+    const normalizedText = text.trim();
+
+    if (!normalizedText.startsWith("{")) {
+      throw new Error("konachan_manifest_not_json");
+    }
+
+    let manifest;
+    try {
+      manifest = JSON.parse(normalizedText);
+    } catch {
+      throw new Error("konachan_manifest_invalid_json");
+    }
+
+    await cacheJsonResponse(MANIFEST_URL, text);
+    return Array.isArray(manifest.images) ? manifest.images : [];
   }
 
   async function readManifest({ cache = "no-cache" } = {}) {
@@ -239,16 +268,16 @@ const konachanClientConfig = {
         cache,
       });
 
-      if (!response.ok) throw new Error(`konachan_manifest_${response.status}`);
-      await cacheJsonResponse(MANIFEST_URL, response);
-      const manifest = await response.json();
-      const images = Array.isArray(manifest.images) ? manifest.images : [];
+      const images = await readManifestResponse(response);
       if (images.length === 0) {
         console.warn("[Konachan] The deployed manifest contains no images.");
       }
       return images;
     } catch (error) {
-      console.warn("[Konachan] Unable to load the deployed manifest.", error);
+      console.warn(
+        "[Konachan] Unable to load the deployed manifest.",
+        error instanceof Error ? error.message : error,
+      );
       const cached = await readCachedJson(MANIFEST_URL);
       return Array.isArray(cached?.images) ? cached.images : [];
     }

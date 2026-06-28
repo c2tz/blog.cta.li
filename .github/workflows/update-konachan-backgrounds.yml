@@ -2,11 +2,12 @@ name: Update Konachan backgrounds
 
 on:
   schedule:
-   - cron: "0 20 * * 6"
+    - cron: "0 20 1 * *"
   workflow_dispatch:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: update-konachan-backgrounds
@@ -44,6 +45,10 @@ jobs:
         run: |
           node --input-type=module <<'EOF'
           import { readFile, readdir } from "node:fs/promises";
+          import {
+            KONACHAN_MANIFEST_LIMIT,
+            KONACHAN_RATING_TARGETS,
+          } from "./src/lib/konachan-backgrounds.mjs";
 
           const manifest = JSON.parse(
             await readFile("public/konachan-backgrounds.json", "utf8"),
@@ -51,13 +56,16 @@ jobs:
           const files = (await readdir("public/konachan-backgrounds")).filter((file) =>
             file.endsWith(".webp"),
           );
-          const expectedRatings = { safe: 10, questionable: 10, explicit: 10 };
+          const expectedRatings = KONACHAN_RATING_TARGETS;
+          const minIdDistance = manifest.minIdDistance ?? 10;
           const expectedFiles = new Set();
           const ratings = {};
+          const ids = [];
 
           for (const image of manifest.images ?? []) {
             const rating = image.rating ?? "safe";
             ratings[rating] = (ratings[rating] ?? 0) + 1;
+            ids.push(Number(image.id));
             if (image.url) expectedFiles.add(image.url.split("/").pop());
             for (const variant of image.variants ?? []) {
               if (variant.url) expectedFiles.add(variant.url.split("/").pop());
@@ -72,9 +80,12 @@ jobs:
             }
           }
 
-          if (!Array.isArray(manifest.images) || manifest.images.length !== 30) {
+          if (
+            !Array.isArray(manifest.images) ||
+            manifest.images.length !== KONACHAN_MANIFEST_LIMIT
+          ) {
             throw new Error(
-              `The Konachan manifest should contain exactly 30 images, got ${manifest.images?.length ?? 0}.`,
+              `The Konachan manifest should contain exactly ${KONACHAN_MANIFEST_LIMIT} images, got ${manifest.images?.length ?? 0}.`,
             );
           }
 
@@ -84,19 +95,30 @@ jobs:
             );
           }
 
+          ids.sort((left, right) => left - right);
+          for (let index = 1; index < ids.length; index += 1) {
+            const gap = ids[index] - ids[index - 1];
+            if (gap < minIdDistance) {
+              throw new Error(
+                `Konachan image IDs ${ids[index - 1]} and ${ids[index]} are too close: ${gap}/${minIdDistance}.`,
+              );
+            }
+          }
+
           console.log(`Validated ${manifest.images.length} Konachan backgrounds and ${files.length} files.`);
           EOF
 
-      - name: Commit updated backgrounds
-        run: |
-          if git diff --quiet -- public/konachan-backgrounds public/konachan-backgrounds.json; then
-            echo "Konachan backgrounds are already up to date."
-            exit 0
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/konachan-backgrounds public/konachan-backgrounds.json
-          git commit -m "chore: refresh Konachan backgrounds"
-          git pull --rebase origin develop
-          git push origin HEAD:develop
+      - name: Open pull request if backgrounds changed
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.BOT_TOKEN }}
+          base: develop
+          branch: automation/update-konachan-backgrounds
+          delete-branch: true
+          add-paths: |
+            public/konachan-backgrounds
+            public/konachan-backgrounds.json
+          commit-message: "chore: refresh Konachan backgrounds"
+          title: "chore: refresh Konachan backgrounds"
+          body: "Automated Konachan background refresh."
+          labels: automation

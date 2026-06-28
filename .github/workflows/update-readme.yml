@@ -7,10 +7,10 @@ on:
   push:
     branches:
       - develop
-      - main
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   update-readme:
@@ -19,11 +19,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          ref: develop
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "22.22.3"
 
       - name: Update README sections with recent commits
         env:
@@ -128,14 +130,15 @@ jobs:
           });
           EOF
 
-      - name: Commit changes if any
-        run: |
-          if git diff --quiet; then
-            echo "No changes detected."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add README.md
-          git commit -m "chore(ci): update README with recent commits"
-          git push
+      - name: Open pull request if README changed
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.BOT_TOKEN }}
+          base: develop
+          branch: automation/update-readme
+          delete-branch: true
+          add-paths: README.md
+          commit-message: "chore(ci): update README with recent commits"
+          title: "chore(ci): update README with recent commits"
+          body: "Automated README refresh for recent commits."
+          labels: automation

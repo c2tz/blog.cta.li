@@ -8,6 +8,7 @@ import {
   KONACHAN_API_ORIGINS,
   KONACHAN_MANIFEST_LIMIT,
   KONACHAN_MAX_BYTES,
+  KONACHAN_MIN_ID_DISTANCE,
   KONACHAN_MIN_ASPECT_RATIO,
   KONACHAN_OUTPUT_HEIGHT,
   KONACHAN_OUTPUT_WIDTH,
@@ -63,8 +64,20 @@ function countByRating(images) {
   }, {});
 }
 
+function hasExpectedRatingCounts(images) {
+  const counts = countByRating(images);
+
+  return Object.entries(KONACHAN_RATING_TARGETS).every(
+    ([rating, expected]) => counts[rating] === expected,
+  );
+}
+
 function hasUsableExistingManifest(manifest) {
-  return Array.isArray(manifest?.images) && manifest.images.length > 0;
+  return (
+    Array.isArray(manifest?.images) &&
+    manifest.images.length === KONACHAN_MANIFEST_LIMIT &&
+    hasExpectedRatingCounts(manifest.images)
+  );
 }
 
 function expectedFileNames(images) {
@@ -92,6 +105,15 @@ function sortImages(images) {
 
 function logPreservedAssets(message) {
   console.warn(`${message} Existing Konachan assets were preserved.`);
+}
+
+function hasMinimumIdDistance(postId, selectedIds) {
+  const id = Number(postId);
+  if (!Number.isFinite(id)) return false;
+
+  return [...selectedIds].every(
+    (selectedId) => Math.abs(id - selectedId) >= KONACHAN_MIN_ID_DISTANCE,
+  );
 }
 
 async function fetchImage(url) {
@@ -169,15 +191,24 @@ async function generateImage(post) {
   };
 }
 
-async function generateRatingImages(posts, rating, targetCount) {
+async function generateRatingImages(posts, rating, targetCount, selectedIds) {
   const candidates = posts.filter((post) => post.rating === rating);
   const images = [];
 
   for (const post of candidates) {
     if (images.length >= targetCount) break;
 
+    if (!hasMinimumIdDistance(post.id, selectedIds)) {
+      console.warn(
+        `Skipped Konachan post ${post.id}: id_too_close_min_${KONACHAN_MIN_ID_DISTANCE}`,
+      );
+      continue;
+    }
+
     try {
-      images.push(await generateImage(post));
+      const image = await generateImage(post);
+      images.push(image);
+      selectedIds.add(Number(image.id));
       console.log(`Generated ${rating} ${images.length}/${targetCount}`);
     } catch (error) {
       console.warn(`Skipped Konachan post ${post.id}:`, error.message);
@@ -204,10 +235,11 @@ async function main() {
   await mkdir(TEMP_DIR, { recursive: true });
 
   const images = [];
+  const selectedIds = new Set();
 
   for (const rating of RATING_ORDER) {
     const targetCount = KONACHAN_RATING_TARGETS[rating];
-    const ratingImages = await generateRatingImages(posts, rating, targetCount);
+    const ratingImages = await generateRatingImages(posts, rating, targetCount, selectedIds);
     images.push(...ratingImages);
 
     if (ratingImages.length < targetCount) {
@@ -243,6 +275,7 @@ async function main() {
     questionableTagQueries: KONACHAN_QUESTIONABLE_TAG_QUERIES,
     explicitTagQueries: KONACHAN_EXPLICIT_TAG_QUERIES,
     ratingTargets: KONACHAN_RATING_TARGETS,
+    minIdDistance: KONACHAN_MIN_ID_DISTANCE,
     blockedAdultTags: KONACHAN_BLOCKED_ADULT_TAGS,
     sensitiveTagQueries: KONACHAN_SENSITIVE_TAG_QUERIES,
     blockedSensitiveTags: KONACHAN_BLOCKED_SENSITIVE_TAGS,

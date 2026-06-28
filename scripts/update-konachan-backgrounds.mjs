@@ -64,8 +64,20 @@ function countByRating(images) {
   }, {});
 }
 
+function hasExpectedRatingCounts(images) {
+  const counts = countByRating(images);
+
+  return Object.entries(KONACHAN_RATING_TARGETS).every(
+    ([rating, expected]) => counts[rating] === expected,
+  );
+}
+
 function hasUsableExistingManifest(manifest) {
-  return Array.isArray(manifest?.images) && manifest.images.length > 0;
+  return (
+    Array.isArray(manifest?.images) &&
+    manifest.images.length === KONACHAN_MANIFEST_LIMIT &&
+    hasExpectedRatingCounts(manifest.images)
+  );
 }
 
 function expectedFileNames(images) {

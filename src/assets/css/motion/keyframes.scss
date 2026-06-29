@@ -11,6 +11,13 @@
   }
 }
 
+@keyframes cookie-modal-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 0.75rem)) scale(0.98);
+  }
+}
+
 @keyframes glitch-jitter {
   0%,
   7%,

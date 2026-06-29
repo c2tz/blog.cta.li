@@ -1,6 +1,4 @@
 ---
-import fallbackOne from "@/content/blog/images/konachan-396319.jpg";
-import fallbackTwo from "@/content/blog/images/konachan-382339.jpg";
 import { HomeHeroActionsComponent } from "./home-hero-actions.component";
 import { KonachanLoadingIndicatorComponent } from "@/components/konachan/konachan-loading-indicator.component";
 import { KonachanRatingToggleComponent } from "@/components/konachan/konachan-rating-toggle.component";
@@ -13,6 +11,7 @@ import {
   SITE_LEGACY_STORAGE_KEYS,
   SITE_STORAGE_KEYS,
 } from "@/lib/site-contracts";
+import { SITE_TITLE } from "@/site-config";
 
 interface Props {
   title?: string;
@@ -24,7 +23,7 @@ interface Props {
 }
 
 const {
-  title = "Court Teplaye",
+  title = SITE_TITLE,
   lede = "Micro-récits, grandes émotions. Des textes courts pour lire entre deux.",
   primaryActionHref = "/tags/all/",
   primaryActionLabel = "Voir plus",
@@ -32,14 +31,16 @@ const {
   secondaryActionLabel = "À propos",
 } = Astro.props;
 const initialBackground = null;
-const emergencyImages = [fallbackOne.src, fallbackTwo.src];
 const konachanClientConfig = {
   cacheName: SITE_CACHE_NAMES.homeKonachanBackgrounds,
   events: {
+    explicitContentChange: SITE_EVENTS.explicitContentChange,
     ratingChange: SITE_EVENTS.konachanRatingChange,
     refreshRequest: SITE_EVENTS.konachanRefreshRequest,
     refreshState: SITE_EVENTS.konachanRefreshState,
   },
+  explicitContentCookieName: SITE_COOKIE_NAMES.explicitContentAcknowledgement,
+  explicitContentStorageKey: SITE_STORAGE_KEYS.explicitContentAcknowledgement,
   legacyRatingCookieName: SITE_LEGACY_COOKIE_NAMES.homeKonachanRatingPreference,
   legacyRatingStorageKey: SITE_LEGACY_STORAGE_KEYS.homeKonachanRatingPreference,
   legacyStorageKey: SITE_LEGACY_STORAGE_KEYS.homeKonachanBackgrounds,
@@ -60,8 +61,6 @@ const konachanClientConfig = {
     <img
       class="home-anime-background-image"
       data-konachan-background-image
-      width={fallbackOne.width}
-      height={fallbackOne.height}
       alt=""
       decoding="async"
     />
@@ -97,7 +96,7 @@ const konachanClientConfig = {
   </aside>
 </section>
 
-<script is:inline define:vars={{ emergencyImages, initialBackground, konachanClientConfig }}>
+<script is:inline define:vars={{ initialBackground, konachanClientConfig }}>
   const TARGET_SELECTOR = "[data-konachan-background]";
   const IMAGE_SELECTOR = "[data-konachan-background-image]";
   const CREDIT_SELECTOR = "[data-konachan-credit]";
@@ -105,6 +104,9 @@ const konachanClientConfig = {
   const LANDING_SELECTOR = ".home-anime-landing";
   const STATUS_SELECTOR = "[data-konachan-status]";
   const MANIFEST_URL = new URL("/konachan-backgrounds.json?v=5", window.location.href).toString();
+  const EXPLICIT_CONTENT_CHANGE_EVENT = konachanClientConfig.events.explicitContentChange;
+  const EXPLICIT_CONTENT_COOKIE = konachanClientConfig.explicitContentCookieName;
+  const EXPLICIT_CONTENT_KEY = konachanClientConfig.explicitContentStorageKey;
   const KONACHAN_CACHE_KEY = konachanClientConfig.storageKey;
   const KONACHAN_LEGACY_CACHE_KEY = konachanClientConfig.legacyStorageKey;
   const KONACHAN_RATING_COOKIE = konachanClientConfig.ratingCookieName;
@@ -114,7 +116,6 @@ const konachanClientConfig = {
   const KONACHAN_CACHE_NAME = konachanClientConfig.cacheName;
   const KONACHAN_CACHE_TTL_MS = 14 * 24 * 60 * 60 * 1000;
   const KONACHAN_MANIFEST_RELOAD_MS = 24 * 60 * 60 * 1000;
-  const EMERGENCY_IMAGES = emergencyImages;
   const INITIAL_BACKGROUND = initialBackground;
   const RATING_RANK = {
     safe: 0,
@@ -208,6 +209,22 @@ const konachanClientConfig = {
       );
       localStorage.removeItem(KONACHAN_LEGACY_CACHE_KEY);
     } catch {}
+  }
+
+  function rememberLoadedImage(image, loadedUrl) {
+    const normalizedImage = normalizeImage(image);
+    if (!normalizedImage) return;
+
+    const cachedImages = readStoredImages()?.images ?? [];
+    writeStoredImages(
+      mergeImages(
+        {
+          ...normalizedImage,
+          url: normalizeUrl(loadedUrl) || normalizedImage.url,
+        },
+        cachedImages,
+      ),
+    );
   }
 
   async function readCachedJson(url) {
@@ -348,6 +365,15 @@ const konachanClientConfig = {
     }
   }
 
+  function explicitContentAcknowledged() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(EXPLICIT_CONTENT_KEY) || "null");
+      if (stored?.version === 1 && stored.acknowledged === true) return true;
+    } catch {}
+
+    return readCookie(EXPLICIT_CONTENT_COOKIE) === "acknowledged";
+  }
+
   function mergeImages(...groups) {
     const byKey = new Map();
 
@@ -446,6 +472,33 @@ const konachanClientConfig = {
     return image ? ratingAllowed(image) : true;
   }
 
+  function clearBackground(target) {
+    const image = target.querySelector(IMAGE_SELECTOR);
+    if (image instanceof HTMLImageElement) {
+      image.removeAttribute("src");
+      image.removeAttribute("srcset");
+      image.removeAttribute("sizes");
+    }
+
+    target.style.removeProperty("--home-konachan-image");
+    target.dataset.loaded = "false";
+    target.dataset.konachanCurrentUrl = "";
+    state.currentImage = null;
+    state.currentUrl = "";
+  }
+
+  function syncExplicitContentState(landing, target) {
+    const acknowledged = explicitContentAcknowledged();
+    landing?.setAttribute("data-explicit-content", acknowledged ? "accepted" : "pending");
+
+    if (!acknowledged) {
+      clearBackground(target);
+      setCredit(null);
+    }
+
+    return acknowledged;
+  }
+
   function syncViewport(target) {
     const landing = target.closest(LANDING_SELECTOR);
     if (!landing) return;
@@ -485,11 +538,6 @@ const konachanClientConfig = {
 
       if (merged.length > 0) {
         state.images = merged;
-        writeStoredImages(merged);
-      }
-
-      if (allowedImages(state.images).length === 0) {
-        state.images = mergeImages(EMERGENCY_IMAGES);
       }
 
       return refreshCandidates(state.images);
@@ -518,17 +566,18 @@ const konachanClientConfig = {
 
     setBackgroundImage(target, loadedUrl);
     target.dataset.loaded = "true";
+    target.dataset.konachanCurrentUrl = loadedUrl;
     state.currentImage = image;
     state.currentUrl = loadedUrl;
     setCredit(typeof image === "string" ? null : image);
+    rememberLoadedImage(image, loadedUrl);
     return true;
   }
 
   async function rotate(target) {
     const pool = refreshCandidates(state.images);
-    const fallbackPool = pool.length > 0 ? pool : mergeImages(EMERGENCY_IMAGES);
     const candidates = pool.filter((image) => !imageCandidates(image).includes(state.currentUrl));
-    const selected = pickRandom(candidates.length > 0 ? candidates : fallbackPool);
+    const selected = pickRandom(candidates.length > 0 ? candidates : pool);
     if (!selected) return false;
 
     try {
@@ -576,6 +625,11 @@ const konachanClientConfig = {
     };
 
     const refresh = async ({ forceReload = false, rotateAfter = false } = {}) => {
+      if (!syncExplicitContentState(landing, target)) {
+        setRefreshState({ busy: false, message: "Avertissement à confirmer" });
+        return;
+      }
+
       setRefreshState({ busy: true, message: "Chargement de l'image" });
       let message = "Image indisponible";
 
@@ -592,6 +646,11 @@ const konachanClientConfig = {
     };
 
     const enforceRatingFilter = async () => {
+      if (!syncExplicitContentState(landing, target)) {
+        setRefreshState({ busy: false, message: "Avertissement à confirmer" });
+        return;
+      }
+
       if (target.dataset.loaded !== "true" || currentImageAllowed()) {
         setRefreshState({
           busy: false,
@@ -606,11 +665,10 @@ const konachanClientConfig = {
       try {
         readLocalImagePool();
         const pool = refreshCandidates(state.images);
-        const fallbackPool = pool.length > 0 ? pool : mergeImages(EMERGENCY_IMAGES);
-        const candidates = fallbackPool.filter(
+        const candidates = pool.filter(
           (image) => !imageCandidates(image).includes(state.currentUrl),
         );
-        const selected = pickRandom(candidates.length > 0 ? candidates : fallbackPool);
+        const selected = pickRandom(candidates.length > 0 ? candidates : pool);
         message = selected && (await setBackground(target, selected))
           ? "Image autorisée"
           : message;
@@ -636,6 +694,20 @@ const konachanClientConfig = {
       );
       enforceRatingFilter();
     });
+
+    document.addEventListener(EXPLICIT_CONTENT_CHANGE_EVENT, () => {
+      if (syncExplicitContentState(landing, target)) {
+        refresh({ rotateAfter: target.dataset.loaded !== "true" });
+      } else {
+        setRefreshState({ busy: false, message: "Avertissement à confirmer" });
+      }
+    });
+
+    if (syncExplicitContentState(landing, target)) {
+      refresh({ rotateAfter: target.dataset.loaded !== "true" });
+    } else {
+      setRefreshState({ busy: false, message: "Avertissement à confirmer" });
+    }
   }
 
   if (document.readyState === "loading") {

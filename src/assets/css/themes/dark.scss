@@ -31,6 +31,14 @@
   background: transparent;
 }
 
+:root[data-theme="dark"] .cookie-consent-backdrop--modal {
+  background: rgb(0 0 0 / 70%);
+}
+
+:root[data-theme="dark"] .cookie-consent--explicit-content {
+  --explicit-warning-accent: #ffea00;
+}
+
 :root[data-theme="dark"] .home-anime-background::after {
   background:
     linear-gradient(to bottom, rgb(0 0 0 / 0.18), rgb(0 0 0 / 0.42)),

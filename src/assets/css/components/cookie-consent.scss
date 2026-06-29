@@ -15,6 +15,10 @@ html.interaction-disabled.consent-visible body {
   animation: cookie-backdrop-in 180ms ease both;
 }
 
+.cookie-consent-backdrop--modal {
+  background: rgb(0 0 0 / 70%);
+}
+
 .cookie-consent {
   position: fixed;
   inset-inline: auto;
@@ -54,6 +58,101 @@ html.interaction-disabled.consent-visible body {
       on-surface-variant: var(--site-muted),
     )
   );
+}
+
+.cookie-consent--modal {
+  top: 50%;
+  bottom: auto;
+  left: 50%;
+  width: min(
+    31rem,
+    calc(
+      100vw - 2rem - env(safe-area-inset-left, 0px) -
+        env(safe-area-inset-right, 0px)
+    )
+  );
+  padding: 1.1rem 1.1rem 0.65rem;
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+  animation: cookie-modal-in 220ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+.cookie-consent--explicit-content {
+  --explicit-warning-accent: #b45309;
+  --explicit-warning-signal: var(--mat-sys-error);
+
+  border-color: var(--site-border);
+  background: var(--site-bg);
+  box-shadow: var(--mat-sys-level4, 0 16px 40px rgb(0 0 0 / 34%));
+  color: var(--site-text);
+  @include mat.theme-overrides(
+    (
+      primary: var(--site-link),
+      on-primary: var(--site-link-contrast),
+      outline: var(--site-link),
+      on-surface: var(--site-text),
+      on-surface-variant: var(--site-text),
+    )
+  );
+}
+
+.cookie-consent--explicit-content .cookie-consent-actions button {
+  border: 0;
+  background: transparent;
+  font-weight: 600;
+}
+
+.cookie-consent--explicit-content .cookie-consent-return-action {
+  color: var(--site-link);
+  @include mat.button-overrides(
+    (
+      text-label-text-color: var(--site-link),
+      text-state-layer-color: var(--site-link),
+      text-ripple-color: color-mix(in srgb, var(--site-link) 12%, transparent),
+    )
+  );
+}
+
+.cookie-consent--explicit-content .cookie-consent-confirm-action {
+  color: var(--explicit-warning-signal);
+  @include mat.button-overrides(
+    (
+      text-label-text-color: var(--explicit-warning-signal),
+      text-state-layer-color: var(--explicit-warning-signal),
+      text-ripple-color: color-mix(
+          in srgb,
+          var(--explicit-warning-signal) 12%,
+          transparent
+        ),
+    )
+  );
+}
+
+.cookie-consent--explicit-content h2 {
+  color: var(--explicit-warning-accent);
+  font-weight: 700;
+}
+
+.cookie-consent--explicit-content p {
+  color: var(--site-text);
+  font-weight: 650;
+}
+
+.cookie-consent-alert {
+  display: grid;
+  grid-template-columns: 3.25rem minmax(0, 1fr);
+  gap: 0.95rem;
+  align-items: start;
+}
+
+.cookie-consent-boot-warning-icon {
+  width: 3rem;
+  height: 3rem;
+  color: var(--explicit-warning-accent);
+  fill: currentColor;
+  filter:
+    drop-shadow(0 0 0.15rem color-mix(in srgb, var(--explicit-warning-accent) 40%, transparent))
+    drop-shadow(0 0.25rem 0.35rem rgb(0 0 0 / 42%));
 }
 
 .cookie-consent h2 {

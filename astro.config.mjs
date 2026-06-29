@@ -20,6 +20,7 @@ const VITE_OPTIMIZE_DEPS = [
   "@angular/material/core",
   "@angular/material/datepicker",
   "@angular/material/dialog",
+  "@angular/material/expansion",
   "@angular/material/form-field",
   "@angular/material/icon",
   "@angular/material/input",
@@ -103,6 +104,12 @@ export default defineConfig({
   ],
   vite: {
     customLogger: viteLogger,
+    server: {
+      headers: {
+        "Access-Control-Allow-Origin": "https://giscus.app",
+        "Cross-Origin-Resource-Policy": "cross-origin",
+      },
+    },
     optimizeDeps: {
       include: VITE_OPTIMIZE_DEPS,
     },

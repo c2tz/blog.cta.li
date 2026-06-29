@@ -58,6 +58,12 @@ interface PagefindModule {
   search: (query: string | null, options?: PagefindSearchOptions) => Promise<PagefindResponse>;
 }
 
+declare global {
+  interface Window {
+    __pagefindModule?: PagefindModule;
+  }
+}
+
 interface SearchResult {
   createdAt?: string;
   createdLabel?: string;
@@ -77,7 +83,8 @@ interface TagFilter {
   value: string;
 }
 
-const PAGEFIND_PATH = "/pagefind/pagefind.js";
+const PAGEFIND_LOADER_PATH = "/pagefind-loader.js";
+const PAGEFIND_LOADED_EVENT = "site:pagefind-loaded";
 const MIN_QUERY_LENGTH = 2;
 const RESULT_LIMIT = 12;
 const EXPANDED_RESULT_FETCH_LIMIT = 100;
@@ -91,12 +98,58 @@ const SORT_OPTIONS: Array<{ label: string; value: SearchSortMode }> = [
   { label: "Récent", value: "created-desc" },
   { label: "Nom", value: "title-asc" },
 ];
-function importPublicModule(path: string): Promise<PagefindModule> {
-  return import(/* @vite-ignore */ path) as Promise<PagefindModule>;
-}
 
 function isSearchSortMode(value: unknown): value is SearchSortMode {
   return SORT_OPTIONS.some((option) => option.value === value);
+}
+
+function loadPagefindScript() {
+  return new Promise<void>((resolve, reject) => {
+    if (window.__pagefindModule) {
+      resolve();
+      return;
+    }
+
+    let script = document.querySelector<HTMLScriptElement>(
+      `script[src="${PAGEFIND_LOADER_PATH}"]`,
+    );
+
+    const handleLoaded = () => {
+      cleanup();
+      resolve();
+    };
+    const handleError = () => {
+      cleanup();
+      reject(new Error("pagefind_loader_failed"));
+    };
+    const cleanup = () => {
+      window.removeEventListener(PAGEFIND_LOADED_EVENT, handleLoaded);
+      script?.removeEventListener("error", handleError);
+    };
+
+    window.addEventListener(PAGEFIND_LOADED_EVENT, handleLoaded, { once: true });
+
+    if (script) {
+      script.addEventListener("error", handleError, { once: true });
+      return;
+    }
+
+    script = document.createElement("script");
+    script.type = "module";
+    script.async = true;
+    script.src = PAGEFIND_LOADER_PATH;
+    script.addEventListener("error", handleError, { once: true });
+    document.head.append(script);
+  });
+}
+
+async function loadPagefindModule() {
+  if (window.__pagefindModule) return window.__pagefindModule;
+
+  await loadPagefindScript();
+  if (!window.__pagefindModule) throw new Error("pagefind_module_unavailable");
+
+  return window.__pagefindModule;
 }
 
 @Component({
@@ -1006,7 +1059,10 @@ export class SiteSearchPanelComponent implements AfterViewInit {
   }
 
   private async loadPagefind() {
-    this.pagefind ??= importPublicModule(PAGEFIND_PATH);
+    this.pagefind ??= loadPagefindModule().catch((error) => {
+      this.pagefind = undefined;
+      throw error;
+    });
     return this.pagefind;
   }
 

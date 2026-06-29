@@ -91,9 +91,9 @@ const SORT_OPTIONS: Array<{ label: string; value: SearchSortMode }> = [
   { label: "Récent", value: "created-desc" },
   { label: "Nom", value: "title-asc" },
 ];
-const importPublicModule = new Function("path", "return import(path)") as (
-  path: string,
-) => Promise<PagefindModule>;
+function importPublicModule(path: string): Promise<PagefindModule> {
+  return import(/* @vite-ignore */ path) as Promise<PagefindModule>;
+}
 
 function isSearchSortMode(value: unknown): value is SearchSortMode {
   return SORT_OPTIONS.some((option) => option.value === value);

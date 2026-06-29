@@ -18,6 +18,7 @@ export const SITE_STORAGE_KEYS = Object.freeze({
   homeKonachanBackgrounds: "home-konachan-backgrounds-v8",
   homeKonachanRatingPreference: "home-konachan-rating-preference-v1",
   ipGeolocation: "site-ip-geolocation-v2",
+  giscusCommentsEnabled: "site-giscus-comments-enabled-v1",
   themePreference: "site-theme-preference",
 });
 

@@ -1,5 +1,6 @@
 export const SITE_EVENTS = Object.freeze({
   consentChange: "site:consent-change",
+  explicitContentChange: "site:explicit-content-change",
   loadingEnd: "site:loading-end",
   loadingStart: "site:loading-start",
   photoSwipeAction: "site:photo-swipe-action",
@@ -13,6 +14,7 @@ export const SITE_EVENTS = Object.freeze({
 
 export const SITE_STORAGE_KEYS = Object.freeze({
   cookieConsent: "ct-cookie-consent-v1",
+  explicitContentAcknowledgement: "ct-explicit-content-ack-v1",
   homeKonachanBackgrounds: "home-konachan-backgrounds-v8",
   homeKonachanRatingPreference: "home-konachan-rating-preference-v1",
   ipGeolocation: "site-ip-geolocation-v2",
@@ -30,6 +32,7 @@ export const SITE_LEGACY_STORAGE_KEYS = Object.freeze({
 
 export const SITE_COOKIE_NAMES = Object.freeze({
   cookieConsent: "ct-cookie-consent",
+  explicitContentAcknowledgement: "ct-explicit-content-ack",
   homeKonachanRatingPreference: "home-konachan-rating-preference",
 });
 

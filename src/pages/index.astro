@@ -34,7 +34,7 @@ const uniqueTags = [
 const intro = await getEntry("info", "intro");
 const introData = intro?.data ?? {};
 const homeCopy = {
-  heroTitle: typeof introData.heroTitle === "string" ? introData.heroTitle : "Court Teplaye",
+  heroTitle: typeof introData.heroTitle === "string" ? introData.heroTitle : SITE_TITLE,
   heroLede:
     typeof introData.heroLede === "string"
       ? introData.heroLede

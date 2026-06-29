@@ -24,6 +24,7 @@ They are incremented when the stored JSON, cache content, or meaning changes eno
 Examples:
 
 - `ct-cookie-consent-v1`: consent payload version.
+- `ct-explicit-content-ack-v1`: explicit image warning acknowledgement.
 - `site-ip-geolocation-v2`: IP geolocation cache format.
 - `home-konachan-backgrounds-v6`: selected home background manifest cache format.
 - `home-konachan-backgrounds-v2`: Cache Storage bucket for fetched Konachan JSON responses.

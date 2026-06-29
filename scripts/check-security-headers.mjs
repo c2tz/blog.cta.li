@@ -106,6 +106,10 @@ if (contentSecurityPolicy) {
     problems.push("Content-Security-Policy is missing script-src.");
   } else if (scriptSrc.includes("'unsafe-inline'")) {
     problems.push("script-src must not use 'unsafe-inline'; use hashes for static inline scripts.");
+  } else if (scriptSrc.includes("'unsafe-eval'")) {
+    problems.push("script-src must not use 'unsafe-eval'.");
+  } else if (scriptSrc.includes("'trusted-types-eval'")) {
+    problems.push("script-src must not use 'trusted-types-eval'.");
   }
 
   const distScriptHashes = await collectInlineScriptHashes("dist");

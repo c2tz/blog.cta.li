@@ -3,7 +3,7 @@ import { readdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const SECURITY_HEADER_SOURCE = "/(.*)";
-const SCRIPT_SRC_BASE_TOKENS = ["'self'", "'wasm-unsafe-eval'"];
+const SCRIPT_SRC_BASE_TOKENS = ["'self'", "'wasm-unsafe-eval'", "https://giscus.app"];
 
 async function htmlFilesIn(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -67,22 +67,14 @@ if (distScriptHashes.length === 0) {
 const vercelConfigPath = "vercel.json";
 const vercelConfigRaw = await readFile(vercelConfigPath, "utf8");
 const vercelConfig = JSON.parse(vercelConfigRaw);
-const securityRule = vercelConfig.headers?.find(
-  (rule) => rule.source === SECURITY_HEADER_SOURCE,
-);
-const cspHeader = securityRule?.headers?.find(
-  (header) => header.key === "Content-Security-Policy",
-);
+const securityRule = vercelConfig.headers?.find((rule) => rule.source === SECURITY_HEADER_SOURCE);
+const cspHeader = securityRule?.headers?.find((header) => header.key === "Content-Security-Policy");
 
 if (!cspHeader) {
   throw new Error(`Missing Content-Security-Policy header for ${SECURITY_HEADER_SOURCE}.`);
 }
 
-const scriptSrc = [
-  "script-src",
-  ...SCRIPT_SRC_BASE_TOKENS,
-  ...distScriptHashes,
-].join(" ");
+const scriptSrc = ["script-src", ...SCRIPT_SRC_BASE_TOKENS, ...distScriptHashes].join(" ");
 
 cspHeader.value = replaceCspDirective(cspHeader.value, "script-src", scriptSrc);
 

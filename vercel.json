@@ -6,7 +6,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-BF0290pkb3jxQsE7z00xR8Imp8X34FLC88L0lkMnrGw=' 'sha256-M4tQR4DZrz7NA4XR/jXGv258pErnNJ/eSqxYyzw4mAE=' 'sha256-PltYMozzxFH1wOFcnNiwWUZKwHFMnscPfzF1UnV4rbI=' 'sha256-Q2BPg90ZMplYY+FSdApNErhpWafg2hcRRbndmvxuL/Q=' 'sha256-QzWFZi+FLIx23tnm9SBU4aEgx4x8DsuASP07mfqol/c=' 'sha256-SaCkFfPruIdTXT8/97JArQmGxiJAL2o4bBDvSgJ5y3Q='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://giscus.app https://get.geojs.io https://ipapi.co https://api64.ipify.org; worker-src 'self' blob:; frame-src https://giscus.app; manifest-src 'self'; media-src 'self'; upgrade-insecure-requests"
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-1+vbLZVocjZkB9zoeBTcybspMGAFSXS0QUfCttToPoI=' 'sha256-I8esRuN1RfFCq9psW+TGOYOYUQldN1YW+GDNougVNiY=' 'sha256-ICeTE69FIFDLTL/T7zPLmQWzlT6R92R1PRloC+uFkvE=' 'sha256-ROWGxEhLmXrBaJHnaFsqAHYZ64A2YnmiY8T03Xt4Z6A=' 'sha256-dopWPuv/gwFqf3DN4vgSW/nK87WlwgY9jEKfSqbOUag=' 'sha256-xeIl6l60LkkYg5OJKoB89t8JlEzTWjMoCGZOg5tdTGk='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://giscus.app https://get.geojs.io https://ipapi.co https://api64.ipify.org; worker-src 'self' blob:; frame-src https://giscus.app; manifest-src 'self'; media-src 'self'; upgrade-insecure-requests"
         },
         {
           "key": "Strict-Transport-Security",

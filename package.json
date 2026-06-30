@@ -17,10 +17,14 @@
     "sync:headers": "node scripts/sync-security-header-hashes.mjs",
     "check:headers": "node scripts/check-security-headers.mjs",
     "verify": "pnpm check && pnpm build && pnpm check:headers",
+    "commit:auto": "node scripts/create-codex-commit.mjs",
+    "commit:normalize": "node scripts/normalize-commit-messages.mjs",
+    "lint:commit": "commitlint",
     "index:search": "node scripts/clean-pagefind.mjs && pagefind --site dist --glob \"posts/**/index.html\" --silent && node scripts/sync-pagefind-dev.mjs",
     "astro": "astro",
     "update:konachan": "node scripts/update-konachan-backgrounds.mjs",
-    "update:material-symbols": "node scripts/update-material-symbols.mjs"
+    "update:material-symbols": "node scripts/update-material-symbols.mjs",
+    "prepare": "husky"
   },
   "dependencies": {
     "@analogjs/astro-angular": "^2.6.1",
@@ -57,7 +61,10 @@
   },
   "devDependencies": {
     "@angular/language-service": "^22.0.4",
+    "@commitlint/cli": "^21.1.0",
+    "@commitlint/config-conventional": "^21.1.0",
     "@types/node": "^22.20.0",
+    "husky": "^9.1.7",
     "pagefind": "^1.5.2",
     "sass": "^1.99.0",
     "typescript": "6.0.3"

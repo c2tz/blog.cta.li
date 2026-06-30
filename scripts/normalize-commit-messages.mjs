@@ -49,7 +49,9 @@ if (!allowProtected && ["develop", "main"].includes(branch)) {
 }
 
 if (!worktreeIsClean()) {
-  console.error("Refusing to rewrite commits with a dirty worktree. Commit, stash, or discard local changes first.");
+  console.error(
+    "Refusing to rewrite commits with a dirty worktree. Commit, stash, or discard local changes first.",
+  );
   process.exit(1);
 }
 
@@ -69,7 +71,9 @@ if (!commitList.length) {
 }
 
 if (mergeCommits.length) {
-  console.error("Merge commits are not supported by this normalizer. Rebase the branch first, then run it again.");
+  console.error(
+    "Merge commits are not supported by this normalizer. Rebase the branch first, then run it again.",
+  );
   process.exit(1);
 }
 
@@ -102,7 +106,9 @@ for (const commit of commitList) {
     changedFiles,
     currentMessage,
     diff,
-    mode: rewriteAll ? "rewrite every commit message in a branch" : "fix an invalid commit message in a branch",
+    mode: rewriteAll
+      ? "rewrite every commit message in a branch"
+      : "fix an invalid commit message in a branch",
   });
 
   validateCommitMessage(message, `CODEX_COMMIT_CHECKMSG_${commit}`);
@@ -146,7 +152,8 @@ try {
     const authorEmail = runGit(["show", "-s", "--format=%ae", item.commit]).trim();
     const authorDate = runGit(["show", "-s", "--format=%aI", item.commit]).trim();
     const messageFile = writeCommitMessageFile(item.message, `CODEX_REWRITE_${item.commit}`);
-    const hasIndexChanges = spawnSync("git", ["diff", "--cached", "--quiet"], { stdio: "ignore" }).status !== 0;
+    const hasIndexChanges =
+      spawnSync("git", ["diff", "--cached", "--quiet"], { stdio: "ignore" }).status !== 0;
     const commitArgs = ["commit", "-F", messageFile];
 
     if (!hasIndexChanges) {
@@ -173,6 +180,8 @@ try {
   console.log(`Commit messages normalized. Backup branch: ${backupBranch}`);
 } catch (error) {
   console.error(error.message);
-  console.error(`The original branch is preserved at ${backupBranch}. Resolve the issue, then switch back to ${branch}.`);
+  console.error(
+    `The original branch is preserved at ${backupBranch}. Resolve the issue, then switch back to ${branch}.`,
+  );
   process.exit(1);
 }

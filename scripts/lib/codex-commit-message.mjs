@@ -4,7 +4,19 @@ import { join } from "node:path";
 
 const MAX_CONTEXT_LENGTH = 60000;
 
-export const commitTypes = ["build", "chore", "ci", "docs", "feat", "fix", "perf", "refactor", "revert", "style", "test"];
+export const commitTypes = [
+  "build",
+  "chore",
+  "ci",
+  "docs",
+  "feat",
+  "fix",
+  "perf",
+  "refactor",
+  "revert",
+  "style",
+  "test",
+];
 
 export const preferredScopes = [
   "a11y",
@@ -70,7 +82,11 @@ export function writeCommitMessageFile(message, filename = "CODEX_COMMIT_EDITMSG
   return file;
 }
 
-export function validateCommitMessage(message, filename = "CODEX_COMMIT_EDITMSG", stdio = "inherit") {
+export function validateCommitMessage(
+  message,
+  filename = "CODEX_COMMIT_EDITMSG",
+  stdio = "inherit",
+) {
   const file = writeCommitMessageFile(message, filename);
   const result = spawnSync("pnpm", ["exec", "commitlint", "--edit", file], {
     encoding: "utf8",
@@ -78,7 +94,9 @@ export function validateCommitMessage(message, filename = "CODEX_COMMIT_EDITMSG"
   });
 
   if (result.status !== 0) {
-    throw new Error(result.stderr || result.stdout || "Commit message does not match the configured convention.");
+    throw new Error(
+      result.stderr || result.stdout || "Commit message does not match the configured convention.",
+    );
   }
 
   return file;
@@ -117,7 +135,13 @@ export function truncateForPrompt(value, maxLength = MAX_CONTEXT_LENGTH) {
 [diff truncated: ${value.length - maxLength} characters omitted]`;
 }
 
-export function buildCommitMessagePrompt({ branch, changedFiles, currentMessage = "", diff, mode }) {
+export function buildCommitMessagePrompt({
+  branch,
+  changedFiles,
+  currentMessage = "",
+  diff,
+  mode,
+}) {
   return `You write professional Git commit messages for this repository.
 
 Return only the final commit message. Do not wrap it in Markdown. Do not add explanations.
@@ -148,11 +172,15 @@ export function generateCommitMessage(context) {
   requireCodexCli();
 
   const prompt = buildCommitMessagePrompt(context);
-  const result = spawnSync("codex", ["exec", "--ephemeral", "--sandbox", "read-only", "--ask-for-approval", "never", "-"], {
-    input: prompt,
-    encoding: "utf8",
-    maxBuffer: 20 * 1024 * 1024,
-  });
+  const result = spawnSync(
+    "codex",
+    ["exec", "--ephemeral", "--sandbox", "read-only", "--ask-for-approval", "never", "-"],
+    {
+      input: prompt,
+      encoding: "utf8",
+      maxBuffer: 20 * 1024 * 1024,
+    },
+  );
 
   if (result.error) {
     throw result.error;
@@ -177,7 +205,9 @@ export function stagedChangesExist() {
 }
 
 export function worktreeIsClean() {
-  return gitCommandSucceeds(["diff", "--quiet"]) && gitCommandSucceeds(["diff", "--cached", "--quiet"]);
+  return (
+    gitCommandSucceeds(["diff", "--quiet"]) && gitCommandSucceeds(["diff", "--cached", "--quiet"])
+  );
 }
 
 export function fileExists(path) {

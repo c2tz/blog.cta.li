@@ -16,13 +16,13 @@ importers:
     dependencies:
       '@analogjs/astro-angular':
         specifier: ^2.6.1
-        version: 2.6.1(a20d21c7178c961505ea13a11c2be8cd)
+        version: 2.6.1(1dc7f0ff20236a61cd4e48631741b909)
       '@angular/animations':
         specifier: ^22.0.2
         version: 22.0.2(@angular/core@22.0.4(@angular/compiler@22.0.4)(rxjs@7.8.2)(zone.js@0.16.2))
       '@angular/build':
         specifier: ^22.0.4
-        version: 22.0.4(142e8fb6a8ab9baaf5d18b54d0cb688e)
+        version: 22.0.4(1e3dab58b7fd5e7f87aa5249893b5ab5)
       '@angular/cdk':
         specifier: ^22.0.2
         version: 22.0.2(@angular/common@22.0.2(@angular/core@22.0.4(@angular/compiler@22.0.4)(rxjs@7.8.2)(zone.js@0.16.2))(rxjs@7.8.2))(@angular/core@22.0.4(@angular/compiler@22.0.4)(rxjs@7.8.2)(zone.js@0.16.2))(@angular/platform-browser@22.0.4(@angular/animations@22.0.2(@angular/core@22.0.4(@angular/compiler@22.0.4)(rxjs@7.8.2)(zone.js@0.16.2)))(@angular/common@22.0.2(@angular/core@22.0.4(@angular/compiler@22.0.4)(rxjs@7.8.2)(zone.js@0.16.2))(rxjs@7.8.2))(@angular/core@22.0.4(@angular/compiler@22.0.4)(rxjs@7.8.2)(zone.js@0.16.2)))(rxjs@7.8.2)
@@ -55,13 +55,13 @@ importers:
         version: 7.2.0
       '@astrojs/mdx':
         specifier: ^6.0.3
-        version: 6.0.3(astro@6.4.8(@types/node@22.20.0)(jiti@2.6.1)(rollup@4.60.2)(sass@1.99.0))
+        version: 6.0.3(astro@6.4.8(@types/node@22.20.0)(jiti@2.6.1)(rollup@4.60.2)(sass@1.99.0)(terser@5.48.0)(yaml@2.9.0))
       '@astrojs/rss':
         specifier: ^4.0.18
         version: 4.0.18
       astro:
         specifier: ^6.4.8
-        version: 6.4.8(@types/node@22.20.0)(jiti@2.6.1)(rollup@4.60.2)(sass@1.99.0)
+        version: 6.4.8(@types/node@22.20.0)(jiti@2.6.1)(rollup@4.60.2)(sass@1.99.0)(terser@5.48.0)(yaml@2.9.0)
       fonteditor-core:
         specifier: ^2.6.3
         version: 2.6.3
@@ -79,7 +79,7 @@ importers:
         version: 7.8.2
       satori-astro:
         specifier: ^0.4.0
-        version: 0.4.0(astro@6.4.8(@types/node@22.20.0)(jiti@2.6.1)(rollup@4.60.2)(sass@1.99.0))(sharp@0.34.5)
+        version: 0.4.0(astro@6.4.8(@types/node@22.20.0)(jiti@2.6.1)(rollup@4.60.2)(sass@1.99.0)(terser@5.48.0)(yaml@2.9.0))(sharp@0.34.5)
       satori-html:
         specifier: ^0.3.2
         version: 0.3.2
@@ -105,9 +105,15 @@ importers:
       '@types/node':
         specifier: ^22.20.0
         version: 22.20.0
+      html-minifier-terser:
+        specifier: ^7.2.0
+        version: 7.2.0
       husky:
         specifier: ^9.1.7
         version: 9.1.7
+      lint-staged:
+        specifier: ^17.0.8
+        version: 17.0.8
       pagefind:
         specifier: ^1.5.2
         version: 1.5.2
@@ -1710,6 +1716,9 @@ packages:
     resolution: {integrity: sha512-P8BjAsXvZS+VIDUI11hHCQEv74YT67YUi5JJFNWIqL235sBmjX4+qx9Muvls5ivyNENctx46xQLQ3aTuE7ssaQ==}
     engines: {node: '>=6'}
 
+  camel-case@4.1.2:
+    resolution: {integrity: sha512-gxGWBrTT1JuMx6R+o5PTXMmUnhnVzLQ9SNutD4YqKtI6ap897t3tKECYla6gCWEkplXnlNybEkZg9GEGxKFCgw==}
+
   camelize@1.0.1:
     resolution: {integrity: sha512-dU+Tx2fsypxTgtLoE36npi3UqcjSSMNYfkqgmoEhtZrraP5VWq0K7FkWVTYa8eMPtnU/G2txVsfdCJTn9uzpuQ==}
 
@@ -1934,6 +1943,9 @@ packages:
 
   domutils@3.2.2:
     resolution: {integrity: sha512-6kZKyUajlDuqlHKVX1w7gyslj9MPIXzIFiz/rGu35uC1wMi+kMhQwGhl4lt9unC9Vb9INnY9Z3/ZA3+FhASLaw==}
+
+  dot-case@3.0.4:
+    resolution: {integrity: sha512-Kv5nKlh6yRrdrGvxeJ2e5y2eRUpkUosIW4A2AS38zwSz27zu7ufDwQPi5Jhs3XAlGNetl3bmnGhQsMtkKJnj3w==}
 
   dot-prop@5.3.0:
     resolution: {integrity: sha512-QM8q3zDe58hqUqjraQOmzZ1LIH9SWQJTlEKCH4kJ2oQvLZk7RbQXvtDM2XEq3fwkV9CCvvH4LA0AV+ogFsBM2Q==}
@@ -2330,6 +2342,11 @@ packages:
   lines-and-columns@1.2.4:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
 
+  lint-staged@17.0.8:
+    resolution: {integrity: sha512-B2P/d+jVW0UXOQ0MVMLrB/9ydA1P+zz6jYfdrbbEd9ur3S2rcbduFWKiUCC02Sm5hbC8nrm7y24WuYMG54HfxA==}
+    engines: {node: '>=22.22.1'}
+    hasBin: true
+
   listr2@10.2.1:
     resolution: {integrity: sha512-7I5knELsJKTUjXG+A6BkKAiGkW1i25fNa/xlUl9hFtk15WbE9jndA89xu5FzQKrY5llajE1hfZZFMILXkDHk/Q==}
     engines: {node: '>=22.13.0'}
@@ -2663,6 +2680,9 @@ packages:
 
   pako@0.2.9:
     resolution: {integrity: sha512-NUcwaKxUxWrZLpDG+z/xZaCgQITkA/Dv4V/T6bw7VON6l1Xz/VnrBqrYjZQ12TamKHzITTfOEIYUj48y2KXImA==}
+
+  param-case@3.0.4:
+    resolution: {integrity: sha512-RXlj7zCYokReqWpOPH9oYivUzLYZ5vAPIfEmCTNViosC78F8F0H9y7T7gG2M39ymgutxF5gcFEsyZQSph9Bp3A==}
 
   parent-module@1.0.1:
     resolution: {integrity: sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==}
@@ -3313,11 +3333,11 @@ snapshots:
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/trace-mapping': 0.3.31
 
-  '@analogjs/astro-angular@2.6.1(a20d21c7178c961505ea13a11c2be8cd)':
+  '@analogjs/astro-angular@2.6.1(1dc7f0ff20236a61cd4e48631741b909)':
     dependencies:
-      '@analogjs/vite-plugin-angular': 2.6.1(@angular/build@22.0.4(142e8fb6a8ab9baaf5d18b54d0cb688e))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(vite@7.3.5(@types/node@22.20.0)(jiti@2.6.1)(sass@1.99.0))
+      '@analogjs/vite-plugin-angular': 2.6.1(@angular/build@22.0.4(1e3dab58b7fd5e7f87aa5249893b5ab5))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(vite@7.3.5(@types/node@22.20.0)(jiti@2.6.1)(sass@1.99.0)(terser@5.48.0)(yaml@2.9.0))
       '@angular/animations': 22.0.2(@angular/core@22.0.4(@angular/compiler@22.0.4)(rxjs@7.8.2)(zone.js@0.16.2))
-      '@angular/build': 22.0.4(142e8fb6a8ab9baaf5d18b54d0cb688e)
+      '@angular/build': 22.0.4(1e3dab58b7fd5e7f87aa5249893b5ab5)
       '@angular/common': 22.0.2(@angular/core@22.0.4(@angular/compiler@22.0.4)(rxjs@7.8.2)(zone.js@0.16.2))(rxjs@7.8.2)
       '@angular/compiler': 22.0.4
       '@angular/compiler-cli': 22.0.2(@angular/compiler@22.0.4)(typescript@6.0.3)
@@ -3334,7 +3354,7 @@ snapshots:
       - '@emnapi/runtime'
       - vite
 
-  '@analogjs/vite-plugin-angular@2.6.1(@angular/build@22.0.4(142e8fb6a8ab9baaf5d18b54d0cb688e))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(vite@7.3.5(@types/node@22.20.0)(jiti@2.6.1)(sass@1.99.0))':
+  '@analogjs/vite-plugin-angular@2.6.1(@angular/build@22.0.4(1e3dab58b7fd5e7f87aa5249893b5ab5))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(vite@7.3.5(@types/node@22.20.0)(jiti@2.6.1)(sass@1.99.0)(terser@5.48.0)(yaml@2.9.0))':
     dependencies:
       magic-string: 0.30.21
       obug: 2.1.3
@@ -3342,8 +3362,8 @@ snapshots:
       tinyglobby: 0.2.17
       ts-morph: 21.0.1
     optionalDependencies:
-      '@angular/build': 22.0.4(142e8fb6a8ab9baaf5d18b54d0cb688e)
-      vite: 7.3.5(@types/node@22.20.0)(jiti@2.6.1)(sass@1.99.0)
+      '@angular/build': 22.0.4(1e3dab58b7fd5e7f87aa5249893b5ab5)
+      vite: 7.3.5(@types/node@22.20.0)(jiti@2.6.1)(sass@1.99.0)(terser@5.48.0)(yaml@2.9.0)
     transitivePeerDependencies:
       - '@emnapi/core'
       - '@emnapi/runtime'
@@ -3371,7 +3391,7 @@ snapshots:
       '@angular/core': 22.0.4(@angular/compiler@22.0.4)(rxjs@7.8.2)(zone.js@0.16.2)
       tslib: 2.8.1
 
-  '@angular/build@22.0.4(142e8fb6a8ab9baaf5d18b54d0cb688e)':
+  '@angular/build@22.0.4(1e3dab58b7fd5e7f87aa5249893b5ab5)':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@angular-devkit/architect': 0.2200.4(chokidar@5.0.0)
@@ -3381,7 +3401,7 @@ snapshots:
       '@babel/helper-annotate-as-pure': 7.27.3
       '@babel/helper-split-export-declaration': 7.24.7
       '@inquirer/confirm': 6.0.12(@types/node@22.20.0)
-      '@vitejs/plugin-basic-ssl': 2.3.0(vite@7.3.5(@types/node@22.20.0)(jiti@2.6.1)(sass@1.99.0))
+      '@vitejs/plugin-basic-ssl': 2.3.0(vite@7.3.5(@types/node@22.20.0)(jiti@2.6.1)(sass@1.99.0)(terser@5.48.0)(yaml@2.9.0))
       beasties: 0.4.2
       browserslist: 4.28.4
       esbuild: 0.28.1
@@ -3400,7 +3420,7 @@ snapshots:
       tinyglobby: 0.2.16
       tslib: 2.8.1
       typescript: 6.0.3
-      vite: 7.3.5(@types/node@22.20.0)(jiti@2.6.1)(sass@1.99.0)
+      vite: 7.3.5(@types/node@22.20.0)(jiti@2.6.1)(sass@1.99.0)(terser@5.48.0)(yaml@2.9.0)
       watchpack: 2.5.1
     optionalDependencies:
       '@angular/core': 22.0.4(@angular/compiler@22.0.4)(rxjs@7.8.2)(zone.js@0.16.2)
@@ -3541,13 +3561,13 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@astrojs/mdx@6.0.3(astro@6.4.8(@types/node@22.20.0)(jiti@2.6.1)(rollup@4.60.2)(sass@1.99.0))':
+  '@astrojs/mdx@6.0.3(astro@6.4.8(@types/node@22.20.0)(jiti@2.6.1)(rollup@4.60.2)(sass@1.99.0)(terser@5.48.0)(yaml@2.9.0))':
     dependencies:
       '@astrojs/internal-helpers': 0.10.0
       '@astrojs/markdown-remark': 7.2.0
       '@mdx-js/mdx': 3.1.1
       acorn: 8.17.0
-      astro: 6.4.8(@types/node@22.20.0)(jiti@2.6.1)(rollup@4.60.2)(sass@1.99.0)
+      astro: 6.4.8(@types/node@22.20.0)(jiti@2.6.1)(rollup@4.60.2)(sass@1.99.0)(terser@5.48.0)(yaml@2.9.0)
       es-module-lexer: 2.1.0
       estree-util-visit: 2.0.0
       hast-util-to-html: 9.0.5
@@ -4563,9 +4583,9 @@ snapshots:
 
   '@ungap/structured-clone@1.3.1': {}
 
-  '@vitejs/plugin-basic-ssl@2.3.0(vite@7.3.5(@types/node@22.20.0)(jiti@2.6.1)(sass@1.99.0))':
+  '@vitejs/plugin-basic-ssl@2.3.0(vite@7.3.5(@types/node@22.20.0)(jiti@2.6.1)(sass@1.99.0)(terser@5.48.0)(yaml@2.9.0))':
     dependencies:
-      vite: 7.3.5(@types/node@22.20.0)(jiti@2.6.1)(sass@1.99.0)
+      vite: 7.3.5(@types/node@22.20.0)(jiti@2.6.1)(sass@1.99.0)(terser@5.48.0)(yaml@2.9.0)
 
   '@xmldom/xmldom@0.8.13': {}
 
@@ -4613,7 +4633,7 @@ snapshots:
 
   astring@1.9.0: {}
 
-  astro@6.4.8(@types/node@22.20.0)(jiti@2.6.1)(rollup@4.60.2)(sass@1.99.0):
+  astro@6.4.8(@types/node@22.20.0)(jiti@2.6.1)(rollup@4.60.2)(sass@1.99.0)(terser@5.48.0)(yaml@2.9.0):
     dependencies:
       '@astrojs/compiler': 4.0.0
       '@astrojs/internal-helpers': 0.10.0
@@ -4665,8 +4685,8 @@ snapshots:
       unist-util-visit: 5.1.0
       unstorage: 1.17.5
       vfile: 6.0.3
-      vite: 7.3.5(@types/node@22.20.0)(jiti@2.6.1)(sass@1.99.0)
-      vitefu: 1.1.3(vite@7.3.5(@types/node@22.20.0)(jiti@2.6.1)(sass@1.99.0))
+      vite: 7.3.5(@types/node@22.20.0)(jiti@2.6.1)(sass@1.99.0)(terser@5.48.0)(yaml@2.9.0)
+      vitefu: 1.1.3(vite@7.3.5(@types/node@22.20.0)(jiti@2.6.1)(sass@1.99.0)(terser@5.48.0)(yaml@2.9.0))
       xxhash-wasm: 1.1.0
       yargs-parser: 22.0.0
       zod: 4.4.3
@@ -4749,6 +4769,11 @@ snapshots:
   buffer-from@1.1.2: {}
 
   callsites@3.1.0: {}
+
+  camel-case@4.1.2:
+    dependencies:
+      pascal-case: 3.1.2
+      tslib: 2.8.1
 
   camelize@1.0.1: {}
 
@@ -4948,6 +4973,11 @@ snapshots:
       dom-serializer: 2.0.0
       domelementtype: 2.3.0
       domhandler: 5.0.3
+
+  dot-case@3.0.4:
+    dependencies:
+      no-case: 3.0.4
+      tslib: 2.8.1
 
   dot-prop@5.3.0:
     dependencies:
@@ -5430,6 +5460,15 @@ snapshots:
       unicode-trie: 2.0.0
 
   lines-and-columns@1.2.4: {}
+
+  lint-staged@17.0.8:
+    dependencies:
+      listr2: 10.2.1
+      picomatch: 4.0.4
+      string-argv: 0.3.2
+      tinyexec: 1.2.4
+    optionalDependencies:
+      yaml: 2.9.0
 
   listr2@10.2.1:
     dependencies:
@@ -6082,6 +6121,11 @@ snapshots:
 
   pako@0.2.9: {}
 
+  param-case@3.0.4:
+    dependencies:
+      dot-case: 3.0.4
+      tslib: 2.8.1
+
   parent-module@1.0.1:
     dependencies:
       callsites: 3.1.0
@@ -6428,9 +6472,9 @@ snapshots:
     optionalDependencies:
       '@parcel/watcher': 2.5.6
 
-  satori-astro@0.4.0(astro@6.4.8(@types/node@22.20.0)(jiti@2.6.1)(rollup@4.60.2)(sass@1.99.0))(sharp@0.34.5):
+  satori-astro@0.4.0(astro@6.4.8(@types/node@22.20.0)(jiti@2.6.1)(rollup@4.60.2)(sass@1.99.0)(terser@5.48.0)(yaml@2.9.0))(sharp@0.34.5):
     dependencies:
-      astro: 6.4.8(@types/node@22.20.0)(jiti@2.6.1)(rollup@4.60.2)(sass@1.99.0)
+      astro: 6.4.8(@types/node@22.20.0)(jiti@2.6.1)(rollup@4.60.2)(sass@1.99.0)(terser@5.48.0)(yaml@2.9.0)
       satori: 0.26.0
       sharp: 0.34.5
 
@@ -6728,7 +6772,7 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
 
-  vite@7.3.5(@types/node@22.20.0)(jiti@2.6.1)(sass@1.99.0):
+  vite@7.3.5(@types/node@22.20.0)(jiti@2.6.1)(sass@1.99.0)(terser@5.48.0)(yaml@2.9.0):
     dependencies:
       esbuild: 0.28.1
       fdir: 6.5.0(picomatch@4.0.4)
@@ -6744,9 +6788,9 @@ snapshots:
       terser: 5.48.0
       yaml: 2.9.0
 
-  vitefu@1.1.3(vite@7.3.5(@types/node@22.20.0)(jiti@2.6.1)(sass@1.99.0)):
+  vitefu@1.1.3(vite@7.3.5(@types/node@22.20.0)(jiti@2.6.1)(sass@1.99.0)(terser@5.48.0)(yaml@2.9.0)):
     optionalDependencies:
-      vite: 7.3.5(@types/node@22.20.0)(jiti@2.6.1)(sass@1.99.0)
+      vite: 7.3.5(@types/node@22.20.0)(jiti@2.6.1)(sass@1.99.0)(terser@5.48.0)(yaml@2.9.0)
 
   watchpack@2.5.1:
     dependencies:

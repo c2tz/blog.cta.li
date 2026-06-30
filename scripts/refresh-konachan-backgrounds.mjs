@@ -95,8 +95,7 @@ function expectedFileNames(images) {
 
 function sortImages(images) {
   return images.sort((left, right) => {
-    const ratingDelta =
-      RATING_ORDER.indexOf(left.rating) - RATING_ORDER.indexOf(right.rating);
+    const ratingDelta = RATING_ORDER.indexOf(left.rating) - RATING_ORDER.indexOf(right.rating);
     if (ratingDelta !== 0) return ratingDelta;
 
     return Number(right.id) - Number(left.id);

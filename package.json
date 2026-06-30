@@ -8,7 +8,8 @@
   "scripts": {
     "dev": "astro dev",
     "dev:local": "astro dev --host 127.0.0.1 --port 4321",
-    "build": "astro build && pnpm index:search",
+    "build": "astro build && pnpm index:search && pnpm minify:html",
+    "build:debug": "astro build && pnpm index:search",
     "build:vercel": "node scripts/ensure-git-history.mjs && pnpm build && pnpm check:headers",
     "preview": "astro preview",
     "preview:local": "astro preview --host 127.0.0.1 --port 4322",
@@ -16,8 +17,11 @@
     "check:angular": "astro sync && ngc -p tsconfig.app.json --noEmit",
     "sync:headers": "node scripts/sync-security-header-hashes.mjs",
     "check:headers": "node scripts/check-security-headers.mjs",
+    "minify:html": "node scripts/minify-dist-html.mjs",
     "verify": "pnpm check && pnpm build && pnpm check:headers",
     "index:search": "node scripts/clean-pagefind.mjs && pagefind --site dist --glob \"posts/**/index.html\" --silent && node scripts/sync-pagefind-dev.mjs",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
     "astro": "astro",
     "update:konachan": "node scripts/update-konachan-backgrounds.mjs",
     "update:material-symbols": "node scripts/update-material-symbols.mjs"
@@ -58,7 +62,9 @@
   "devDependencies": {
     "@angular/language-service": "^22.0.4",
     "@types/node": "^22.20.0",
+    "html-minifier-terser": "^7.2.0",
     "pagefind": "^1.5.2",
+    "prettier": "^3.9.3",
     "sass": "^1.99.0",
     "typescript": "6.0.3"
   }

@@ -5,9 +5,7 @@
   "enforcement": "active",
   "conditions": {
     "ref_name": {
-      "include": [
-        "refs/heads/develop"
-      ],
+      "include": ["refs/heads/develop"],
       "exclude": []
     }
   },
@@ -37,7 +35,19 @@
         "strict_required_status_checks_policy": true,
         "required_status_checks": [
           {
-            "context": "verify"
+            "context": "Analyze (javascript-typescript)"
+          },
+          {
+            "context": "Build and sync security header hashes"
+          },
+          {
+            "context": "Check Astro, Angular, and security headers"
+          },
+          {
+            "context": "Validate pull request title"
+          },
+          {
+            "context": "Vercel"
           }
         ]
       }

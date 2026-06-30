@@ -30,10 +30,7 @@ html.interaction-disabled.consent-visible body {
   gap: 0.75rem;
   width: min(
     28.875rem,
-    calc(
-      100vw - 3rem - env(safe-area-inset-left, 0px) -
-        env(safe-area-inset-right, 0px)
-    )
+    calc(100vw - 3rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px))
   );
   box-sizing: border-box;
   padding: 1rem 1rem 0.5rem;
@@ -66,10 +63,7 @@ html.interaction-disabled.consent-visible body {
   left: 50%;
   width: min(
     31rem,
-    calc(
-      100vw - 2rem - env(safe-area-inset-left, 0px) -
-        env(safe-area-inset-right, 0px)
-    )
+    calc(100vw - 2rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px))
   );
   padding: 1.1rem 1.1rem 0.65rem;
   transform: translate(-50%, -50%);
@@ -119,18 +113,16 @@ html.interaction-disabled.consent-visible body {
     (
       text-label-text-color: var(--explicit-warning-signal),
       text-state-layer-color: var(--explicit-warning-signal),
-      text-ripple-color: color-mix(
-          in srgb,
-          var(--explicit-warning-signal) 12%,
-          transparent
-        ),
+      text-ripple-color: color-mix(in srgb, var(--explicit-warning-signal) 12%, transparent),
     )
   );
 }
 
-.cookie-consent--explicit-content h2 {
+.cookie-consent--explicit-content h4 {
   color: var(--explicit-warning-accent);
-  font-weight: 700;
+  font-family: inherit;
+  font-style: inherit;
+  font-weight: 650;
 }
 
 .cookie-consent--explicit-content p {
@@ -150,8 +142,9 @@ html.interaction-disabled.consent-visible body {
   height: 3rem;
   color: var(--explicit-warning-accent);
   fill: currentColor;
-  filter:
-    drop-shadow(0 0 0.15rem color-mix(in srgb, var(--explicit-warning-accent) 40%, transparent))
+  filter: drop-shadow(
+      0 0 0.15rem color-mix(in srgb, var(--explicit-warning-accent) 40%, transparent)
+    )
     drop-shadow(0 0.25rem 0.35rem rgb(0 0 0 / 42%));
 }
 
@@ -159,6 +152,12 @@ html.interaction-disabled.consent-visible body {
   margin: 0 0 0.35rem;
   font-size: 1.1rem;
   line-height: 1.3;
+}
+
+.cookie-consent h4 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  line-height: 1.35;
 }
 
 .cookie-consent p {

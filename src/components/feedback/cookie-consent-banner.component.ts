@@ -1,9 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  signal,
-} from "@angular/core";
+import { ChangeDetectionStrategy, Component, computed, signal } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
 import { MatButton } from "@angular/material/button";
 import {
@@ -181,14 +176,18 @@ function isFocusableElement(element: HTMLElement) {
         [class.cookie-consent--explicit-content]="activeNotice() === 'explicit-content'"
         role="dialog"
         aria-modal="true"
-        [attr.aria-labelledby]="activeNotice() === 'explicit-content'
-          ? 'explicit-content-consent-title'
-          : 'cookie-consent-title'"
-        [attr.aria-describedby]="activeNotice() === 'explicit-content'
-          ? 'explicit-content-consent-desc'
-          : 'cookie-consent-desc'"
+        [attr.aria-labelledby]="
+          activeNotice() === 'explicit-content'
+            ? 'explicit-content-consent-title'
+            : 'cookie-consent-title'
+        "
+        [attr.aria-describedby]="
+          activeNotice() === 'explicit-content'
+            ? 'explicit-content-consent-desc'
+            : 'cookie-consent-desc'
+        "
       >
-        @if (activeNotice() === 'explicit-content') {
+        @if (activeNotice() === "explicit-content") {
           <div class="cookie-consent-alert">
             <svg
               class="cookie-consent-boot-warning-icon"
@@ -196,14 +195,16 @@ function isFocusableElement(element: HTMLElement) {
               viewBox="0 -960 960 960"
               aria-hidden="true"
             >
-              <path d="m40-120 440-760 440 760H40Zm468.5-131.5Q520-263 520-280t-11.5-28.5Q497-320 480-320t-28.5 11.5Q440-297 440-280t11.5 28.5Q463-240 480-240t28.5-11.5ZM440-360h80v-200h-80v200Z" />
+              <path
+                d="m40-120 440-760 440 760H40Zm468.5-131.5Q520-263 520-280t-11.5-28.5Q497-320 480-320t-28.5 11.5Q440-297 440-280t11.5 28.5Q463-240 480-240t28.5-11.5ZM440-360h80v-200h-80v200Z"
+              />
             </svg>
             <div class="cookie-consent-content">
-              <h2 id="explicit-content-consent-title">Avertissement images</h2>
+              <h4 id="explicit-content-consent-title">Avertissement relatif aux images</h4>
               <p id="explicit-content-consent-desc">
-                Ce site peut afficher des images d’anime explicites réservées à
-                un public majeur. En continuant, vous confirmez avoir au moins
-                18 ans ou l’âge de la majorité dans votre pays ou région.
+                Ce site peut contenir des images d’anime à caractère explicite, destinées uniquement
+                à un public majeur. En poursuivant votre navigation, vous confirmez avoir au moins
+                18 ans, ou avoir atteint l’âge légal de la majorité dans votre pays ou région.
               </p>
             </div>
           </div>
@@ -230,27 +231,14 @@ function isFocusableElement(element: HTMLElement) {
           <div class="cookie-consent-content">
             <h2 id="cookie-consent-title">Confidentialité</h2>
             <p id="cookie-consent-desc">
-              En acceptant, vous autorisez la
-              fonctionnalité qui affiche votre IP et votre pays dans le pied de
-              page. En refusant, elle reste désactivée.
+              En acceptant, vous autorisez la fonctionnalité qui affiche votre IP et votre pays dans
+              le pied de page. En refusant, elle reste désactivée.
             </p>
           </div>
 
           <div class="cookie-consent-actions">
-            <button
-              matButton="text"
-              type="button"
-              (click)="reject()"
-            >
-              Continuer sans
-            </button>
-            <button
-              matButton="text"
-              type="button"
-              (click)="accept()"
-            >
-              Autoriser
-            </button>
+            <button matButton="text" type="button" (click)="reject()">Continuer sans</button>
+            <button matButton="text" type="button" (click)="accept()">Autoriser</button>
           </div>
         }
       </section>
@@ -376,8 +364,12 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
 
     const activeIndex = elements.indexOf(document.activeElement as HTMLElement);
     const nextIndex = event.shiftKey
-      ? activeIndex <= 0 ? elements.length - 1 : activeIndex - 1
-      : activeIndex === -1 || activeIndex >= elements.length - 1 ? 0 : activeIndex + 1;
+      ? activeIndex <= 0
+        ? elements.length - 1
+        : activeIndex - 1
+      : activeIndex === -1 || activeIndex >= elements.length - 1
+        ? 0
+        : activeIndex + 1;
 
     event.preventDefault();
     elements[nextIndex].focus();

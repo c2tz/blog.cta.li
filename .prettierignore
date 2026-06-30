@@ -1,0 +1,8 @@
+dist/
+node_modules/
+public/pagefind/
+.astro/
+.lighthouse/
+coverage/
+pnpm-lock.yaml
+*.report.html

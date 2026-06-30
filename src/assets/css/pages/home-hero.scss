@@ -50,6 +50,11 @@
   );
 }
 
+.home-anime-landing[data-explicit-content="pending"] .home-anime-credit,
+.home-anime-landing[data-explicit-content="pending"] site-konachan-rating-toggle {
+  display: none;
+}
+
 .home-anime-background {
   position: absolute;
   inset: 0;

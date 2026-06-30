@@ -1,10 +1,12 @@
 ---
 import { type CollectionEntry, getCollection, render } from "astro:content";
 
+import { GiscusCommentsComponent } from "@/components/feedback/giscus-comments.component";
 import PostGitDates from "@/components/post/post-git-dates.astro";
 import Prose from "@/components/post/prose.astro";
 import Layout from "@/layouts/site-layout.astro";
 import { getContentEntryGitDates } from "@/lib/git-dates.mjs";
+import { SITE_GISCUS_CONFIG } from "@/site-config";
 
 export async function getStaticPaths() {
   const posts = await getCollection("blog");
@@ -100,6 +102,19 @@ const postTags = [
           }
         </ul>
       </nav>
+      <GiscusCommentsComponent
+        client:idle
+        repo={SITE_GISCUS_CONFIG.repo}
+        repoId={SITE_GISCUS_CONFIG.repoId}
+        category={SITE_GISCUS_CONFIG.category}
+        categoryId={SITE_GISCUS_CONFIG.categoryId}
+        mapping={SITE_GISCUS_CONFIG.mapping}
+        strict={SITE_GISCUS_CONFIG.strict}
+        reactionsEnabled={SITE_GISCUS_CONFIG.reactionsEnabled}
+        emitMetadata={SITE_GISCUS_CONFIG.emitMetadata}
+        inputPosition={SITE_GISCUS_CONFIG.inputPosition}
+        lang={SITE_GISCUS_CONFIG.lang}
+      />
     </article>
   </Fragment>
 </Layout>

@@ -1,0 +1,93 @@
+:root {
+  color-scheme: light;
+  --color-canvas-default: #fff;
+  --color-canvas-subtle: #f7f9fb;
+  --color-canvas-inset: #f3f6f8;
+  --color-fg-default: #000;
+  --color-fg-muted: #616161;
+  --color-fg-subtle: #616161;
+  --color-border-default: #ddd;
+  --color-border-muted: #ddd;
+  --color-accent-fg: #1565c0;
+  --color-accent-emphasis: #1565c0;
+  --color-accent-muted: #90caf9;
+  --color-accent-subtle: #e3f2fd;
+  --color-success-fg: #1565c0;
+  --color-attention-fg: #3f2e00;
+  --color-attention-subtle: #ffefb2;
+  --color-btn-text: #0b3d67;
+  --color-btn-bg: #e3f2fd;
+  --color-btn-border: transparent;
+  --color-btn-hover-bg: #cbe7fb;
+  --color-btn-hover-border: transparent;
+  --color-btn-active-bg: #b7ddf7;
+  --color-btn-active-border: transparent;
+  --color-btn-primary-text: #fff;
+  --color-btn-primary-bg: #1565c0;
+  --color-btn-primary-border: transparent;
+  --color-btn-primary-hover-bg: #0f57a8;
+  --color-btn-primary-hover-border: transparent;
+  --color-btn-primary-selected-bg: #0b4a91;
+  --color-input-bg: #fff;
+  --color-input-border: #ddd;
+  --color-neutral-muted: rgb(21 101 192 / 16%);
+  --color-neutral-subtle: rgb(21 101 192 / 8%);
+  --color-severe-fg: #c62828;
+  --color-primer-shadow-focus: 0 0 0 3px rgb(21 101 192 / 22%);
+}
+
+body,
+.gsc-main {
+  background: var(--color-canvas-default);
+  color: var(--color-fg-default);
+  font-family:
+    Roboto,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+a {
+  color: var(--color-fg-default);
+  text-decoration: none;
+}
+
+a:hover,
+a:focus-visible {
+  color: var(--color-accent-fg);
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+}
+
+.gsc-main,
+.gsc-comment-box,
+.gsc-comment {
+  font-size: 1rem;
+}
+
+.gsc-comment-box,
+.gsc-comment {
+  border-radius: 8px;
+}
+
+.gsc-comment-box-tabs,
+.gsc-comment-box-textarea,
+.gsc-comment-box-bottom {
+  border-color: var(--color-border-default);
+}
+
+.gsc-reactions,
+.gsc-timeline {
+  border-color: var(--color-border-default);
+}
+
+.gsc-reply-box,
+.gsc-comment-box {
+  border-color: var(--color-border-default);
+  background: var(--color-canvas-default);
+}
+
+.gsc-btn {
+  border-radius: 9999px;
+}

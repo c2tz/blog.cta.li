@@ -10,16 +10,6 @@ on:
       - synchronize
       - reopened
       - ready_for_review
-    paths:
-      - ".github/workflows/sync-security-header-hashes.yml"
-      - "astro.config.mjs"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - "public/**"
-      - "scripts/check-security-headers.mjs"
-      - "scripts/sync-security-header-hashes.mjs"
-      - "src/**"
-      - "vercel.json"
 
 permissions:
   contents: write

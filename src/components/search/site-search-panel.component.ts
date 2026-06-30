@@ -53,7 +53,9 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
   template: `
     <form class="site-search-panel-form" role="search" (submit)="submit($event)">
       <div class="site-search-panel-field">
-        <mat-icon class="site-search-panel-leading-icon" aria-hidden="true">{{ searchIcon }}</mat-icon>
+        <mat-icon class="site-search-panel-leading-icon" aria-hidden="true">{{
+          searchIcon
+        }}</mat-icon>
         <input
           #searchInput
           class="site-search-panel-input"
@@ -110,7 +112,6 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
             }
           </mat-select>
         </div>
-
       </div>
     </form>
 
@@ -320,8 +321,7 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
       background: transparent;
       color: var(--site-muted);
       cursor: pointer;
-      transition:
-        color 140ms ease;
+      transition: color 140ms ease;
     }
 
     .site-search-panel-clear-search.mat-mdc-icon-button:is(:hover, :focus-visible) {
@@ -491,11 +491,7 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
       overflow: hidden;
       border-radius: 9999px;
       --mdc-linear-progress-active-indicator-color: var(--site-link);
-      --mdc-linear-progress-track-color: color-mix(
-        in srgb,
-        var(--site-link) 16%,
-        transparent
-      );
+      --mdc-linear-progress-track-color: color-mix(in srgb, var(--site-link) 16%, transparent);
     }
 
     .site-search-panel-filters {
@@ -839,7 +835,9 @@ export class SiteSearchPanelComponent implements AfterViewInit {
   readonly searchIcon = "\uE8B6";
   readonly sortOptions = SORT_OPTIONS;
   readonly sortLabel = computed(() => {
-    return this.sortOptions.find((option) => option.value === this.sortMode())?.label ?? "Pertinence";
+    return (
+      this.sortOptions.find((option) => option.value === this.sortMode())?.label ?? "Pertinence"
+    );
   });
   readonly status = signal("Tape au moins deux caractères ou choisis un filtre.");
 
@@ -914,7 +912,8 @@ export class SiteSearchPanelComponent implements AfterViewInit {
     if (
       nextTags.length === selectedTags.length &&
       nextTags.every((tag, index) => tag === selectedTags[index])
-    ) return;
+    )
+      return;
 
     this.selectedTags.set(nextTags);
     void this.search(this.query.value.trim());
@@ -925,9 +924,7 @@ export class SiteSearchPanelComponent implements AfterViewInit {
   }
 
   tagAriaLabel(tag: string) {
-    return this.selectedTags().includes(tag)
-      ? `Retirer le tag ${tag}`
-      : `Ajouter le tag ${tag}`;
+    return this.selectedTags().includes(tag) ? `Retirer le tag ${tag}` : `Ajouter le tag ${tag}`;
   }
 
   releaseTouchFocus(event: Event) {
@@ -1021,10 +1018,7 @@ export class SiteSearchPanelComponent implements AfterViewInit {
     try {
       const pagefind = await this.withSearchTimeout(this.loadPagefind());
       const response = await this.withSearchTimeout(
-        pagefind.search(
-          query || null,
-          this.pagefindSearchOptions(),
-        ),
+        pagefind.search(query || null, this.pagefindSearchOptions()),
       );
 
       if (currentRequest !== this.requestId) return;
@@ -1159,10 +1153,12 @@ export class SiteSearchPanelComponent implements AfterViewInit {
     }
 
     if (sortMode === "title-asc") {
-      return [...results].sort((left, right) => left.title.localeCompare(right.title, "fr", {
-        numeric: true,
-        sensitivity: "base",
-      }));
+      return [...results].sort((left, right) =>
+        left.title.localeCompare(right.title, "fr", {
+          numeric: true,
+          sensitivity: "base",
+        }),
+      );
     }
 
     return [...results].sort((left, right) => {
@@ -1324,7 +1320,10 @@ export class SiteSearchPanelComponent implements AfterViewInit {
       if (/\s/.test(titleCharacter)) {
         if (!/\s/.test(textCharacter)) return -1;
         while (textIndex < text.length && /\s/.test(text[textIndex] ?? "")) textIndex++;
-        while (titleIndex < normalizedTitle.length && /\s/.test(normalizedTitle[titleIndex] ?? "")) {
+        while (
+          titleIndex < normalizedTitle.length &&
+          /\s/.test(normalizedTitle[titleIndex] ?? "")
+        ) {
           titleIndex++;
         }
         continue;

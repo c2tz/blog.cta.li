@@ -4,4 +4,5 @@ public/pagefind/
 .astro/
 .lighthouse/
 coverage/
+pnpm-lock.yaml
 *.report.html

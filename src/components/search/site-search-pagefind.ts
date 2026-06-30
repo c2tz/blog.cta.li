@@ -52,9 +52,7 @@ function loadPagefindScript() {
       return;
     }
 
-    let script = document.querySelector<HTMLScriptElement>(
-      `script[src="${PAGEFIND_LOADER_PATH}"]`,
-    );
+    let script = document.querySelector<HTMLScriptElement>(`script[src="${PAGEFIND_LOADER_PATH}"]`);
 
     const handleLoaded = () => {
       cleanup();

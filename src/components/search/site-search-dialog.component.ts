@@ -1,8 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ViewEncapsulation,
-} from "@angular/core";
+import { ChangeDetectionStrategy, Component, ViewEncapsulation } from "@angular/core";
 import { MatIconButton } from "@angular/material/button";
 import { MatDialogModule } from "@angular/material/dialog";
 import { MatIcon } from "@angular/material/icon";
@@ -71,8 +67,7 @@ import { SiteSearchPanelComponent } from "./site-search-panel.component";
         width: auto !important;
         max-width: none !important;
         max-height: calc(
-          100dvh - 1.5rem - env(safe-area-inset-top, 0px) -
-            env(safe-area-inset-bottom, 0px)
+          100dvh - 1.5rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)
         ) !important;
         transform: none !important;
       }
@@ -84,8 +79,7 @@ import { SiteSearchPanelComponent } from "./site-search-panel.component";
 
       .site-search-dialog-panel .mat-mdc-dialog-content {
         max-height: calc(
-          100dvh - 7.5rem - env(safe-area-inset-top, 0px) -
-            env(safe-area-inset-bottom, 0px)
+          100dvh - 7.5rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)
         );
       }
     }

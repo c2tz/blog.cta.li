@@ -279,8 +279,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
       );
     } catch {
       return normalizeRatingPreference(
-        readCookie(KONACHAN_RATING_COOKIE) ||
-          readCookie(KONACHAN_LEGACY_RATING_COOKIE),
+        readCookie(KONACHAN_RATING_COOKIE) || readCookie(KONACHAN_LEGACY_RATING_COOKIE),
       );
     }
   }
@@ -299,9 +298,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
 
     for (const image of groups.flat().map(normalizeImage).filter(Boolean)) {
       const key =
-        typeof image === "string"
-          ? image
-          : String(image.id || image.originalUrl || image.url);
+        typeof image === "string" ? image : String(image.id || image.originalUrl || image.url);
       if (!byKey.has(key)) byKey.set(key, image);
     }
 
@@ -379,9 +376,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
   function currentImage() {
     if (state.currentImage) return state.currentImage;
 
-    const match = state.images.find((image) =>
-      imageCandidates(image).includes(state.currentUrl),
-    );
+    const match = state.images.find((image) => imageCandidates(image).includes(state.currentUrl));
     state.currentImage = match || null;
     return state.currentImage;
   }
@@ -430,8 +425,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
 
     landing.style.setProperty("--home-viewport-width", `${width}px`);
     landing.style.setProperty("--home-viewport-height", `${height}px`);
-    landing.dataset.homeViewport =
-      ratio < 0.78 ? "portrait" : ratio > 1.55 ? "wide" : "landscape";
+    landing.dataset.homeViewport = ratio < 0.78 ? "portrait" : ratio > 1.55 ? "wide" : "landscape";
   }
 
   async function refreshImagePool({ forceReload = false } = {}) {
@@ -451,10 +445,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
       const freshImages = shouldReloadManifest
         ? await readManifest({ cache: forceReload ? "reload" : "no-cache" })
         : [];
-      const merged =
-        freshImages.length > 0
-          ? mergeImages(freshImages)
-          : mergeImages(state.images);
+      const merged = freshImages.length > 0 ? mergeImages(freshImages) : mergeImages(state.images);
 
       if (merged.length > 0) {
         state.images = merged;
@@ -589,9 +580,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
           (image) => !imageCandidates(image).includes(state.currentUrl),
         );
         const selected = pickRandom(candidates.length > 0 ? candidates : pool);
-        message = selected && (await setBackground(target, selected))
-          ? "Image autorisée"
-          : message;
+        message = selected && (await setBackground(target, selected)) ? "Image autorisée" : message;
       } catch {
         message = target.dataset.loaded === "true" ? "Image prête" : message;
       } finally {

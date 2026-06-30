@@ -12,79 +12,20 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { FormControl, ReactiveFormsModule } from "@angular/forms";
 import { MatButton, MatIconButton } from "@angular/material/button";
 import { MatChipsModule } from "@angular/material/chips";
-import { MatDialogModule } from "@angular/material/dialog";
 import { MatIcon, MatIconModule } from "@angular/material/icon";
 import { MatProgressBarModule } from "@angular/material/progress-bar";
 import { MatSelectModule } from "@angular/material/select";
 import { MatTooltip } from "@angular/material/tooltip";
 import { debounceTime, distinctUntilChanged } from "rxjs";
+import { isSearchSortMode, SORT_OPTIONS } from "./site-search-model";
+import type { SearchResult, SearchSortMode, TagFilter } from "./site-search-model";
+import { loadPagefindModule } from "./site-search-pagefind";
+import type {
+  PagefindModule,
+  PagefindSearchOptions,
+  PagefindSortDirection,
+} from "./site-search-pagefind";
 
-interface PagefindResultData {
-  excerpt?: string;
-  meta?: {
-    created?: string;
-    modified?: string;
-    priority?: string;
-    tags?: string;
-    title?: string;
-  };
-  title?: string;
-  url: string;
-}
-
-interface PagefindResultRef {
-  data: () => Promise<PagefindResultData>;
-  score: number;
-}
-
-type PagefindFilterCounts = Record<string, Record<string, number>>;
-type PagefindSortDirection = "asc" | "desc";
-type SearchSortMode = "relevance" | "created-desc" | "title-asc";
-
-interface PagefindSearchOptions {
-  filters?: Record<string, string | string[] | { all: string[] } | { any: string[] }>;
-  sort?: Record<string, PagefindSortDirection>;
-}
-
-interface PagefindResponse {
-  filters?: PagefindFilterCounts;
-  results: PagefindResultRef[];
-  totalFilters?: PagefindFilterCounts;
-  unfilteredResultCount?: number;
-}
-
-interface PagefindModule {
-  filters: () => Promise<PagefindFilterCounts>;
-  search: (query: string | null, options?: PagefindSearchOptions) => Promise<PagefindResponse>;
-}
-
-declare global {
-  interface Window {
-    __pagefindModule?: PagefindModule;
-  }
-}
-
-interface SearchResult {
-  createdAt?: string;
-  createdLabel?: string;
-  excerpt: string;
-  modifiedAt?: string;
-  modifiedLabel?: string;
-  priority: number;
-  score: number;
-  tags: string[];
-  title: string;
-  titleHtml: string;
-  url: string;
-}
-
-interface TagFilter {
-  count: number;
-  value: string;
-}
-
-const PAGEFIND_LOADER_PATH = "/pagefind-loader.js";
-const PAGEFIND_LOADED_EVENT = "site:pagefind-loaded";
 const MIN_QUERY_LENGTH = 2;
 const RESULT_LIMIT = 12;
 const EXPANDED_RESULT_FETCH_LIMIT = 100;
@@ -93,64 +34,6 @@ const MAX_SELECTED_TAGS = 3;
 const SEARCH_TIMEOUT_MS = 12000;
 const MAX_PRIORITY = 100;
 const RELEVANCE_PRIORITY_WEIGHT = 0.01;
-const SORT_OPTIONS: Array<{ label: string; value: SearchSortMode }> = [
-  { label: "Pertinence", value: "relevance" },
-  { label: "Récent", value: "created-desc" },
-  { label: "Nom", value: "title-asc" },
-];
-
-function isSearchSortMode(value: unknown): value is SearchSortMode {
-  return SORT_OPTIONS.some((option) => option.value === value);
-}
-
-function loadPagefindScript() {
-  return new Promise<void>((resolve, reject) => {
-    if (window.__pagefindModule) {
-      resolve();
-      return;
-    }
-
-    let script = document.querySelector<HTMLScriptElement>(
-      `script[src="${PAGEFIND_LOADER_PATH}"]`,
-    );
-
-    const handleLoaded = () => {
-      cleanup();
-      resolve();
-    };
-    const handleError = () => {
-      cleanup();
-      reject(new Error("pagefind_loader_failed"));
-    };
-    const cleanup = () => {
-      window.removeEventListener(PAGEFIND_LOADED_EVENT, handleLoaded);
-      script?.removeEventListener("error", handleError);
-    };
-
-    window.addEventListener(PAGEFIND_LOADED_EVENT, handleLoaded, { once: true });
-
-    if (script) {
-      script.addEventListener("error", handleError, { once: true });
-      return;
-    }
-
-    script = document.createElement("script");
-    script.type = "module";
-    script.async = true;
-    script.src = PAGEFIND_LOADER_PATH;
-    script.addEventListener("error", handleError, { once: true });
-    document.head.append(script);
-  });
-}
-
-async function loadPagefindModule() {
-  if (window.__pagefindModule) return window.__pagefindModule;
-
-  await loadPagefindScript();
-  if (!window.__pagefindModule) throw new Error("pagefind_module_unavailable");
-
-  return window.__pagefindModule;
-}
 
 @Component({
   selector: "site-search-panel",
@@ -1500,91 +1383,4 @@ export class SiteSearchPanelComponent implements AfterViewInit {
       if (!element.textContent?.trim() && element.children.length === 0) element.remove();
     });
   }
-}
-
-@Component({
-  selector: "site-search-dialog",
-  standalone: true,
-  imports: [MatDialogModule, MatIcon, MatIconButton, SiteSearchPanelComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  encapsulation: ViewEncapsulation.None,
-  template: `
-    <div class="site-search-dialog-header">
-      <h2 mat-dialog-title>Recherche</h2>
-      <button matIconButton type="button" mat-dialog-close aria-label="Fermer la recherche">
-        <mat-icon aria-hidden="true">{{ closeIcon }}</mat-icon>
-      </button>
-    </div>
-
-    <mat-dialog-content>
-      <site-search-panel />
-    </mat-dialog-content>
-  `,
-  styles: `
-    .site-search-dialog-panel .mat-mdc-dialog-container,
-    .site-search-dialog-panel .mat-mdc-dialog-surface {
-      border-radius: var(--image-radius);
-    }
-
-    .site-search-dialog-panel .mat-mdc-dialog-container {
-      max-height: inherit;
-    }
-
-    .site-search-dialog-panel .mat-mdc-dialog-surface {
-      background: var(--site-bg);
-      color: var(--site-text);
-      overflow: hidden;
-    }
-
-    .site-search-dialog-panel .mat-mdc-dialog-content {
-      max-height: min(72vh, 42rem);
-      overflow: auto;
-      overscroll-behavior: contain;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .site-search-dialog-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      padding-inline-end: 0.75rem;
-    }
-
-    .site-search-dialog-header [mat-dialog-title] {
-      margin: 0;
-      font-family: var(--site-heading-font);
-    }
-
-    @media (max-width: 720px), (pointer: coarse) {
-      .site-search-dialog-panel.cdk-overlay-pane {
-        position: fixed !important;
-        top: calc(0.75rem + env(safe-area-inset-top, 0px)) !important;
-        right: calc(0.75rem + env(safe-area-inset-right, 0px)) !important;
-        left: calc(0.75rem + env(safe-area-inset-left, 0px)) !important;
-        width: auto !important;
-        max-width: none !important;
-        max-height: calc(
-          100dvh - 1.5rem - env(safe-area-inset-top, 0px) -
-            env(safe-area-inset-bottom, 0px)
-        ) !important;
-        transform: none !important;
-      }
-
-      .site-search-dialog-panel .mat-mdc-dialog-container,
-      .site-search-dialog-panel .mat-mdc-dialog-surface {
-        max-height: inherit;
-      }
-
-      .site-search-dialog-panel .mat-mdc-dialog-content {
-        max-height: calc(
-          100dvh - 7.5rem - env(safe-area-inset-top, 0px) -
-            env(safe-area-inset-bottom, 0px)
-        );
-      }
-    }
-  `,
-})
-export class SiteSearchDialogComponent {
-  readonly closeIcon = "\uE5CD";
 }

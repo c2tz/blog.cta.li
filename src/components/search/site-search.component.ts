@@ -10,7 +10,7 @@ import { MatDialog } from "@angular/material/dialog";
 import { MatIcon } from "@angular/material/icon";
 import { MatTooltip } from "@angular/material/tooltip";
 
-type SearchDialogModule = typeof import("./site-search-panel.component");
+type SearchDialogModule = typeof import("./site-search-dialog.component");
 
 @Component({
   selector: "site-search-trigger",
@@ -73,7 +73,7 @@ export class SiteSearchTriggerComponent implements OnInit, OnDestroy {
   }
 
   preload() {
-    this.searchDialogModule ??= import("./site-search-panel.component").catch((error) => {
+    this.searchDialogModule ??= import("./site-search-dialog.component").catch((error) => {
       this.searchDialogModule = undefined;
       throw error;
     });

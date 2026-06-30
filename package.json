@@ -16,10 +16,11 @@
     "check:angular": "astro sync && ngc -p tsconfig.app.json --noEmit",
     "sync:headers": "node scripts/sync-security-header-hashes.mjs",
     "check:headers": "node scripts/check-security-headers.mjs",
-    "verify": "pnpm check && pnpm build && pnpm check:headers",
+    "verify": "pnpm verify:project",
+    "verify:project": "pnpm check && pnpm build && pnpm check:headers",
     "index:search": "node scripts/clean-pagefind.mjs && pagefind --site dist --glob \"posts/**/index.html\" --silent && node scripts/sync-pagefind-dev.mjs",
     "astro": "astro",
-    "update:konachan": "node scripts/update-konachan-backgrounds.mjs",
+    "update:konachan": "node scripts/refresh-konachan-backgrounds.mjs",
     "update:material-symbols": "node scripts/update-material-symbols.mjs"
   },
   "dependencies": {

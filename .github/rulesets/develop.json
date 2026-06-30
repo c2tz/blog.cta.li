@@ -37,7 +37,7 @@
         "strict_required_status_checks_policy": true,
         "required_status_checks": [
           {
-            "context": "verify"
+            "context": "Check Astro, Angular, and security headers"
           }
         ]
       }

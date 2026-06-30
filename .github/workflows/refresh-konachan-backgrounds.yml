@@ -1,4 +1,4 @@
-name: Update Konachan backgrounds
+name: Refresh Konachan backgrounds
 
 on:
   schedule:
@@ -10,11 +10,12 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: update-konachan-backgrounds
+  group: refresh-konachan-backgrounds
   cancel-in-progress: false
 
 jobs:
-  update-backgrounds:
+  refresh-backgrounds:
+    name: Download and propose Konachan backgrounds
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -38,7 +39,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Refresh backgrounds
+      - name: Download Konachan backgrounds
         run: pnpm update:konachan
 
       - name: Validate generated assets
@@ -113,7 +114,7 @@ jobs:
         with:
           token: ${{ secrets.BOT_TOKEN }}
           base: develop
-          branch: automation/update-konachan-backgrounds
+          branch: automation/refresh-konachan-backgrounds
           delete-branch: true
           add-paths: |
             public/konachan-backgrounds

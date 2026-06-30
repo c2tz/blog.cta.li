@@ -13,7 +13,10 @@ const REQUIRED_HEADERS = new Map([
   ["X-Frame-Options", ["DENY"]],
   ["X-Content-Type-Options", ["nosniff"]],
   ["Referrer-Policy", ["strict-origin-when-cross-origin"]],
-  ["Permissions-Policy", ["geolocation=()", "camera=()", "microphone=()", "clipboard-write=(self)", "fullscreen=(self)"]],
+  [
+    "Permissions-Policy",
+    ["geolocation=()", "camera=()", "microphone=()", "clipboard-write=(self)", "fullscreen=(self)"],
+  ],
 ]);
 
 const OPTIONAL_HARDENING_HEADERS = [
@@ -25,11 +28,36 @@ const OPTIONAL_HARDENING_HEADERS = [
   "X-XSS-Protection",
 ];
 
+const GISCUS_ORIGIN = new URL("https://giscus.app");
+
 function cspDirective(csp, directiveName) {
   return csp
     .split(";")
     .map((directive) => directive.trim())
     .find((directive) => directive === directiveName || directive.startsWith(`${directiveName} `));
+}
+
+function cspDirectiveTokens(csp, directiveName) {
+  return cspDirective(csp, directiveName)?.split(/\s+/).slice(1) ?? [];
+}
+
+function cspDirectiveAllowsUrlOrigin(csp, directiveName, expectedUrl) {
+  return cspDirectiveTokens(csp, directiveName).some((source) => {
+    try {
+      const sourceUrl = new URL(source);
+
+      return (
+        sourceUrl.protocol === expectedUrl.protocol &&
+        sourceUrl.hostname === expectedUrl.hostname &&
+        sourceUrl.port === expectedUrl.port &&
+        sourceUrl.pathname === "/" &&
+        sourceUrl.search === "" &&
+        sourceUrl.hash === ""
+      );
+    } catch {
+      return false;
+    }
+  });
 }
 
 async function htmlFilesIn(directory) {
@@ -68,9 +96,7 @@ async function collectInlineScriptHashes(directory) {
 }
 
 const vercelConfig = JSON.parse(await readFile("vercel.json", "utf8"));
-const securityRule = vercelConfig.headers?.find(
-  (rule) => rule.source === SECURITY_HEADER_SOURCE,
-);
+const securityRule = vercelConfig.headers?.find((rule) => rule.source === SECURITY_HEADER_SOURCE);
 
 if (!securityRule) {
   throw new Error(`Missing global security header rule for ${SECURITY_HEADER_SOURCE}.`);
@@ -126,12 +152,33 @@ if (contentSecurityPolicy) {
       problems.push(`script-src contains stale inline script hash ${match[0]}.`);
     }
   }
+
+  if (!cspDirectiveAllowsUrlOrigin(contentSecurityPolicy, "script-src", GISCUS_ORIGIN)) {
+    problems.push("script-src is missing https://giscus.app for Giscus.");
+  }
+
+  if (!cspDirectiveAllowsUrlOrigin(contentSecurityPolicy, "style-src", GISCUS_ORIGIN)) {
+    problems.push("style-src is missing https://giscus.app for Giscus styles.");
+  }
+
+  if (!cspDirectiveAllowsUrlOrigin(contentSecurityPolicy, "frame-src", GISCUS_ORIGIN)) {
+    problems.push("frame-src is missing https://giscus.app for Giscus iframe.");
+  }
 }
 
 for (const headerName of OPTIONAL_HARDENING_HEADERS) {
   if (!configuredHeaders.has(headerName)) {
     problems.push(`Missing hardening header ${headerName}.`);
   }
+}
+
+const crossOriginEmbedderPolicy = configuredHeaders.get("Cross-Origin-Embedder-Policy");
+const allowsGiscusFrame = contentSecurityPolicy
+  ? cspDirectiveAllowsUrlOrigin(contentSecurityPolicy, "frame-src", GISCUS_ORIGIN)
+  : false;
+
+if (crossOriginEmbedderPolicy === "require-corp" && allowsGiscusFrame) {
+  problems.push("Cross-Origin-Embedder-Policy require-corp blocks the Giscus iframe.");
 }
 
 if (problems.length > 0) {

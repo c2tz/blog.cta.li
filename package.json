@@ -8,19 +8,30 @@
   "scripts": {
     "dev": "astro dev",
     "dev:local": "astro dev --host 127.0.0.1 --port 4321",
-    "build": "astro build && pnpm index:search",
+    "build": "astro build && pnpm index:search && pnpm minify:html",
+    "build:debug": "astro build && pnpm index:search",
     "build:vercel": "node scripts/ensure-git-history.mjs && pnpm build && pnpm check:headers",
     "preview": "astro preview",
     "preview:local": "astro preview --host 127.0.0.1 --port 4322",
     "check": "pnpm check:angular",
     "check:angular": "astro sync && ngc -p tsconfig.app.json --noEmit",
+    "check:commits": "commitlint --from origin/develop --to HEAD --verbose",
     "sync:headers": "node scripts/sync-security-header-hashes.mjs",
     "check:headers": "node scripts/check-security-headers.mjs",
     "verify": "pnpm check && pnpm build && pnpm check:headers",
+    "commit:auto": "node scripts/create-codex-commit.mjs",
+    "commit:normalize": "node scripts/normalize-commit-messages.mjs",
+    "lint:commit": "commitlint",
     "index:search": "node scripts/clean-pagefind.mjs && pagefind --site dist --glob \"posts/**/index.html\" --silent && node scripts/sync-pagefind-dev.mjs",
+    "format": "node scripts/check-changed-format.mjs --write",
+    "format:check": "node scripts/check-changed-format.mjs",
+    "format:all": "prettier . --write",
+    "format:all:check": "prettier . --check",
+    "prepare": "husky",
     "astro": "astro",
     "update:konachan": "node scripts/update-konachan-backgrounds.mjs",
-    "update:material-symbols": "node scripts/update-material-symbols.mjs"
+    "update:material-symbols": "node scripts/update-material-symbols.mjs",
+    "prepare": "husky"
   },
   "dependencies": {
     "@analogjs/astro-angular": "^2.6.1",
@@ -57,8 +68,13 @@
   },
   "devDependencies": {
     "@angular/language-service": "^22.0.4",
+    "@commitlint/cli": "^21.1.0",
+    "@commitlint/config-conventional": "^21.1.0",
     "@types/node": "^22.20.0",
+    "husky": "^9.1.7",
     "pagefind": "^1.5.2",
+    "prettier": "^3.9.3",
+    "prettier-plugin-astro": "^0.14.1",
     "sass": "^1.99.0",
     "typescript": "6.0.3"
   }

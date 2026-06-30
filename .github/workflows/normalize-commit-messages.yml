@@ -1,0 +1,89 @@
+name: Normalize commit messages with Codex
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to rewrite, for example codex/my-feature"
+        required: true
+        type: string
+      base:
+        default: develop
+        description: "Base branch used to find the commits to normalize"
+        required: true
+        type: choice
+        options:
+          - develop
+          - main
+      rewrite_all:
+        default: false
+        description: "Rewrite valid commit messages too"
+        required: true
+        type: boolean
+      push:
+        default: false
+        description: "Force-push the rewritten branch with --force-with-lease"
+        required: true
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: normalize-commit-messages-${{ inputs.branch }}
+  cancel-in-progress: false
+
+jobs:
+  normalize-commit-messages:
+    name: Rewrite branch commit messages
+    if: inputs.branch != 'develop' && inputs.branch != 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.branch }}
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        run: git fetch origin ${{ inputs.base }}:refs/remotes/origin/${{ inputs.base }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.0.9
+        with:
+          version: 11.1.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22.22.3
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Codex CLI
+        run: npm install --global @openai/codex@0.142.4
+
+      - name: Normalize branch commit messages
+        env:
+          CODEX_API_KEY: ${{ secrets.CODEX_API_KEY || secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -z "${CODEX_API_KEY:-}" ]; then
+            echo "::error::Set CODEX_API_KEY or OPENAI_API_KEY in repository secrets."
+            exit 1
+          fi
+
+          args=(--base "origin/${{ inputs.base }}" --yes)
+
+          if [ "${{ inputs.rewrite_all }}" = "true" ]; then
+            args+=(--all)
+          fi
+
+          if [ "${{ inputs.push }}" = "true" ]; then
+            args+=(--push)
+          fi
+
+          pnpm commit:normalize -- "${args[@]}"

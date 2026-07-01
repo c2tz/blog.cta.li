@@ -36,8 +36,8 @@ html.interaction-disabled.consent-visible body {
   box-sizing: border-box;
   padding: 1rem 1rem 0.5rem;
   border: 1px solid var(--site-border);
-  border-radius: 8px;
-  background: var(--site-bg);
+  border-radius: var(--site-shape-small);
+  background: var(--m3-surface-container-low);
   box-shadow:
     0 3px 3px -2px rgb(0 0 0 / 20%),
     0 3px 4px 0 rgb(0 0 0 / 14%),
@@ -85,12 +85,12 @@ html.interaction-disabled.consent-visible body {
 }
 
 .cookie-consent--explicit-content {
-  --explicit-consent-link: #1565c0;
-  --explicit-consent-link-contrast: #fff;
-  --explicit-on-warning-signal: #fff;
-  --explicit-warning-signal: #b3261e;
-  --explicit-warning-container: #ffdad6;
-  --explicit-on-warning-container: #93000a;
+  --explicit-consent-link: var(--m3-primary);
+  --explicit-consent-link-contrast: var(--m3-on-primary);
+  --explicit-on-warning-signal: var(--m3-on-error);
+  --explicit-warning-signal: var(--m3-error);
+  --explicit-warning-container: var(--m3-error-container);
+  --explicit-on-warning-container: var(--m3-on-error-container);
   --explicit-consent-bg: #fff;
   --explicit-consent-border: color-mix(
     in srgb,
@@ -120,12 +120,6 @@ html.interaction-disabled.consent-visible body {
 }
 
 :root[data-theme="dark"] .cookie-consent--explicit-content {
-  --explicit-consent-link: #a8c7fa;
-  --explicit-consent-link-contrast: #00315d;
-  --explicit-on-warning-signal: #601410;
-  --explicit-warning-signal: #f2b8b5;
-  --explicit-warning-container: #8c1d18;
-  --explicit-on-warning-container: #f9dedc;
   --explicit-consent-bg: #000;
   --explicit-consent-border: color-mix(
     in srgb,
@@ -193,7 +187,7 @@ html.interaction-disabled.consent-visible body {
 
 .cookie-consent-choice-link {
   display: block;
-  border-radius: 6px;
+  border-radius: var(--site-shape-extra-small);
 }
 
 .cookie-consent-choice-link:focus-visible {
@@ -207,7 +201,7 @@ html.interaction-disabled.consent-visible body {
   height: auto;
   aspect-ratio: 1260 / 434;
   border: 1px solid var(--explicit-consent-border, var(--site-border));
-  border-radius: 6px;
+  border-radius: var(--site-shape-extra-small);
   object-fit: cover;
 }
 

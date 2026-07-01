@@ -11,39 +11,129 @@
   --font-mono: var(--site-mono-font);
   --default-font-family: var(--site-font);
   --default-mono-font-family: var(--site-mono-font);
-  --site-bg: #fff;
-  --site-text: #000;
-  --site-border: #ddd;
-  --site-muted: #616161;
-  --site-link: #1565c0;
-  --site-link-contrast: #fff;
-  --site-link-container: #e3f2fd;
-  --site-on-link-container: #0b3d67;
-  --site-warning-container: #ffefb2;
-  --site-on-warning-container: #3f2e00;
-  --site-mark-bg: #ffff00;
-  --site-mark-text: #000;
-  --site-tonal-container: #eceff1;
-  --site-on-tonal-container: #263238;
-  --code-surface: #f3f3f3;
-  --code-block-surface: #ffffff;
+  --m3-background: #fffbfe;
+  --m3-error: #ba1a1a;
+  --m3-error-container: #ffdad6;
+  --m3-inverse-on-surface: #f4eff4;
+  --m3-inverse-primary: #d0bcff;
+  --m3-inverse-surface: #313033;
+  --m3-on-background: #1d1b20;
+  --m3-on-error: #ffffff;
+  --m3-on-error-container: #93000a;
+  --m3-on-primary: #ffffff;
+  --m3-on-primary-container: #21005d;
+  --m3-on-primary-fixed: #21005d;
+  --m3-on-primary-fixed-variant: #4f378b;
+  --m3-on-secondary: #ffffff;
+  --m3-on-secondary-container: #1d192b;
+  --m3-on-secondary-fixed: #1d192b;
+  --m3-on-secondary-fixed-variant: #4a4458;
+  --m3-on-surface: #1d1b20;
+  --m3-on-surface-variant: #49454f;
+  --m3-on-tertiary: #ffffff;
+  --m3-on-tertiary-container: #31111d;
+  --m3-on-tertiary-fixed: #31111d;
+  --m3-on-tertiary-fixed-variant: #633b48;
+  --m3-outline: #79747e;
+  --m3-outline-variant: #cac4d0;
+  --m3-primary: #6750a4;
+  --m3-primary-container: #eaddff;
+  --m3-primary-fixed: #eaddff;
+  --m3-primary-fixed-dim: #d0bcff;
+  --m3-scrim: #000000;
+  --m3-secondary: #625b71;
+  --m3-secondary-container: #e8def8;
+  --m3-secondary-fixed: #e8def8;
+  --m3-secondary-fixed-dim: #ccc2dc;
+  --m3-shadow: #000000;
+  --m3-surface: #fffbfe;
+  --m3-surface-bright: #fffbfe;
+  --m3-surface-container: #f3edf7;
+  --m3-surface-container-high: #ece6f0;
+  --m3-surface-container-highest: #e6e0e9;
+  --m3-surface-container-low: #f7f2fa;
+  --m3-surface-container-lowest: #ffffff;
+  --m3-surface-dim: #ded8e1;
+  --m3-surface-tint: var(--m3-primary);
+  --m3-surface-variant: #e7e0ec;
+  --m3-tertiary: #7d5260;
+  --m3-tertiary-container: #ffd8e4;
+  --m3-tertiary-fixed: #ffd8e4;
+  --m3-tertiary-fixed-dim: #efb8c8;
+  --site-bg: var(--m3-surface);
+  --site-text: var(--m3-on-surface);
+  --site-border: var(--m3-outline-variant);
+  --site-muted: var(--m3-on-surface-variant);
+  --site-link: var(--m3-primary);
+  --site-link-contrast: var(--m3-on-primary);
+  --site-link-container: var(--m3-primary-container);
+  --site-on-link-container: var(--m3-on-primary-container);
+  --site-warning-container: var(--m3-tertiary-container);
+  --site-on-warning-container: var(--m3-on-tertiary-container);
+  --site-mark-bg: var(--m3-tertiary-container);
+  --site-mark-text: var(--m3-on-tertiary-container);
+  --site-tonal-container: var(--m3-secondary-container);
+  --site-on-tonal-container: var(--m3-on-secondary-container);
+  --code-surface: var(--m3-surface-container-high);
+  --code-block-surface: var(--m3-surface-container-lowest);
   --code-pad: 1rem;
-  --code-radius: 12px;
-  --image-radius: 16px;
+  --site-shape-extra-small: 4px;
+  --site-shape-small: 8px;
+  --site-shape-medium: 12px;
+  --site-shape-large: 16px;
+  --code-radius: var(--site-shape-medium);
+  --image-radius: var(--site-shape-large);
   @include mat.theme-overrides(
     (
+      background: var(--m3-background),
+      error: var(--m3-error),
+      error-container: var(--m3-error-container),
+      inverse-on-surface: var(--m3-inverse-on-surface),
+      inverse-primary: var(--m3-inverse-primary),
+      inverse-surface: var(--m3-inverse-surface),
+      on-background: var(--m3-on-background),
+      on-error: var(--m3-on-error),
+      on-error-container: var(--m3-on-error-container),
       primary: var(--site-link),
       on-primary: var(--site-link-contrast),
       primary-container: var(--site-link-container),
       on-primary-container: var(--site-on-link-container),
+      primary-fixed: var(--m3-primary-fixed),
+      primary-fixed-dim: var(--m3-primary-fixed-dim),
+      on-primary-fixed: var(--m3-on-primary-fixed),
+      on-primary-fixed-variant: var(--m3-on-primary-fixed-variant),
+      secondary: var(--m3-secondary),
+      on-secondary: var(--m3-on-secondary),
       secondary-container: var(--site-tonal-container),
       on-secondary-container: var(--site-on-tonal-container),
+      secondary-fixed: var(--m3-secondary-fixed),
+      secondary-fixed-dim: var(--m3-secondary-fixed-dim),
+      on-secondary-fixed: var(--m3-on-secondary-fixed),
+      on-secondary-fixed-variant: var(--m3-on-secondary-fixed-variant),
+      tertiary: var(--m3-tertiary),
+      on-tertiary: var(--m3-on-tertiary),
       tertiary-container: var(--site-warning-container),
       on-tertiary-container: var(--site-on-warning-container),
+      tertiary-fixed: var(--m3-tertiary-fixed),
+      tertiary-fixed-dim: var(--m3-tertiary-fixed-dim),
+      on-tertiary-fixed: var(--m3-on-tertiary-fixed),
+      on-tertiary-fixed-variant: var(--m3-on-tertiary-fixed-variant),
       surface: var(--site-bg),
+      surface-bright: var(--m3-surface-bright),
+      surface-container: var(--m3-surface-container),
+      surface-container-high: var(--m3-surface-container-high),
+      surface-container-highest: var(--m3-surface-container-highest),
+      surface-container-low: var(--m3-surface-container-low),
+      surface-container-lowest: var(--m3-surface-container-lowest),
+      surface-dim: var(--m3-surface-dim),
+      surface-tint: var(--m3-surface-tint),
+      surface-variant: var(--m3-surface-variant),
       on-surface: var(--site-text),
       on-surface-variant: var(--site-muted),
-      outline: var(--site-link),
+      outline: var(--m3-outline),
+      outline-variant: var(--site-border),
+      scrim: var(--m3-scrim),
+      shadow: var(--m3-shadow),
       body-large-font: var(--site-font),
       body-medium-font: var(--site-font),
       body-small-font: var(--site-font),
@@ -67,11 +157,7 @@
       tonal-container-color: var(--site-link-container),
       tonal-label-text-color: var(--site-on-link-container),
       tonal-state-layer-color: var(--site-on-link-container),
-      tonal-ripple-color: color-mix(
-          in srgb,
-          var(--site-on-link-container) 12%,
-          transparent
-        ),
+      tonal-ripple-color: color-mix(in srgb, var(--site-on-link-container) 12%, transparent),
     )
   );
 
@@ -105,5 +191,4 @@
       selected-state-layer-color: var(--site-link-container),
     )
   );
-
 }

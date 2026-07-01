@@ -125,7 +125,7 @@ interface LatestPostsResponse {
     }
 
     .home-posts-table-scroll:focus-visible {
-      border-radius: 4px;
+      border-radius: var(--site-shape-extra-small);
       outline: 2px solid var(--site-link);
       outline-offset: 2px;
     }

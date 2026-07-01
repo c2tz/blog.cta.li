@@ -261,7 +261,7 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
       padding-inline: 1rem 0;
       border: 0;
       border-radius: 1.75rem;
-      background: color-mix(in srgb, var(--site-muted) 10%, transparent);
+      background: var(--m3-surface-container-high);
       color: var(--site-text);
       transition:
         background-color 160ms ease,
@@ -269,7 +269,7 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
     }
 
     .site-search-panel-field:has(.site-search-panel-input:focus) {
-      background: color-mix(in srgb, var(--site-muted) 10%, transparent);
+      background: var(--m3-surface-container-high);
       box-shadow: 0 0 0 2px var(--site-link);
     }
 
@@ -376,8 +376,8 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
       position: absolute;
       inset: 0.35rem 0.55rem 0.35rem 0.5rem;
       display: block;
-      border-radius: 8px;
-      background: color-mix(in srgb, var(--site-muted) 10%, transparent);
+      border-radius: var(--site-shape-small);
+      background: var(--m3-surface-container-highest);
       content: "";
       opacity: 0;
       pointer-events: none;

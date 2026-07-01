@@ -1,8 +1,8 @@
 .header-link-glitch {
   --glitch-bg: transparent;
-  --glitch-c1: #ff3d71;
-  --glitch-c2: #40c4ff;
-  --glitch-c3: #c6ff00;
+  --glitch-c1: var(--m3-error);
+  --glitch-c2: var(--m3-primary);
+  --glitch-c3: var(--m3-tertiary);
   position: relative;
   overflow: visible;
   isolation: isolate;

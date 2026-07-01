@@ -178,10 +178,9 @@ function isFocusableElement(element: HTMLElement) {
         [attr.role]="activeNotice() === 'explicit-content' ? 'dialog' : 'region'"
         [attr.aria-modal]="activeNotice() === 'explicit-content' ? 'true' : null"
         [attr.aria-labelledby]="
-          activeNotice() === 'explicit-content'
-            ? 'explicit-content-consent-title'
-            : 'cookie-consent-title'
+          activeNotice() === 'explicit-content' ? 'explicit-content-consent-title' : null
         "
+        [attr.aria-label]="activeNotice() === 'explicit-content' ? null : 'Avis de confidentialité'"
         [attr.aria-describedby]="
           activeNotice() === 'explicit-content'
             ? 'explicit-content-consent-desc'
@@ -247,7 +246,6 @@ function isFocusableElement(element: HTMLElement) {
           </div>
         } @else {
           <div class="cookie-consent-content">
-            <h2 id="cookie-consent-title">Confidentialité</h2>
             <p id="cookie-consent-desc">
               Ce site utilise des cookies de Vercel pour fournir ses services et analyser le trafic.
             </p>

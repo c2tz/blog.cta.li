@@ -51,8 +51,8 @@
   background: rgb(0 0 0 / 32%);
   color: #fff;
   box-shadow: 0 0.25rem 0.75rem rgb(0 0 0 / 18%);
-  backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
   opacity: 0;
   pointer-events: none;
   transform: translateY(1rem);

@@ -91,6 +91,7 @@ function normalizeRatingPreference(
         id="home-anime-rating-options"
         class="home-anime-rating-options"
         [attr.aria-hidden]="!optionsOpen()"
+        [hidden]="!optionsOpen()"
       >
         @for (option of ratingOptions; track option.value) {
           @if (option.value !== ratingPreference() && optionVisible(option.value)) {
@@ -101,9 +102,7 @@ function normalizeRatingPreference(
               [class.is-safe]="option.value === 'safe'"
               [class.is-questionable]="option.value === 'questionable'"
               [class.is-explicit]="option.value === 'explicit'"
-              [disabled]="!optionsOpen()"
-              [tabIndex]="optionsOpen() ? 0 : -1"
-              [attr.aria-label]="option.label"
+              [attr.aria-label]="'Choisir le niveau Konachan ' + option.label"
               [matTooltip]="option.label"
               matTooltipPosition="below"
               (click)="selectRating(option.value)"
@@ -139,6 +138,10 @@ function normalizeRatingPreference(
       pointer-events: none;
     }
 
+    .home-anime-rating-options[hidden] {
+      display: none;
+    }
+
     .home-anime-rating-picker.is-open .home-anime-rating-options {
       pointer-events: auto;
     }
@@ -156,8 +159,8 @@ function normalizeRatingPreference(
       padding: 0;
       background: rgb(0 0 0 / 52%);
       color: #fff;
-      backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
     }
 
     .home-anime-rating-option.mat-mdc-icon-button {
@@ -257,10 +260,11 @@ export class KonachanRatingToggleComponent implements OnInit, OnDestroy {
   readonly detailedView = signal(false);
   readonly ratingPreference = signal<KonachanRatingPreference>("safe");
   readonly triggerLabel = computed(() => {
-    return (
+    const label =
       this.ratingOptions.find((option) => option.value === this.ratingPreference())?.label ??
-      RATING_OPTIONS[0].label
-    );
+      RATING_OPTIONS[0].label;
+
+    return `Niveau Konachan : ${label}`;
   });
   readonly triggerIcon = computed(() => {
     return (

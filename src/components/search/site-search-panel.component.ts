@@ -290,6 +290,7 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
       color: var(--site-text);
       font: inherit;
       font-size: 16px;
+      -moz-text-size-adjust: 100%;
       -webkit-text-size-adjust: 100%;
       text-size-adjust: 100%;
     }
@@ -770,7 +771,15 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
     @media (max-width: 720px), (pointer: coarse) {
       .site-search-panel-filters {
         overflow-x: auto;
-        scrollbar-width: thin;
+      }
+
+      .site-search-panel-filters::-webkit-scrollbar {
+        height: 0.5rem;
+      }
+
+      .site-search-panel-filters::-webkit-scrollbar-thumb {
+        border-radius: 9999px;
+        background: color-mix(in srgb, var(--site-muted) 42%, transparent);
       }
 
       .site-search-panel-tags .mdc-evolution-chip-set__chips {

@@ -108,8 +108,16 @@ interface LatestPostsResponse {
       margin-block: 0 1em;
       overflow-x: auto;
       overflow-y: hidden;
-      scrollbar-width: thin;
       -webkit-overflow-scrolling: touch;
+    }
+
+    .home-posts-table-scroll::-webkit-scrollbar {
+      height: 0.5rem;
+    }
+
+    .home-posts-table-scroll::-webkit-scrollbar-thumb {
+      border-radius: 9999px;
+      background: color-mix(in srgb, var(--site-muted) 42%, transparent);
     }
 
     .home-posts-table-scroll-detailed {

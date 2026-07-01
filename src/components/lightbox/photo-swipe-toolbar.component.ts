@@ -1,9 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  signal,
-  viewChildren,
-} from "@angular/core";
+import { ChangeDetectionStrategy, Component, signal, viewChildren } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
 import { MatIconButton } from "@angular/material/button";
 import { MatChip, MatChipSet } from "@angular/material/chips";
@@ -27,25 +22,12 @@ interface PhotoSwipeToolbarState {
 }
 
 type PhotoSwipeAction =
-  | "close"
-  | "download"
-  | "fullscreen"
-  | "next"
-  | "previous"
-  | "share"
-  | "zoom";
+  "close" | "download" | "fullscreen" | "next" | "previous" | "share" | "zoom";
 
 @Component({
   selector: "site-photo-swipe-toolbar",
   standalone: true,
-  imports: [
-    MatIconButton,
-    MatChip,
-    MatChipSet,
-    MatIcon,
-    MatProgressSpinner,
-    MatTooltip,
-  ],
+  imports: [MatIconButton, MatChip, MatChipSet, MatIcon, MatProgressSpinner, MatTooltip],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     "[class.is-open]": "open()",
@@ -58,9 +40,7 @@ type PhotoSwipeAction =
       <div class="photo-swipe-toolbar" role="toolbar" aria-label="Commandes de l'image">
         @if (!isFullscreen()) {
           <mat-chip-set class="photo-swipe-counter-set" aria-hidden="true">
-            <mat-chip>
-              {{ index() }} / {{ total() }}
-            </mat-chip>
+            <mat-chip> {{ index() }} / {{ total() }} </mat-chip>
           </mat-chip-set>
           <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
             Image {{ index() }} sur {{ total() }}
@@ -236,15 +216,15 @@ type PhotoSwipeAction =
     .photo-swipe-counter-set .mat-mdc-chip {
       background-color: rgb(0 0 0 / 32%);
       color: #fff;
-      backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
     }
 
     .photo-swipe-button {
       background-color: rgb(0 0 0 / 32%);
       touch-action: manipulation;
-      backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
     }
 
     .photo-swipe-nav {

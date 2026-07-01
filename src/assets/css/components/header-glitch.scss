@@ -7,9 +7,9 @@
   overflow: visible;
   isolation: isolate;
   color: inherit;
-  text-shadow: 0 0 0 transparent;
+  text-shadow: none;
   transform-origin: 50% 55%;
-  animation: glitch-shadow-pulse 2.8s infinite steps(1, end);
+  animation: glitch-jitter 3.4s infinite steps(1, end);
 }
 
 .header-link-glitch::before,
@@ -22,25 +22,23 @@
   color: currentColor;
   background: var(--glitch-bg);
   opacity: 0.95;
-  will-change: clip-path, transform;
+  will-change: opacity, transform;
 }
 
 .header-link-glitch::before {
+  clip-path: inset(8% 0 76% 0);
   transform: translateX(-1px);
   text-shadow:
     2px 0 var(--glitch-c2),
     -1px 0 var(--glitch-c3);
-  animation:
-    glitch-slice-blue 1.15s infinite steps(2, end) alternate-reverse,
-    glitch-layer-blue 3.6s infinite steps(1, end);
+  animation: glitch-layer-blue 3.6s infinite steps(1, end);
 }
 
 .header-link-glitch::after {
+  clip-path: inset(68% 0 12% 0);
   transform: translateX(1px);
   text-shadow:
     -2px 0 var(--glitch-c1),
     1px 0 var(--glitch-c2);
-  animation:
-    glitch-slice-red 1.65s infinite steps(2, end) alternate,
-    glitch-layer-red 4.1s infinite steps(1, end);
+  animation: glitch-layer-red 4.1s infinite steps(1, end);
 }

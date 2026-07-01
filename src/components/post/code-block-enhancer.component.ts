@@ -1,25 +1,37 @@
-import {
-  ApplicationRef,
-  ChangeDetectionStrategy,
-  Component,
-  ComponentRef,
-  EnvironmentInjector,
-  computed,
-  createComponent,
-  inject,
-  input,
-  signal,
-} from "@angular/core";
+import { ChangeDetectionStrategy, Component } from "@angular/core";
 import type { AfterViewInit, OnDestroy } from "@angular/core";
-import { MatIconButton } from "@angular/material/button";
-import { MatIcon } from "@angular/material/icon";
-import { MatSnackBar } from "@angular/material/snack-bar";
-import { MatTooltip } from "@angular/material/tooltip";
 import { SITE_EVENTS } from "@/lib/site-contracts";
 
 const COPY_FEEDBACK_DURATION_MS = 2200;
+const COPY_ICON = "\uE14D";
+const COPIED_ICON = "\uE5CA";
+const ERROR_ICON = "\uE000";
 
-async function copyToClipboard(text: string) {
+function restoreSelection(selection: Selection | null, selectedRange: Range | null) {
+  if (!selection || !selectedRange) return;
+
+  selection.removeAllRanges();
+  selection.addRange(selectedRange);
+}
+
+function copySelectedCodeBlock(source: HTMLElement) {
+  const selection = document.getSelection();
+  const selectedRange = selection?.rangeCount ? selection.getRangeAt(0) : null;
+  const range = document.createRange();
+
+  range.selectNodeContents(source);
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+
+  try {
+    return document.execCommand("copy");
+  } finally {
+    selection?.removeAllRanges();
+    restoreSelection(selection ?? null, selectedRange);
+  }
+}
+
+async function copyToClipboard(text: string, source?: HTMLElement) {
   try {
     await navigator.clipboard.writeText(text);
     return true;
@@ -30,10 +42,9 @@ async function copyToClipboard(text: string) {
 
     textarea.value = text;
     textarea.setAttribute("readonly", "");
-    textarea.style.position = "fixed";
-    textarea.style.inset = "0 auto auto 0";
-    textarea.style.opacity = "0";
+    textarea.className = "code-copy-fallback-input";
     document.body.appendChild(textarea);
+    textarea.focus({ preventScroll: true });
     textarea.select();
     textarea.setSelectionRange(0, textarea.value.length);
 
@@ -42,96 +53,16 @@ async function copyToClipboard(text: string) {
       copied = document.execCommand("copy");
     } finally {
       textarea.remove();
-      if (selectedRange && selection) {
-        selection.removeAllRanges();
-        selection.addRange(selectedRange);
-      }
+      restoreSelection(selection ?? null, selectedRange);
     }
 
-    return copied;
-  }
-}
-
-@Component({
-  selector: "site-code-copy-button",
-  standalone: true,
-  imports: [MatIconButton, MatIcon, MatTooltip],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <button
-      matIconButton
-      type="button"
-      class="code-copy-button"
-      [attr.aria-label]="label()"
-      matTooltip="Copier le code source"
-      matTooltipPosition="left"
-      (click)="copy()"
-    >
-      <mat-icon aria-hidden="true">
-        {{ icon() }}
-      </mat-icon>
-    </button>
-    <span class="sr-only" role="status" aria-live="polite">
-      {{ status() }}
-    </span>
-  `,
-  styles: `
-    :host {
-      display: inline-flex;
-      width: 2.5rem;
-      height: 2.5rem;
-    }
-  `,
-})
-class CodeCopyButtonComponent implements OnDestroy {
-  readonly code = input("");
-  readonly state = signal<"idle" | "copied" | "error">("idle");
-  readonly status = signal("");
-  readonly icon = computed(() => {
-    if (this.state() === "copied") return "\uE5CA";
-    if (this.state() === "error") return "\uE000";
-    return "\uE14D";
-  });
-  private resetTimer = 0;
-  private readonly snackBar = inject(MatSnackBar);
-
-  readonly label = () => {
-    if (this.state() === "copied") return "Copié";
-    if (this.state() === "error") return "Erreur";
-    return "Copier le code";
-  };
-
-  ngOnDestroy() {
-    if (typeof window !== "undefined") {
-      window.clearTimeout(this.resetTimer);
-    }
-  }
-
-  async copy() {
-    document.dispatchEvent(new CustomEvent(SITE_EVENTS.tooltipHide));
-    const copied = await copyToClipboard(this.code());
-    this.state.set(copied ? "copied" : "error");
-    const message = copied ? "Code copié" : "Impossible de copier le code";
-    this.status.set(message);
-
-    this.snackBar.open(message, undefined, {
-      duration: COPY_FEEDBACK_DURATION_MS,
-      horizontalPosition: "center",
-      politeness: copied ? "polite" : "assertive",
-      verticalPosition: "bottom",
-    });
-
-    window.clearTimeout(this.resetTimer);
-    this.resetTimer = window.setTimeout(() => {
-      this.state.set("idle");
-      this.status.set("");
-    }, COPY_FEEDBACK_DURATION_MS);
+    return copied || (source ? copySelectedCodeBlock(source) : false);
   }
 }
 
 interface MountedCopyButton {
   host: HTMLElement;
-  ref: ComponentRef<CodeCopyButtonComponent>;
+  resetTimer: number;
 }
 
 @Component({
@@ -149,11 +80,6 @@ export class CodeBlockEnhancerComponent implements AfterViewInit, OnDestroy {
   private readonly mounted: MountedCopyButton[] = [];
   private readonly handlePageLoad = () => this.enhance();
 
-  constructor(
-    private readonly appRef: ApplicationRef,
-    private readonly environmentInjector: EnvironmentInjector,
-  ) {}
-
   ngAfterViewInit() {
     if (typeof document === "undefined") return;
     this.enhance();
@@ -165,6 +91,34 @@ export class CodeBlockEnhancerComponent implements AfterViewInit, OnDestroy {
       window.removeEventListener("astro:page-load", this.handlePageLoad);
     }
     for (const mounted of this.mounted.splice(0)) this.destroy(mounted);
+  }
+
+  private async copyCode(
+    button: HTMLButtonElement,
+    status: HTMLElement,
+    code: string,
+    codeBlock: HTMLElement,
+  ) {
+    document.dispatchEvent(new CustomEvent(SITE_EVENTS.tooltipHide));
+
+    const copied = await copyToClipboard(code, codeBlock);
+    const message = copied ? "Code copié" : "Impossible de copier le code";
+    const icon = button.querySelector<HTMLElement>(".material-symbols-rounded");
+    const mounted = this.mounted.find((entry) => entry.host === button);
+
+    button.setAttribute("aria-label", copied ? "Copié" : "Erreur de copie");
+    button.classList.toggle("code-copy-button-copied", copied);
+    button.classList.toggle("code-copy-button-error", !copied);
+    if (icon) icon.textContent = copied ? COPIED_ICON : ERROR_ICON;
+    status.textContent = message;
+
+    if (mounted) {
+      window.clearTimeout(mounted.resetTimer);
+      mounted.resetTimer = window.setTimeout(() => {
+        this.resetCopyButton(button, status);
+        mounted.resetTimer = 0;
+      }, COPY_FEEDBACK_DURATION_MS);
+    }
   }
 
   private enhance() {
@@ -202,20 +156,34 @@ export class CodeBlockEnhancerComponent implements AfterViewInit, OnDestroy {
       languageLabel.textContent = language;
       const actions = document.createElement("div");
       actions.className = "code-actions";
-      const host = document.createElement("site-code-copy-button");
+      const host = document.createElement("button");
+      host.type = "button";
+      host.className = "code-copy-button";
+      host.setAttribute("aria-label", "Copier le code");
+      host.title = "Copier le code source";
+
+      const icon = document.createElement("span");
+      icon.className = "material-symbols-rounded";
+      icon.setAttribute("aria-hidden", "true");
+      icon.textContent = COPY_ICON;
+
+      const status = document.createElement("span");
+      status.className = "sr-only";
+      status.setAttribute("role", "status");
+      status.setAttribute("aria-live", "polite");
+
+      host.append(icon);
+      host.addEventListener(
+        "click",
+        () => void this.copyCode(host, status, codeBlock.innerText, codeBlock),
+      );
 
       actions.appendChild(host);
+      actions.appendChild(status);
       header.append(languageLabel, actions);
       shell.insertBefore(header, pre);
 
-      const ref = createComponent(CodeCopyButtonComponent, {
-        environmentInjector: this.environmentInjector,
-        hostElement: host,
-      });
-      ref.setInput("code", codeBlock.innerText);
-      this.appRef.attachView(ref.hostView);
-      ref.changeDetectorRef.detectChanges();
-      this.mounted.push({ host, ref });
+      this.mounted.push({ host, resetTimer: 0 });
     });
   }
 
@@ -229,8 +197,16 @@ export class CodeBlockEnhancerComponent implements AfterViewInit, OnDestroy {
   }
 
   private destroy(mounted: MountedCopyButton) {
-    this.appRef.detachView(mounted.ref.hostView);
-    mounted.ref.destroy();
+    if (typeof window !== "undefined") window.clearTimeout(mounted.resetTimer);
     mounted.host.remove();
+  }
+
+  private resetCopyButton(button: HTMLButtonElement, status: HTMLElement) {
+    const icon = button.querySelector<HTMLElement>(".material-symbols-rounded");
+
+    button.setAttribute("aria-label", "Copier le code");
+    button.classList.remove("code-copy-button-copied", "code-copy-button-error");
+    if (icon) icon.textContent = COPY_ICON;
+    status.textContent = "";
   }
 }

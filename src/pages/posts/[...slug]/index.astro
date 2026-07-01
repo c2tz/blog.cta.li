@@ -24,10 +24,7 @@ const gitDates = getContentEntryGitDates("blog", post);
 const { createdAt, lastModified } = gitDates;
 const postPriority = post.data.priority ?? 0;
 const visiblePostTags = [...(post.data.tags ?? [])].filter((tag) => tag !== "all");
-const postTags = [
-  "all",
-  ...visiblePostTags,
-];
+const postTags = ["all", ...visiblePostTags];
 ---
 
 <Layout
@@ -49,7 +46,7 @@ const postTags = [
           {post.data.title}
         </h1>
       </header>
-      <div data-pagefind-ignore aria-hidden="true" style="display: none;">
+      <div class="post-search-metadata" data-pagefind-ignore aria-hidden="true">
         <time
           datetime={createdAt}
           data-pagefind-meta="created[datetime]"
@@ -70,13 +67,7 @@ const postTags = [
         <span data-pagefind-meta="priority">
           {postPriority}
         </span>
-        {
-          visiblePostTags.map((tag) => (
-            <span data-pagefind-filter="tag">
-              {tag}
-            </span>
-          ))
-        }
+        {visiblePostTags.map((tag) => <span data-pagefind-filter="tag">{tag}</span>)}
       </div>
       <Prose>
         <Content />
@@ -94,9 +85,7 @@ const postTags = [
           {
             postTags.map((tag) => (
               <li>
-                <a href={`/tags/${tag}/`}>
-                  #{tag}
-                </a>
+                <a href={`/tags/${tag}/`}>#{tag}</a>
               </li>
             ))
           }

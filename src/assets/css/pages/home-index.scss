@@ -67,5 +67,6 @@ body.home-page[data-home-detail-view="true"] .home-post-date-full {
 .tag-separator {
   display: inline;
   color: var(--site-muted);
+  -webkit-user-select: none;
   user-select: none;
 }

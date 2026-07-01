@@ -83,6 +83,10 @@ abbr.site-tooltip {
   gap: 0 0.5em;
 }
 
+.post-search-metadata {
+  display: none;
+}
+
 .post-git-dates {
   display: flex;
   flex-wrap: wrap;
@@ -128,6 +132,7 @@ abbr.site-tooltip {
 
 .tag-separator {
   color: var(--site-muted);
+  -webkit-user-select: none;
   user-select: none;
 }
 

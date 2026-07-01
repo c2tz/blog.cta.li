@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component } from "@angular/core";
 import type { OnInit } from "@angular/core";
+import { MatSlideToggle } from "@angular/material/slide-toggle";
+import type { MatSlideToggleChange } from "@angular/material/slide-toggle";
 
 import {
   SITE_COOKIE_NAMES,
@@ -12,24 +14,17 @@ import {
 @Component({
   selector: "site-home-detail-toggle",
   standalone: true,
-  imports: [],
+  imports: [MatSlideToggle],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <label class="home-detail-toggle">
-      <input
-        class="home-detail-toggle-input"
-        type="checkbox"
-        name="home-detail-view"
-        [checked]="detailed"
-        (change)="handleToggleChange($event)"
-      />
-      <span class="home-detail-toggle-control" aria-hidden="true">
-        <span class="home-detail-toggle-thumb"></span>
-      </span>
-      <span class="home-detail-toggle-label">
-        {{ detailed ? "Affichage détaillé" : "Affichage simple" }}
-      </span>
-    </label>
+    <mat-slide-toggle
+      class="home-detail-toggle"
+      name="home-detail-view"
+      [checked]="detailed"
+      (change)="handleToggleChange($event)"
+    >
+      {{ detailed ? "Affichage détaillé" : "Affichage simple" }}
+    </mat-slide-toggle>
   `,
   styles: `
     :host {
@@ -38,71 +33,24 @@ import {
       margin-block: 0.7rem 0;
     }
 
-    .home-detail-toggle {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.55rem;
-      color: var(--site-muted);
-      cursor: pointer;
-      font-size: 0.8125rem;
-      line-height: 1.25rem;
-      user-select: none;
+    .home-detail-toggle.mat-mdc-slide-toggle {
+      --mat-slide-toggle-label-text-size: 1rem;
+      --mat-slide-toggle-label-text-line-height: 1.5rem;
+      --mat-slide-toggle-label-text-weight: 400;
+      --mat-slide-toggle-label-text-tracking: 0;
     }
 
-    .home-detail-toggle-input {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-
-    .home-detail-toggle-control {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      width: 2.25rem;
-      height: 1.25rem;
-      border: 1px solid color-mix(in srgb, var(--site-muted) 48%, transparent);
-      border-radius: 9999px;
-      background: color-mix(in srgb, var(--site-muted) 24%, var(--site-bg));
-      transition:
-        background-color 160ms ease,
-        border-color 160ms ease;
-    }
-
-    .home-detail-toggle-thumb {
-      position: absolute;
-      left: 0.125rem;
-      width: 0.875rem;
-      height: 0.875rem;
-      border-radius: 50%;
-      background: color-mix(in srgb, var(--site-muted) 72%, var(--site-bg));
-      transition:
-        background-color 160ms ease,
-        transform 180ms cubic-bezier(0.2, 0, 0, 1);
-    }
-
-    .home-detail-toggle-input:checked + .home-detail-toggle-control {
-      border-color: var(--site-link);
-      background: color-mix(in srgb, var(--site-link) 24%, var(--site-bg));
-    }
-
-    .home-detail-toggle-input:checked + .home-detail-toggle-control .home-detail-toggle-thumb {
-      background: var(--site-link);
-      transform: translateX(1rem);
-    }
-
-    .home-detail-toggle-input:focus-visible + .home-detail-toggle-control {
-      outline: 2px solid var(--site-link);
-      outline-offset: 3px;
-    }
-
-    .home-detail-toggle:is(:hover, :focus-within) .home-detail-toggle-label {
-      color: var(--site-text);
+    :host-context(:root[data-theme="dark"]) .home-detail-toggle.mat-mdc-slide-toggle {
+      --mat-slide-toggle-track-outline-color: var(--site-muted);
+      --mat-slide-toggle-unselected-focus-handle-color: var(--site-on-tonal-container);
+      --mat-slide-toggle-unselected-focus-track-color: var(--site-tonal-container);
+      --mat-slide-toggle-unselected-handle-color: var(--site-muted);
+      --mat-slide-toggle-unselected-hover-handle-color: var(--site-on-tonal-container);
+      --mat-slide-toggle-unselected-hover-track-color: var(--site-tonal-container);
+      --mat-slide-toggle-unselected-icon-color: var(--site-tonal-container);
+      --mat-slide-toggle-unselected-pressed-handle-color: var(--site-on-tonal-container);
+      --mat-slide-toggle-unselected-pressed-track-color: var(--site-tonal-container);
+      --mat-slide-toggle-unselected-track-color: var(--site-tonal-container);
     }
   `,
 })
@@ -116,8 +64,8 @@ export class HomeDetailToggleComponent implements OnInit {
     this.applyDetailView(stored);
   }
 
-  handleToggleChange(event: Event) {
-    this.setDetailedView((event.target as HTMLInputElement | null)?.checked === true);
+  handleToggleChange(event: MatSlideToggleChange) {
+    this.setDetailedView(event.checked);
   }
 
   setDetailedView(detailed: boolean) {

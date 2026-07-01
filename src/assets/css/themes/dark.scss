@@ -50,6 +50,7 @@
   border-color: #000;
 }
 
+:root[data-theme="dark"] .astro-code,
 :root[data-theme="dark"] .code-shell pre.astro-code {
   background-color: var(--shiki-dark-bg, var(--code-block-surface)) !important;
   color: var(--shiki-dark, var(--site-text)) !important;

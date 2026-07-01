@@ -16,6 +16,7 @@
   color: var(--site-text);
   font-family: var(--site-mono-font);
   font-size: 0.75rem;
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -27,6 +28,50 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.code-copy-button {
+  display: inline-grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--site-muted);
+  cursor: pointer;
+}
+
+.code-copy-button:hover {
+  background: color-mix(in srgb, var(--site-muted) 12%, transparent);
+  color: var(--site-text);
+}
+
+.code-copy-button:focus-visible {
+  outline: 2px solid var(--site-link);
+  outline-offset: 2px;
+}
+
+.code-copy-button-copied {
+  color: var(--site-link);
+}
+
+.code-copy-button-error {
+  color: var(--mat-sys-error, #b3261e);
+}
+
+.code-copy-button .material-symbols-rounded {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.code-copy-fallback-input {
+  position: fixed;
+  inset: 0 auto auto 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
 }
 
 .code-shell pre {
@@ -41,6 +86,11 @@
 .code-shell pre code,
 .code-shell pre code * {
   font-family: inherit;
+}
+
+.astro-code {
+  background-color: var(--shiki-light-bg, var(--code-block-surface)) !important;
+  color: var(--shiki-light, var(--site-text)) !important;
 }
 
 .code-shell pre.astro-code {

@@ -1,16 +1,18 @@
 @layer base {
   html {
     height: -webkit-fill-available;
-    -webkit-text-size-adjust: none;
-    text-size-adjust: none;
+    -moz-text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
     overscroll-behavior: none;
   }
 
   body {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
     min-height: -webkit-fill-available;
+    min-height: 100vh;
+    min-height: 100dvh;
     margin: 0;
     padding: 0;
     overflow-y: scroll;

@@ -18,7 +18,6 @@ export function initHomeKonachanBackgroundFromDocument() {
 
 export function initHomeKonachanBackground({ initialBackground = null, konachanClientConfig }) {
   const TARGET_SELECTOR = "[data-konachan-background]";
-  const IMAGE_SELECTOR = "[data-konachan-background-image]";
   const CREDIT_SELECTOR = "[data-konachan-credit]";
   const CREDIT_LINK_SELECTOR = "[data-konachan-credit-link]";
   const LANDING_SELECTOR = ".home-anime-landing";
@@ -84,15 +83,6 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
   }
 
   function setBackgroundImage(target, url) {
-    const image = target.querySelector(IMAGE_SELECTOR);
-    if (image instanceof HTMLImageElement) {
-      target.dataset.loaded = "false";
-      image.removeAttribute("srcset");
-      image.removeAttribute("sizes");
-      image.src = url;
-      return;
-    }
-
     target.style.setProperty("--home-konachan-image", toCssUrl(url));
   }
 
@@ -393,13 +383,6 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
   }
 
   function clearBackground(target) {
-    const image = target.querySelector(IMAGE_SELECTOR);
-    if (image instanceof HTMLImageElement) {
-      image.removeAttribute("src");
-      image.removeAttribute("srcset");
-      image.removeAttribute("sizes");
-    }
-
     target.style.removeProperty("--home-konachan-image");
     target.dataset.loaded = "false";
     target.dataset.konachanCurrentUrl = "";
@@ -417,20 +400,6 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     }
 
     return acknowledged;
-  }
-
-  function syncViewport(target) {
-    const landing = target.closest(LANDING_SELECTOR);
-    if (!landing) return;
-
-    const viewport = window.visualViewport;
-    const width = Math.round(viewport?.width || window.innerWidth || landing.clientWidth);
-    const height = Math.round(viewport?.height || window.innerHeight || landing.clientHeight);
-    const ratio = width / Math.max(height, 1);
-
-    landing.style.setProperty("--home-viewport-width", `${width}px`);
-    landing.style.setProperty("--home-viewport-height", `${height}px`);
-    landing.dataset.homeViewport = ratio < 0.78 ? "portrait" : ratio > 1.55 ? "wide" : "landscape";
   }
 
   async function refreshImagePool({ forceReload = false } = {}) {
@@ -513,15 +482,6 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     state.ratingPreference = readRatingPreference();
     state.currentUrl = normalizeUrl(target.dataset.konachanCurrentUrl || INITIAL_BACKGROUND?.url);
     setCredit(INITIAL_BACKGROUND);
-    syncViewport(target);
-    const handleViewportChange = () => syncViewport(target);
-    window.addEventListener("resize", handleViewportChange, { passive: true });
-    window.visualViewport?.addEventListener("resize", handleViewportChange, {
-      passive: true,
-    });
-    window.visualViewport?.addEventListener("scroll", handleViewportChange, {
-      passive: true,
-    });
     const landing = target.closest(LANDING_SELECTOR);
     const status = document.querySelector(STATUS_SELECTOR);
 

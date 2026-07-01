@@ -1,7 +1,8 @@
 @use "@angular/material" as mat;
 
 .home-anime-landing {
-  --home-banner-height: clamp(20rem, calc(var(--home-viewport-height, 100vh) * 0.52), 31rem);
+  --home-banner-height: clamp(20rem, 52vh, 31rem);
+  --home-banner-height: clamp(20rem, 52svh, 31rem);
   @include mat.button-overrides(
     (
       outlined-label-text-color: #fff,
@@ -28,14 +29,6 @@
   border-radius: var(--image-radius);
   background: var(--home-media-surface);
   isolation: isolate;
-}
-
-.home-anime-landing[data-home-viewport="portrait"] {
-  --home-banner-height: clamp(22rem, calc(var(--home-viewport-height, 100vh) * 0.56), 29rem);
-}
-
-.home-anime-landing[data-home-viewport="wide"] {
-  --home-banner-height: clamp(22rem, calc(var(--home-viewport-height, 100vh) * 0.58), 34rem);
 }
 
 .home-anime-landing[data-explicit-content="pending"] .home-anime-credit,
@@ -70,20 +63,6 @@
   transition: opacity 360ms ease;
 }
 
-.home-anime-background-image {
-  position: absolute;
-  inset: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  filter: var(--home-image-filter, brightness(0.86) saturate(0.92) contrast(1.02));
-  opacity: var(--home-konachan-underlay-opacity, 0);
-  transform: scale(1.025);
-  transition: opacity 360ms ease;
-}
-
 .home-anime-background[data-loaded="true"] {
   --home-konachan-underlay-opacity: 1;
 }
@@ -92,22 +71,6 @@
   background:
     linear-gradient(to bottom, rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.28)),
     linear-gradient(90deg, rgb(0 0 0 / 0.38), rgb(0 0 0 / 0.04) 70%);
-}
-
-.home-anime-landing[data-home-viewport="portrait"] .home-anime-background::before {
-  background-position: center 42%;
-}
-
-.home-anime-landing[data-home-viewport="portrait"] .home-anime-background-image {
-  object-position: center 42%;
-}
-
-.home-anime-landing[data-home-viewport="wide"] .home-anime-background::before {
-  background-position: center 46%;
-}
-
-.home-anime-landing[data-home-viewport="wide"] .home-anime-background-image {
-  object-position: center 46%;
 }
 
 .home-hero-content {
@@ -191,4 +154,26 @@ body.home-page:not([data-home-detail-view="true"]) .home-anime-credit-link:not([
 .home-anime-refresh {
   flex: 0 0 auto;
   margin: 0;
+}
+
+@media (orientation: portrait) {
+  .home-anime-landing {
+    --home-banner-height: clamp(22rem, 56vh, 29rem);
+    --home-banner-height: clamp(22rem, 56svh, 29rem);
+  }
+
+  .home-anime-background::before {
+    background-position: center 42%;
+  }
+}
+
+@media (min-aspect-ratio: 31 / 20) {
+  .home-anime-landing {
+    --home-banner-height: clamp(22rem, 58vh, 34rem);
+    --home-banner-height: clamp(22rem, 58svh, 34rem);
+  }
+
+  .home-anime-background::before {
+    background-position: center 46%;
+  }
 }

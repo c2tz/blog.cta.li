@@ -33,13 +33,7 @@ interface LatestPostsResponse {
   imports: [MatSortModule, MatTableModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div
-      class="home-posts-table-scroll"
-      tabindex="0"
-      aria-label="Derniers articles"
-      [attr.aria-busy]="loading()"
-      [class.home-posts-table-scroll-detailed]="detailed()"
-    >
+    <div class="home-posts-table-scroll" [class.home-posts-table-scroll-detailed]="detailed()">
       @if (loading()) {
         <div class="home-posts-table-loader" role="status">
           <span class="home-posts-table-spinner" aria-hidden="true"></span>
@@ -47,7 +41,14 @@ interface LatestPostsResponse {
         </div>
       }
 
-      <table mat-table [dataSource]="dataSource" matSort class="home-posts-table">
+      <table
+        mat-table
+        [dataSource]="dataSource"
+        matSort
+        class="home-posts-table"
+        aria-label="Derniers articles"
+        [attr.aria-busy]="loading()"
+      >
         <ng-container matColumnDef="date">
           <th
             mat-header-cell

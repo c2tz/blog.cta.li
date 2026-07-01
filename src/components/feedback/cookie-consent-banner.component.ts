@@ -216,7 +216,7 @@ function isFocusableElement(element: HTMLElement) {
               type="button"
               (click)="returnFromExplicitContent()"
             >
-              Retour
+              QUITTER
             </button>
             <button
               class="cookie-consent-confirm-action"
@@ -224,7 +224,7 @@ function isFocusableElement(element: HTMLElement) {
               type="button"
               (click)="acknowledgeExplicitContent()"
             >
-              J’ai compris
+              J’ACCEPTE ET J’ENTRE
             </button>
           </div>
         } @else {

@@ -72,7 +72,6 @@ html.interaction-disabled.consent-visible body {
 }
 
 .cookie-consent--explicit-content {
-  --explicit-warning-accent: #b45309;
   --explicit-warning-signal: var(--mat-sys-error);
 
   border-color: var(--site-border);
@@ -119,7 +118,7 @@ html.interaction-disabled.consent-visible body {
 }
 
 .cookie-consent--explicit-content h4 {
-  color: var(--explicit-warning-accent);
+  color: var(--explicit-warning-signal);
   font-family: inherit;
   font-style: inherit;
   font-weight: 650;
@@ -127,7 +126,9 @@ html.interaction-disabled.consent-visible body {
 
 .cookie-consent--explicit-content p {
   color: var(--site-text);
-  font-weight: 650;
+  font-family: var(--site-font);
+  font-weight: 400;
+  line-height: 1.5;
 }
 
 .cookie-consent-alert {
@@ -140,12 +141,28 @@ html.interaction-disabled.consent-visible body {
 .cookie-consent-boot-warning-icon {
   width: 3rem;
   height: 3rem;
-  color: var(--explicit-warning-accent);
+  color: var(--explicit-warning-signal);
   fill: currentColor;
-  filter: drop-shadow(
-      0 0 0.15rem color-mix(in srgb, var(--explicit-warning-accent) 40%, transparent)
-    )
-    drop-shadow(0 0.25rem 0.35rem rgb(0 0 0 / 42%));
+}
+
+.cookie-consent-choice-link {
+  display: block;
+  border-radius: 6px;
+}
+
+.cookie-consent-choice-link:focus-visible {
+  outline: 2px solid var(--site-link);
+  outline-offset: 2px;
+}
+
+.cookie-consent-choice-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1260 / 434;
+  border: 1px solid var(--site-border);
+  border-radius: 6px;
+  object-fit: cover;
 }
 
 .cookie-consent h2 {

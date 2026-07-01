@@ -20,12 +20,17 @@ export function toDate(value) {
   return value instanceof Date ? value : new Date(value);
 }
 
-export function formatFrenchDateTime(value) {
+export function formatFrenchDate(value) {
   const date = toDate(value);
   const formattedDate = DATE_FORMATTER.format(date);
-  const formattedTime = TIME_FORMATTER.format(date).replace("UTC−", "UTC-");
-  const capitalizedDate =
-    formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
 
-  return `${capitalizedDate}, ${formattedTime}`;
+  return formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+}
+
+export function formatFrenchTime(value) {
+  return TIME_FORMATTER.format(toDate(value)).replace("UTC−", "UTC-");
+}
+
+export function formatFrenchDateTime(value) {
+  return `${formatFrenchDate(value)}, ${formatFrenchTime(value)}`;
 }

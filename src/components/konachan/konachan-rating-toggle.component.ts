@@ -7,7 +7,7 @@ import {
   inject,
   signal,
 } from "@angular/core";
-import type { OnInit } from "@angular/core";
+import type { OnDestroy, OnInit } from "@angular/core";
 import { MatIconButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
 import { MatTooltip } from "@angular/material/tooltip";
@@ -30,17 +30,17 @@ interface RatingOption {
 const RATING_OPTIONS: readonly RatingOption[] = [
   {
     value: "safe",
-    label: "Images Konachan safe",
+    label: "Safe",
     icon: "\uEF80",
   },
   {
     value: "questionable",
-    label: "Images Konachan questionable",
+    label: "Questionnable",
     icon: "\uF8EA",
   },
   {
     value: "explicit",
-    label: "Images Konachan explicites",
+    label: "Explicit",
     icon: "\uF8FD",
   },
 ];
@@ -93,7 +93,7 @@ function normalizeRatingPreference(
         [attr.aria-hidden]="!optionsOpen()"
       >
         @for (option of ratingOptions; track option.value) {
-          @if (option.value !== ratingPreference()) {
+          @if (option.value !== ratingPreference() && optionVisible(option.value)) {
             <button
               matIconButton
               type="button"
@@ -103,7 +103,7 @@ function normalizeRatingPreference(
               [class.is-explicit]="option.value === 'explicit'"
               [disabled]="!optionsOpen()"
               [tabIndex]="optionsOpen() ? 0 : -1"
-              [attr.aria-label]="'Choisir ' + option.label"
+              [attr.aria-label]="option.label"
               [matTooltip]="option.label"
               matTooltipPosition="below"
               (click)="selectRating(option.value)"
@@ -249,18 +249,18 @@ function normalizeRatingPreference(
     }
   `,
 })
-export class KonachanRatingToggleComponent implements OnInit {
+export class KonachanRatingToggleComponent implements OnInit, OnDestroy {
   private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   readonly ratingOptions = RATING_OPTIONS;
   readonly optionsOpen = signal(false);
+  readonly detailedView = signal(false);
   readonly ratingPreference = signal<KonachanRatingPreference>("safe");
   readonly triggerLabel = computed(() => {
-    const label = this.ratingOptions.find(
-      (option) => option.value === this.ratingPreference(),
-    )?.label;
-
-    return `Niveau Konachan : ${label ?? "Images Konachan safe"}`;
+    return (
+      this.ratingOptions.find((option) => option.value === this.ratingPreference())?.label ??
+      RATING_OPTIONS[0].label
+    );
   });
   readonly triggerIcon = computed(() => {
     return (
@@ -271,12 +271,23 @@ export class KonachanRatingToggleComponent implements OnInit {
 
   ngOnInit() {
     const stored = this.readStoredPreference();
+    this.detailedView.set(this.readDetailedView());
     this.ratingPreference.set(stored);
     this.persistPreference(stored);
+    if (typeof document === "undefined") return;
+
+    document.addEventListener(SITE_EVENTS.homeDetailViewChange, this.handleDetailViewChange);
+  }
+
+  ngOnDestroy() {
+    if (typeof document === "undefined") return;
+
+    document.removeEventListener(SITE_EVENTS.homeDetailViewChange, this.handleDetailViewChange);
   }
 
   selectRating(preference: KonachanRatingPreference) {
     this.closeOptions();
+    if (preference === "explicit" && !this.detailedView()) return;
     if (this.ratingPreference() === preference) return;
 
     this.ratingPreference.set(preference);
@@ -290,6 +301,10 @@ export class KonachanRatingToggleComponent implements OnInit {
 
   closeOptions() {
     this.optionsOpen.set(false);
+  }
+
+  optionVisible(preference: KonachanRatingPreference) {
+    return preference !== "explicit" || this.detailedView();
   }
 
   @HostListener("document:pointerdown", ["$event"])
@@ -315,20 +330,40 @@ export class KonachanRatingToggleComponent implements OnInit {
 
     for (const candidate of candidates) {
       const normalized = normalizeRatingPreference(candidate);
-      if (normalized) return normalized;
+      if (normalized) return normalized === "explicit" ? "safe" : normalized;
     }
 
     return "safe";
   }
 
   private persistPreference(preference: KonachanRatingPreference) {
+    const storedPreference = preference === "explicit" ? "safe" : preference;
+
     try {
-      localStorage.setItem(SITE_STORAGE_KEYS.homeKonachanRatingPreference, preference);
+      localStorage.setItem(SITE_STORAGE_KEYS.homeKonachanRatingPreference, storedPreference);
       localStorage.removeItem(SITE_LEGACY_STORAGE_KEYS.homeKonachanRatingPreference);
     } catch {}
 
-    this.writeCookie(SITE_COOKIE_NAMES.homeKonachanRatingPreference, preference);
+    this.writeCookie(SITE_COOKIE_NAMES.homeKonachanRatingPreference, storedPreference);
     this.expireCookie(SITE_LEGACY_COOKIE_NAMES.homeKonachanRatingPreference);
+  }
+
+  private readonly handleDetailViewChange = (event: Event) => {
+    const detailed = Boolean((event as CustomEvent<{ detailed?: boolean }>).detail?.detailed);
+    this.detailedView.set(detailed);
+
+    if (!detailed && this.ratingPreference() === "explicit") {
+      this.closeOptions();
+      this.ratingPreference.set("safe");
+      this.persistPreference("safe");
+      this.emitChange("safe");
+    }
+  };
+
+  private readDetailedView() {
+    if (typeof document === "undefined") return false;
+
+    return document.body.dataset["homeDetailView"] === "true";
   }
 
   private readLocalStorage(key: string) {

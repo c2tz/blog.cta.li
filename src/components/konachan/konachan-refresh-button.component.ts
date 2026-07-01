@@ -1,9 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  signal,
-} from "@angular/core";
+import { ChangeDetectionStrategy, Component, computed, signal } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
 import { MatIconButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
@@ -73,11 +68,7 @@ export class KonachanRefreshButtonComponent implements OnInit, OnDestroy {
   readonly busy = signal(false);
   readonly loaded = signal(false);
   readonly status = signal("");
-  readonly buttonLabel = computed(() => {
-    if (this.busy()) return "Image Konachan en cours de chargement";
-
-    return this.loaded() ? "Changer l'image Konachan" : "Afficher une image Konachan";
-  });
+  readonly buttonLabel = computed(() => "Actualiser l'image");
 
   private readonly handleRefreshState = (event: Event) => {
     const detail = (event as CustomEvent<RefreshState>).detail ?? {};
@@ -90,8 +81,7 @@ export class KonachanRefreshButtonComponent implements OnInit, OnDestroy {
   ngOnInit() {
     if (typeof document === "undefined") return;
     this.loaded.set(
-      document.querySelector("[data-konachan-background]")?.getAttribute("data-loaded") ===
-        "true",
+      document.querySelector("[data-konachan-background]")?.getAttribute("data-loaded") === "true",
     );
     document.addEventListener(SITE_EVENTS.konachanRefreshState, this.handleRefreshState);
   }

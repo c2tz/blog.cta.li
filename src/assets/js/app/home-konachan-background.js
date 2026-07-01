@@ -270,15 +270,20 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
   }
 
   function readRatingPreference() {
+    const restorePreference = (value) => {
+      const preference = normalizeRatingPreference(value);
+      return preference === "explicit" ? "safe" : preference;
+    };
+
     try {
-      return normalizeRatingPreference(
+      return restorePreference(
         localStorage.getItem(KONACHAN_RATING_KEY) ||
           localStorage.getItem(KONACHAN_LEGACY_RATING_KEY) ||
           readCookie(KONACHAN_RATING_COOKIE) ||
           readCookie(KONACHAN_LEGACY_RATING_COOKIE),
       );
     } catch {
-      return normalizeRatingPreference(
+      return restorePreference(
         readCookie(KONACHAN_RATING_COOKIE) || readCookie(KONACHAN_LEGACY_RATING_COOKIE),
       );
     }
@@ -312,7 +317,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     if (image.author) parts.push(image.author);
     if (image.id) parts.push(`#${image.id}`);
 
-    return parts.length > 0 ? parts.join(" · ") : "Voir la source";
+    return parts.length > 0 ? parts.join(" ") : "Voir la source";
   }
 
   function setCredit(image) {

@@ -165,17 +165,18 @@ function isFocusableElement(element: HTMLElement) {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (activeNotice()) {
-      <div
-        class="cookie-consent-backdrop"
-        [class.cookie-consent-backdrop--modal]="activeNotice() === 'explicit-content'"
-        aria-hidden="true"
-      ></div>
+      @if (activeNotice() === "explicit-content") {
+        <div
+          class="cookie-consent-backdrop cookie-consent-backdrop--modal"
+          aria-hidden="true"
+        ></div>
+      }
       <section
         class="cookie-consent"
         [class.cookie-consent--modal]="activeNotice() === 'explicit-content'"
         [class.cookie-consent--explicit-content]="activeNotice() === 'explicit-content'"
-        role="dialog"
-        aria-modal="true"
+        [attr.role]="activeNotice() === 'explicit-content' ? 'dialog' : 'region'"
+        [attr.aria-modal]="activeNotice() === 'explicit-content' ? 'true' : null"
         [attr.aria-labelledby]="
           activeNotice() === 'explicit-content'
             ? 'explicit-content-consent-title'
@@ -202,19 +203,35 @@ function isFocusableElement(element: HTMLElement) {
             <div class="cookie-consent-content">
               <h4 id="explicit-content-consent-title">Avertissement relatif aux images</h4>
               <p id="explicit-content-consent-desc">
-                Ce site peut contenir des images d’anime à caractère explicite, destinées uniquement
-                à un public majeur. En poursuivant votre navigation, vous confirmez avoir au moins
-                18 ans, ou avoir atteint l’âge légal de la majorité dans votre pays ou région.
+                Ce site peut contenir des images d’anime à caractère explicite, réservées à un
+                public adulte. En continuant, vous confirmez avoir au moins 18 ans, ou avoir atteint
+                l’âge légal de la majorité dans votre pays ou région.
               </p>
             </div>
           </div>
+
+          <a
+            class="cookie-consent-choice-link"
+            href="https://www.youtube.com/watch?v=Cywo2B_CX2I&t=149s"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Voir la scène du choix des pilules à 2 minutes 29 secondes"
+          >
+            <img
+              class="cookie-consent-choice-image"
+              src="/images/choice-pills.webp"
+              alt=""
+              decoding="async"
+            />
+          </a>
 
           <div class="cookie-consent-actions">
             <button
               class="cookie-consent-return-action"
               matButton="text"
               type="button"
-              (click)="returnFromExplicitContent()"
+              aria-label="Quitter le site"
+              (click)="leaveExplicitContent()"
             >
               QUITTER
             </button>
@@ -222,6 +239,7 @@ function isFocusableElement(element: HTMLElement) {
               class="cookie-consent-confirm-action"
               matButton="text"
               type="button"
+              aria-label="Entrer sur le site en confirmant avoir au moins 18 ans"
               (click)="acknowledgeExplicitContent()"
             >
               J’ACCEPTE ET J’ENTRE
@@ -231,14 +249,22 @@ function isFocusableElement(element: HTMLElement) {
           <div class="cookie-consent-content">
             <h2 id="cookie-consent-title">Confidentialité</h2>
             <p id="cookie-consent-desc">
-              En acceptant, vous autorisez la fonctionnalité qui affiche votre IP et votre pays dans
-              le pied de page. En refusant, elle reste désactivée.
+              Ce site utilise des cookies de Vercel pour fournir ses services et analyser le trafic.
             </p>
           </div>
 
           <div class="cookie-consent-actions">
-            <button matButton="text" type="button" (click)="reject()">Continuer sans</button>
-            <button matButton="text" type="button" (click)="accept()">Autoriser</button>
+            <button
+              matButton="text"
+              type="button"
+              disabled
+              aria-label="Plus de détails, page à venir"
+            >
+              PLUS DE DÉTAILS
+            </button>
+            <button matButton="text" type="button" (click)="acknowledgePrivacyNotice()">
+              JE COMPRENDS
+            </button>
           </div>
         }
       </section>
@@ -250,11 +276,13 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
     if (!this.visible()) return;
 
     if (event.key === "Escape" && this.activeNotice() === "privacy") {
-      this.reject();
+      this.acknowledgePrivacyNotice();
       return;
     }
 
-    if (event.key === "Tab") this.trapFocus(event);
+    if (event.key === "Tab" && this.activeNotice() === "explicit-content") {
+      this.trapFocus(event);
+    }
   };
 
   readonly activeNotice = signal<ActiveNotice | null>(null);
@@ -284,11 +312,7 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
     this.unlockPage();
   }
 
-  accept() {
-    this.save(true);
-  }
-
-  reject() {
+  acknowledgePrivacyNotice() {
     this.save(false);
   }
 
@@ -299,7 +323,7 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
     this.showNextNotice();
   }
 
-  returnFromExplicitContent() {
+  leaveExplicitContent() {
     if (window.history.length > 1) {
       window.history.back();
       return;
@@ -326,11 +350,11 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
     );
 
     this.syncPageState();
-    if (this.visible()) this.focusInitialAction();
+    if (this.activeNotice() === "explicit-content") this.focusInitialAction();
   }
 
   private syncPageState() {
-    if (this.visible()) {
+    if (this.activeNotice() === "explicit-content") {
       document.documentElement.classList.add("interaction-disabled", "consent-visible");
       setBackgroundInteractionDisabled(true);
     } else {

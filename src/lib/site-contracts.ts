@@ -1,6 +1,7 @@
 export const SITE_EVENTS = Object.freeze({
   consentChange: "site:consent-change",
   explicitContentChange: "site:explicit-content-change",
+  homeDetailViewChange: "home:detail-view-change",
   loadingEnd: "site:loading-end",
   loadingStart: "site:loading-start",
   photoSwipeAction: "site:photo-swipe-action",
@@ -15,6 +16,7 @@ export const SITE_EVENTS = Object.freeze({
 export const SITE_STORAGE_KEYS = Object.freeze({
   cookieConsent: "ct-cookie-consent-v1",
   explicitContentAcknowledgement: "ct-explicit-content-ack-v1",
+  homeDetailView: "home-detail-view-v1",
   homeKonachanBackgrounds: "home-konachan-backgrounds-v8",
   homeKonachanRatingPreference: "home-konachan-rating-preference-v1",
   ipGeolocation: "site-ip-geolocation-v2",
@@ -24,6 +26,7 @@ export const SITE_STORAGE_KEYS = Object.freeze({
 
 export const SITE_LEGACY_STORAGE_KEYS = Object.freeze({
   cookieConsent: "ct_cookie_consent_v1",
+  homeDetailView: "home_detail_view_v1",
   homeKonachanBackgrounds: "home_konachan_backgrounds_v6",
   homeKonachanRatingPreference: "home_konachan_rating_preference_v1",
   ipGeolocation: "site_ip_geolocation_v2",
@@ -33,11 +36,13 @@ export const SITE_LEGACY_STORAGE_KEYS = Object.freeze({
 export const SITE_COOKIE_NAMES = Object.freeze({
   cookieConsent: "ct-cookie-consent",
   explicitContentAcknowledgement: "ct-explicit-content-ack",
+  homeDetailView: "home-detail-view",
   homeKonachanRatingPreference: "home-konachan-rating-preference",
 });
 
 export const SITE_LEGACY_COOKIE_NAMES = Object.freeze({
   cookieConsent: "ct_cookie_consent",
+  homeDetailView: "home_detail_view",
   homeKonachanRatingPreference: "home_konachan_rating_preference",
 });
 

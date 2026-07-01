@@ -1,11 +1,14 @@
 ---
 import { getCollection, getEntry } from "astro:content";
 
+import { HomeDetailToggleComponent } from "@/components/home/home-detail-toggle.component";
+import { HomeLatestPostsTableComponent } from "@/components/home/home-latest-posts-table.component";
 import HomeKonachanBackground from "@/components/home/home-konachan-background.astro";
+import { HomeSectionDividerComponent } from "@/components/home/home-section-divider.component";
 import { HomeTagsTreeComponent } from "@/components/home/home-tags-tree.component";
-import FormattedDate from "@/components/post/formatted-date.astro";
 import Layout from "@/layouts/site-layout.astro";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/site-config";
+import { formatFrenchDate, formatFrenchDateTime, toDate } from "@/lib/date-format.mjs";
 import { getContentEntryGitDates } from "@/lib/git-dates.mjs";
 
 const posts = (await getCollection("blog"))
@@ -14,12 +17,17 @@ const posts = (await getCollection("blog"))
     gitDates: getContentEntryGitDates("blog", post),
   }))
   .sort(
-    (a, b) =>
-      new Date(b.gitDates.createdAt).valueOf() -
-      new Date(a.gitDates.createdAt).valueOf(),
+    (a, b) => new Date(b.gitDates.createdAt).valueOf() - new Date(a.gitDates.createdAt).valueOf(),
   );
 
 const latestPosts = posts.slice(0, 3);
+const latestPostSummaries = latestPosts.map((post) => ({
+  dateCompact: formatFrenchDate(post.gitDates.createdAt),
+  dateFull: formatFrenchDateTime(post.gitDates.createdAt),
+  datetime: toDate(post.gitDates.createdAt).toISOString(),
+  href: `/posts/${post.id}/`,
+  title: post.data.title,
+}));
 const contentTags = [
   ...new Set(
     posts
@@ -27,18 +35,12 @@ const contentTags = [
       .filter((tag): tag is string => tag !== undefined && tag !== "all"),
   ),
 ].sort();
-const uniqueTags = [
-  "all",
-  ...contentTags,
-];
+const uniqueTags = ["all", ...contentTags];
 const intro = await getEntry("info", "intro");
 const introData = intro?.data ?? {};
 const homeCopy = {
   heroTitle: typeof introData.heroTitle === "string" ? introData.heroTitle : SITE_TITLE,
-  heroLede:
-    typeof introData.heroLede === "string"
-      ? introData.heroLede
-      : "Simple blog-note.",
+  heroLede: typeof introData.heroLede === "string" ? introData.heroLede : "Simple blog-note.",
   primaryActionHref:
     typeof introData.primaryActionHref === "string" ? introData.primaryActionHref : "/tags/all/",
   primaryActionLabel:
@@ -52,7 +54,9 @@ const homeCopy = {
       ? introData.secondaryActionLabel
       : "À propos",
   latestPostsTitle:
-    typeof introData.latestPostsTitle === "string" ? introData.latestPostsTitle : "Derniers articles",
+    typeof introData.latestPostsTitle === "string"
+      ? introData.latestPostsTitle
+      : "Derniers articles",
   tagsTitle: typeof introData.tagsTitle === "string" ? introData.tagsTitle : "Tags",
 };
 ---
@@ -78,29 +82,27 @@ const homeCopy = {
     />
 
     <section class="home-section" aria-labelledby="blog-posts">
+      <HomeSectionDividerComponent />
+
       <h2 id="blog-posts">
         <a href="#blog-posts" class="heading-link">{homeCopy.latestPostsTitle}</a>
       </h2>
 
-      <ul class="home-posts">
-        {
-          latestPosts.map((post) => (
-            <li class="home-post">
-              <span class="home-post-date">
-                <FormattedDate date={post.gitDates.createdAt} />
-              </span>
-              <span class="home-separator" aria-hidden="true">·</span>
-              <a class="home-post-title" href={`/posts/${post.id}/`}>
-                {post.data.title}
-              </a>
-            </li>
-          ))
-        }
-      </ul>
+      <HomeLatestPostsTableComponent client:load posts={latestPostSummaries} />
     </section>
 
-    <section class="home-section home-tags-section" aria-labelledby="tags">
-      <HomeTagsTreeComponent client:visible title={homeCopy.tagsTitle} tags={uniqueTags} />
+    <section class="home-section home-tags-section" aria-label={homeCopy.tagsTitle}>
+      <HomeSectionDividerComponent />
+
+      <HomeDetailToggleComponent client:load />
+
+      <div id="home-tags-detail" class="home-tags-detail" aria-labelledby="tags">
+        <h2 id="tags">
+          <a href="#tags" class="heading-link">{homeCopy.tagsTitle}</a>
+        </h2>
+
+        <HomeTagsTreeComponent tags={uniqueTags} />
+      </div>
     </section>
   </Fragment>
 </Layout>

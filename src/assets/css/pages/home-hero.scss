@@ -1,11 +1,7 @@
 @use "@angular/material" as mat;
 
 .home-anime-landing {
-  --home-banner-height: clamp(
-    20rem,
-    calc(var(--home-viewport-height, 100vh) * 0.52),
-    31rem
-  );
+  --home-banner-height: clamp(20rem, calc(var(--home-viewport-height, 100vh) * 0.52), 31rem);
   @include mat.button-overrides(
     (
       outlined-label-text-color: #fff,
@@ -35,19 +31,11 @@
 }
 
 .home-anime-landing[data-home-viewport="portrait"] {
-  --home-banner-height: clamp(
-    22rem,
-    calc(var(--home-viewport-height, 100vh) * 0.56),
-    29rem
-  );
+  --home-banner-height: clamp(22rem, calc(var(--home-viewport-height, 100vh) * 0.56), 29rem);
 }
 
 .home-anime-landing[data-home-viewport="wide"] {
-  --home-banner-height: clamp(
-    22rem,
-    calc(var(--home-viewport-height, 100vh) * 0.58),
-    34rem
-  );
+  --home-banner-height: clamp(22rem, calc(var(--home-viewport-height, 100vh) * 0.58), 34rem);
 }
 
 .home-anime-landing[data-explicit-content="pending"] .home-anime-credit,
@@ -184,6 +172,10 @@
 
 .home-anime-credit[hidden],
 .home-anime-credit-link[hidden] {
+  display: none;
+}
+
+body.home-page:not([data-home-detail-view="true"]) .home-anime-credit-link:not([hidden]) {
   display: none;
 }
 

@@ -11,8 +11,7 @@ import { PageLoadingIndicatorComponent } from "@/components/feedback/page-loadin
 import { PhotoSwipeToolbarComponent } from "@/components/lightbox/photo-swipe-toolbar.component";
 import { ScrollTopButtonComponent } from "@/components/navigation/scroll-top-button.component";
 import { SITE_LEGACY_STORAGE_KEYS, SITE_STORAGE_KEYS } from "@/lib/site-contracts";
-import { computeRoute } from "@vercel/speed-insights";
-import speedInsightsPackage from "@vercel/speed-insights/package.json";
+import SpeedInsights from "@vercel/speed-insights/astro";
 import "@/assets/css/global.scss";
 
 interface Props {
@@ -40,8 +39,6 @@ const seoDescription = description ?? SITE_DESCRIPTION;
 const themeStorageKey = SITE_STORAGE_KEYS.themePreference;
 const legacyThemeStorageKey = SITE_LEGACY_STORAGE_KEYS.themePreference;
 const isPost = Astro.url.pathname.startsWith("/posts/");
-const speedInsightsRoute = computeRoute(Astro.url.pathname, Astro.params);
-const speedInsightsVersion = speedInsightsPackage.version;
 ---
 
 <!doctype html>
@@ -118,12 +115,7 @@ const speedInsightsVersion = speedInsightsPackage.version;
     <PageLoadingIndicatorComponent client:idle />
     {isPost && <PhotoSwipeToolbarComponent client:idle />}
     {readingProgress && <ScrollTopButtonComponent client:idle />}
-    <script
-      defer
-      src="/_vercel/speed-insights/script.js"
-      data-sdkn="@vercel/speed-insights/astro"
-      data-sdkv={speedInsightsVersion}
-      data-route={speedInsightsRoute}></script>
+    <SpeedInsights />
 
     <script>
       import "@/assets/js/app-init.js";

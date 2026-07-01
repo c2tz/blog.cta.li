@@ -22,6 +22,7 @@ const VITE_OPTIMIZE_DEPS = [
   "@angular/material/core",
   "@angular/material/datepicker",
   "@angular/material/dialog",
+  "@angular/material/divider",
   "@angular/material/expansion",
   "@angular/material/form-field",
   "@angular/material/icon",
@@ -30,7 +31,9 @@ const VITE_OPTIMIZE_DEPS = [
   "@angular/material/progress-bar",
   "@angular/material/progress-spinner",
   "@angular/material/select",
+  "@angular/material/slide-toggle",
   "@angular/material/snack-bar",
+  "@angular/material/table",
   "@angular/material/tooltip",
   "photoswipe",
   "photoswipe/lightbox",
@@ -48,8 +51,7 @@ function isCompiledAngularDecoratorWarning(warning) {
 function isCompiledAngularMetadataImportWarning(warning) {
   return (
     warning.code === "UNUSED_EXTERNAL_IMPORT" &&
-    (warning.exporter === "@angular/forms" ||
-      warning.exporter?.startsWith("@angular/material/")) &&
+    (warning.exporter === "@angular/forms" || warning.exporter?.startsWith("@angular/material/")) &&
     warning.names?.every((name) => name.endsWith("Module")) &&
     warning.ids?.every((id) => id.includes("/src/components/"))
   );

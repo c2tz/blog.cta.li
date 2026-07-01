@@ -390,7 +390,6 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
 
     .site-search-panel-sort-label {
       color: var(--site-muted);
-      font-size: 0.75rem;
       line-height: 1.1;
     }
 
@@ -401,8 +400,6 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
       box-sizing: border-box;
       width: auto !important;
       color: var(--site-text);
-      font-size: 0.95rem;
-      font-weight: 650;
     }
 
     .site-search-panel-sort-select .mat-mdc-select-trigger {
@@ -448,7 +445,6 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
     .site-search-panel-sort-menu .mat-mdc-option {
       min-height: 3.25rem;
       cursor: pointer;
-      font-size: 0.95rem;
     }
 
     .site-search-panel-sort-option {
@@ -462,10 +458,6 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
 
     .site-search-panel-sort-option .mat-icon {
       flex: 0 0 auto;
-      width: 1.4rem;
-      height: 1.4rem;
-      font-size: 1.4rem;
-      line-height: 1;
     }
 
     .site-search-panel-progress.mat-mdc-progress-bar {

@@ -76,17 +76,6 @@
 .site-prose :where(a, a:visited):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
   color: var(--site-link);
   font-weight: 400;
-  text-decoration-line: none;
-  text-decoration-thickness: from-font;
-  text-decoration-color: currentColor;
-  text-underline-offset: 0.16em;
-}
-
-.site-prose
-  :where(a, a:visited):is(:hover, :focus-visible):not(
-    :where([class~="not-prose"], [class~="not-prose"] *)
-  ) {
-  text-decoration-line: underline;
 }
 
 .site-prose
@@ -110,13 +99,6 @@
 
 .site-prose .footnotes :where(a, a:visited) {
   color: inherit;
-  text-decoration-line: none;
-  text-decoration-thickness: from-font;
-  text-underline-offset: 0.16em;
-}
-
-.site-prose .footnotes :where(a, a:visited):is(:hover, :focus-visible) {
-  text-decoration-line: underline;
 }
 
 .site-prose :where(img):not(:where([class~="not-prose"], [class~="not-prose"] *)) {

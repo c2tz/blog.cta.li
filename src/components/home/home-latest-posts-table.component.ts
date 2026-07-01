@@ -70,14 +70,15 @@ interface LatestPostsResponse {
         </ng-container>
 
         <ng-container matColumnDef="title">
-          <th mat-header-cell *matHeaderCellDef class="home-posts-title-header" scope="col">
-            <span
-              class="home-posts-title-header-sticky"
-              mat-sort-header="title"
-              sortActionDescription="Trier par titre"
-            >
-              Titre
-            </span>
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+            mat-sort-header
+            sortActionDescription="Trier par titre"
+            class="home-posts-title-header"
+            scope="col"
+          >
+            Titre
           </th>
           <td mat-cell *matCellDef="let post">
             <a class="home-post-title" [href]="post.href">{{ post.title }}</a>
@@ -109,6 +110,7 @@ interface LatestPostsResponse {
       margin-block: 0 1em;
       overflow-x: auto;
       overflow-y: hidden;
+      padding-block-end: 1px;
       -webkit-overflow-scrolling: touch;
     }
 
@@ -206,15 +208,14 @@ interface LatestPostsResponse {
       overflow: visible;
     }
 
-    .home-posts-title-header-sticky {
+    :host ::ng-deep .home-posts-table .home-posts-title-header .mat-sort-header-container {
       position: sticky;
       left: 0;
       z-index: 2;
-      display: inline-flex;
-      align-items: center;
       box-sizing: border-box;
       width: var(--home-posts-date-column-width);
-      height: 2.75rem;
+      height: 100%;
+      min-height: 2.75rem;
       margin-inline-start: -1rem;
       padding-inline: 1rem 0.65rem;
       background: var(--site-bg);

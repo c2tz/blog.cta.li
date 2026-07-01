@@ -131,8 +131,8 @@
     text-decoration: none;
   }
 
-  a[href]:hover {
-    text-decoration-line: underline;
+  a[href]:is(:hover, :focus-visible) {
+    text-decoration: underline;
   }
 
   a[href]:focus-visible {
@@ -209,7 +209,7 @@
   h5 a:visited,
   h6 a,
   h6 a:visited {
-    color: var(--site-text);
+    color: inherit;
   }
 
   button,

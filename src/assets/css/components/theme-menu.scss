@@ -2,6 +2,10 @@
   min-width: 14rem;
   --mat-menu-container-color: var(--site-bg);
   --mat-menu-item-label-text-color: var(--site-text);
+  --mat-menu-item-label-text-size: 0.95rem;
+  --mat-menu-item-label-text-line-height: 1.5rem;
+  --mat-menu-item-label-text-weight: 650;
+  --mat-menu-item-label-text-tracking: 0;
   --mat-menu-item-icon-color: var(--site-text);
   --mat-menu-item-hover-state-layer-color: var(--site-tonal-container);
   --mat-menu-item-focus-state-layer-color: var(--site-tonal-container);
@@ -13,7 +17,7 @@
   cursor: pointer;
   pointer-events: auto;
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 650;
 }
 
 .site-theme-menu-item[aria-checked="true"] {

@@ -1,14 +1,9 @@
 .site-theme-menu.mat-mdc-menu-panel {
   min-width: 14rem;
-  --mat-menu-container-color: var(--m3-surface-container);
-  --mat-menu-item-label-text-color: var(--site-text);
   --mat-menu-item-label-text-size: 1rem;
   --mat-menu-item-label-text-line-height: 1.5rem;
   --mat-menu-item-label-text-weight: 400;
   --mat-menu-item-label-text-tracking: 0;
-  --mat-menu-item-icon-color: var(--site-text);
-  --mat-menu-item-hover-state-layer-color: var(--site-tonal-container);
-  --mat-menu-item-focus-state-layer-color: var(--site-tonal-container);
 }
 
 .site-theme-menu-item.mat-mdc-menu-item {
@@ -25,12 +20,7 @@
 }
 
 .site-theme-radio-icon.mat-icon {
-  color: var(--site-muted);
   pointer-events: none;
-}
-
-.site-theme-radio-icon-checked.mat-icon {
-  color: var(--site-link);
 }
 
 .site-theme-menu-content {

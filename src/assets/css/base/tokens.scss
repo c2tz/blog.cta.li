@@ -169,26 +169,4 @@
       enabled-icon-color: var(--site-muted),
     )
   );
-
-  @include mat.select-overrides(
-    (
-      disabled-arrow-color: color-mix(in srgb, var(--site-text) 38%, transparent),
-      disabled-trigger-text-color: color-mix(in srgb, var(--site-text) 38%, transparent),
-      enabled-arrow-color: var(--site-muted),
-      enabled-trigger-text-color: var(--site-text),
-      focused-arrow-color: var(--site-link),
-      panel-background-color: var(--site-bg),
-      placeholder-text-color: var(--site-muted),
-    )
-  );
-
-  @include mat.option-overrides(
-    (
-      focus-state-layer-color: color-mix(in srgb, var(--site-text) 12%, transparent),
-      hover-state-layer-color: color-mix(in srgb, var(--site-text) 8%, transparent),
-      label-text-color: var(--site-text),
-      selected-state-label-text-color: var(--site-on-link-container),
-      selected-state-layer-color: var(--site-link-container),
-    )
-  );
 }

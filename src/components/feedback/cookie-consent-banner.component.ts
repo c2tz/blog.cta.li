@@ -313,7 +313,7 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
   }
 
   acknowledgePrivacyNotice() {
-    this.save(false);
+    this.save(true);
   }
 
   acknowledgeExplicitContent() {

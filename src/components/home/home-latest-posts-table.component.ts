@@ -219,10 +219,6 @@ interface LatestPostsResponse {
       background: var(--site-bg);
     }
 
-    .home-posts-table tbody tr:last-child td {
-      border-block-end-color: transparent;
-    }
-
     .home-posts-table .mat-sort-header {
       --mat-sort-arrow-color: currentColor;
     }

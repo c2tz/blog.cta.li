@@ -91,19 +91,21 @@ html.interaction-disabled.consent-visible body {
   --explicit-warning-signal: var(--m3-error);
   --explicit-warning-container: var(--m3-error-container);
   --explicit-on-warning-container: var(--m3-on-error-container);
-  --explicit-consent-bg: #fff;
-  --explicit-consent-border: color-mix(
+  --explicit-consent-bg: var(--m3-surface-container-high);
+  --explicit-consent-border: var(--m3-outline-variant);
+  --explicit-consent-text: var(--m3-on-surface);
+  --explicit-warning-border: color-mix(
     in srgb,
-    var(--explicit-on-warning-container) 24%,
+    var(--explicit-on-warning-container) 18%,
     transparent
   );
-  --explicit-consent-text: var(--explicit-on-warning-container);
   --explicit-warning-foreground: var(--explicit-on-warning-container);
 
   border-color: var(--explicit-consent-border);
   background: var(--explicit-consent-bg);
   box-shadow: var(--mat-sys-level4, 0 16px 40px rgb(0 0 0 / 34%));
   color: var(--explicit-consent-text);
+  font: var(--mat-sys-body-large, 400 1rem / 1.5rem var(--site-font));
   @include mat.theme-overrides(
     (
       primary: var(--explicit-consent-link),
@@ -112,22 +114,12 @@ html.interaction-disabled.consent-visible body {
       on-error: var(--explicit-on-warning-signal),
       error-container: var(--explicit-warning-container),
       on-error-container: var(--explicit-on-warning-container),
-      outline: var(--explicit-consent-link),
+      outline: var(--m3-outline),
+      outline-variant: var(--explicit-consent-border),
       on-surface: var(--explicit-consent-text),
       on-surface-variant: var(--explicit-consent-text),
     )
   );
-}
-
-:root[data-theme="dark"] .cookie-consent--explicit-content {
-  --explicit-consent-bg: #000;
-  --explicit-consent-border: color-mix(
-    in srgb,
-    var(--explicit-on-warning-container) 32%,
-    transparent
-  );
-  --explicit-consent-text: var(--explicit-on-warning-container);
-  --explicit-warning-foreground: var(--explicit-on-warning-container);
 }
 
 .cookie-consent--explicit-content .cookie-consent-actions button {
@@ -147,28 +139,26 @@ html.interaction-disabled.consent-visible body {
 }
 
 .cookie-consent--explicit-content .cookie-consent-confirm-action {
-  color: var(--explicit-warning-foreground);
+  color: var(--explicit-warning-signal);
   @include mat.button-overrides(
     (
-      text-label-text-color: var(--explicit-warning-foreground),
-      text-state-layer-color: var(--explicit-warning-foreground),
-      text-ripple-color: color-mix(in srgb, var(--explicit-warning-foreground) 12%, transparent),
+      text-label-text-color: var(--explicit-warning-signal),
+      text-state-layer-color: var(--explicit-warning-signal),
+      text-ripple-color: color-mix(in srgb, var(--explicit-warning-signal) 12%, transparent),
     )
   );
 }
 
 .cookie-consent--explicit-content h4 {
-  color: var(--explicit-warning-foreground);
+  color: inherit;
   font-family: inherit;
   font-style: inherit;
   font-weight: 400;
 }
 
 .cookie-consent--explicit-content p {
-  color: var(--explicit-consent-text);
-  font-family: var(--site-font);
-  font-weight: 400;
-  line-height: 1.5;
+  color: inherit;
+  font: inherit;
 }
 
 .cookie-consent-alert {
@@ -176,12 +166,17 @@ html.interaction-disabled.consent-visible body {
   grid-template-columns: 3.25rem minmax(0, 1fr);
   gap: 0.95rem;
   align-items: start;
+  padding: 0.85rem;
+  border: 1px solid var(--explicit-warning-border);
+  border-radius: var(--site-shape-small);
+  background: var(--explicit-warning-container);
+  color: var(--explicit-warning-foreground);
 }
 
 .cookie-consent-boot-warning-icon {
   width: 3rem;
   height: 3rem;
-  color: var(--explicit-warning-foreground);
+  color: currentColor;
   fill: currentColor;
 }
 

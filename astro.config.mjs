@@ -32,6 +32,7 @@ const VITE_OPTIMIZE_DEPS = [
   "@angular/material/progress-spinner",
   "@angular/material/select",
   "@angular/material/slide-toggle",
+  "@angular/material/sort",
   "@angular/material/snack-bar",
   "@angular/material/table",
   "@angular/material/tooltip",

@@ -6,6 +6,11 @@ html.interaction-disabled.consent-visible body {
   touch-action: none;
 }
 
+html.consent-visible,
+html.consent-visible body {
+  background-color: #141218;
+}
+
 .cookie-consent-backdrop {
   position: fixed;
   inset: 0;
@@ -17,7 +22,7 @@ html.interaction-disabled.consent-visible body {
 }
 
 .cookie-consent-backdrop--modal {
-  background: rgb(0 0 0 / 70%);
+  background: #141218;
 }
 
 .cookie-consent {
@@ -85,39 +90,31 @@ html.interaction-disabled.consent-visible body {
 }
 
 .cookie-consent--explicit-content {
-  --explicit-consent-link: var(--m3-primary);
-  --explicit-consent-link-contrast: var(--m3-on-primary);
-  --explicit-on-warning-signal: var(--m3-on-error);
-  --explicit-warning-signal: var(--m3-error);
-  --explicit-warning-container: var(--m3-error-container);
-  --explicit-on-warning-container: var(--m3-on-error-container);
-  --explicit-consent-bg: var(--m3-surface-container-high);
-  --explicit-consent-border: var(--m3-outline-variant);
-  --explicit-consent-text: var(--m3-on-surface);
-  --explicit-warning-border: color-mix(
+  border-color: color-mix(
     in srgb,
-    var(--explicit-on-warning-container) 18%,
+    var(--mat-sys-on-error-container, var(--m3-on-error-container)) 22%,
     transparent
   );
-  --explicit-warning-foreground: var(--explicit-on-warning-container);
-
-  border-color: var(--explicit-consent-border);
-  background: var(--explicit-consent-bg);
+  background: var(--mat-sys-error-container, var(--m3-error-container));
   box-shadow: var(--mat-sys-level4, 0 16px 40px rgb(0 0 0 / 34%));
-  color: var(--explicit-consent-text);
+  color: var(--mat-sys-on-error-container, var(--m3-on-error-container));
   font: var(--mat-sys-body-large, 400 1rem / 1.5rem var(--site-font));
   @include mat.theme-overrides(
     (
-      primary: var(--explicit-consent-link),
-      on-primary: var(--explicit-consent-link-contrast),
-      error: var(--explicit-warning-signal),
-      on-error: var(--explicit-on-warning-signal),
-      error-container: var(--explicit-warning-container),
-      on-error-container: var(--explicit-on-warning-container),
-      outline: var(--m3-outline),
-      outline-variant: var(--explicit-consent-border),
-      on-surface: var(--explicit-consent-text),
-      on-surface-variant: var(--explicit-consent-text),
+      primary: var(--mat-sys-error, var(--m3-error)),
+      on-primary: var(--mat-sys-on-error, var(--m3-on-error)),
+      error: var(--mat-sys-error, var(--m3-error)),
+      on-error: var(--mat-sys-on-error, var(--m3-on-error)),
+      error-container: var(--mat-sys-error-container, var(--m3-error-container)),
+      on-error-container: var(--mat-sys-on-error-container, var(--m3-on-error-container)),
+      outline: var(--mat-sys-outline, var(--m3-outline)),
+      outline-variant: color-mix(
+          in srgb,
+          var(--mat-sys-on-error-container, var(--m3-on-error-container)) 22%,
+          transparent
+        ),
+      on-surface: var(--mat-sys-on-error-container, var(--m3-on-error-container)),
+      on-surface-variant: var(--mat-sys-on-error-container, var(--m3-on-error-container)),
     )
   );
 }
@@ -128,32 +125,31 @@ html.interaction-disabled.consent-visible body {
 }
 
 .cookie-consent--explicit-content .cookie-consent-return-action {
-  color: var(--explicit-consent-link);
+  color: var(--mat-sys-error, var(--m3-error));
   @include mat.button-overrides(
     (
-      text-label-text-color: var(--explicit-consent-link),
-      text-state-layer-color: var(--explicit-consent-link),
-      text-ripple-color: color-mix(in srgb, var(--explicit-consent-link) 12%, transparent),
+      text-label-text-color: var(--mat-sys-error, var(--m3-error)),
+      text-state-layer-color: var(--mat-sys-error, var(--m3-error)),
+      text-ripple-color: color-mix(in srgb, var(--mat-sys-error, var(--m3-error)) 12%, transparent),
     )
   );
 }
 
 .cookie-consent--explicit-content .cookie-consent-confirm-action {
-  color: var(--explicit-warning-signal);
+  color: var(--mat-sys-error, var(--m3-error));
   @include mat.button-overrides(
     (
-      text-label-text-color: var(--explicit-warning-signal),
-      text-state-layer-color: var(--explicit-warning-signal),
-      text-ripple-color: color-mix(in srgb, var(--explicit-warning-signal) 12%, transparent),
+      text-label-text-color: var(--mat-sys-error, var(--m3-error)),
+      text-state-layer-color: var(--mat-sys-error, var(--m3-error)),
+      text-ripple-color: color-mix(in srgb, var(--mat-sys-error, var(--m3-error)) 12%, transparent),
     )
   );
 }
 
 .cookie-consent--explicit-content h4 {
-  color: inherit;
+  color: var(--mat-sys-error, var(--m3-error));
   font-family: inherit;
   font-style: inherit;
-  font-weight: 400;
 }
 
 .cookie-consent--explicit-content p {
@@ -166,38 +162,18 @@ html.interaction-disabled.consent-visible body {
   grid-template-columns: 3.25rem minmax(0, 1fr);
   gap: 0.95rem;
   align-items: start;
-  padding: 0.85rem;
-  border: 1px solid var(--explicit-warning-border);
-  border-radius: var(--site-shape-small);
-  background: var(--explicit-warning-container);
-  color: var(--explicit-warning-foreground);
+  padding: 0.1rem 0.2rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--mat-sys-on-error-container, var(--m3-on-error-container));
 }
 
 .cookie-consent-boot-warning-icon {
   width: 3rem;
   height: 3rem;
-  color: currentColor;
+  color: var(--mat-sys-error, var(--m3-error));
   fill: currentColor;
-}
-
-.cookie-consent-choice-link {
-  display: block;
-  border-radius: var(--site-shape-extra-small);
-}
-
-.cookie-consent-choice-link:focus-visible {
-  outline: 2px solid var(--site-link);
-  outline-offset: 2px;
-}
-
-.cookie-consent-choice-image {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 1260 / 434;
-  border: 1px solid var(--explicit-consent-border, var(--site-border));
-  border-radius: var(--site-shape-extra-small);
-  object-fit: cover;
 }
 
 .cookie-consent h2 {
@@ -210,7 +186,6 @@ html.interaction-disabled.consent-visible body {
 .cookie-consent h4 {
   margin: 0 0 0.35rem;
   font-size: 1rem;
-  font-weight: 400;
   line-height: 1.5;
 }
 

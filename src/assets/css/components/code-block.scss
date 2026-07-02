@@ -1,63 +1,33 @@
 .code-shell {
+  --code-action-space: 3.25rem;
+  --code-line-number-gap: 1rem;
+  --code-line-number-width: 3ch;
+  --code-inline-pad: 1.5rem;
+
+  position: relative;
   margin-block: 1rem;
   overflow: hidden;
   border: 1px solid var(--site-border);
   border-radius: var(--code-radius);
-  background: var(--code-surface);
-}
-
-.code-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 3rem;
-  padding-inline: var(--code-pad);
-  background: var(--code-surface);
-  color: var(--site-text);
-  font-family: var(--site-mono-font);
-  font-size: 0.75rem;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-.code-language {
-  text-transform: lowercase;
+  background: var(--code-block-surface);
 }
 
 .code-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  position: absolute;
+  inset-block-start: 0.55rem;
+  inset-inline-end: 0.55rem;
+  z-index: 2;
+  display: inline-flex;
+  pointer-events: none;
+}
+
+.code-shell[data-single-line="true"] .code-actions {
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .code-copy-button.mat-mdc-icon-button {
-  --mat-icon-button-icon-size: 1.5rem;
-  --mat-icon-button-icon-color: var(--site-muted);
-  --mat-icon-button-ripple-color: color-mix(in srgb, var(--site-muted) 12%, transparent);
-  --mat-icon-button-state-layer-color: var(--site-muted);
-  --mat-icon-button-hover-state-layer-opacity: 0.12;
-  --mat-icon-button-focus-state-layer-opacity: 0.12;
-  --mat-icon-button-pressed-state-layer-opacity: 0.16;
-  --mat-icon-button-state-layer-size: 2.5rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  padding: 0;
-  color: var(--site-muted);
-  line-height: 1;
-}
-
-.code-copy-button.mat-mdc-icon-button:hover {
-  --mat-icon-button-icon-color: var(--site-text);
-  --mat-icon-button-state-layer-color: var(--site-text);
-  color: var(--site-text);
-}
-
-.code-copy-button.mat-mdc-icon-button:focus-visible {
-  outline: 2px solid var(--site-link);
-  outline-offset: 2px;
+  pointer-events: auto;
 }
 
 .code-copy-button-copied {
@@ -66,16 +36,6 @@
 
 .code-copy-button-error {
   color: var(--m3-error);
-}
-
-.code-copy-button.mat-mdc-icon-button .mat-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  font-size: 1.5rem;
-  line-height: 1;
 }
 
 .code-copy-fallback-input {
@@ -89,9 +49,35 @@
 .code-shell pre {
   font-family: var(--site-mono-font);
   margin: 0;
-  padding: var(--code-pad);
-  overflow: auto;
+  margin-inline-end: var(--code-action-space);
+  padding-block: var(--code-pad);
+  padding-inline: var(--code-inline-pad);
+  overflow: hidden;
   background-color: var(--code-block-surface) !important;
+  scrollbar-color: color-mix(in srgb, var(--site-muted) 42%, transparent) transparent;
+}
+
+@supports (overflow: clip) {
+  .code-shell pre {
+    overflow: clip;
+  }
+}
+
+.code-shell[data-scrollable="true"] pre {
+  overflow-x: auto;
+}
+
+.code-shell pre::-webkit-scrollbar {
+  height: 0.5rem;
+}
+
+.code-shell pre::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.code-shell pre::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--site-muted) 42%, transparent);
 }
 
 .code-shell pre *,
@@ -101,12 +87,12 @@
 }
 
 .astro-code {
-  background-color: var(--shiki-light-bg, var(--code-block-surface)) !important;
+  background-color: var(--code-block-surface) !important;
   color: var(--shiki-light, var(--site-text)) !important;
 }
 
 .code-shell pre.astro-code {
-  background-color: var(--shiki-light-bg, var(--code-block-surface)) !important;
+  background-color: var(--code-block-surface) !important;
   color: var(--shiki-light, var(--site-text)) !important;
 }
 
@@ -118,5 +104,36 @@
 }
 
 .code-shell pre code {
+  display: block;
+  min-width: max-content;
+  counter-reset: code-line;
   background: transparent !important;
+}
+
+.code-shell pre code > .line {
+  position: relative;
+  box-sizing: border-box;
+  display: inline-block;
+  min-width: 100%;
+  min-height: 1.25rem;
+  padding-inline-start: calc(var(--code-line-number-width) + var(--code-line-number-gap));
+  counter-increment: code-line;
+  line-height: 1.25rem;
+}
+
+.code-shell pre code > .line::before {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-start: 0;
+  box-sizing: border-box;
+  width: var(--code-line-number-width);
+  min-height: 1.25rem;
+  color: var(--site-muted);
+  content: counter(code-line);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25rem;
+  opacity: 0.72;
+  text-align: start;
+  -webkit-user-select: none;
+  user-select: none;
 }

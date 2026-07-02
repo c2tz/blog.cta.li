@@ -141,7 +141,7 @@ export default defineConfig({
         dark: "dark-plus",
       },
       defaultColor: false,
-      wrap: true,
+      wrap: false,
       transformers: [removeCodeBlockTabindex],
     },
     processor: unified({

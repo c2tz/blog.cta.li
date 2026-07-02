@@ -35,7 +35,7 @@ import {
     :host {
       display: flex;
       justify-content: flex-start;
-      margin-block: 0.7rem 0;
+      margin-block: 0;
     }
 
     .home-detail-toggle.mat-mdc-slide-toggle {
@@ -83,8 +83,10 @@ export class HomeDetailToggleComponent implements OnInit {
     if (typeof document === "undefined") return;
 
     if (detailed) {
+      document.documentElement.dataset["homeDetailView"] = "true";
       document.body.dataset["homeDetailView"] = "true";
     } else {
+      delete document.documentElement.dataset["homeDetailView"];
       delete document.body.dataset["homeDetailView"];
     }
 

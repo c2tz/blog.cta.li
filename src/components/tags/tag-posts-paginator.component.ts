@@ -1,13 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from "@angular/core";
-import {
-  MatPaginatorIntl,
-  MatPaginatorModule,
-  type PageEvent,
-} from "@angular/material/paginator";
+import { MatPaginatorIntl, MatPaginatorModule, type PageEvent } from "@angular/material/paginator";
 
 interface TagPostItem {
   createdIso: string;
-  createdLabel: string;
+  createdLabelCompact: string;
+  createdLabelFull: string;
   title: string;
   url: string;
 }
@@ -49,8 +46,11 @@ function createFrenchPaginatorIntl() {
         @for (post of visiblePosts(); track post.url) {
           <li class="tag-post">
             <span class="tag-post-date">
-              <time class="post-date" [attr.datetime]="post.createdIso">
-                {{ post.createdLabel }}
+              <time class="post-date site-date-compact" [attr.datetime]="post.createdIso">
+                {{ post.createdLabelCompact }}
+              </time>
+              <time class="post-date site-date-full" [attr.datetime]="post.createdIso">
+                {{ post.createdLabelFull }}
               </time>
             </span>
             <span class="tag-separator" aria-hidden="true">·</span>

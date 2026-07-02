@@ -1,13 +1,8 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  signal,
-} from "@angular/core";
+import { ChangeDetectionStrategy, Component, signal } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
 import { MatBadge } from "@angular/material/badge";
-import { MatIconButton } from "@angular/material/button";
+import { MatMiniFabButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
-import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatTooltip } from "@angular/material/tooltip";
 import { SITE_EVENTS } from "@/lib/site-contracts";
 
@@ -24,40 +19,26 @@ function isScrollTopDisabledPage() {
 @Component({
   selector: "site-scroll-top-button",
   standalone: true,
-  imports: [
-    MatBadge,
-    MatIconButton,
-    MatIcon,
-    MatProgressSpinner,
-    MatTooltip,
-  ],
+  imports: [MatBadge, MatMiniFabButton, MatIcon, MatTooltip],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button
-      matIconButton
+      matMiniFab
       type="button"
-      class="site-scroll-top site-icon-button"
+      class="site-scroll-top"
       [class.is-visible]="visible()"
       [disabled]="!visible()"
       [hidden]="!visible()"
       [attr.aria-label]="'Retour en haut, progression ' + progress() + ' %'"
-      [matBadge]="progress()"
+      [matBadge]="progress() + '%'"
+      [matBadgeDescription]="'Progression ' + progress() + ' %'"
       [matBadgeHidden]="!visible()"
       matBadgePosition="above after"
-      [showProgress]="true"
+      matBadgeSize="large"
       matTooltip="Retour en haut"
       matTooltipPosition="left"
       (click)="scrollToTop()"
     >
-      <mat-spinner
-        progressIndicator
-        class="site-scroll-top-progress"
-        mode="determinate"
-        [value]="progress()"
-        diameter="40"
-        strokeWidth="3"
-        aria-hidden="true"
-      ></mat-spinner>
       <mat-icon class="site-scroll-top-icon" aria-hidden="true">&#xE5D8;</mat-icon>
     </button>
   `,

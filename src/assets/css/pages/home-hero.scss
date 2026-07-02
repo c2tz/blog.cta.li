@@ -3,8 +3,8 @@
 .home-anime-landing {
   --home-banner-height: clamp(20rem, 52vh, 31rem);
   --home-banner-height: clamp(20rem, 52svh, 31rem);
-  --home-hero-on-image: #fff;
-  --home-hero-on-image-muted: rgb(255 255 255 / 90%);
+  --home-hero-on-image: #e6e0e9;
+  --home-hero-on-image-muted: #e6e0e9;
   --home-hero-tonal-container: rgb(255 255 255 / 18%);
   --home-hero-tonal-hover: rgb(255 255 255 / 24%);
   @include mat.button-overrides(
@@ -123,6 +123,13 @@
 .home-hero-button {
   color: var(--home-hero-on-image);
   text-shadow: none;
+}
+
+.home-hero-button .mat-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  font-size: 1.25rem;
+  line-height: 1.25rem;
 }
 
 .home-hero-button.mat-mdc-unelevated-button:hover,

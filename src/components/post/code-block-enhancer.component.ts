@@ -74,6 +74,7 @@ async function copyToClipboard(text: string, source?: HTMLElement) {
 interface MountedCopyButton {
   host: HTMLElement;
   componentRef: ComponentRef<CodeCopyButtonComponent>;
+  cleanup?: () => void;
 }
 
 @Component({
@@ -100,9 +101,6 @@ interface MountedCopyButton {
   styles: `
     :host {
       display: inline-flex;
-      width: 2.5rem;
-      height: 2.5rem;
-      flex: 0 0 2.5rem;
     }
   `,
 })
@@ -189,33 +187,20 @@ export class CodeBlockEnhancerComponent implements AfterViewInit, OnDestroy {
 
       pre.dataset["styled"] = "1";
       pre.removeAttribute("tabindex");
-
-      const langClass = [...codeBlock.classList].find((name) => name.startsWith("language-"));
-      const preLangClass = [...pre.classList].find((name) => name.startsWith("language-"));
-      const dataLang =
-        codeBlock.getAttribute("data-language") ||
-        codeBlock.getAttribute("data-lang") ||
-        pre.getAttribute("data-language") ||
-        pre.getAttribute("data-lang");
-      const language =
-        langClass?.replace("language-", "") ||
-        preLangClass?.replace("language-", "") ||
-        dataLang?.toLowerCase() ||
-        "code";
+      pre.style.removeProperty("overflow-x");
 
       const shell = document.createElement("div");
       shell.className = "code-shell";
+      if (codeBlock.querySelectorAll(":scope > .line").length === 1) {
+        shell.dataset["singleLine"] = "true";
+      }
       pre.parentNode.insertBefore(shell, pre);
       shell.appendChild(pre);
 
-      const header = document.createElement("div");
-      header.className = "code-header";
-      const languageLabel = document.createElement("div");
-      languageLabel.className = "code-language";
-      languageLabel.textContent = language;
       const actions = document.createElement("div");
       actions.className = "code-actions";
       const host = document.createElement("site-code-copy-button");
+      const cleanup = this.watchCodeBlockOverflow(shell, pre, codeBlock);
       const componentRef = createComponent(CodeCopyButtonComponent, {
         environmentInjector: this.environmentInjector,
         hostElement: host,
@@ -227,11 +212,43 @@ export class CodeBlockEnhancerComponent implements AfterViewInit, OnDestroy {
       componentRef.changeDetectorRef.detectChanges();
 
       actions.appendChild(host);
-      header.append(languageLabel, actions);
-      shell.insertBefore(header, pre);
+      shell.appendChild(actions);
 
-      this.mounted.push({ host, componentRef });
+      this.mounted.push({ host, componentRef, cleanup });
     });
+  }
+
+  private watchCodeBlockOverflow(shell: HTMLElement, pre: HTMLElement, codeBlock: HTMLElement) {
+    if (typeof window === "undefined") return undefined;
+
+    let animationFrame = 0;
+    const update = () => {
+      animationFrame = 0;
+      const isScrollable = pre.scrollWidth > pre.clientWidth + 1;
+      if (isScrollable) {
+        shell.dataset["scrollable"] = "true";
+      } else {
+        delete shell.dataset["scrollable"];
+      }
+    };
+    const schedule = () => {
+      if (animationFrame) window.cancelAnimationFrame(animationFrame);
+      animationFrame = window.requestAnimationFrame(update);
+    };
+
+    schedule();
+
+    const resizeObserver =
+      typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(schedule);
+    resizeObserver?.observe(pre);
+    resizeObserver?.observe(codeBlock);
+    window.addEventListener("resize", schedule, { passive: true });
+
+    return () => {
+      if (animationFrame) window.cancelAnimationFrame(animationFrame);
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", schedule);
+    };
   }
 
   private removeDisconnectedButtons() {
@@ -244,6 +261,7 @@ export class CodeBlockEnhancerComponent implements AfterViewInit, OnDestroy {
   }
 
   private destroy(mounted: MountedCopyButton) {
+    mounted.cleanup?.();
     this.applicationRef.detachView(mounted.componentRef.hostView);
     mounted.componentRef.destroy();
     mounted.host.remove();

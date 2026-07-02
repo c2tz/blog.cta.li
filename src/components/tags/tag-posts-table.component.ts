@@ -22,7 +22,8 @@ import { MatTableDataSource, MatTableModule } from "@angular/material/table";
 
 interface TagPostItem {
   createdIso: string;
-  createdLabel: string;
+  createdLabelCompact: string;
+  createdLabelFull: string;
   title: string;
   url: string;
 }
@@ -93,8 +94,11 @@ function createFrenchPaginatorIntl() {
             Date
           </th>
           <td mat-cell *matCellDef="let post">
-            <time class="post-date" [attr.datetime]="post.createdIso">
-              {{ post.createdLabel }}
+            <time class="post-date site-date-compact" [attr.datetime]="post.createdIso">
+              {{ post.createdLabelCompact }}
+            </time>
+            <time class="post-date site-date-full" [attr.datetime]="post.createdIso">
+              {{ post.createdLabelFull }}
             </time>
           </td>
         </ng-container>
@@ -355,9 +359,10 @@ export class TagPostsTableComponent {
       return "";
     };
     this.dataSource.filterPredicate = (post, filter) => {
-      const searchable = `${post.createdLabel} ${post.createdIso} ${post.title}`.toLocaleLowerCase(
-        "fr",
-      );
+      const searchable =
+        `${post.createdLabelCompact} ${post.createdLabelFull} ${post.createdIso} ${post.title}`.toLocaleLowerCase(
+          "fr",
+        );
 
       return searchable.includes(filter);
     };
@@ -397,7 +402,7 @@ export class TagPostsTableComponent {
     if (!filter) return posts;
 
     return posts.filter((post) =>
-      `${post.createdLabel} ${post.createdIso} ${post.title}`
+      `${post.createdLabelCompact} ${post.createdLabelFull} ${post.createdIso} ${post.title}`
         .toLocaleLowerCase("fr")
         .includes(filter),
     );

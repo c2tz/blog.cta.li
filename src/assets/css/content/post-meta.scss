@@ -90,9 +90,13 @@ abbr.site-tooltip {
 }
 
 .post-tags-section {
+  display: flex;
+  align-items: center;
+  min-height: 3.15rem;
+  box-sizing: border-box;
   margin-block: 0;
   padding-block: 0.75rem;
-  border-block: 1px solid var(--site-border);
+  border-block-end: 1px solid var(--site-border);
 }
 
 .post-tags {
@@ -110,9 +114,11 @@ abbr.site-tooltip {
   grid-template-columns: max-content 1px max-content;
   align-items: center;
   column-gap: 0.75rem;
-  margin-block: 1.5rem 1rem;
+  margin-block: 1.5rem 0;
+  min-height: 3.15rem;
+  box-sizing: border-box;
   padding-block: 0.75rem;
-  border-block-start: 1px solid var(--site-border);
+  border-block: 1px solid var(--site-border);
   color: var(--site-muted);
   font-size: 0.95rem;
   line-height: 1.5;

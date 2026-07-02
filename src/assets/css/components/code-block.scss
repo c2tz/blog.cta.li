@@ -36,12 +36,10 @@
   width: 2.5rem;
   height: 2.5rem;
   padding: 0;
-  background: color-mix(in srgb, var(--code-block-surface) 88%, transparent);
+  background: transparent;
   color: var(--site-muted);
   line-height: 1;
   pointer-events: auto;
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
 }
 
 .code-copy-button.mat-mdc-icon-button:hover {

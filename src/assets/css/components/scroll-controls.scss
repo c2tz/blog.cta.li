@@ -86,8 +86,8 @@
 
 @media (max-width: 520px) {
   .site-scroll-top.mat-mdc-mini-fab.mat-mdc-button-base {
-    right: calc(1rem + env(safe-area-inset-right, 0px));
-    bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    right: calc(2rem + env(safe-area-inset-right, 0px));
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   }
 
   .site-scroll-top .site-scroll-top-icon.mat-icon {

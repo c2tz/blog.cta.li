@@ -12,7 +12,7 @@ function syncThumbRadiusTransition(img, pswp) {
     ? getComputedStyle(pswp.element).getPropertyValue("--pswp-transition-duration").trim()
     : "";
   img.style.transitionDuration = duration || "";
-  img.style.transitionTimingFunction = "cubic-bezier(0.4, 0, 0.22, 1)";
+  img.style.transitionTimingFunction = "cubic-bezier(0.16, 1, 0.3, 1)";
 }
 
 function cleanupThumbRadiusTransition(img) {

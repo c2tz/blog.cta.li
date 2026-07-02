@@ -35,7 +35,7 @@ import {
     :host {
       display: flex;
       justify-content: flex-start;
-      margin-block: 0.7rem 0;
+      margin-block: 0;
     }
 
     .home-detail-toggle.mat-mdc-slide-toggle {

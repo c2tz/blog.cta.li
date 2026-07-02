@@ -18,7 +18,7 @@ type SiteTheme = "dark" | "light";
 const GISCUS_ORIGIN = "https://giscus.app";
 const GISCUS_SCRIPT_URL = `${GISCUS_ORIGIN}/client.js`;
 const CODE_OF_CONDUCT_URL =
-  "https://github.com/c2tz/ct-blog.cta.li/blob/develop/CODE_OF_CONDUCT.md";
+  "https://raw.githubusercontent.com/c2tz/ct-blog-comments/refs/heads/main/CODE_OF_CONDUCT.md";
 const GISCUS_THEME_SYNC_DELAYS = [0, 150, 500, 1200] as const;
 const GISCUS_FALLBACK_THEMES = {
   dark: "dark_dimmed",
@@ -127,7 +127,7 @@ function getCurrentTheme(): SiteTheme {
 
     .giscus-comments-header {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
       gap: 1rem;
     }
@@ -222,17 +222,19 @@ function getCurrentTheme(): SiteTheme {
 
     @media (max-width: 520px) {
       .giscus-comments-header {
-        align-items: stretch;
+        align-items: center;
         flex-direction: column;
+        text-align: center;
       }
 
       .giscus-comments-actions {
-        justify-content: flex-start;
+        justify-content: center;
+        width: 100%;
       }
 
       .giscus-comments-conduct-link.mat-mdc-button-base,
       .giscus-comments-accept-button.mat-mdc-button-base {
-        align-self: flex-start;
+        align-self: center;
       }
     }
 

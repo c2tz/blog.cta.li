@@ -89,14 +89,27 @@ abbr.site-tooltip {
   list-style-type: none;
 }
 
+.post-meta-table {
+  display: grid;
+  margin-block: 1.5rem 0;
+  border-block: 1px solid var(--site-border);
+}
+
+.post-meta-table > * {
+  min-width: 0;
+}
+
 .post-tags-section {
   display: flex;
   align-items: center;
+  width: 100%;
+  max-width: 100%;
   min-height: 3.15rem;
   box-sizing: border-box;
   margin-block: 0;
   padding-block: 0.75rem;
-  border-block-end: 1px solid var(--site-border);
+  font-size: 1rem;
+  line-height: 1.5;
 }
 
 .post-tags {
@@ -114,13 +127,15 @@ abbr.site-tooltip {
   grid-template-columns: max-content 1px max-content;
   align-items: center;
   column-gap: 0.75rem;
-  margin-block: 1.5rem 0;
+  width: 100%;
+  max-width: 100%;
+  margin-block: 0;
   min-height: 3.15rem;
   box-sizing: border-box;
   padding-block: 0.75rem;
-  border-block: 1px solid var(--site-border);
+  border-block-end: 1px solid var(--site-border);
   color: var(--site-muted);
-  font-size: 0.95rem;
+  font-size: 1rem;
   line-height: 1.5;
 }
 

@@ -111,8 +111,13 @@ const modifiedDateFull = formatFrenchDateTime(lastModified);
     const columnGap = Number.parseFloat(styles.columnGap) || 0;
     const dividerWidth = divider instanceof HTMLElement ? divider.getBoundingClientRect().width : 0;
     const requiredWidth = created.scrollWidth + modified.scrollWidth + dividerWidth + columnGap * 2;
+    const parentWidth =
+      container.parentElement instanceof HTMLElement ? container.parentElement.clientWidth : 0;
+    const availableWidth = parentWidth
+      ? Math.min(container.clientWidth, parentWidth)
+      : container.clientWidth;
 
-    container.dataset.stacked = requiredWidth > container.clientWidth + 1 ? "true" : "false";
+    container.dataset.stacked = requiredWidth > availableWidth + 1 ? "true" : "false";
   }
 
   function initPostGitDateLayout() {

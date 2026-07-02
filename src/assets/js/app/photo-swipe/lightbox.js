@@ -88,6 +88,9 @@ const lightbox = new PhotoSwipeLightbox({
   tapAction: false,
   doubleTapAction: false,
   trapFocus: false,
+  showAnimationDuration: 420,
+  hideAnimationDuration: 260,
+  easing: "cubic-bezier(0.16, 1, 0.3, 1)",
   bgOpacity: 0.74,
   arrowPrevTitle: "Image précédente",
   arrowNextTitle: "Image suivante",
@@ -119,7 +122,10 @@ function getPhotoSwipeZoomState(pswp) {
 }
 
 async function exitPhotoSwipeFullscreen() {
-  if (activePhotoSwipeFullscreenRoot && document.fullscreenElement === activePhotoSwipeFullscreenRoot) {
+  if (
+    activePhotoSwipeFullscreenRoot &&
+    document.fullscreenElement === activePhotoSwipeFullscreenRoot
+  ) {
     try {
       await document.exitFullscreen?.();
     } catch {}
@@ -154,7 +160,10 @@ function dispatchPhotoSwipeState(pswp, open = true) {
 }
 
 document.addEventListener("fullscreenchange", () => {
-  if (activePhotoSwipeFullscreenRoot && document.fullscreenElement !== activePhotoSwipeFullscreenRoot) {
+  if (
+    activePhotoSwipeFullscreenRoot &&
+    document.fullscreenElement !== activePhotoSwipeFullscreenRoot
+  ) {
     activePhotoSwipeFullscreenRoot = null;
   }
 

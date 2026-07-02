@@ -3,6 +3,10 @@ img[data-lightbox],
   cursor: pointer;
 }
 
+.pswp__bg {
+  background: #000;
+}
+
 .site-prose a[data-pswp-item] {
   display: block;
   border-radius: var(--image-radius);
@@ -61,9 +65,9 @@ img[data-lightbox],
 
 .pswp__img--radius-transition {
   transition:
-    border-radius var(--pswp-transition-duration, 180ms) cubic-bezier(0.4, 0, 0.22, 1),
-    transform var(--pswp-transition-duration, 180ms) cubic-bezier(0.4, 0, 0.22, 1),
-    opacity var(--pswp-transition-duration, 180ms) cubic-bezier(0.4, 0, 0.22, 1);
+    border-radius var(--pswp-transition-duration, 220ms) cubic-bezier(0.16, 1, 0.3, 1),
+    transform var(--pswp-transition-duration, 220ms) cubic-bezier(0.16, 1, 0.3, 1),
+    opacity var(--pswp-transition-duration, 220ms) cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .pswp__top-bar,

@@ -1,10 +1,7 @@
 {
   "version": 2,
   "source": "https://konachan.com/help/api",
-  "sources": [
-    "https://konachan.com/help/api",
-    "https://konachan.net/help/api"
-  ],
+  "sources": ["https://konachan.com/help/api", "https://konachan.net/help/api"],
   "tags": "rating:safe width:>=1920 height:>=1080",
   "tagQueries": [
     "rating:safe width:>=1920 height:>=1080",
@@ -3378,5 +3375,6 @@
         }
       ]
     }
-  ]
+  ],
+  "repairedAt": "2026-07-02T10:46:27.311Z"
 }

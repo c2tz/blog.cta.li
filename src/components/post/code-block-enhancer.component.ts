@@ -190,29 +190,11 @@ export class CodeBlockEnhancerComponent implements AfterViewInit, OnDestroy {
       pre.dataset["styled"] = "1";
       pre.removeAttribute("tabindex");
 
-      const langClass = [...codeBlock.classList].find((name) => name.startsWith("language-"));
-      const preLangClass = [...pre.classList].find((name) => name.startsWith("language-"));
-      const dataLang =
-        codeBlock.getAttribute("data-language") ||
-        codeBlock.getAttribute("data-lang") ||
-        pre.getAttribute("data-language") ||
-        pre.getAttribute("data-lang");
-      const language =
-        langClass?.replace("language-", "") ||
-        preLangClass?.replace("language-", "") ||
-        dataLang?.toLowerCase() ||
-        "code";
-
       const shell = document.createElement("div");
       shell.className = "code-shell";
       pre.parentNode.insertBefore(shell, pre);
       shell.appendChild(pre);
 
-      const header = document.createElement("div");
-      header.className = "code-header";
-      const languageLabel = document.createElement("div");
-      languageLabel.className = "code-language";
-      languageLabel.textContent = language;
       const actions = document.createElement("div");
       actions.className = "code-actions";
       const host = document.createElement("site-code-copy-button");
@@ -227,8 +209,7 @@ export class CodeBlockEnhancerComponent implements AfterViewInit, OnDestroy {
       componentRef.changeDetectorRef.detectChanges();
 
       actions.appendChild(host);
-      header.append(languageLabel, actions);
-      shell.insertBefore(header, pre);
+      shell.appendChild(actions);
 
       this.mounted.push({ host, componentRef });
     });

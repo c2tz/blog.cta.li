@@ -6,6 +6,18 @@
   line-height: 1.5;
 }
 
+.site-date-full {
+  display: none;
+}
+
+:root[data-home-detail-view="true"] .site-date-compact {
+  display: none;
+}
+
+:root[data-home-detail-view="true"] .site-date-full {
+  display: inline;
+}
+
 .post-git-date-icon {
   display: block;
   width: 1.1rem;
@@ -124,6 +136,17 @@ abbr.site-tooltip {
   width: 1px;
   min-height: 1.5rem;
   background: var(--site-border);
+}
+
+.post-git-dates[data-stacked="true"] {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.post-git-dates[data-stacked="true"] .post-git-date-divider {
+  width: 100%;
+  height: 1px;
+  min-height: 0;
 }
 
 .post-git-dates time {

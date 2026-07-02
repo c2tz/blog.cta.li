@@ -10,7 +10,12 @@ import { GlobalTooltipComponent } from "@/components/feedback/global-tooltip.com
 import { PageLoadingIndicatorComponent } from "@/components/feedback/page-loading-indicator.component";
 import { PhotoSwipeToolbarComponent } from "@/components/lightbox/photo-swipe-toolbar.component";
 import { ScrollTopButtonComponent } from "@/components/navigation/scroll-top-button.component";
-import { SITE_LEGACY_STORAGE_KEYS, SITE_STORAGE_KEYS } from "@/lib/site-contracts";
+import {
+  SITE_COOKIE_NAMES,
+  SITE_LEGACY_COOKIE_NAMES,
+  SITE_LEGACY_STORAGE_KEYS,
+  SITE_STORAGE_KEYS,
+} from "@/lib/site-contracts";
 import { computeRoute } from "@vercel/speed-insights";
 import speedInsightsPackage from "@vercel/speed-insights/package.json";
 import "@/assets/css/global.scss";
@@ -39,6 +44,10 @@ const seoTitle = title ? `${SITE_ARTICLE_TITLE_PREFIX} ${title}` : SITE_DEFAULT_
 const seoDescription = description ?? SITE_DESCRIPTION;
 const themeStorageKey = SITE_STORAGE_KEYS.themePreference;
 const legacyThemeStorageKey = SITE_LEGACY_STORAGE_KEYS.themePreference;
+const detailStorageKey = SITE_STORAGE_KEYS.homeDetailView;
+const legacyDetailStorageKey = SITE_LEGACY_STORAGE_KEYS.homeDetailView;
+const detailCookieName = SITE_COOKIE_NAMES.homeDetailView;
+const legacyDetailCookieName = SITE_LEGACY_COOKIE_NAMES.homeDetailView;
 const isPost = Astro.url.pathname.startsWith("/posts/");
 const shouldLoadSpeedInsights = import.meta.env.PROD && process.env.VERCEL === "1";
 const speedInsightsRoute = computeRoute(Astro.url.pathname, Astro.params);
@@ -49,7 +58,17 @@ const speedInsightsVersion = speedInsightsPackage.version;
 <html lang={locale}>
   <head>
     <meta charset="utf-8" />
-    <script is:inline define:vars={{ legacyThemeStorageKey, themeStorageKey }}>
+    <script
+      is:inline
+      define:vars={{
+        detailCookieName,
+        detailStorageKey,
+        legacyDetailCookieName,
+        legacyDetailStorageKey,
+        legacyThemeStorageKey,
+        themeStorageKey,
+      }}
+    >
       (() => {
         try {
           const key = themeStorageKey;
@@ -80,6 +99,54 @@ const speedInsightsVersion = speedInsightsPackage.version;
           document.documentElement.style.colorScheme = resolved;
         } catch {
           document.documentElement.dataset.theme = "light";
+        }
+
+        try {
+          const readCookie = (name) => {
+            const encodedName = `${encodeURIComponent(name)}=`;
+            const cookie = document.cookie
+              .split(";")
+              .map((part) => part.trim())
+              .find((part) => part.startsWith(encodedName));
+
+            if (!cookie) return null;
+
+            try {
+              return decodeURIComponent(cookie.slice(encodedName.length));
+            } catch {
+              return null;
+            }
+          };
+          const normalizeDetailView = (value) => {
+            if (value === "true" || value === "detailed") return true;
+            if (value === "false" || value === "compact") return false;
+            return null;
+          };
+          const stored = localStorage.getItem(detailStorageKey);
+          const legacyStored = localStorage.getItem(legacyDetailStorageKey);
+          const candidates = [
+            stored,
+            legacyStored,
+            readCookie(detailCookieName),
+            readCookie(legacyDetailCookieName),
+          ];
+          const detailed = candidates.map(normalizeDetailView).find((value) => value !== null);
+
+          if (stored === null && legacyStored !== null) {
+            const normalizedLegacy = normalizeDetailView(legacyStored);
+            if (normalizedLegacy !== null) {
+              localStorage.setItem(detailStorageKey, normalizedLegacy ? "true" : "false");
+              localStorage.removeItem(legacyDetailStorageKey);
+            }
+          }
+
+          if (detailed) {
+            document.documentElement.dataset.homeDetailView = "true";
+          } else {
+            delete document.documentElement.dataset.homeDetailView;
+          }
+        } catch {
+          delete document.documentElement.dataset.homeDetailView;
         }
       })();
     </script>

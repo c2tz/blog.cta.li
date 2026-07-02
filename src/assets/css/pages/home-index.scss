@@ -19,7 +19,8 @@
   margin-block-start: 1.25rem;
 }
 
-body.home-page[data-home-detail-view="true"] .home-tags-detail {
+body.home-page[data-home-detail-view="true"] .home-tags-detail,
+:root[data-home-detail-view="true"] body.home-page .home-tags-detail {
   display: block;
 }
 
@@ -50,11 +51,13 @@ body.home-page[data-home-detail-view="true"] .home-tags-detail {
   display: none;
 }
 
-body.home-page[data-home-detail-view="true"] .home-post-date-compact {
+body.home-page[data-home-detail-view="true"] .home-post-date-compact,
+:root[data-home-detail-view="true"] body.home-page .home-post-date-compact {
   display: none;
 }
 
-body.home-page[data-home-detail-view="true"] .home-post-date-full {
+body.home-page[data-home-detail-view="true"] .home-post-date-full,
+:root[data-home-detail-view="true"] body.home-page .home-post-date-full {
   display: inline;
 }
 

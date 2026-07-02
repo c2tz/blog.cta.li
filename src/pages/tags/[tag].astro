@@ -2,7 +2,7 @@
 import { TagPostsPaginatorComponent } from "@/components/tags/tag-posts-paginator.component";
 import { TagPostsTableComponent } from "@/components/tags/tag-posts-table.component";
 import Layout from "@/layouts/site-layout.astro";
-import { formatFrenchDateTime, toDate } from "@/lib/date-format.mjs";
+import { formatFrenchDate, formatFrenchDateTime, toDate } from "@/lib/date-format.mjs";
 import { getContentEntryGitDates } from "@/lib/git-dates.mjs";
 import { getCollection } from "astro:content";
 
@@ -42,7 +42,8 @@ const tag = Astro.params.tag ?? "all";
 const { posts } = Astro.props;
 const tagPosts = posts.map((post) => ({
   createdIso: toDate(post.gitDates.createdAt).toISOString(),
-  createdLabel: formatFrenchDateTime(post.gitDates.createdAt),
+  createdLabelCompact: formatFrenchDate(post.gitDates.createdAt),
+  createdLabelFull: formatFrenchDateTime(post.gitDates.createdAt),
   title: post.data.title,
   url: `/posts/${post.id}/`,
 }));

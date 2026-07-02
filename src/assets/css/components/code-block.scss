@@ -1,4 +1,5 @@
 .code-shell {
+  position: relative;
   margin-block: 1rem;
   overflow: hidden;
   border: 1px solid var(--site-border);
@@ -6,28 +7,13 @@
   background: var(--code-surface);
 }
 
-.code-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 3rem;
-  padding-inline: var(--code-pad);
-  background: var(--code-surface);
-  color: var(--site-text);
-  font-family: var(--site-mono-font);
-  font-size: 0.75rem;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-.code-language {
-  text-transform: lowercase;
-}
-
 .code-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  position: absolute;
+  inset-block-start: 0.55rem;
+  inset-inline-end: 0.55rem;
+  z-index: 2;
+  display: inline-flex;
+  pointer-events: none;
 }
 
 .code-copy-button.mat-mdc-icon-button {
@@ -45,8 +31,12 @@
   width: 2.5rem;
   height: 2.5rem;
   padding: 0;
+  background: color-mix(in srgb, var(--code-block-surface) 88%, transparent);
   color: var(--site-muted);
   line-height: 1;
+  pointer-events: auto;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
 }
 
 .code-copy-button.mat-mdc-icon-button:hover {
@@ -90,6 +80,7 @@
   font-family: var(--site-mono-font);
   margin: 0;
   padding: var(--code-pad);
+  padding-inline-end: calc(var(--code-pad) + 3.25rem);
   overflow: auto;
   background-color: var(--code-block-surface) !important;
 }
@@ -101,12 +92,12 @@
 }
 
 .astro-code {
-  background-color: var(--shiki-light-bg, var(--code-block-surface)) !important;
+  background-color: var(--code-block-surface) !important;
   color: var(--shiki-light, var(--site-text)) !important;
 }
 
 .code-shell pre.astro-code {
-  background-color: var(--shiki-light-bg, var(--code-block-surface)) !important;
+  background-color: var(--code-block-surface) !important;
   color: var(--shiki-light, var(--site-text)) !important;
 }
 
@@ -118,5 +109,30 @@
 }
 
 .code-shell pre code {
+  display: block;
+  min-width: max-content;
+  counter-reset: code-line;
   background: transparent !important;
+}
+
+.code-shell pre code > .line {
+  position: relative;
+  display: inline-block;
+  min-width: 100%;
+  min-height: 1.25rem;
+  padding-inline-start: 3rem;
+  counter-increment: code-line;
+}
+
+.code-shell pre code > .line::before {
+  position: absolute;
+  inset-inline-start: 0;
+  width: 2rem;
+  color: var(--site-muted);
+  content: counter(code-line);
+  font-variant-numeric: tabular-nums;
+  opacity: 0.72;
+  text-align: end;
+  -webkit-user-select: none;
+  user-select: none;
 }

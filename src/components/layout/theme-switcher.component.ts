@@ -1,9 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  signal,
-} from "@angular/core";
+import { ChangeDetectionStrategy, Component, computed, signal } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
 import { MatIconButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
@@ -28,14 +23,7 @@ function isThemePreference(value: string | null | undefined): value is ThemePref
 @Component({
   selector: "site-theme-switcher",
   standalone: true,
-  imports: [
-    MatIconButton,
-    MatIcon,
-    MatMenu,
-    MatMenuItem,
-    MatMenuTrigger,
-    MatTooltip,
-  ],
+  imports: [MatIconButton, MatIcon, MatMenu, MatMenuItem, MatMenuTrigger, MatTooltip],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button
@@ -93,17 +81,21 @@ function isThemePreference(value: string | null | undefined): value is ThemePref
                 </clipPath>
               </defs>
               <g [attr.clip-path]="'url(#theme-swatch-' + option.value + ')'">
-                <rect width="80" height="80" [attr.fill]="option.value === 'dark' ? '#000' : '#fff'"></rect>
-                @if (option.value === 'system') {
-                  <rect x="40" width="40" height="80" fill="#000"></rect>
+                <rect
+                  width="80"
+                  height="80"
+                  [attr.fill]="option.value === 'dark' ? '#141218' : '#fffbfe'"
+                ></rect>
+                @if (option.value === "system") {
+                  <rect x="40" width="40" height="80" fill="#141218"></rect>
                 }
                 <rect
                   width="80"
                   height="17.24"
-                  [attr.fill]="option.value === 'dark' ? '#90caf9' : '#1565c0'"
+                  [attr.fill]="option.value === 'dark' ? '#d0bcff' : '#6750a4'"
                 ></rect>
-                @if (option.value === 'system') {
-                  <rect x="40" width="40" height="17.24" fill="#90caf9"></rect>
+                @if (option.value === "system") {
+                  <rect x="40" width="40" height="17.24" fill="#d0bcff"></rect>
                 }
                 <g [attr.clip-path]="'url(#theme-pill-' + option.value + ')'">
                   <rect
@@ -111,10 +103,10 @@ function isThemePreference(value: string | null | undefined): value is ThemePref
                     y="40"
                     width="40"
                     height="12"
-                    [attr.fill]="option.value === 'dark' ? '#90caf9' : '#1565c0'"
+                    [attr.fill]="option.value === 'dark' ? '#d0bcff' : '#6750a4'"
                   ></rect>
-                  @if (option.value === 'system') {
-                    <rect x="40" y="40" width="20" height="12" fill="#90caf9"></rect>
+                  @if (option.value === "system") {
+                    <rect x="40" y="40" width="20" height="12" fill="#d0bcff"></rect>
                   }
                 </g>
               </g>
@@ -210,11 +202,7 @@ export class ThemeSwitcherComponent implements OnInit, OnDestroy {
 
   private applyTheme(preference: ThemePreference, persist: boolean) {
     const resolved =
-      preference === "system"
-        ? this.systemTheme?.matches
-          ? "dark"
-          : "light"
-        : preference;
+      preference === "system" ? (this.systemTheme?.matches ? "dark" : "light") : preference;
 
     document.documentElement.dataset["theme"] = resolved;
     document.documentElement.dataset["themePreference"] = preference;

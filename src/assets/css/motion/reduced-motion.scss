@@ -11,14 +11,4 @@
   .cookie-consent-backdrop {
     animation-duration: 1ms;
   }
-
-  .header-link-glitch,
-  .header-link-glitch::before,
-  .header-link-glitch::after {
-    animation: none;
-  }
-
-  .header-link-glitch {
-    text-shadow: none;
-  }
 }

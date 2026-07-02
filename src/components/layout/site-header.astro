@@ -2,18 +2,11 @@
 import { SITE_TITLE } from "@/site-config";
 import { SiteSearchTriggerComponent } from "@/components/search/site-search.component";
 import { ThemeSwitcherComponent } from "./theme-switcher.component";
-
-const isHome = Astro.url.pathname === "/";
 ---
 
 <header class="site-header">
   <h2 class="site-header-title">
-    <a
-      href="/"
-      class:list={["header-link", { "header-link-glitch": isHome }]}
-      data-glitch={SITE_TITLE}
-      aria-label={SITE_TITLE}
-    >
+    <a href="/" class="header-link" aria-label={SITE_TITLE}>
       {SITE_TITLE}
     </a>
   </h2>

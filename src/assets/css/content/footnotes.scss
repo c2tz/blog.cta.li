@@ -27,6 +27,6 @@
 }
 
 .site-prose .footnote-ref-tooltip {
-  border-radius: 3px;
+  border-radius: var(--site-shape-extra-small);
   font-weight: 500;
 }

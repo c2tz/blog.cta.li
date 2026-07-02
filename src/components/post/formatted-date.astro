@@ -1,13 +1,13 @@
 ---
-import { formatFrenchDateTime, toDate } from "@/lib/date-format.mjs";
+import { formatFrenchDate, formatFrenchDateTime, toDate } from "@/lib/date-format.mjs";
 
 interface Props {
   date: Date | string;
 }
 
 const { date } = Astro.props as Props;
+const datetime = toDate(date).toISOString();
 ---
 
-<time class="post-date" datetime={toDate(date).toISOString()}>
-  {formatFrenchDateTime(date)}
-</time>
+<time class="post-date site-date-compact" datetime={datetime}>{formatFrenchDate(date)}</time>
+<time class="post-date site-date-full" datetime={datetime}>{formatFrenchDateTime(date)}</time>

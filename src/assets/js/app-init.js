@@ -1,6 +1,16 @@
 import { initScrollProgressBar, removeReadingProgress } from "./app/reading-progress.js";
 import { initSiteTooltips } from "./app/site-tooltips.js";
 
+function syncDetailViewBodyState() {
+  if (!document.body) return;
+
+  if (document.documentElement.dataset.homeDetailView === "true") {
+    document.body.dataset.homeDetailView = "true";
+  } else {
+    delete document.body.dataset.homeDetailView;
+  }
+}
+
 async function initProseImageEnhancements() {
   const hasProseImage = document.querySelector(".site-prose img");
   const hasLightboxCandidate = document.querySelector(
@@ -24,6 +34,7 @@ async function initProseImageEnhancements() {
 }
 
 function initApp() {
+  syncDetailViewBodyState();
   initSiteTooltips();
   void initProseImageEnhancements();
   if (document.body?.dataset.readingProgress === "off") {

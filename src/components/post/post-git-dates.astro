@@ -1,5 +1,5 @@
 ---
-import { formatFrenchDateTime, toDate } from "@/lib/date-format.mjs";
+import { formatFrenchDate, formatFrenchDateTime, toDate } from "@/lib/date-format.mjs";
 
 interface Props {
   createdAt: Date | string;
@@ -26,10 +26,16 @@ const createdCommitUrl = createdCommit
 const modifiedCommitUrl = lastModifiedCommit
   ? `${GITHUB_REPOSITORY_URL}/commit/${lastModifiedCommit}`
   : undefined;
+const createdIso = toDate(createdAt).toISOString();
+const modifiedIso = toDate(lastModified).toISOString();
+const createdDateCompact = formatFrenchDate(createdAt);
+const createdDateFull = formatFrenchDateTime(createdAt);
+const modifiedDateCompact = formatFrenchDate(lastModified);
+const modifiedDateFull = formatFrenchDateTime(lastModified);
 ---
 
-<footer class="post-git-dates" aria-label="Dates du post">
-  <span class="post-git-date">
+<footer class="post-git-dates" aria-label="Dates du post" data-post-git-dates>
+  <span class="post-git-date" data-post-git-date="created">
     <span
       class="post-icon-tooltip"
       role="img"
@@ -40,21 +46,26 @@ const modifiedCommitUrl = lastModifiedCommit
     </span>
     <span class="post-git-date-text">
       <span class="post-git-date-label">Créé le :</span>
-      <time datetime={toDate(createdAt).toISOString()}>{formatFrenchDateTime(createdAt)}</time>
+      <time class="site-date-compact" datetime={createdIso}>{createdDateCompact}</time>
+      <time class="site-date-full" datetime={createdIso}>{createdDateFull}</time>
     </span>
-    {createdCommitLabel && createdCommitUrl && (
-      <a
-        class="post-icon-tooltip post-git-commit-link"
-        href={createdCommitUrl}
-        aria-label={createdCommitLabel}
-        data-tooltip={createdCommitLabel}
-      >
-        <span class="material-symbols-rounded post-git-commit-icon" aria-hidden="true">&#xEAF5;</span>
-      </a>
-    )}
+    {
+      createdCommitLabel && createdCommitUrl && (
+        <a
+          class="post-icon-tooltip post-git-commit-link"
+          href={createdCommitUrl}
+          aria-label={createdCommitLabel}
+          data-tooltip={createdCommitLabel}
+        >
+          <span class="material-symbols-rounded post-git-commit-icon" aria-hidden="true">
+            &#xEAF5;
+          </span>
+        </a>
+      )
+    }
   </span>
   <span class="post-git-date-divider" aria-hidden="true"></span>
-  <span class="post-git-date">
+  <span class="post-git-date" data-post-git-date="modified">
     <span
       class="post-icon-tooltip"
       role="img"
@@ -65,17 +76,71 @@ const modifiedCommitUrl = lastModifiedCommit
     </span>
     <span class="post-git-date-text">
       <span class="post-git-date-label">Modifié le :</span>
-      <time datetime={toDate(lastModified).toISOString()}>{formatFrenchDateTime(lastModified)}</time>
+      <time class="site-date-compact" datetime={modifiedIso}>{modifiedDateCompact}</time>
+      <time class="site-date-full" datetime={modifiedIso}>{modifiedDateFull}</time>
     </span>
-    {modifiedCommitLabel && modifiedCommitUrl && (
-      <a
-        class="post-icon-tooltip post-git-commit-link"
-        href={modifiedCommitUrl}
-        aria-label={modifiedCommitLabel}
-        data-tooltip={modifiedCommitLabel}
-      >
-        <span class="material-symbols-rounded post-git-commit-icon" aria-hidden="true">&#xEAF5;</span>
-      </a>
-    )}
+    {
+      modifiedCommitLabel && modifiedCommitUrl && (
+        <a
+          class="post-icon-tooltip post-git-commit-link"
+          href={modifiedCommitUrl}
+          aria-label={modifiedCommitLabel}
+          data-tooltip={modifiedCommitLabel}
+        >
+          <span class="material-symbols-rounded post-git-commit-icon" aria-hidden="true">
+            &#xEAF5;
+          </span>
+        </a>
+      )
+    }
   </span>
 </footer>
+
+<script>
+  const observedPostGitDates = new WeakMap();
+
+  function syncPostGitDateLayout(container) {
+    const created = container.querySelector('[data-post-git-date="created"]');
+    const modified = container.querySelector('[data-post-git-date="modified"]');
+    if (!(created instanceof HTMLElement) || !(modified instanceof HTMLElement)) return;
+
+    container.dataset.stacked = "false";
+
+    const divider = container.querySelector(".post-git-date-divider");
+    const styles = window.getComputedStyle(container);
+    const columnGap = Number.parseFloat(styles.columnGap) || 0;
+    const dividerWidth = divider instanceof HTMLElement ? divider.getBoundingClientRect().width : 0;
+    const requiredWidth = created.scrollWidth + modified.scrollWidth + dividerWidth + columnGap * 2;
+
+    container.dataset.stacked = requiredWidth > container.clientWidth + 1 ? "true" : "false";
+  }
+
+  function initPostGitDateLayout() {
+    document.querySelectorAll("[data-post-git-dates]").forEach((container) => {
+      if (!(container instanceof HTMLElement) || observedPostGitDates.has(container)) return;
+
+      const sync = () => syncPostGitDateLayout(container);
+      observedPostGitDates.set(container, sync);
+      sync();
+
+      if (typeof ResizeObserver === "undefined") {
+        window.addEventListener("resize", sync, { passive: true });
+        return;
+      }
+
+      const observer = new ResizeObserver(sync);
+      observer.observe(container);
+      for (const child of container.children) observer.observe(child);
+    });
+  }
+
+  initPostGitDateLayout();
+  document.addEventListener("astro:page-load", initPostGitDateLayout);
+  document.addEventListener("home:detail-view-change", () => {
+    requestAnimationFrame(() => {
+      document.querySelectorAll("[data-post-git-dates]").forEach((container) => {
+        if (container instanceof HTMLElement) syncPostGitDateLayout(container);
+      });
+    });
+  });
+</script>

@@ -200,7 +200,7 @@ function isFocusableElement(element: HTMLElement) {
               />
             </svg>
             <div class="cookie-consent-content">
-              <h4 id="explicit-content-consent-title">Avertissement relatif aux images</h4>
+              <h3 id="explicit-content-consent-title">Avertissement relatif aux images</h3>
               <p id="explicit-content-consent-desc">
                 Ce site peut contenir des images d’anime à caractère explicite, réservées à un
                 public adulte. En continuant, vous confirmez avoir au moins 18 ans, ou avoir atteint
@@ -208,21 +208,6 @@ function isFocusableElement(element: HTMLElement) {
               </p>
             </div>
           </div>
-
-          <a
-            class="cookie-consent-choice-link"
-            href="https://www.youtube.com/watch?v=Cywo2B_CX2I&t=149s"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Voir la scène du choix des pilules à 2 minutes 29 secondes"
-          >
-            <img
-              class="cookie-consent-choice-image"
-              src="/images/choice-pills.webp"
-              alt=""
-              decoding="async"
-            />
-          </a>
 
           <div class="cookie-consent-actions">
             <button
@@ -247,7 +232,7 @@ function isFocusableElement(element: HTMLElement) {
         } @else {
           <div class="cookie-consent-content">
             <p id="cookie-consent-desc">
-              Ce site utilise des cookies de Vercel pour fournir ses services et analyser le trafic.
+              Ce site utilise des cookies pour fournir ses services et analyser le trafic.
             </p>
           </div>
 

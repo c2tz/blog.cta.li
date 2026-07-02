@@ -83,8 +83,10 @@ export class HomeDetailToggleComponent implements OnInit {
     if (typeof document === "undefined") return;
 
     if (detailed) {
+      document.documentElement.dataset["homeDetailView"] = "true";
       document.body.dataset["homeDetailView"] = "true";
     } else {
+      delete document.documentElement.dataset["homeDetailView"];
       delete document.body.dataset["homeDetailView"];
     }
 

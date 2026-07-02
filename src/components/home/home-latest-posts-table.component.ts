@@ -63,10 +63,16 @@ interface LatestPostsResponse {
             Date
           </th>
           <td mat-cell *matCellDef="let post">
-            <time class="post-date home-post-date-compact" [attr.datetime]="post.datetime">
+            <time
+              class="post-date site-date-compact home-post-date-compact"
+              [attr.datetime]="post.datetime"
+            >
               {{ post.dateCompact }}
             </time>
-            <time class="post-date home-post-date-full" [attr.datetime]="post.datetime">
+            <time
+              class="post-date site-date-full home-post-date-full"
+              [attr.datetime]="post.datetime"
+            >
               {{ post.dateFull }}
             </time>
           </td>
@@ -338,7 +344,9 @@ export class HomeLatestPostsTableComponent implements AfterViewInit, OnInit, OnD
   ngOnInit() {
     if (typeof document === "undefined") return;
 
-    const detailed = document.body.dataset["homeDetailView"] === "true";
+    const detailed =
+      document.documentElement.dataset["homeDetailView"] === "true" ||
+      document.body.dataset["homeDetailView"] === "true";
     this.detailed.set(detailed);
     if (detailed) void this.loadDetailedPosts();
     document.addEventListener(SITE_EVENTS.homeDetailViewChange, this.handleDetailViewChange);

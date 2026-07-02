@@ -1,20 +1,22 @@
 import { ChangeDetectionStrategy, Component, input } from "@angular/core";
 import { MatButton } from "@angular/material/button";
+import { MatIcon } from "@angular/material/icon";
 
 @Component({
   selector: "site-home-hero-actions",
   standalone: true,
-  imports: [MatButton],
+  imports: [MatButton, MatIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <nav class="home-hero-actions" aria-label="Navigation d'accueil">
       <a
-        matButton="tonal"
+        matButton="text"
         class="home-hero-button"
         [href]="primaryActionHref()"
         [attr.aria-label]="primaryActionAriaLabel()"
       >
         {{ primaryActionLabel() }}
+        <mat-icon iconPositionEnd aria-hidden="true">&#xE5D3;</mat-icon>
       </a>
       <a
         matButton="text"
@@ -23,6 +25,7 @@ import { MatButton } from "@angular/material/button";
         [attr.aria-label]="secondaryActionAriaLabel()"
       >
         {{ secondaryActionLabel() }}
+        <mat-icon iconPositionEnd aria-hidden="true">&#xE89E;</mat-icon>
       </a>
     </nav>
   `,

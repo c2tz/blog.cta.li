@@ -21,38 +21,38 @@
   will-change: transform;
 }
 
-.site-scroll-top.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base {
-  @include mat.icon-button-overrides(
+.site-scroll-top.mat-mdc-mini-fab.mat-mdc-button-base {
+  @include mat.fab-overrides(
     (
-      icon-color: var(--m3-inverse-on-surface),
-      state-layer-color: var(--m3-inverse-on-surface),
-      ripple-color: color-mix(in srgb, var(--m3-inverse-on-surface) 12%, transparent),
+      small-container-color: var(--site-tonal-container),
+      small-foreground-color: var(--site-on-tonal-container),
+      small-ripple-color: color-mix(in srgb, var(--site-on-tonal-container) 12%, transparent),
+      small-state-layer-color: var(--site-on-tonal-container),
     )
   );
   @include mat.badge-overrides(
     (
-      background-color: var(--m3-primary),
+      background-color: var(--site-link),
       text-color: var(--m3-on-primary),
+      large-size-text-size: 0.6875rem,
+      large-size-line-height: 1rem,
     )
   );
-  --mat-progress-spinner-active-indicator-color: var(--m3-inverse-on-surface);
-  --site-icon-button-color: var(--m3-inverse-on-surface);
   position: fixed;
   right: calc(2rem + env(safe-area-inset-right, 0px));
   bottom: 1rem;
   z-index: 9000;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 2.5rem;
   height: 2.5rem;
-  min-width: 2.5rem;
   padding: 0;
   overflow: visible;
   border: 0;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--m3-inverse-surface) 86%, transparent);
-  color: var(--m3-inverse-on-surface);
-  box-shadow: 0 0.25rem 0.75rem rgb(0 0 0 / 18%);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  background: var(--site-tonal-container);
+  color: var(--site-on-tonal-container);
+  box-shadow: var(--mat-sys-level3, 0 6px 14px rgb(0 0 0 / 18%));
   opacity: 0;
   pointer-events: none;
   transform: translateY(1rem);
@@ -61,53 +61,41 @@
     transform 180ms ease;
 }
 
-.site-scroll-top.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base
-  .site-scroll-top-progress.mat-mdc-progress-spinner {
-  position: relative;
-  inset: auto;
-  z-index: 1;
+.site-scroll-top .site-scroll-top-icon.mat-icon {
+  width: 1.35rem;
+  height: 1.35rem;
   margin: 0;
-  pointer-events: none;
-}
-
-.site-scroll-top .mat-mdc-button-progress-indicator-container {
-  pointer-events: none;
+  font-size: 1.35rem;
+  line-height: 1.35rem;
 }
 
 .site-scroll-top .mat-badge-content {
   z-index: 3;
+  min-width: 2rem;
+  width: auto;
+  height: 1rem;
+  padding-inline: 0.25rem;
   pointer-events: none;
 }
 
-.site-scroll-top.mat-mdc-button-progress-indicator-shown .mat-icon {
-  visibility: visible;
-}
-
-.site-scroll-top-progress svg {
-  width: 100%;
-  height: 100%;
-  fill: transparent;
-}
-
-.site-scroll-top.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base
-  .site-scroll-top-icon.mat-icon {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: 1;
-  display: block;
-  width: 1.5rem;
-  height: 1.5rem;
-  margin: 0;
-  font-size: 1.5rem;
-  line-height: 1.5rem;
-  transform: translate(-50%, -50%);
-}
-
-.site-scroll-top.site-icon-button.mat-mdc-icon-button.mat-mdc-button-base.is-visible {
+.site-scroll-top.mat-mdc-mini-fab.mat-mdc-button-base.is-visible {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
+}
+
+@media (max-width: 520px) {
+  .site-scroll-top.mat-mdc-mini-fab.mat-mdc-button-base {
+    right: calc(1rem + env(safe-area-inset-right, 0px));
+    bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .site-scroll-top .site-scroll-top-icon.mat-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    font-size: 1.25rem;
+    line-height: 1.25rem;
+  }
 }
 
 html.consent-visible .site-scroll-top {

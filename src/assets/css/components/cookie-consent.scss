@@ -85,15 +85,19 @@ html.interaction-disabled.consent-visible body {
 }
 
 .cookie-consent--explicit-content {
-  --explicit-consent-link: var(--m3-primary);
-  --explicit-consent-link-contrast: var(--m3-on-primary);
+  --explicit-consent-link: var(--m3-error);
+  --explicit-consent-link-contrast: var(--m3-on-error);
   --explicit-on-warning-signal: var(--m3-on-error);
   --explicit-warning-signal: var(--m3-error);
   --explicit-warning-container: var(--m3-error-container);
   --explicit-on-warning-container: var(--m3-on-error-container);
-  --explicit-consent-bg: var(--m3-surface-container-high);
-  --explicit-consent-border: var(--m3-outline-variant);
-  --explicit-consent-text: var(--m3-on-surface);
+  --explicit-consent-bg: var(--explicit-warning-container);
+  --explicit-consent-border: color-mix(
+    in srgb,
+    var(--explicit-on-warning-container) 22%,
+    transparent
+  );
+  --explicit-consent-text: var(--explicit-on-warning-container);
   --explicit-warning-border: color-mix(
     in srgb,
     var(--explicit-on-warning-container) 18%,
@@ -149,8 +153,8 @@ html.interaction-disabled.consent-visible body {
   );
 }
 
-.cookie-consent--explicit-content h4 {
-  color: inherit;
+.cookie-consent--explicit-content h3 {
+  color: var(--explicit-warning-signal);
   font-family: inherit;
   font-style: inherit;
   font-weight: 400;
@@ -166,38 +170,18 @@ html.interaction-disabled.consent-visible body {
   grid-template-columns: 3.25rem minmax(0, 1fr);
   gap: 0.95rem;
   align-items: start;
-  padding: 0.85rem;
-  border: 1px solid var(--explicit-warning-border);
-  border-radius: var(--site-shape-small);
-  background: var(--explicit-warning-container);
+  padding: 0.35rem 0.2rem 0.1rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--explicit-warning-foreground);
 }
 
 .cookie-consent-boot-warning-icon {
   width: 3rem;
   height: 3rem;
-  color: currentColor;
+  color: var(--explicit-warning-signal);
   fill: currentColor;
-}
-
-.cookie-consent-choice-link {
-  display: block;
-  border-radius: var(--site-shape-extra-small);
-}
-
-.cookie-consent-choice-link:focus-visible {
-  outline: 2px solid var(--site-link);
-  outline-offset: 2px;
-}
-
-.cookie-consent-choice-image {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 1260 / 434;
-  border: 1px solid var(--explicit-consent-border, var(--site-border));
-  border-radius: var(--site-shape-extra-small);
-  object-fit: cover;
 }
 
 .cookie-consent h2 {

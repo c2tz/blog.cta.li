@@ -9,34 +9,21 @@ import {
   signal,
 } from "@angular/core";
 import type { AfterViewInit, OnDestroy } from "@angular/core";
-import { MatExpansionModule } from "@angular/material/expansion";
+import { MatButton } from "@angular/material/button";
+import { MatIcon } from "@angular/material/icon";
 import { MatProgressBar } from "@angular/material/progress-bar";
-import { SITE_STORAGE_KEYS } from "@/lib/site-contracts";
 
 type SiteTheme = "dark" | "light";
 
-const STORAGE_KEY = SITE_STORAGE_KEYS.giscusCommentsEnabled;
 const GISCUS_ORIGIN = "https://giscus.app";
 const GISCUS_SCRIPT_URL = `${GISCUS_ORIGIN}/client.js`;
+const CODE_OF_CONDUCT_URL =
+  "https://github.com/c2tz/ct-blog.cta.li/blob/develop/CODE_OF_CONDUCT.md";
 const GISCUS_THEME_SYNC_DELAYS = [0, 150, 500, 1200] as const;
 const GISCUS_FALLBACK_THEMES = {
   dark: "dark_dimmed",
   light: "light",
 } as const satisfies Record<SiteTheme, string>;
-
-function readEnabledPreference() {
-  try {
-    return localStorage.getItem(STORAGE_KEY) === "enabled";
-  } catch {
-    return false;
-  }
-}
-
-function writeEnabledPreference(enabled: boolean) {
-  try {
-    localStorage.setItem(STORAGE_KEY, enabled ? "enabled" : "disabled");
-  } catch {}
-}
 
 function getCurrentTheme(): SiteTheme {
   return document.documentElement.dataset["theme"] === "dark" ? "dark" : "light";
@@ -45,11 +32,39 @@ function getCurrentTheme(): SiteTheme {
 @Component({
   selector: "site-giscus-comments",
   standalone: true,
-  imports: [MatExpansionModule, MatProgressBar],
+  imports: [MatButton, MatIcon, MatProgressBar],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
     <section class="giscus-comments" aria-label="Commentaires" data-pagefind-ignore>
+      <header class="giscus-comments-header">
+        <div class="giscus-comments-intro">
+          <h2>Commentaires</h2>
+          <p>Avant de participer, merci de respecter les règles de conduite du projet.</p>
+        </div>
+        <div class="giscus-comments-actions">
+          <a
+            matButton="text"
+            class="giscus-comments-conduct-link"
+            [href]="codeOfConductUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Code de conduite
+            <mat-icon iconPositionEnd aria-hidden="true">&#xE89E;</mat-icon>
+          </a>
+          <button
+            matButton="tonal"
+            type="button"
+            class="giscus-comments-accept-button"
+            [disabled]="!configured() || accepted()"
+            (click)="acceptCodeOfConduct()"
+          >
+            J’accepte
+          </button>
+        </div>
+      </header>
+
       @if (!configured()) {
         <p id="giscus-comments-config" class="giscus-comments-config">
           Configuration Giscus en attente : ajoutez le repo public, le repo ID, la catégorie et le
@@ -57,17 +72,7 @@ function getCurrentTheme(): SiteTheme {
         </p>
       }
 
-      <mat-expansion-panel
-        class="giscus-comments-expansion"
-        [expanded]="enabled()"
-        [disabled]="!configured()"
-        (opened)="openComments()"
-        (closed)="closeComments()"
-      >
-        <mat-expansion-panel-header>
-          <mat-panel-title>Commentaires</mat-panel-title>
-        </mat-expansion-panel-header>
-
+      @if (accepted()) {
         <div
           class="giscus-comments-panel-content"
           [class.is-loading]="loading()"
@@ -94,18 +99,17 @@ function getCurrentTheme(): SiteTheme {
 
           <div #giscusContainer class="giscus-comments-frame"></div>
         </div>
-      </mat-expansion-panel>
+      }
     </section>
   `,
   styles: `
     :host {
       display: block;
-      margin-block-start: 1rem;
+      margin-block-start: 0;
     }
 
     .giscus-comments {
-      padding-block-start: 0.75rem;
-      border-block-start: 1px solid var(--site-border);
+      padding-block-start: 1rem;
     }
 
     .giscus-comments-config,
@@ -121,36 +125,50 @@ function getCurrentTheme(): SiteTheme {
       color: var(--site-link);
     }
 
-    .giscus-comments-expansion.mat-expansion-panel {
-      border-radius: 0;
-      background: transparent;
-      box-shadow: none;
-      color: var(--site-text);
-      font-family: var(--site-font);
+    .giscus-comments-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
     }
 
-    .giscus-comments-expansion .mat-expansion-panel-header {
-      min-height: 2.5rem;
-      padding-inline: 0;
-      color: var(--site-text);
-      font-family: var(--site-font);
+    .giscus-comments-intro {
+      min-width: 0;
     }
 
-    .giscus-comments-expansion .mat-expansion-panel-header-title {
+    .giscus-comments-intro h2 {
+      margin-block: 0 0.25rem;
       color: var(--site-text);
-      font-family: var(--site-font);
       font-size: 1rem;
-      font-weight: 400;
+      line-height: 1.5;
     }
 
-    .giscus-comments-expansion .mat-expansion-indicator::after {
-      color: var(--site-link);
+    .giscus-comments-intro p {
+      margin: 0;
+      color: var(--site-muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .giscus-comments-actions {
+      display: flex;
+      flex: 0 0 auto;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
+    .giscus-comments-conduct-link.mat-mdc-button-base,
+    .giscus-comments-accept-button.mat-mdc-button-base {
+      flex: 0 0 auto;
+      white-space: nowrap;
     }
 
     .giscus-comments-panel-content {
       position: relative;
       min-height: 7rem;
-      padding-block-start: 0.75rem;
+      padding-block-start: 1rem;
     }
 
     .giscus-comments-progress.mat-mdc-progress-bar {
@@ -202,6 +220,22 @@ function getCurrentTheme(): SiteTheme {
       color: var(--site-muted);
     }
 
+    @media (max-width: 520px) {
+      .giscus-comments-header {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .giscus-comments-actions {
+        justify-content: flex-start;
+      }
+
+      .giscus-comments-conduct-link.mat-mdc-button-base,
+      .giscus-comments-accept-button.mat-mdc-button-base {
+        align-self: flex-start;
+      }
+    }
+
     @keyframes giscus-comments-skeleton {
       from {
         background-position: 200% 0;
@@ -214,6 +248,7 @@ function getCurrentTheme(): SiteTheme {
   `,
 })
 export class GiscusCommentsComponent implements AfterViewInit, OnDestroy {
+  readonly codeOfConductUrl = CODE_OF_CONDUCT_URL;
   readonly repo = input("");
   readonly repoId = input("");
   readonly category = input("");
@@ -225,7 +260,7 @@ export class GiscusCommentsComponent implements AfterViewInit, OnDestroy {
   readonly inputPosition = input("bottom");
   readonly lang = input("fr");
 
-  readonly enabled = signal(false);
+  readonly accepted = signal(false);
   readonly loading = signal(false);
   readonly loaded = signal(false);
   readonly error = signal(false);
@@ -254,10 +289,7 @@ export class GiscusCommentsComponent implements AfterViewInit, OnDestroy {
       attributes: true,
     });
 
-    if (this.configured() && readEnabledPreference()) {
-      this.enabled.set(true);
-      window.queueMicrotask(() => this.loadGiscus());
-    }
+    if (this.accepted()) window.setTimeout(() => this.loadGiscus());
   }
 
   ngOnDestroy() {
@@ -270,17 +302,11 @@ export class GiscusCommentsComponent implements AfterViewInit, OnDestroy {
     this.themeSyncTimers.clear();
   }
 
-  openComments() {
-    if (!this.configured()) return;
+  acceptCodeOfConduct() {
+    if (!this.configured() || this.accepted()) return;
 
-    this.enabled.set(true);
-    writeEnabledPreference(true);
-    this.loadGiscus();
-  }
-
-  closeComments() {
-    this.enabled.set(false);
-    writeEnabledPreference(false);
+    this.accepted.set(true);
+    window.setTimeout(() => this.loadGiscus());
   }
 
   private loadGiscus() {

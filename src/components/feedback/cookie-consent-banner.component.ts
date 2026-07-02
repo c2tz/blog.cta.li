@@ -209,21 +209,6 @@ function isFocusableElement(element: HTMLElement) {
             </div>
           </div>
 
-          <a
-            class="cookie-consent-choice-link"
-            href="https://www.youtube.com/watch?v=Cywo2B_CX2I&t=149s"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Voir la scène du choix des pilules à 2 minutes 29 secondes"
-          >
-            <img
-              class="cookie-consent-choice-image"
-              src="/images/choice-pills.webp"
-              alt=""
-              decoding="async"
-            />
-          </a>
-
           <div class="cookie-consent-actions">
             <button
               class="cookie-consent-return-action"
@@ -247,7 +232,7 @@ function isFocusableElement(element: HTMLElement) {
         } @else {
           <div class="cookie-consent-content">
             <p id="cookie-consent-desc">
-              Ce site utilise des cookies de Vercel pour fournir ses services et analyser le trafic.
+              Ce site utilise des cookies pour fournir ses services et analyser le trafic.
             </p>
           </div>
 

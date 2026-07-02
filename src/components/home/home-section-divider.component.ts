@@ -15,7 +15,7 @@ type HomeSectionDividerSpacing = "section" | "end";
   styles: `
     :host {
       display: block;
-      margin-block: 0 1.25rem;
+      margin-block: 0 1rem;
     }
 
     :host(.home-section-divider-host-end) {

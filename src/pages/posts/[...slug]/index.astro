@@ -72,25 +72,25 @@ const postTags = ["all", ...visiblePostTags];
       <Prose>
         <Content />
       </Prose>
-      <div data-pagefind-ignore>
+      <div class="post-meta-table" data-pagefind-ignore>
         <PostGitDates
           createdAt={createdAt}
           createdCommit={gitDates.createdCommit}
           lastModified={lastModified}
           lastModifiedCommit={gitDates.lastModifiedCommit}
         />
+        <nav class="post-tags-section" aria-label="Tags de l’article">
+          <ul class="post-tags">
+            {
+              postTags.map((tag) => (
+                <li>
+                  <a href={`/tags/${tag}/`}>#{tag}</a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
       </div>
-      <nav aria-label="Tags de l’article" data-pagefind-ignore>
-        <ul class="post-tags">
-          {
-            postTags.map((tag) => (
-              <li>
-                <a href={`/tags/${tag}/`}>#{tag}</a>
-              </li>
-            ))
-          }
-        </ul>
-      </nav>
       <GiscusCommentsComponent
         client:load
         repo={SITE_GISCUS_CONFIG.repo}

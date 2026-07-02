@@ -11,6 +11,7 @@ import {
 } from "@angular/core";
 import { LiveAnnouncer } from "@angular/cdk/a11y";
 import type { AfterViewInit, OnDestroy, OnInit } from "@angular/core";
+import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatSort, MatSortModule, type Sort } from "@angular/material/sort";
 import { MatTableDataSource, MatTableModule } from "@angular/material/table";
 
@@ -31,17 +32,10 @@ interface LatestPostsResponse {
 @Component({
   selector: "site-home-latest-posts-table",
   standalone: true,
-  imports: [MatSortModule, MatTableModule],
+  imports: [MatProgressSpinner, MatSortModule, MatTableModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="home-posts-table-scroll" [class.home-posts-table-scroll-detailed]="detailed()">
-      @if (loading()) {
-        <div class="home-posts-table-loader" role="status">
-          <span class="home-posts-table-spinner" aria-hidden="true"></span>
-          <span class="sr-only">Chargement des articles</span>
-        </div>
-      }
-
       <table
         mat-table
         [dataSource]="dataSource"
@@ -63,10 +57,16 @@ interface LatestPostsResponse {
             Date
           </th>
           <td mat-cell *matCellDef="let post">
-            <time class="post-date home-post-date-compact" [attr.datetime]="post.datetime">
+            <time
+              class="post-date site-date-compact home-post-date-compact"
+              [attr.datetime]="post.datetime"
+            >
               {{ post.dateCompact }}
             </time>
-            <time class="post-date home-post-date-full" [attr.datetime]="post.datetime">
+            <time
+              class="post-date site-date-full home-post-date-full"
+              [attr.datetime]="post.datetime"
+            >
               {{ post.dateFull }}
             </time>
           </td>
@@ -94,6 +94,23 @@ interface LatestPostsResponse {
           mat-row
           *matRowDef="let row; columns: displayedColumns"
         ></tr>
+        <tr class="home-posts-table-loading-row" *matNoDataRow>
+          <td [attr.colspan]="displayedColumns.length">
+            @if (loading()) {
+              <div class="home-posts-table-loading" role="status">
+                <mat-progress-spinner
+                  mode="indeterminate"
+                  diameter="64"
+                  strokeWidth="6"
+                  aria-hidden="true"
+                />
+                <span class="sr-only">Chargement des articles</span>
+              </div>
+            } @else {
+              <span class="home-posts-table-empty">Aucun article à afficher.</span>
+            }
+          </td>
+        </tr>
       </table>
     </div>
   `,
@@ -139,31 +156,6 @@ interface LatestPostsResponse {
       outline-offset: 2px;
     }
 
-    .home-posts-table-loader {
-      position: absolute;
-      inset-block-start: 0.65rem;
-      inset-inline-end: 0.65rem;
-      z-index: 2;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 2rem;
-      height: 2rem;
-      border-radius: 9999px;
-      background: color-mix(in srgb, var(--site-bg) 86%, transparent);
-      box-shadow: 0 0.125rem 0.5rem rgb(0 0 0 / 16%);
-    }
-
-    .home-posts-table-spinner {
-      display: block;
-      width: 1rem;
-      height: 1rem;
-      border: 2px solid color-mix(in srgb, var(--site-muted) 36%, transparent);
-      border-block-start-color: var(--site-link);
-      border-radius: 50%;
-      animation: home-posts-table-spin 700ms linear infinite;
-    }
-
     .home-posts-table {
       min-width: 42rem;
       width: max-content;
@@ -202,6 +194,27 @@ interface LatestPostsResponse {
 
     .home-posts-table .home-posts-table-row:last-child td {
       border-block-end: 0;
+    }
+
+    .home-posts-table-loading-row td {
+      height: 9rem;
+      padding: 0;
+      background: var(--m3-surface-container-low);
+      text-align: center;
+    }
+
+    .home-posts-table-loading {
+      --mat-progress-spinner-active-indicator-color: var(--site-link);
+
+      display: grid;
+      min-height: 9rem;
+      place-items: center;
+    }
+
+    .home-posts-table-empty {
+      display: inline-block;
+      padding: 1rem;
+      color: var(--site-muted);
     }
 
     .home-posts-table .mat-column-date {
@@ -271,12 +284,6 @@ interface LatestPostsResponse {
       white-space: nowrap;
     }
 
-    @keyframes home-posts-table-spin {
-      to {
-        transform: rotate(360deg);
-      }
-    }
-
     @media (max-width: 520px) {
       .home-posts-table-scroll-detailed {
         --home-posts-date-column-content-width: 12.5rem;
@@ -311,6 +318,8 @@ export class HomeLatestPostsTableComponent implements AfterViewInit, OnInit, OnD
   readonly detailedPosts = signal<readonly HomeLatestPost[] | null>(null);
   readonly loading = signal(false);
   readonly tablePosts = computed(() => {
+    if (this.loading()) return [];
+
     const posts =
       this.detailed() && this.detailedPosts() ? (this.detailedPosts() ?? []) : this.posts();
 
@@ -338,7 +347,9 @@ export class HomeLatestPostsTableComponent implements AfterViewInit, OnInit, OnD
   ngOnInit() {
     if (typeof document === "undefined") return;
 
-    const detailed = document.body.dataset["homeDetailView"] === "true";
+    const detailed =
+      document.documentElement.dataset["homeDetailView"] === "true" ||
+      document.body.dataset["homeDetailView"] === "true";
     this.detailed.set(detailed);
     if (detailed) void this.loadDetailedPosts();
     document.addEventListener(SITE_EVENTS.homeDetailViewChange, this.handleDetailViewChange);

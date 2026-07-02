@@ -367,7 +367,10 @@ export class KonachanRatingToggleComponent implements OnInit, OnDestroy {
   private readDetailedView() {
     if (typeof document === "undefined") return false;
 
-    return document.body.dataset["homeDetailView"] === "true";
+    return (
+      document.documentElement.dataset["homeDetailView"] === "true" ||
+      document.body.dataset["homeDetailView"] === "true"
+    );
   }
 
   private readLocalStorage(key: string) {

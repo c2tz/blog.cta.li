@@ -49,7 +49,7 @@
   --m3-tertiary-fixed: #ffd8e4;
   --m3-tertiary-fixed-dim: #efb8c8;
   --code-surface: var(--m3-surface-container-high);
-  --code-block-surface: #000000;
+  --code-block-surface: var(--site-bg);
 }
 
 :root[data-theme="dark"] kbd {

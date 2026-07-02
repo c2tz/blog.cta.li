@@ -40,6 +40,7 @@ const seoDescription = description ?? SITE_DESCRIPTION;
 const themeStorageKey = SITE_STORAGE_KEYS.themePreference;
 const legacyThemeStorageKey = SITE_LEGACY_STORAGE_KEYS.themePreference;
 const isPost = Astro.url.pathname.startsWith("/posts/");
+const shouldLoadSpeedInsights = import.meta.env.PROD && process.env.VERCEL === "1";
 const speedInsightsRoute = computeRoute(Astro.url.pathname, Astro.params);
 const speedInsightsVersion = speedInsightsPackage.version;
 ---
@@ -118,12 +119,17 @@ const speedInsightsVersion = speedInsightsPackage.version;
     <PageLoadingIndicatorComponent client:idle />
     {isPost && <PhotoSwipeToolbarComponent client:idle />}
     {readingProgress && <ScrollTopButtonComponent client:idle />}
-    <script
-      defer
-      src="/_vercel/speed-insights/script.js"
-      data-sdkn="@vercel/speed-insights/astro"
-      data-sdkv={speedInsightsVersion}
-      data-route={speedInsightsRoute}></script>
+    {
+      shouldLoadSpeedInsights && (
+        <script
+          defer
+          src="/_vercel/speed-insights/script.js"
+          data-sdkn="@vercel/speed-insights/astro"
+          data-sdkv={speedInsightsVersion}
+          data-route={speedInsightsRoute}
+        />
+      )
+    }
 
     <script>
       import "@/assets/js/app-init.js";

@@ -33,7 +33,7 @@ import { SiteSearchPanelComponent } from "./site-search-panel.component";
     }
 
     .site-search-dialog-panel .mat-mdc-dialog-surface {
-      background: var(--site-bg);
+      background: var(--m3-surface-container-low);
       color: var(--site-text);
       overflow: hidden;
     }

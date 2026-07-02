@@ -40,7 +40,7 @@
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: var(--site-shape-extra-small);
   color: var(--site-muted);
   outline: none;
 }

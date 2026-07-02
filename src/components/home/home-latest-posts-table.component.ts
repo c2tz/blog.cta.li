@@ -33,13 +33,7 @@ interface LatestPostsResponse {
   imports: [MatSortModule, MatTableModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div
-      class="home-posts-table-scroll"
-      tabindex="0"
-      aria-label="Derniers articles"
-      [attr.aria-busy]="loading()"
-      [class.home-posts-table-scroll-detailed]="detailed()"
-    >
+    <div class="home-posts-table-scroll" [class.home-posts-table-scroll-detailed]="detailed()">
       @if (loading()) {
         <div class="home-posts-table-loader" role="status">
           <span class="home-posts-table-spinner" aria-hidden="true"></span>
@@ -47,7 +41,14 @@ interface LatestPostsResponse {
         </div>
       }
 
-      <table mat-table [dataSource]="dataSource" matSort class="home-posts-table">
+      <table
+        mat-table
+        [dataSource]="dataSource"
+        matSort
+        class="home-posts-table"
+        aria-label="Derniers articles"
+        [attr.aria-busy]="loading()"
+      >
         <ng-container matColumnDef="date">
           <th
             mat-header-cell
@@ -69,14 +70,15 @@ interface LatestPostsResponse {
         </ng-container>
 
         <ng-container matColumnDef="title">
-          <th mat-header-cell *matHeaderCellDef class="home-posts-title-header" scope="col">
-            <span
-              class="home-posts-title-header-sticky"
-              mat-sort-header="title"
-              sortActionDescription="Trier par titre"
-            >
-              Titre
-            </span>
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+            mat-sort-header
+            sortActionDescription="Trier par titre"
+            class="home-posts-title-header"
+            scope="col"
+          >
+            Titre
           </th>
           <td mat-cell *matCellDef="let post">
             <a class="home-post-title" [href]="post.href">{{ post.title }}</a>
@@ -108,6 +110,7 @@ interface LatestPostsResponse {
       margin-block: 0 1em;
       overflow-x: auto;
       overflow-y: hidden;
+      padding-block-end: 1px;
       -webkit-overflow-scrolling: touch;
     }
 
@@ -125,7 +128,7 @@ interface LatestPostsResponse {
     }
 
     .home-posts-table-scroll:focus-visible {
-      border-radius: 4px;
+      border-radius: var(--site-shape-extra-small);
       outline: 2px solid var(--site-link);
       outline-offset: 2px;
     }
@@ -205,26 +208,48 @@ interface LatestPostsResponse {
       overflow: visible;
     }
 
-    .home-posts-title-header-sticky {
+    :host ::ng-deep .home-posts-table .home-posts-title-header .mat-sort-header-container {
       position: sticky;
       left: 0;
       z-index: 2;
-      display: inline-flex;
-      align-items: center;
       box-sizing: border-box;
       width: var(--home-posts-date-column-width);
-      height: 2.75rem;
+      height: 100%;
+      min-height: 2.75rem;
       margin-inline-start: -1rem;
       padding-inline: 1rem 0.65rem;
       background: var(--site-bg);
     }
 
-    .home-posts-table tbody tr:last-child td {
-      border-block-end-color: transparent;
-    }
-
     .home-posts-table .mat-sort-header {
       --mat-sort-arrow-color: currentColor;
+    }
+
+    :host ::ng-deep .home-posts-table .mat-sort-header-arrow {
+      display: inline-grid;
+      place-items: center;
+      width: 1.25rem;
+      height: 1.25rem;
+      margin-inline-start: 0.25rem;
+      color: currentColor;
+      font-family: "Material Symbols Rounded";
+      font-size: 1.25rem;
+      font-style: normal;
+      font-weight: 400;
+      font-variation-settings:
+        "FILL" 0,
+        "wght" 400,
+        "GRAD" 0,
+        "opsz" 20;
+      line-height: 1;
+    }
+
+    :host ::ng-deep .home-posts-table .mat-sort-header-arrow svg {
+      display: none;
+    }
+
+    :host ::ng-deep .home-posts-table .mat-sort-header-arrow::before {
+      content: "\\e5d8";
     }
 
     .home-posts-table .mat-sort-header-sorted {

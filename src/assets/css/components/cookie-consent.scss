@@ -36,8 +36,8 @@ html.interaction-disabled.consent-visible body {
   box-sizing: border-box;
   padding: 1rem 1rem 0.5rem;
   border: 1px solid var(--site-border);
-  border-radius: 8px;
-  background: var(--site-bg);
+  border-radius: var(--site-shape-small);
+  background: var(--m3-surface-container-low);
   box-shadow:
     0 3px 3px -2px rgb(0 0 0 / 20%),
     0 3px 4px 0 rgb(0 0 0 / 14%),
@@ -85,25 +85,27 @@ html.interaction-disabled.consent-visible body {
 }
 
 .cookie-consent--explicit-content {
-  --explicit-consent-link: #1565c0;
-  --explicit-consent-link-contrast: #fff;
-  --explicit-on-warning-signal: #fff;
-  --explicit-warning-signal: #b3261e;
-  --explicit-warning-container: #ffdad6;
-  --explicit-on-warning-container: #93000a;
-  --explicit-consent-bg: #fff;
-  --explicit-consent-border: color-mix(
+  --explicit-consent-link: var(--m3-primary);
+  --explicit-consent-link-contrast: var(--m3-on-primary);
+  --explicit-on-warning-signal: var(--m3-on-error);
+  --explicit-warning-signal: var(--m3-error);
+  --explicit-warning-container: var(--m3-error-container);
+  --explicit-on-warning-container: var(--m3-on-error-container);
+  --explicit-consent-bg: var(--m3-surface-container-high);
+  --explicit-consent-border: var(--m3-outline-variant);
+  --explicit-consent-text: var(--m3-on-surface);
+  --explicit-warning-border: color-mix(
     in srgb,
-    var(--explicit-on-warning-container) 24%,
+    var(--explicit-on-warning-container) 18%,
     transparent
   );
-  --explicit-consent-text: var(--explicit-on-warning-container);
   --explicit-warning-foreground: var(--explicit-on-warning-container);
 
   border-color: var(--explicit-consent-border);
   background: var(--explicit-consent-bg);
   box-shadow: var(--mat-sys-level4, 0 16px 40px rgb(0 0 0 / 34%));
   color: var(--explicit-consent-text);
+  font: var(--mat-sys-body-large, 400 1rem / 1.5rem var(--site-font));
   @include mat.theme-overrides(
     (
       primary: var(--explicit-consent-link),
@@ -112,28 +114,12 @@ html.interaction-disabled.consent-visible body {
       on-error: var(--explicit-on-warning-signal),
       error-container: var(--explicit-warning-container),
       on-error-container: var(--explicit-on-warning-container),
-      outline: var(--explicit-consent-link),
+      outline: var(--m3-outline),
+      outline-variant: var(--explicit-consent-border),
       on-surface: var(--explicit-consent-text),
       on-surface-variant: var(--explicit-consent-text),
     )
   );
-}
-
-:root[data-theme="dark"] .cookie-consent--explicit-content {
-  --explicit-consent-link: #a8c7fa;
-  --explicit-consent-link-contrast: #00315d;
-  --explicit-on-warning-signal: #601410;
-  --explicit-warning-signal: #f2b8b5;
-  --explicit-warning-container: #8c1d18;
-  --explicit-on-warning-container: #f9dedc;
-  --explicit-consent-bg: #000;
-  --explicit-consent-border: color-mix(
-    in srgb,
-    var(--explicit-on-warning-container) 32%,
-    transparent
-  );
-  --explicit-consent-text: var(--explicit-on-warning-container);
-  --explicit-warning-foreground: var(--explicit-on-warning-container);
 }
 
 .cookie-consent--explicit-content .cookie-consent-actions button {
@@ -153,28 +139,26 @@ html.interaction-disabled.consent-visible body {
 }
 
 .cookie-consent--explicit-content .cookie-consent-confirm-action {
-  color: var(--explicit-warning-foreground);
+  color: var(--explicit-warning-signal);
   @include mat.button-overrides(
     (
-      text-label-text-color: var(--explicit-warning-foreground),
-      text-state-layer-color: var(--explicit-warning-foreground),
-      text-ripple-color: color-mix(in srgb, var(--explicit-warning-foreground) 12%, transparent),
+      text-label-text-color: var(--explicit-warning-signal),
+      text-state-layer-color: var(--explicit-warning-signal),
+      text-ripple-color: color-mix(in srgb, var(--explicit-warning-signal) 12%, transparent),
     )
   );
 }
 
 .cookie-consent--explicit-content h4 {
-  color: var(--explicit-warning-foreground);
+  color: inherit;
   font-family: inherit;
   font-style: inherit;
   font-weight: 400;
 }
 
 .cookie-consent--explicit-content p {
-  color: var(--explicit-consent-text);
-  font-family: var(--site-font);
-  font-weight: 400;
-  line-height: 1.5;
+  color: inherit;
+  font: inherit;
 }
 
 .cookie-consent-alert {
@@ -182,18 +166,23 @@ html.interaction-disabled.consent-visible body {
   grid-template-columns: 3.25rem minmax(0, 1fr);
   gap: 0.95rem;
   align-items: start;
+  padding: 0.85rem;
+  border: 1px solid var(--explicit-warning-border);
+  border-radius: var(--site-shape-small);
+  background: var(--explicit-warning-container);
+  color: var(--explicit-warning-foreground);
 }
 
 .cookie-consent-boot-warning-icon {
   width: 3rem;
   height: 3rem;
-  color: var(--explicit-warning-foreground);
+  color: currentColor;
   fill: currentColor;
 }
 
 .cookie-consent-choice-link {
   display: block;
-  border-radius: 6px;
+  border-radius: var(--site-shape-extra-small);
 }
 
 .cookie-consent-choice-link:focus-visible {
@@ -207,7 +196,7 @@ html.interaction-disabled.consent-visible body {
   height: auto;
   aspect-ratio: 1260 / 434;
   border: 1px solid var(--explicit-consent-border, var(--site-border));
-  border-radius: 6px;
+  border-radius: var(--site-shape-extra-small);
   object-fit: cover;
 }
 

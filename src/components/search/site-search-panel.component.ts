@@ -261,7 +261,7 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
       padding-inline: 1rem 0;
       border: 0;
       border-radius: 1.75rem;
-      background: color-mix(in srgb, var(--site-muted) 10%, transparent);
+      background: var(--m3-surface-container-high);
       color: var(--site-text);
       transition:
         background-color 160ms ease,
@@ -269,7 +269,7 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
     }
 
     .site-search-panel-field:has(.site-search-panel-input:focus) {
-      background: color-mix(in srgb, var(--site-muted) 10%, transparent);
+      background: var(--m3-surface-container-high);
       box-shadow: 0 0 0 2px var(--site-link);
     }
 
@@ -376,8 +376,8 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
       position: absolute;
       inset: 0.35rem 0.55rem 0.35rem 0.5rem;
       display: block;
-      border-radius: 8px;
-      background: color-mix(in srgb, var(--site-muted) 10%, transparent);
+      border-radius: var(--site-shape-small);
+      background: var(--m3-surface-container-highest);
       content: "";
       opacity: 0;
       pointer-events: none;
@@ -390,7 +390,6 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
 
     .site-search-panel-sort-label {
       color: var(--site-muted);
-      font-size: 0.75rem;
       line-height: 1.1;
     }
 
@@ -401,8 +400,6 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
       box-sizing: border-box;
       width: auto !important;
       color: var(--site-text);
-      font-size: 0.95rem;
-      font-weight: 650;
     }
 
     .site-search-panel-sort-select .mat-mdc-select-trigger {
@@ -443,29 +440,11 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
 
     .site-search-panel-sort-menu.mat-mdc-select-panel {
       min-width: 14rem;
-      --mat-select-panel-background-color: var(--site-bg);
-      --mat-option-label-text-color: var(--site-text);
-      --mat-option-selected-state-label-text-color: var(--site-text);
-      --mat-option-hover-state-layer-color: var(--site-tonal-container);
-      --mat-option-focus-state-layer-color: var(--site-tonal-container);
-      --mat-option-selected-state-layer-color: transparent;
-      background: var(--site-bg);
-      color: var(--site-text);
     }
 
     .site-search-panel-sort-menu .mat-mdc-option {
       min-height: 3.25rem;
-      color: var(--site-text);
       cursor: pointer;
-      font-size: 0.95rem;
-    }
-
-    .site-search-panel-sort-menu .mat-mdc-option .mdc-list-item__primary-text {
-      color: var(--site-text);
-    }
-
-    .site-search-panel-sort-menu .mat-mdc-option-pseudo-checkbox {
-      --mat-pseudo-checkbox-minimal-selected-checkmark-color: var(--site-link);
     }
 
     .site-search-panel-sort-option {
@@ -479,11 +458,6 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
 
     .site-search-panel-sort-option .mat-icon {
       flex: 0 0 auto;
-      width: 1.4rem;
-      height: 1.4rem;
-      color: var(--site-link);
-      font-size: 1.4rem;
-      line-height: 1;
     }
 
     .site-search-panel-progress.mat-mdc-progress-bar {

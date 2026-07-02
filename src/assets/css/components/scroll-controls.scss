@@ -21,19 +21,21 @@
   will-change: transform;
 }
 
-.site-scroll-top.mat-mdc-fab.mat-mdc-extended-fab.mat-mdc-button-base {
+.site-scroll-top.mat-mdc-mini-fab.mat-mdc-button-base {
   @include mat.fab-overrides(
     (
-      container-color: var(--site-tonal-container),
-      foreground-color: var(--site-on-tonal-container),
-      extended-container-height: 3rem,
-      extended-container-shape: var(--site-shape-large),
-      extended-label-text-font: var(--site-font),
-      extended-label-text-size: 0.875rem,
-      extended-label-text-tracking: 0,
-      extended-label-text-weight: 400,
-      ripple-color: color-mix(in srgb, var(--site-on-tonal-container) 12%, transparent),
-      state-layer-color: var(--site-on-tonal-container),
+      small-container-color: var(--site-tonal-container),
+      small-foreground-color: var(--site-on-tonal-container),
+      small-ripple-color: color-mix(in srgb, var(--site-on-tonal-container) 12%, transparent),
+      small-state-layer-color: var(--site-on-tonal-container),
+    )
+  );
+  @include mat.badge-overrides(
+    (
+      background-color: var(--site-link),
+      text-color: var(--m3-on-primary),
+      large-size-text-size: 0.6875rem,
+      large-size-line-height: 1rem,
     )
   );
   position: fixed;
@@ -43,10 +45,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.3rem;
-  min-width: 4.4rem;
-  height: 3rem;
-  padding-inline: 0.85rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
   overflow: visible;
   border: 0;
   background: var(--site-tonal-container);
@@ -61,43 +62,39 @@
 }
 
 .site-scroll-top .site-scroll-top-icon.mat-icon {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 1.35rem;
+  height: 1.35rem;
   margin: 0;
-  font-size: 1.25rem;
-  line-height: 1.25rem;
+  font-size: 1.35rem;
+  line-height: 1.35rem;
 }
 
-.site-scroll-top-percent {
-  min-width: 2.15rem;
-  text-align: end;
+.site-scroll-top .mat-badge-content {
+  z-index: 3;
+  min-width: 2rem;
+  width: auto;
+  height: 1rem;
+  padding-inline: 0.25rem;
+  pointer-events: none;
 }
 
-.site-scroll-top.mat-mdc-fab.mat-mdc-extended-fab.mat-mdc-button-base.is-visible {
+.site-scroll-top.mat-mdc-mini-fab.mat-mdc-button-base.is-visible {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
 }
 
 @media (max-width: 520px) {
-  .site-scroll-top.mat-mdc-fab.mat-mdc-extended-fab.mat-mdc-button-base {
+  .site-scroll-top.mat-mdc-mini-fab.mat-mdc-button-base {
     right: calc(1rem + env(safe-area-inset-right, 0px));
     bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
-    min-width: 3.75rem;
-    height: 2.5rem;
-    padding-inline: 0.65rem;
   }
 
   .site-scroll-top .site-scroll-top-icon.mat-icon {
-    width: 1.1rem;
-    height: 1.1rem;
-    font-size: 1.1rem;
-    line-height: 1.1rem;
-  }
-
-  .site-scroll-top-percent {
-    min-width: 1.95rem;
-    font-size: 0.8125rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    font-size: 1.25rem;
+    line-height: 1.25rem;
   }
 }
 

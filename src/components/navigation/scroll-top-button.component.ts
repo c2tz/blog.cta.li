@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, signal } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
-import { MatFabButton } from "@angular/material/button";
+import { MatBadge } from "@angular/material/badge";
+import { MatMiniFabButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
 import { MatTooltip } from "@angular/material/tooltip";
 import { SITE_EVENTS } from "@/lib/site-contracts";
@@ -18,24 +19,27 @@ function isScrollTopDisabledPage() {
 @Component({
   selector: "site-scroll-top-button",
   standalone: true,
-  imports: [MatFabButton, MatIcon, MatTooltip],
+  imports: [MatBadge, MatMiniFabButton, MatIcon, MatTooltip],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button
-      matFab
-      extended
+      matMiniFab
       type="button"
       class="site-scroll-top"
       [class.is-visible]="visible()"
       [disabled]="!visible()"
       [hidden]="!visible()"
       [attr.aria-label]="'Retour en haut, progression ' + progress() + ' %'"
+      [matBadge]="progress() + '%'"
+      [matBadgeDescription]="'Progression ' + progress() + ' %'"
+      [matBadgeHidden]="!visible()"
+      matBadgePosition="above after"
+      matBadgeSize="large"
       matTooltip="Retour en haut"
       matTooltipPosition="left"
       (click)="scrollToTop()"
     >
       <mat-icon class="site-scroll-top-icon" aria-hidden="true">&#xE5D8;</mat-icon>
-      <span class="site-scroll-top-percent">{{ progress() }}%</span>
     </button>
   `,
 })

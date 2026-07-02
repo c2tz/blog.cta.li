@@ -16,6 +16,11 @@
   pointer-events: none;
 }
 
+.code-shell[data-single-line="true"] .code-actions {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 .code-copy-button.mat-mdc-icon-button {
   --mat-icon-button-icon-size: 1.5rem;
   --mat-icon-button-icon-color: var(--site-muted);

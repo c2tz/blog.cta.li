@@ -192,6 +192,9 @@ export class CodeBlockEnhancerComponent implements AfterViewInit, OnDestroy {
 
       const shell = document.createElement("div");
       shell.className = "code-shell";
+      if (codeBlock.querySelectorAll(":scope > .line").length === 1) {
+        shell.dataset["singleLine"] = "true";
+      }
       pre.parentNode.insertBefore(shell, pre);
       shell.appendChild(pre);
 

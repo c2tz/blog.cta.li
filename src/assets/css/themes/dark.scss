@@ -49,7 +49,7 @@
   --m3-tertiary-fixed: #ffd8e4;
   --m3-tertiary-fixed-dim: #efb8c8;
   --code-surface: var(--m3-surface-container-high);
-  --code-block-surface: #1e1e1e;
+  --code-block-surface: #000000;
 }
 
 :root[data-theme="dark"] kbd {
@@ -89,7 +89,7 @@
 
 :root[data-theme="dark"] .astro-code,
 :root[data-theme="dark"] .code-shell pre.astro-code {
-  background-color: var(--shiki-dark-bg, var(--code-block-surface)) !important;
+  background-color: var(--code-block-surface) !important;
   color: var(--shiki-dark, var(--site-text)) !important;
 }
 

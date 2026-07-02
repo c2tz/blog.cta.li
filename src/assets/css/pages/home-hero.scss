@@ -3,8 +3,16 @@
 .home-anime-landing {
   --home-banner-height: clamp(20rem, 52vh, 31rem);
   --home-banner-height: clamp(20rem, 52svh, 31rem);
+  --home-hero-on-image: #fff;
+  --home-hero-on-image-muted: rgb(255 255 255 / 90%);
+  --home-hero-tonal-container: rgb(255 255 255 / 18%);
+  --home-hero-tonal-hover: rgb(255 255 255 / 24%);
   @include mat.button-overrides(
     (
+      tonal-container-color: var(--home-hero-tonal-container),
+      tonal-label-text-color: var(--home-hero-on-image),
+      tonal-state-layer-color: var(--home-hero-on-image),
+      tonal-ripple-color: rgb(255 255 255 / 14%),
       outlined-label-text-color: #fff,
       outlined-outline-color: #fff,
       outlined-state-layer-color: #fff,
@@ -28,6 +36,7 @@
   overflow: hidden;
   border-radius: var(--image-radius);
   background: var(--home-media-surface);
+  color: var(--home-hero-on-image);
   isolation: isolate;
 }
 
@@ -83,7 +92,7 @@
   max-width: 34rem;
   box-sizing: border-box;
   padding: 2.25rem;
-  color: #fff;
+  color: var(--home-hero-on-image);
   text-shadow: 0 1px 3px rgb(0 0 0 / 0.36);
 }
 
@@ -99,7 +108,7 @@
 .home-hero-lede {
   max-width: 30rem;
   margin: 0.9rem 0 0;
-  color: rgb(255 255 255 / 0.9);
+  color: var(--home-hero-on-image-muted);
   font-size: 1.1rem;
   line-height: 1.5;
 }
@@ -112,7 +121,14 @@
 }
 
 .home-hero-button {
+  color: var(--home-hero-on-image);
   text-shadow: none;
+}
+
+.home-hero-button.mat-mdc-unelevated-button:hover,
+.home-hero-button.mat-mdc-outlined-button:hover,
+.home-hero-button.mat-mdc-button:hover {
+  background-color: var(--home-hero-tonal-hover);
 }
 
 .home-anime-credit {

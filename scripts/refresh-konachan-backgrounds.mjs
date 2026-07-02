@@ -1,4 +1,4 @@
-import { mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -84,13 +84,21 @@ function expectedFileNames(images) {
   const names = new Set();
 
   for (const image of images) {
-    if (image.url) names.add(image.url.split("/").pop());
-    for (const variant of image.variants ?? []) {
-      if (variant.url) names.add(variant.url.split("/").pop());
-    }
+    for (const file of imageFileNames(image)) names.add(file);
   }
 
   return names;
+}
+
+function imageFileNames(image) {
+  const names = [];
+
+  if (image.url) names.push(image.url.split("/").pop());
+  for (const variant of image.variants ?? []) {
+    if (variant.url) names.push(variant.url.split("/").pop());
+  }
+
+  return names.filter(Boolean);
 }
 
 function sortImages(images) {
@@ -104,6 +112,99 @@ function sortImages(images) {
 
 function logPreservedAssets(message) {
   console.warn(`${message} Existing Konachan assets were preserved.`);
+}
+
+async function listOutputFiles() {
+  try {
+    return await readdir(OUTPUT_DIR);
+  } catch {
+    return [];
+  }
+}
+
+async function prunePreservedOutput(manifest) {
+  const expectedFiles = expectedFileNames(manifest.images);
+  const files = (await listOutputFiles()).filter((file) => file.endsWith(".webp"));
+
+  let removedFiles = 0;
+
+  for (const file of files) {
+    if (expectedFiles.has(file)) continue;
+
+    await rm(resolve(OUTPUT_DIR, file), { force: true });
+    removedFiles += 1;
+  }
+
+  if (removedFiles > 0) {
+    console.warn(`Removed ${removedFiles} orphaned Konachan asset file(s).`);
+  }
+}
+
+async function outputMatchesManifest(manifest) {
+  const expectedFiles = expectedFileNames(manifest.images);
+  const files = (await listOutputFiles()).filter((file) => file.endsWith(".webp"));
+
+  return files.length === expectedFiles.size && files.every((file) => expectedFiles.has(file));
+}
+
+async function writeManifest(manifest) {
+  await writeFile(MANIFEST_TEMP_PATH, `${JSON.stringify(manifest, null, 2)}\n`);
+  await rename(MANIFEST_TEMP_PATH, MANIFEST_PATH);
+}
+
+async function repairMissingPreservedImages(manifest) {
+  const files = (await listOutputFiles()).filter((file) => file.endsWith(".webp"));
+  const fileSet = new Set(files);
+  const missingImages = manifest.images.filter((image) =>
+    imageFileNames(image).some((file) => !fileSet.has(file)),
+  );
+
+  if (missingImages.length === 0) return manifest;
+
+  await rm(TEMP_DIR, { recursive: true, force: true });
+  await mkdir(TEMP_DIR, { recursive: true });
+  await mkdir(OUTPUT_DIR, { recursive: true });
+
+  const regeneratedImages = new Map();
+
+  for (const image of missingImages) {
+    if (!image.originalUrl) {
+      throw new Error(`Cannot repair Konachan image ${image.id}: missing originalUrl.`);
+    }
+
+    const regenerated = await generateImage({
+      id: image.id,
+      remoteUrl: image.originalUrl,
+      rating: image.rating ?? "safe",
+      source: image.source,
+      author: image.author ?? "",
+      tags: image.tags ?? "",
+    });
+
+    for (const file of imageFileNames(regenerated)) {
+      await copyFile(resolve(TEMP_DIR, file), resolve(OUTPUT_DIR, file));
+    }
+
+    regeneratedImages.set(String(image.id), regenerated);
+  }
+
+  await rm(TEMP_DIR, { recursive: true, force: true });
+  console.warn(`Regenerated ${regeneratedImages.size} missing Konachan image asset(s).`);
+
+  return {
+    ...manifest,
+    repairedAt: new Date().toISOString(),
+    images: manifest.images.map((image) => regeneratedImages.get(String(image.id)) ?? image),
+  };
+}
+
+async function preserveExistingAssets(message, manifest) {
+  const repairedManifest = await repairMissingPreservedImages(manifest);
+
+  if (repairedManifest !== manifest) await writeManifest(repairedManifest);
+
+  await prunePreservedOutput(repairedManifest);
+  logPreservedAssets(message);
 }
 
 function hasMinimumIdDistance(postId, selectedIds) {
@@ -226,7 +327,7 @@ async function main() {
       throw new Error("Konachan returned no usable posts and no existing manifest is available.");
     }
 
-    logPreservedAssets("Konachan returned no usable posts.");
+    await preserveExistingAssets("Konachan returned no usable posts.", previousManifest);
     return;
   }
 
@@ -250,8 +351,9 @@ async function main() {
         );
       }
 
-      logPreservedAssets(
+      await preserveExistingAssets(
         `Only ${ratingImages.length}/${targetCount} ${rating} images were generated.`,
+        previousManifest,
       );
       return;
     }
@@ -260,6 +362,14 @@ async function main() {
   sortImages(images);
   if (hasSameImages(previousManifest, images)) {
     await rm(TEMP_DIR, { recursive: true, force: true });
+    if (!(await outputMatchesManifest(previousManifest))) {
+      await preserveExistingAssets(
+        "Konachan assets are already up to date but file output was out of sync.",
+        previousManifest,
+      );
+      return;
+    }
+
     console.log("Konachan assets are already up to date.");
     return;
   }

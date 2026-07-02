@@ -225,6 +225,33 @@ interface LatestPostsResponse {
       --mat-sort-arrow-color: currentColor;
     }
 
+    :host ::ng-deep .home-posts-table .mat-sort-header-arrow {
+      display: inline-grid;
+      place-items: center;
+      width: 1.25rem;
+      height: 1.25rem;
+      margin-inline-start: 0.25rem;
+      color: currentColor;
+      font-family: "Material Symbols Rounded";
+      font-size: 1.25rem;
+      font-style: normal;
+      font-weight: 400;
+      font-variation-settings:
+        "FILL" 0,
+        "wght" 400,
+        "GRAD" 0,
+        "opsz" 20;
+      line-height: 1;
+    }
+
+    :host ::ng-deep .home-posts-table .mat-sort-header-arrow svg {
+      display: none;
+    }
+
+    :host ::ng-deep .home-posts-table .mat-sort-header-arrow::before {
+      content: "\\e5d8";
+    }
+
     .home-posts-table .mat-sort-header-sorted {
       color: var(--site-text);
     }

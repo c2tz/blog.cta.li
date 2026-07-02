@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  ViewEncapsulation,
   ViewChild,
   computed,
   input,
@@ -46,16 +47,13 @@ function getCurrentTheme(): SiteTheme {
   standalone: true,
   imports: [MatExpansionModule, MatProgressBar],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
   template: `
-    <section
-      class="giscus-comments"
-      aria-label="Commentaires"
-      data-pagefind-ignore
-    >
+    <section class="giscus-comments" aria-label="Commentaires" data-pagefind-ignore>
       @if (!configured()) {
         <p id="giscus-comments-config" class="giscus-comments-config">
-          Configuration Giscus en attente : ajoutez le repo public, le repo ID,
-          la catégorie et le category ID.
+          Configuration Giscus en attente : ajoutez le repo public, le repo ID, la catégorie et le
+          category ID.
         </p>
       }
 
@@ -131,21 +129,21 @@ function getCurrentTheme(): SiteTheme {
       font-family: var(--site-font);
     }
 
-    .giscus-comments-expansion :global(.mat-expansion-panel-header) {
+    .giscus-comments-expansion .mat-expansion-panel-header {
       min-height: 2.5rem;
       padding-inline: 0;
       color: var(--site-text);
       font-family: var(--site-font);
     }
 
-    .giscus-comments-expansion :global(.mat-expansion-panel-header-title) {
+    .giscus-comments-expansion .mat-expansion-panel-header-title {
       color: var(--site-text);
       font-family: var(--site-font);
       font-size: 1rem;
       font-weight: 400;
     }
 
-    .giscus-comments-expansion :global(.mat-expansion-indicator::after) {
+    .giscus-comments-expansion .mat-expansion-indicator::after {
       color: var(--site-link);
     }
 
@@ -160,11 +158,7 @@ function getCurrentTheme(): SiteTheme {
       overflow: hidden;
       border-radius: 9999px;
       --mdc-linear-progress-active-indicator-color: var(--site-link);
-      --mdc-linear-progress-track-color: color-mix(
-        in srgb,
-        var(--site-link) 16%,
-        transparent
-      );
+      --mdc-linear-progress-track-color: color-mix(in srgb, var(--site-link) 16%, transparent);
     }
 
     .giscus-comments-skeleton {
@@ -362,9 +356,8 @@ export class GiscusCommentsComponent implements AfterViewInit, OnDestroy {
 
   private getGiscusFrame() {
     const iframe =
-      this.giscusContainer?.nativeElement.querySelector<HTMLIFrameElement>(
-        "iframe.giscus-frame",
-      ) ?? document.querySelector<HTMLIFrameElement>("iframe.giscus-frame");
+      this.giscusContainer?.nativeElement.querySelector<HTMLIFrameElement>("iframe.giscus-frame") ??
+      document.querySelector<HTMLIFrameElement>("iframe.giscus-frame");
 
     if (!iframe?.src) return;
 

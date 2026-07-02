@@ -104,9 +104,15 @@ const modifiedDateFull = formatFrenchDateTime(lastModified);
     const modified = container.querySelector('[data-post-git-date="modified"]');
     if (!(created instanceof HTMLElement) || !(modified instanceof HTMLElement)) return;
 
-    const createdRect = created.getBoundingClientRect();
-    const modifiedRect = modified.getBoundingClientRect();
-    container.dataset.stacked = modifiedRect.top > createdRect.top + 1 ? "true" : "false";
+    container.dataset.stacked = "false";
+
+    const divider = container.querySelector(".post-git-date-divider");
+    const styles = window.getComputedStyle(container);
+    const columnGap = Number.parseFloat(styles.columnGap) || 0;
+    const dividerWidth = divider instanceof HTMLElement ? divider.getBoundingClientRect().width : 0;
+    const requiredWidth = created.scrollWidth + modified.scrollWidth + dividerWidth + columnGap * 2;
+
+    container.dataset.stacked = requiredWidth > container.clientWidth + 1 ? "true" : "false";
   }
 
   function initPostGitDateLayout() {

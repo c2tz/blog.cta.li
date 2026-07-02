@@ -88,6 +88,20 @@
   padding-inline-end: calc(var(--code-pad) + 3.25rem);
   overflow: auto;
   background-color: var(--code-block-surface) !important;
+  scrollbar-color: color-mix(in srgb, var(--site-muted) 42%, transparent) transparent;
+}
+
+.code-shell pre::-webkit-scrollbar {
+  height: 0.5rem;
+}
+
+.code-shell pre::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.code-shell pre::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--site-muted) 42%, transparent);
 }
 
 .code-shell pre *,

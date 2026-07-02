@@ -200,7 +200,7 @@ function isFocusableElement(element: HTMLElement) {
               />
             </svg>
             <div class="cookie-consent-content">
-              <h4 id="explicit-content-consent-title">Avertissement relatif aux images</h4>
+              <h3 id="explicit-content-consent-title">Avertissement relatif aux images</h3>
               <p id="explicit-content-consent-desc">
                 Ce site peut contenir des images d’anime à caractère explicite, réservées à un
                 public adulte. En continuant, vous confirmez avoir au moins 18 ans, ou avoir atteint

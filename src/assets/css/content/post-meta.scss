@@ -84,9 +84,15 @@ abbr.site-tooltip {
 
 .post-tags,
 .tag-posts {
-  margin-block: 1rem 0;
+  margin-block: 0;
   padding: 0;
   list-style-type: none;
+}
+
+.post-tags-section {
+  margin-block: 1rem 0;
+  padding-block: 0.75rem;
+  border-block-end: 1px solid var(--site-border);
 }
 
 .post-tags {
@@ -100,10 +106,10 @@ abbr.site-tooltip {
 }
 
 .post-git-dates {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: max-content 1px max-content;
   align-items: center;
-  gap: 0.75rem;
+  column-gap: 0.75rem;
   margin-block: 1.5rem 1rem;
   padding-block: 0.75rem;
   border-block: 1px solid var(--site-border);
@@ -116,12 +122,13 @@ abbr.site-tooltip {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  min-width: 0;
+  min-width: max-content;
+  white-space: nowrap;
 }
 
 .post-git-date-text {
   display: inline-flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: baseline;
   gap: 0.3em;
   min-width: 0;
@@ -139,14 +146,23 @@ abbr.site-tooltip {
 }
 
 .post-git-dates[data-stacked="true"] {
-  flex-direction: column;
-  align-items: stretch;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: 0.75rem;
 }
 
 .post-git-dates[data-stacked="true"] .post-git-date-divider {
   width: 100%;
   height: 1px;
   min-height: 0;
+}
+
+.post-git-dates[data-stacked="true"] .post-git-date {
+  min-width: 0;
+  white-space: normal;
+}
+
+.post-git-dates[data-stacked="true"] .post-git-date-text {
+  flex-wrap: wrap;
 }
 
 .post-git-dates time {

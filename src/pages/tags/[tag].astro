@@ -1,5 +1,6 @@
 ---
 import { TagPostsPaginatorComponent } from "@/components/tags/tag-posts-paginator.component";
+import { TagPostsTableComponent } from "@/components/tags/tag-posts-table.component";
 import Layout from "@/layouts/site-layout.astro";
 import { formatFrenchDateTime, toDate } from "@/lib/date-format.mjs";
 import { getContentEntryGitDates } from "@/lib/git-dates.mjs";
@@ -12,22 +13,17 @@ export async function getStaticPaths() {
       gitDates: getContentEntryGitDates("blog", post),
     }))
     .sort(
-      (a, b) =>
-        new Date(b.gitDates.createdAt).valueOf() -
-        new Date(a.gitDates.createdAt).valueOf(),
+      (a, b) => new Date(b.gitDates.createdAt).valueOf() - new Date(a.gitDates.createdAt).valueOf(),
     );
 
   const contentTags = [
     ...new Set(
       allPosts
         .flatMap((post) => post.data.tags)
-        .filter((tag): tag is string => tag !== undefined && tag !== "all")
+        .filter((tag): tag is string => tag !== undefined && tag !== "all"),
     ),
   ].sort();
-  const uniqueTags = [
-    "all",
-    ...contentTags,
-  ];
+  const uniqueTags = ["all", ...contentTags];
 
   return uniqueTags.map((tag) => {
     const filteredPosts =
@@ -56,7 +52,13 @@ const tagPosts = posts.map((post) => ({
   <Fragment slot="content">
     <section aria-labelledby="tag-posts-title">
       <h1 id="tag-posts-title">Articles avec le tag « {tag} »</h1>
-      <TagPostsPaginatorComponent client:load posts={tagPosts} tag={tag} />
+      {
+        tag === "all" ? (
+          <TagPostsTableComponent client:load posts={tagPosts} tag={tag} />
+        ) : (
+          <TagPostsPaginatorComponent client:load posts={tagPosts} tag={tag} />
+        )
+      }
     </section>
   </Fragment>
 </Layout>

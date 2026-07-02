@@ -238,7 +238,7 @@ function isFocusableElement(element: HTMLElement) {
               class="cookie-consent-confirm-action"
               matButton="text"
               type="button"
-              aria-label="Entrer sur le site en confirmant avoir au moins 18 ans"
+              aria-label="J’ACCEPTE ET J’ENTRE en confirmant avoir au moins 18 ans"
               (click)="acknowledgeExplicitContent()"
             >
               J’ACCEPTE ET J’ENTRE

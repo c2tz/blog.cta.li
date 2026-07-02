@@ -21,10 +21,15 @@ import {
       class="home-detail-toggle"
       name="home-detail-view"
       [checked]="detailed"
+      [attr.aria-describedby]="'home-detail-toggle-help'"
       (change)="handleToggleChange($event)"
     >
       {{ detailed ? "Affichage détaillé" : "Affichage simple" }}
     </mat-slide-toggle>
+    <span id="home-detail-toggle-help" class="sr-only">
+      L’affichage détaillé montre les dates complètes, les informations Konachan et la rubrique
+      Tags.
+    </span>
   `,
   styles: `
     :host {

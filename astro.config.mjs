@@ -12,6 +12,7 @@ const ANGULAR_DECORATOR_IMPORTS = new Set([
 ]);
 
 const VITE_OPTIMIZE_DEPS = [
+  "@angular/cdk/a11y",
   "@angular/core/rxjs-interop",
   "@angular/forms",
   "@angular/material/autocomplete",

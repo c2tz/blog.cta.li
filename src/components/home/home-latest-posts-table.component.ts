@@ -9,8 +9,9 @@ import {
   input,
   signal,
 } from "@angular/core";
+import { LiveAnnouncer } from "@angular/cdk/a11y";
 import type { AfterViewInit, OnDestroy, OnInit } from "@angular/core";
-import { MatSort, MatSortModule } from "@angular/material/sort";
+import { MatSort, MatSortModule, type Sort } from "@angular/material/sort";
 import { MatTableDataSource, MatTableModule } from "@angular/material/table";
 
 import { SITE_EVENTS } from "@/lib/site-contracts";
@@ -45,9 +46,11 @@ interface LatestPostsResponse {
         mat-table
         [dataSource]="dataSource"
         matSort
+        id="home-latest-posts-table"
         class="home-posts-table"
         aria-label="Derniers articles"
         [attr.aria-busy]="loading()"
+        (matSortChange)="announceSortChange($event)"
       >
         <ng-container matColumnDef="date">
           <th
@@ -86,7 +89,11 @@ interface LatestPostsResponse {
         </ng-container>
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        <tr
+          class="home-posts-table-row"
+          mat-row
+          *matRowDef="let row; columns: displayedColumns"
+        ></tr>
       </table>
     </div>
   `,
@@ -110,7 +117,6 @@ interface LatestPostsResponse {
       margin-block: 0 1em;
       overflow-x: auto;
       overflow-y: hidden;
-      padding-block-end: 1px;
       -webkit-overflow-scrolling: touch;
     }
 
@@ -192,6 +198,10 @@ interface LatestPostsResponse {
     .home-posts-table td {
       height: 2.75rem;
       padding: 0 2rem 0 1rem;
+    }
+
+    .home-posts-table .home-posts-table-row:last-child td {
+      border-block-end: 0;
     }
 
     .home-posts-table .mat-column-date {
@@ -289,6 +299,7 @@ interface LatestPostsResponse {
 })
 export class HomeLatestPostsTableComponent implements AfterViewInit, OnInit, OnDestroy {
   private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly liveAnnouncer = inject(LiveAnnouncer);
 
   @ViewChild(MatSort) sort?: MatSort;
 
@@ -354,6 +365,17 @@ export class HomeLatestPostsTableComponent implements AfterViewInit, OnInit, OnD
     if (detailed) void this.loadDetailedPosts();
     this.queueDateColumnMeasure();
   };
+
+  announceSortChange(sortState: Sort) {
+    if (!sortState.direction) {
+      this.liveAnnouncer.announce("Tri désactivé.");
+      return;
+    }
+
+    const direction = sortState.direction === "asc" ? "croissant" : "décroissant";
+    const column = sortState.active === "date" ? "date" : "titre";
+    this.liveAnnouncer.announce(`Articles triés par ${column}, ordre ${direction}.`);
+  }
 
   private watchDateColumnWidth() {
     if (typeof ResizeObserver === "undefined") return;

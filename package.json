@@ -48,7 +48,7 @@
     "@angular/platform-browser": "^22.0.5",
     "@angular/platform-server": "^22.0.2",
     "@astrojs/markdown-remark": "^7.2.0",
-    "@astrojs/mdx": "^6.0.3",
+    "@astrojs/mdx": "^7.0.2",
     "@astrojs/rss": "^4.0.18",
     "@vercel/speed-insights": "^2.0.0",
     "astro": "^7.0.6",

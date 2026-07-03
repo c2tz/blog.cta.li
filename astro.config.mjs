@@ -125,6 +125,13 @@ export default defineConfig({
     optimizeDeps: {
       include: VITE_OPTIMIZE_DEPS,
     },
+    css: {
+      preprocessorOptions: {
+        scss: {
+          loadPaths: ["node_modules"],
+        },
+      },
+    },
     build: {
       rollupOptions: {
         onwarn(warning, warn) {

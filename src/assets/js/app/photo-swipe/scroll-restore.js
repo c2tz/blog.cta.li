@@ -17,33 +17,46 @@ function clearLightboxScrollLock() {
   });
 }
 
+function restoreScrollLockStyle(element, property, value) {
+  restoreInlineStyle(element, property, value);
+}
+
 export function initLightboxPageScrollRestore(pswp) {
   const scrollX = window.scrollX;
   const scrollY = window.scrollY;
   const htmlOverflow = document.documentElement.style.overflow;
+  const htmlOverscrollBehavior = document.documentElement.style.overscrollBehavior;
   const htmlTouchAction = document.documentElement.style.touchAction;
   const bodyOverflow = document.body.style.overflow;
+  const bodyOverscrollBehavior = document.body.style.overscrollBehavior;
+  const bodyPosition = document.body.style.position;
+  const bodyTop = document.body.style.top;
+  const bodyLeft = document.body.style.left;
+  const bodyRight = document.body.style.right;
+  const bodyWidth = document.body.style.width;
   const bodyTouchAction = document.body.style.touchAction;
   let isClosing = false;
   let userScrolledAfterClose = false;
   let cleanupFallback = 0;
+
+  const lockPageScroll = () => {
+    document.documentElement.style.overflow = "hidden";
+    document.documentElement.style.overscrollBehavior = "none";
+    document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "none";
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = `-${scrollX}px`;
+    document.body.style.right = "0";
+    document.body.style.width = "100%";
+  };
 
   const markUserScrollIntent = () => {
     if (isClosing) userScrolledAfterClose = true;
   };
 
   const markUserScrollKeyIntent = (event) => {
-    if (
-      ![
-        " ",
-        "ArrowDown",
-        "ArrowUp",
-        "End",
-        "Home",
-        "PageDown",
-        "PageUp",
-      ].includes(event.key)
-    ) {
+    if (![" ", "ArrowDown", "ArrowUp", "End", "Home", "PageDown", "PageUp"].includes(event.key)) {
       return;
     }
 
@@ -51,36 +64,44 @@ export function initLightboxPageScrollRestore(pswp) {
   };
 
   const restorePageStyles = () => {
-    restoreInlineStyle(document.documentElement, "overflow", htmlOverflow);
-    restoreInlineStyle(document.documentElement, "touchAction", htmlTouchAction);
-    restoreInlineStyle(document.body, "overflow", bodyOverflow);
-    restoreInlineStyle(document.body, "touchAction", bodyTouchAction);
+    restoreScrollLockStyle(document.documentElement, "overflow", htmlOverflow);
+    restoreScrollLockStyle(document.documentElement, "overscrollBehavior", htmlOverscrollBehavior);
+    restoreScrollLockStyle(document.documentElement, "touchAction", htmlTouchAction);
+    restoreScrollLockStyle(document.body, "overflow", bodyOverflow);
+    restoreScrollLockStyle(document.body, "overscrollBehavior", bodyOverscrollBehavior);
+    restoreScrollLockStyle(document.body, "position", bodyPosition);
+    restoreScrollLockStyle(document.body, "top", bodyTop);
+    restoreScrollLockStyle(document.body, "left", bodyLeft);
+    restoreScrollLockStyle(document.body, "right", bodyRight);
+    restoreScrollLockStyle(document.body, "width", bodyWidth);
+    restoreScrollLockStyle(document.body, "touchAction", bodyTouchAction);
     clearLightboxScrollLock();
   };
 
   const restoreScroll = () => {
     if (userScrolledAfterClose) return;
 
-    if (
-      Math.abs(window.scrollX - scrollX) > 1 ||
-      Math.abs(window.scrollY - scrollY) > 1
-    ) {
+    if (Math.abs(window.scrollX - scrollX) > 1 || Math.abs(window.scrollY - scrollY) > 1) {
       window.scrollTo(scrollX, scrollY);
     }
   };
 
   const scheduleFallbackCleanup = () => {
     window.clearTimeout(cleanupFallback);
-    cleanupFallback = window.setTimeout(restorePageStyles, 600);
+    cleanupFallback = window.setTimeout(() => {
+      restorePageStyles();
+      restoreScroll();
+    }, 600);
   };
 
   window.addEventListener("wheel", markUserScrollIntent, { capture: true, passive: true });
   window.addEventListener("touchmove", markUserScrollIntent, { capture: true, passive: true });
   window.addEventListener("keydown", markUserScrollKeyIntent, true);
 
+  lockPageScroll();
+
   pswp.on("close", () => {
     isClosing = true;
-    restoreScroll();
     scheduleFallbackCleanup();
   });
 

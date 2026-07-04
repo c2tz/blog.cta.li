@@ -173,6 +173,7 @@ function isFocusableElement(element: HTMLElement) {
       }
       <section
         class="cookie-consent"
+        [class.cookie-consent--privacy]="activeNotice() === 'privacy'"
         [class.cookie-consent--modal]="activeNotice() === 'explicit-content'"
         [class.cookie-consent--explicit-content]="activeNotice() === 'explicit-content'"
         [attr.role]="activeNotice() === 'explicit-content' ? 'dialog' : 'region'"
@@ -237,14 +238,7 @@ function isFocusableElement(element: HTMLElement) {
           </div>
 
           <div class="cookie-consent-actions">
-            <button
-              matButton="text"
-              type="button"
-              disabled
-              aria-label="Plus de détails, page à venir"
-            >
-              PLUS DE DÉTAILS
-            </button>
+            <a href="/cookies/" matButton="text"> PLUS DE DÉTAILS </a>
             <button matButton="text" type="button" (click)="acknowledgePrivacyNotice()">
               JE COMPRENDS
             </button>
@@ -338,7 +332,11 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
 
   private syncPageState() {
     if (this.activeNotice() === "explicit-content") {
-      document.documentElement.classList.add("interaction-disabled", "consent-visible");
+      document.documentElement.classList.add(
+        "interaction-disabled",
+        "consent-prelock",
+        "consent-visible",
+      );
       setBackgroundInteractionDisabled(true);
     } else {
       this.unlockPage();
@@ -346,7 +344,11 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
   }
 
   private unlockPage() {
-    document.documentElement.classList.remove("interaction-disabled", "consent-visible");
+    document.documentElement.classList.remove(
+      "interaction-disabled",
+      "consent-prelock",
+      "consent-visible",
+    );
     setBackgroundInteractionDisabled(false);
   }
 

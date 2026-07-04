@@ -137,7 +137,6 @@
   margin-block: 1.5rem;
   border-radius: var(--image-radius);
   transition:
-    border-radius 180ms ease,
     transform 180ms ease,
     opacity 300ms cubic-bezier(0, 0, 0.2, 1),
     filter 360ms cubic-bezier(0, 0, 0.2, 1);
@@ -155,7 +154,6 @@
   filter: blur(18px);
   opacity: 0.68;
   transition:
-    border-radius 180ms ease,
     transform 180ms ease,
     opacity 1ms linear,
     filter 1ms linear;
@@ -177,8 +175,8 @@
 
 .site-prose :where(pre, pre code):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
   font-family: var(--site-mono-font);
-  font-size: 0.875rem;
-  line-height: 1.25rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
 }
 
 .site-prose

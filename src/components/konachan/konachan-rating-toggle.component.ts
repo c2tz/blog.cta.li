@@ -93,7 +93,6 @@ function normalizeRatingPreference(
       <div
         id="home-anime-rating-options"
         class="home-anime-rating-options"
-        [attr.aria-hidden]="!optionsOpen()"
         [hidden]="!optionsOpen()"
       >
         @for (option of ratingOptions; track option.value) {

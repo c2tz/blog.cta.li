@@ -56,7 +56,7 @@
   border-color: var(--m3-outline);
   background-color: var(--m3-surface-container-highest);
   color: var(--m3-on-surface);
-  box-shadow: inset 0 -1px 0 var(--m3-outline);
+  box-shadow: none;
 }
 
 :root[data-theme="dark"] .site-footer-link,
@@ -85,6 +85,15 @@
 
 :root[data-theme="dark"] .code-shell {
   border-color: var(--m3-outline-variant);
+}
+
+:root[data-theme="dark"] .code-shell pre {
+  scrollbar-color: color-mix(in srgb, var(--m3-outline) 82%, var(--code-block-surface))
+    var(--code-block-surface);
+}
+
+:root[data-theme="dark"] .code-shell pre::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--m3-outline) 82%, var(--code-block-surface));
 }
 
 :root[data-theme="dark"] .astro-code,

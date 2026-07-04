@@ -6,6 +6,13 @@ html.interaction-disabled.consent-visible body {
   touch-action: none;
 }
 
+html.consent-prelock .site-main,
+html.consent-prelock .site-footer {
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 html.consent-visible,
 html.consent-visible body {
   background-color: var(--home-dynamic-page-bg, var(--site-bg, var(--m3-background)));
@@ -77,6 +84,24 @@ html.consent-visible body {
   );
 }
 
+.cookie-consent--privacy {
+  bottom: 0;
+  left: 0;
+  width: auto;
+  max-width: 26.875rem;
+  margin: 1.5rem;
+  padding: 1rem 1rem 0.5rem;
+  border: 0;
+  border-radius: var(--site-shape-small);
+  background: var(--m3-surface-container-low);
+  box-shadow: var(
+    --mat-sys-level2,
+    0 3px 3px -2px rgb(0 0 0 / 20%),
+    0 3px 4px 0 rgb(0 0 0 / 14%),
+    0 1px 8px 0 rgb(0 0 0 / 12%)
+  );
+}
+
 .cookie-consent--modal {
   top: 50%;
   bottom: auto;
@@ -85,6 +110,9 @@ html.consent-visible body {
     31rem,
     calc(100vw - 2rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px))
   );
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
   padding: 1.1rem 1.1rem 0.65rem;
   transform: translate(-50%, -50%);
   transform-origin: center;
@@ -161,8 +189,8 @@ html.consent-visible body {
 
 .cookie-consent-alert {
   display: grid;
-  grid-template-columns: 3.25rem minmax(0, 1fr);
-  gap: 0.95rem;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
   align-items: start;
   padding: 0.1rem 0.2rem;
   border: 0;
@@ -209,6 +237,19 @@ html.consent-visible body {
   gap: 0.5rem;
 }
 
+.cookie-consent:is(.cookie-consent--privacy, .cookie-consent--explicit-content)
+  .cookie-consent-actions {
+  flex-wrap: nowrap;
+  gap: 0;
+  margin: 0.25rem -0.5rem 0 0;
+}
+
+.cookie-consent:is(.cookie-consent--privacy, .cookie-consent--explicit-content)
+  .cookie-consent-actions
+  .mat-mdc-button-base {
+  text-transform: uppercase;
+}
+
 .cookie-consent-actions button,
 .cookie-consent-actions .mdc-button__label {
   font-family: var(--site-font);
@@ -216,4 +257,19 @@ html.consent-visible body {
   font-weight: 400;
   letter-spacing: 0;
   line-height: 1.5;
+}
+
+.cookie-consent:is(.cookie-consent--privacy, .cookie-consent--explicit-content)
+  .cookie-consent-actions
+  .mat-mdc-button-base {
+  min-width: 4rem;
+  padding-inline: 0.5rem;
+}
+
+.cookie-consent:is(.cookie-consent--privacy, .cookie-consent--explicit-content)
+  .cookie-consent-actions
+  .mdc-button__label {
+  font-size: var(--mat-sys-label-large-size, 0.875rem);
+  font-weight: var(--mat-sys-label-large-weight, 500);
+  line-height: var(--mat-sys-label-large-line-height, 1.25rem);
 }

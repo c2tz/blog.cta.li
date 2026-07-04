@@ -1,7 +1,6 @@
 ---
 import { getCollection, getEntry } from "astro:content";
 
-import { HomeDetailToggleComponent } from "@/components/home/home-detail-toggle.component";
 import { HomeLatestPostsTableComponent } from "@/components/home/home-latest-posts-table.component";
 import HomeKonachanBackground from "@/components/home/home-konachan-background.astro";
 import { HomeSectionDividerComponent } from "@/components/home/home-section-divider.component";
@@ -92,8 +91,6 @@ const homeCopy = {
     </section>
 
     <section class="home-section home-tags-section" aria-label={homeCopy.tagsTitle}>
-      <HomeDetailToggleComponent client:load />
-
       <div id="home-tags-detail" class="home-tags-detail" aria-labelledby="tags">
         <h2 id="tags">
           <a href="#tags" class="heading-link">{homeCopy.tagsTitle}</a>

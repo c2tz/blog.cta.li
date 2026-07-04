@@ -1,9 +1,9 @@
 .code-shell {
   --code-action-space: 3.25rem;
-  --code-font-size: 0.875rem;
+  --code-font-size: 0.9rem;
   --code-line-number-gap: 1rem;
   --code-line-number-width: 3ch;
-  --code-line-height: 1.25rem;
+  --code-line-height: 1.5rem;
   --code-inline-pad: 1.5rem;
 
   position: relative;
@@ -49,6 +49,8 @@
 }
 
 .code-shell pre {
+  scrollbar-color: color-mix(in srgb, var(--site-muted) 68%, var(--code-block-surface))
+    var(--code-block-surface);
   font-family: var(--site-mono-font);
   font-size: var(--code-font-size);
   line-height: var(--code-line-height);
@@ -73,16 +75,17 @@
 }
 
 .code-shell pre::-webkit-scrollbar {
-  height: 0.5rem;
+  height: 0.625rem;
 }
 
 .code-shell pre::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--code-block-surface);
 }
 
 .code-shell pre::-webkit-scrollbar-thumb {
+  border: 2px solid var(--code-block-surface);
   border-radius: 9999px;
-  background: color-mix(in srgb, var(--site-muted) 42%, transparent);
+  background: color-mix(in srgb, var(--site-muted) 68%, var(--code-block-surface));
 }
 
 .code-shell pre *,
@@ -149,9 +152,7 @@
 
 @media (max-width: 520px) {
   .code-shell {
-    --code-font-size: 0.875rem;
     --code-inline-pad: 1rem;
-    --code-line-height: 1.25rem;
     --code-line-number-gap: 0.75rem;
   }
 }

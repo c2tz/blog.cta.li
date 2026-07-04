@@ -1,7 +1,12 @@
 function getPhotoSwipeToolbarRoot() {
-  return document.querySelector(
-    'astro-island[component-export="PhotoSwipeToolbarComponent"], site-photo-swipe-toolbar',
-  );
+  return getPhotoSwipeToolbarRoots()[0] ?? null;
+}
+
+function getPhotoSwipeToolbarRoots() {
+  return [
+    document.querySelector("site-photo-swipe-toolbar"),
+    document.querySelector('astro-island[component-export="PhotoSwipeToolbarComponent"]'),
+  ].filter((element, index, elements) => element && elements.indexOf(element) === index);
 }
 
 export function getLightboxViewportSize() {
@@ -18,41 +23,13 @@ export function getDisabledPhotoSwipeZoomLevel(zoomLevel) {
   return zoomLevel.initial || zoomLevel.fit || 1;
 }
 
-function getLightboxSystemZoomInverseScale() {
-  return 1 / Math.max(1, window.visualViewport?.scale || 1);
-}
-
-function setLightboxControlScale(element) {
-  element.style.setProperty(
-    "--photo-swipe-system-zoom-inverse-scale",
-    `${getLightboxSystemZoomInverseScale()}`,
-  );
-}
-
-function resetLightboxControlScale(element) {
-  element.style.removeProperty("--photo-swipe-system-zoom-inverse-scale");
+function isSystemZoomActive() {
+  return (window.visualViewport?.scale || 1) > 1.01;
 }
 
 export function initLightboxVisualViewport(pswp, syncPhotoSwipeState) {
   let frame = 0;
-  let controlFrame = 0;
   let lastPhotoSwipeViewportSize = getLightboxViewportSize();
-
-  const applyControlScale = () => {
-    if (pswp.element) setLightboxControlScale(pswp.element);
-
-    const toolbar = getPhotoSwipeToolbarRoot();
-    if (toolbar instanceof HTMLElement) setLightboxControlScale(toolbar);
-  };
-
-  const requestControlScale = () => {
-    if (controlFrame) return;
-
-    controlFrame = requestAnimationFrame(() => {
-      controlFrame = 0;
-      applyControlScale();
-    });
-  };
 
   const requestPhotoSwipeResize = () => {
     if (frame) return;
@@ -60,37 +37,29 @@ export function initLightboxVisualViewport(pswp, syncPhotoSwipeState) {
     frame = requestAnimationFrame(() => {
       frame = 0;
 
-      const viewportSize = getLightboxViewportSize();
-      const layoutChanged =
-        viewportSize.x !== lastPhotoSwipeViewportSize.x ||
-        viewportSize.y !== lastPhotoSwipeViewportSize.y;
+      if (!isSystemZoomActive()) {
+        const viewportSize = getLightboxViewportSize();
+        const layoutChanged =
+          viewportSize.x !== lastPhotoSwipeViewportSize.x ||
+          viewportSize.y !== lastPhotoSwipeViewportSize.y;
 
-      if (layoutChanged) {
-        lastPhotoSwipeViewportSize = viewportSize;
-        pswp.updateSize?.(true);
+        if (layoutChanged) {
+          lastPhotoSwipeViewportSize = viewportSize;
+          pswp.updateSize?.(true);
+        }
       }
 
       syncPhotoSwipeState?.();
     });
   };
 
-  applyControlScale();
-  pswp.on("firstUpdate", applyControlScale);
-  pswp.on("bindEvents", applyControlScale);
-
   window.addEventListener("resize", requestPhotoSwipeResize, { passive: true });
-  window.visualViewport?.addEventListener("resize", requestControlScale, { passive: true });
+  window.visualViewport?.addEventListener("resize", requestPhotoSwipeResize, { passive: true });
 
   pswp.on("destroy", () => {
     if (frame) cancelAnimationFrame(frame);
-    if (controlFrame) cancelAnimationFrame(controlFrame);
     window.removeEventListener("resize", requestPhotoSwipeResize);
-    window.visualViewport?.removeEventListener("resize", requestControlScale);
-
-    if (pswp.element) resetLightboxControlScale(pswp.element);
-
-    const toolbar = getPhotoSwipeToolbarRoot();
-    if (toolbar instanceof HTMLElement) resetLightboxControlScale(toolbar);
+    window.visualViewport?.removeEventListener("resize", requestPhotoSwipeResize);
   });
 }
 
@@ -113,7 +82,7 @@ function getPhotoSwipeFocusableElements(pswp) {
     "textarea:not([disabled])",
     '[tabindex]:not([tabindex="-1"])',
   ].join(",");
-  const roots = [getPhotoSwipeToolbarRoot(), pswp.element].filter(Boolean);
+  const roots = [...getPhotoSwipeToolbarRoots(), pswp.element].filter(Boolean);
   const elements = roots.flatMap((root) => Array.from(root.querySelectorAll(selector)));
 
   return [...new Set(elements)].filter(isVisibleFocusableElement);
@@ -143,8 +112,10 @@ export function initLightboxFocusTrap(pswp) {
 
   const isInsideLightboxFocusScope = (target) => {
     if (!(target instanceof Node)) return false;
-    const toolbar = getPhotoSwipeToolbarRoot();
-    return Boolean(pswp.element?.contains(target) || toolbar?.contains(target));
+    return Boolean(
+      pswp.element?.contains(target) ||
+      getPhotoSwipeToolbarRoots().some((toolbar) => toolbar.contains(target)),
+    );
   };
 
   const handleFocusIn = (event) => {
@@ -182,10 +153,25 @@ export function initLightboxFocusTrap(pswp) {
 }
 
 export function initLightboxSystemZoomPassThrough(pswp) {
+  const activeTouchPointers = new Set();
+
   const isInsideLightbox = (target) => {
     if (!(target instanceof Node)) return false;
-    const toolbar = getPhotoSwipeToolbarRoot();
-    return Boolean(pswp.element?.contains(target) || toolbar?.contains(target));
+    return Boolean(
+      pswp.element?.contains(target) ||
+      getPhotoSwipeToolbarRoots().some((toolbar) => toolbar.contains(target)),
+    );
+  };
+
+  const trackTouchPointer = (event) => {
+    if (event.pointerType !== "touch") return;
+
+    if (event.type === "pointerdown") {
+      if (isInsideLightbox(event.target)) activeTouchPointers.add(event.pointerId);
+      return;
+    }
+
+    activeTouchPointers.delete(event.pointerId);
   };
 
   const passSystemZoomGesture = (event) => {
@@ -201,11 +187,15 @@ export function initLightboxSystemZoomPassThrough(pswp) {
   };
 
   const allowNativeMultitouch = (prevent, event) => {
+    if (!isInsideLightbox(event.target)) return prevent;
+
+    if (event?.ctrlKey || event?.metaKey) {
+      return false;
+    }
+
     if (
-      event?.touches?.length > 1 ||
-      event?.ctrlKey ||
-      event?.metaKey ||
-      (event?.pointerType === "touch" && pswp.gestures?._numActivePoints > 1)
+      (event?.pointerType === "touch" && activeTouchPointers.size > 1) ||
+      window.visualViewport?.scale > 1
     ) {
       return false;
     }
@@ -214,13 +204,25 @@ export function initLightboxSystemZoomPassThrough(pswp) {
   };
 
   pswp.addFilter("preventPointerEvent", allowNativeMultitouch);
+  document.addEventListener("pointerdown", trackTouchPointer, { capture: true, passive: true });
+  document.addEventListener("pointerup", trackTouchPointer, { capture: true, passive: true });
+  document.addEventListener("pointercancel", trackTouchPointer, { capture: true, passive: true });
   document.addEventListener("wheel", onWheel, { capture: true, passive: false });
-  document.addEventListener("gesturestart", passSystemZoomGesture, { capture: true, passive: false });
-  document.addEventListener("gesturechange", passSystemZoomGesture, { capture: true, passive: false });
+  document.addEventListener("gesturestart", passSystemZoomGesture, {
+    capture: true,
+    passive: false,
+  });
+  document.addEventListener("gesturechange", passSystemZoomGesture, {
+    capture: true,
+    passive: false,
+  });
   document.addEventListener("gestureend", passSystemZoomGesture, { capture: true, passive: false });
 
   const cleanup = () => {
     pswp.removeFilter("preventPointerEvent", allowNativeMultitouch);
+    document.removeEventListener("pointerdown", trackTouchPointer, true);
+    document.removeEventListener("pointerup", trackTouchPointer, true);
+    document.removeEventListener("pointercancel", trackTouchPointer, true);
     document.removeEventListener("wheel", onWheel, true);
     document.removeEventListener("gesturestart", passSystemZoomGesture, true);
     document.removeEventListener("gesturechange", passSystemZoomGesture, true);
@@ -232,32 +234,42 @@ export function initLightboxSystemZoomPassThrough(pswp) {
 }
 
 export function initLightboxPhotoSwipeZoomDisable(pswp) {
-  const lockZoomLevels = ({ zoomLevels }) => {
-    const lockedZoom = getDisabledPhotoSwipeZoomLevel(zoomLevels);
-    zoomLevels.secondary = lockedZoom;
-    zoomLevels.max = lockedZoom;
-    zoomLevels.min = lockedZoom;
+  const disableContentZoom = () => false;
+
+  const resetPhotoSwipeZoom = () => {
+    const slide = pswp.currSlide;
+    if (!slide?.zoomLevels) return;
+
+    const initial = slide.zoomLevels.initial || slide.zoomLevels.fit || 1;
+    slide.zoomLevels.secondary = initial;
+    slide.zoomLevels.max = initial;
+
+    if (Math.abs((slide.currZoomLevel || initial) - initial) > 0.01) {
+      slide.zoomTo?.(initial, false, 0, true);
+    }
   };
 
-  const blockInternalMultitouchZoom = (event) => {
+  const blockInternalZoom = (event) => {
     const originalEvent = event.originalEvent;
     if (
-      originalEvent?.touches?.length > 1 ||
-      (originalEvent?.pointerType === "touch" && pswp.gestures?._numActivePoints > 1)
+      pswp.gestures?._numActivePoints > 1 ||
+      pswp.gestures?.isZooming ||
+      originalEvent?.ctrlKey ||
+      originalEvent?.metaKey
     ) {
       event.preventDefault();
     }
   };
 
-  const blockKeyboardZoom = (event) => {
-    const originalEvent = event.originalEvent;
-    if (originalEvent?.key?.toLowerCase() !== "z") return;
+  pswp.addFilter("isContentZoomable", disableContentZoom);
+  pswp.on("afterInit", resetPhotoSwipeZoom);
+  pswp.on("change", resetPhotoSwipeZoom);
+  pswp.on("beforeZoomTo", blockInternalZoom);
+  pswp.on("pointerMove", blockInternalZoom);
 
-    event.preventDefault();
-    originalEvent.preventDefault();
+  const cleanup = () => {
+    pswp.removeFilter("isContentZoomable", disableContentZoom);
   };
 
-  pswp.on("zoomLevelsUpdate", lockZoomLevels);
-  pswp.on("pointerMove", blockInternalMultitouchZoom);
-  pswp.on("keydown", blockKeyboardZoom);
+  pswp.on("destroy", cleanup);
 }

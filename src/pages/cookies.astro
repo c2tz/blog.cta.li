@@ -1,0 +1,77 @@
+---
+import Layout from "@/layouts/site-layout.astro";
+---
+
+<Layout
+  title="Cookies et confidentialité"
+  description="Détails sur les cookies, le stockage local et les services utilisés par ct-blog."
+>
+  <Fragment slot="content">
+    <article class="site-prose" aria-labelledby="cookies-title">
+      <h1 id="cookies-title">Cookies et confidentialité</h1>
+
+      <p>
+        Cette page détaille les cookies, le stockage local et les services utilisés par ct-blog.
+        L’objectif est de garder les préférences utiles au fonctionnement du site sans multiplier
+        les traceurs.
+      </p>
+
+      <h2>Stockage nécessaire au site</h2>
+      <p>
+        Le site conserve certaines préférences dans votre navigateur pour éviter de vous redemander
+        les mêmes choix à chaque visite.
+      </p>
+      <ul>
+        <li>
+          <code>ct-cookie-consent</code> et <code>ct-cookie-consent-v1</code> mémorisent que l’avis de
+          confidentialité a été compris.
+        </li>
+        <li>
+          <code>ct-explicit-content-ack</code> et <code>ct-explicit-content-ack-v1</code> mémorisent l’avertissement
+          relatif aux images pouvant être réservées à un public adulte.
+        </li>
+        <li>
+          <code>site-theme-preference</code> garde le thème choisi: clair, sombre ou système.
+        </li>
+        <li>
+          <code>home-detail-view-v1</code> garde le choix d’affichage détaillé ou compact de la page d’accueil.
+        </li>
+      </ul>
+
+      <h2>Fonctionnalités locales</h2>
+      <p>
+        Certaines options améliorent l’expérience sans créer de compte utilisateur. Les fonds
+        Konachan de la page d’accueil, leur préférence de classement et la géolocalisation IP
+        affichée dans le pied de page peuvent être mis en cache dans le navigateur.
+      </p>
+      <ul>
+        <li>
+          <code>home-konachan-backgrounds-v8</code> conserve temporairement la liste des images chargées
+          pour l’accueil.
+        </li>
+        <li>
+          <code>home-konachan-rating-preference-v1</code> garde la préférence de classement des images
+          d’accueil.
+        </li>
+        <li>
+          <code>site-ip-geolocation-v2</code> garde temporairement le résultat de géolocalisation IP afin
+          de limiter les appels réseau répétés.
+        </li>
+      </ul>
+
+      <h2>Services externes</h2>
+      <p>
+        Le site peut contacter des services externes uniquement pour les fonctionnalités visibles:
+        récupérer une géolocalisation IP, charger les commentaires Giscus sur les articles, ou
+        mesurer les performances de navigation en production via Vercel Speed Insights.
+      </p>
+
+      <h2>Réinitialiser vos choix</h2>
+      <p>
+        Vous pouvez supprimer ces données depuis les réglages de votre navigateur en effaçant les
+        cookies et les données de site associées à <code>ct-blog.cta.li</code>. Au prochain passage,
+        le site redemandera les choix nécessaires.
+      </p>
+    </article>
+  </Fragment>
+</Layout>

@@ -2,17 +2,21 @@ import { createHash } from "node:crypto";
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 
-const SECURITY_HEADER_SOURCE = "/(.*)";
+const GLOBAL_SECURITY_HEADER_SOURCE = "/(.*)";
+const DOCUMENT_SECURITY_HEADER_SOURCE =
+  "/((?!_astro/|fonts/|giscus/|konachan-backgrounds/|favicon\\.ico$|mask\\.webp$|.*\\.(?:css|js|mjs|map|woff2?|png|jpe?g|gif|svg|webp|avif|ico|json|xml|txt|webmanifest)$).*)";
 
-const REQUIRED_HEADERS = new Map([
+const GLOBAL_REQUIRED_HEADERS = new Map([
+  ["Strict-Transport-Security", ["max-age=63072000", "includeSubDomains", "preload"]],
+  ["X-Content-Type-Options", ["nosniff"]],
+  ["Referrer-Policy", ["strict-origin-when-cross-origin"]],
+]);
+
+const DOCUMENT_REQUIRED_HEADERS = new Map([
   [
     "Content-Security-Policy",
     ["default-src 'self'", "object-src 'none'", "frame-ancestors 'none'", "'wasm-unsafe-eval'"],
   ],
-  ["Strict-Transport-Security", ["max-age=63072000", "includeSubDomains", "preload"]],
-  ["X-Frame-Options", ["DENY"]],
-  ["X-Content-Type-Options", ["nosniff"]],
-  ["Referrer-Policy", ["strict-origin-when-cross-origin"]],
   [
     "Permissions-Policy",
     ["geolocation=()", "camera=()", "microphone=()", "clipboard-write=(self)", "fullscreen=(self)"],
@@ -25,7 +29,6 @@ const OPTIONAL_HARDENING_HEADERS = [
   "Cross-Origin-Resource-Policy",
   "Origin-Agent-Cluster",
   "X-Permitted-Cross-Domain-Policies",
-  "X-XSS-Protection",
 ];
 
 const GISCUS_ORIGIN = new URL("https://giscus.app");
@@ -96,20 +99,32 @@ async function collectInlineScriptHashes(directory) {
 }
 
 const vercelConfig = JSON.parse(await readFile("vercel.json", "utf8"));
-const securityRule = vercelConfig.headers?.find((rule) => rule.source === SECURITY_HEADER_SOURCE);
+const globalSecurityRule = vercelConfig.headers?.find(
+  (rule) => rule.source === GLOBAL_SECURITY_HEADER_SOURCE,
+);
+const documentSecurityRule = vercelConfig.headers?.find(
+  (rule) => rule.source === DOCUMENT_SECURITY_HEADER_SOURCE,
+);
 
-if (!securityRule) {
-  throw new Error(`Missing global security header rule for ${SECURITY_HEADER_SOURCE}.`);
+if (!globalSecurityRule) {
+  throw new Error(`Missing global security header rule for ${GLOBAL_SECURITY_HEADER_SOURCE}.`);
 }
 
-const configuredHeaders = new Map(
-  securityRule.headers?.map((header) => [header.key, header.value]) ?? [],
+if (!documentSecurityRule) {
+  throw new Error(`Missing document security header rule for ${DOCUMENT_SECURITY_HEADER_SOURCE}.`);
+}
+
+const globalHeaders = new Map(
+  globalSecurityRule.headers?.map((header) => [header.key, header.value]) ?? [],
+);
+const documentHeaders = new Map(
+  documentSecurityRule.headers?.map((header) => [header.key, header.value]) ?? [],
 );
 
 const problems = [];
 
-for (const [headerName, requiredTokens] of REQUIRED_HEADERS) {
-  const value = configuredHeaders.get(headerName);
+for (const [headerName, requiredTokens] of GLOBAL_REQUIRED_HEADERS) {
+  const value = globalHeaders.get(headerName);
 
   if (!value) {
     problems.push(`Missing ${headerName}.`);
@@ -123,7 +138,22 @@ for (const [headerName, requiredTokens] of REQUIRED_HEADERS) {
   }
 }
 
-const contentSecurityPolicy = configuredHeaders.get("Content-Security-Policy");
+for (const [headerName, requiredTokens] of DOCUMENT_REQUIRED_HEADERS) {
+  const value = documentHeaders.get(headerName);
+
+  if (!value) {
+    problems.push(`Missing ${headerName}.`);
+    continue;
+  }
+
+  for (const token of requiredTokens) {
+    if (!value.includes(token)) {
+      problems.push(`${headerName} is missing "${token}".`);
+    }
+  }
+}
+
+const contentSecurityPolicy = documentHeaders.get("Content-Security-Policy");
 
 if (contentSecurityPolicy) {
   const scriptSrc = cspDirective(contentSecurityPolicy, "script-src");
@@ -167,12 +197,12 @@ if (contentSecurityPolicy) {
 }
 
 for (const headerName of OPTIONAL_HARDENING_HEADERS) {
-  if (!configuredHeaders.has(headerName)) {
+  if (!documentHeaders.has(headerName)) {
     problems.push(`Missing hardening header ${headerName}.`);
   }
 }
 
-const crossOriginEmbedderPolicy = configuredHeaders.get("Cross-Origin-Embedder-Policy");
+const crossOriginEmbedderPolicy = documentHeaders.get("Cross-Origin-Embedder-Policy");
 const allowsGiscusFrame = contentSecurityPolicy
   ? cspDirectiveAllowsUrlOrigin(contentSecurityPolicy, "frame-src", GISCUS_ORIGIN)
   : false;

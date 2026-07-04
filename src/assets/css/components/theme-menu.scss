@@ -32,3 +32,19 @@
   height: 24px;
   margin: 0;
 }
+
+.site-theme-swatch-surface-light {
+  fill: var(--home-dynamic-light-surface, #fffbfe);
+}
+
+.site-theme-swatch-surface-dark {
+  fill: var(--home-dynamic-dark-surface, #141218);
+}
+
+.site-theme-swatch-primary-light {
+  fill: var(--home-dynamic-light-primary, #6750a4);
+}
+
+.site-theme-swatch-primary-dark {
+  fill: var(--home-dynamic-dark-primary, #d0bcff);
+}

@@ -5,21 +5,23 @@
   --home-banner-height: clamp(20rem, 52svh, 31rem);
   --home-hero-on-image: #e6e0e9;
   --home-hero-on-image-muted: #e6e0e9;
+  --home-hero-accent: var(--home-hero-on-image);
   --home-hero-tonal-container: rgb(255 255 255 / 18%);
+  --home-hero-tonal-label: var(--home-hero-on-image);
   --home-hero-tonal-hover: rgb(255 255 255 / 24%);
   @include mat.button-overrides(
     (
       tonal-container-color: var(--home-hero-tonal-container),
-      tonal-label-text-color: var(--home-hero-on-image),
-      tonal-state-layer-color: var(--home-hero-on-image),
-      tonal-ripple-color: rgb(255 255 255 / 14%),
+      tonal-label-text-color: var(--home-hero-tonal-label),
+      tonal-state-layer-color: var(--home-hero-tonal-label),
+      tonal-ripple-color: color-mix(in srgb, var(--home-hero-tonal-label) 14%, transparent),
       outlined-label-text-color: #fff,
       outlined-outline-color: #fff,
       outlined-state-layer-color: #fff,
       outlined-ripple-color: rgb(255 255 255 / 12%),
-      text-label-text-color: #fff,
-      text-state-layer-color: #fff,
-      text-ripple-color: rgb(255 255 255 / 12%),
+      text-label-text-color: var(--home-hero-accent),
+      text-state-layer-color: var(--home-hero-accent),
+      text-ripple-color: color-mix(in srgb, var(--home-hero-accent) 12%, transparent),
     )
   );
   @include mat.icon-button-overrides(
@@ -121,8 +123,12 @@
 }
 
 .home-hero-button {
-  color: var(--home-hero-on-image);
+  color: var(--home-hero-tonal-label);
   text-shadow: none;
+}
+
+.home-hero-button.mat-mdc-button {
+  color: var(--home-hero-accent);
 }
 
 .home-hero-button .mat-icon {

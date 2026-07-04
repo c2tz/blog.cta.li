@@ -42,6 +42,7 @@ const VITE_OPTIMIZE_DEPS = [
   "@angular/material/snack-bar",
   "@angular/material/table",
   "@angular/material/tooltip",
+  "@material/material-color-utilities",
   "photoswipe",
   "photoswipe/lightbox",
 ];

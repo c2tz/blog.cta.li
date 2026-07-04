@@ -70,36 +70,41 @@ const speedInsightsVersion = speedInsightsPackage.version;
       }}
     >
       (() => {
-        try {
-          const key = themeStorageKey;
-          const legacyKey = legacyThemeStorageKey;
-          const preferences = ["system", "light", "dark"];
-          const stored = localStorage.getItem(key);
-          const legacyStored = localStorage.getItem(legacyKey);
-          const preference = preferences.includes(stored)
-            ? stored
-            : preferences.includes(legacyStored)
-              ? legacyStored
-              : "system";
+        const syncThemePreference = () => {
+          try {
+            const key = themeStorageKey;
+            const legacyKey = legacyThemeStorageKey;
+            const preferences = ["system", "light", "dark"];
+            const stored = localStorage.getItem(key);
+            const legacyStored = localStorage.getItem(legacyKey);
+            const preference = preferences.includes(stored)
+              ? stored
+              : preferences.includes(legacyStored)
+                ? legacyStored
+                : "system";
 
-          if (stored === null && preferences.includes(legacyStored)) {
-            localStorage.setItem(key, preference);
-            localStorage.removeItem(legacyKey);
+            if (stored === null && preferences.includes(legacyStored)) {
+              localStorage.setItem(key, preference);
+              localStorage.removeItem(legacyKey);
+            }
+
+            const resolved =
+              preference === "system"
+                ? matchMedia("(prefers-color-scheme: dark)").matches
+                  ? "dark"
+                  : "light"
+                : preference;
+
+            document.documentElement.dataset.theme = resolved;
+            document.documentElement.dataset.themePreference = preference;
+            document.documentElement.style.colorScheme = resolved;
+          } catch {
+            document.documentElement.dataset.theme = "light";
           }
+        };
 
-          const resolved =
-            preference === "system"
-              ? matchMedia("(prefers-color-scheme: dark)").matches
-                ? "dark"
-                : "light"
-              : preference;
-
-          document.documentElement.dataset.theme = resolved;
-          document.documentElement.dataset.themePreference = preference;
-          document.documentElement.style.colorScheme = resolved;
-        } catch {
-          document.documentElement.dataset.theme = "light";
-        }
+        syncThemePreference();
+        addEventListener("pageshow", syncThemePreference);
 
         try {
           const readCookie = (name) => {

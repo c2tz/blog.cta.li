@@ -84,18 +84,31 @@ function isThemePreference(value: string | null | undefined): value is ThemePref
                 <rect
                   width="80"
                   height="80"
-                  [attr.fill]="option.value === 'dark' ? '#141218' : '#fffbfe'"
+                  [class]="
+                    option.value === 'dark'
+                      ? 'site-theme-swatch-surface-dark'
+                      : 'site-theme-swatch-surface-light'
+                  "
                 ></rect>
                 @if (option.value === "system") {
-                  <rect x="40" width="40" height="80" fill="#141218"></rect>
+                  <rect x="40" width="40" height="80" class="site-theme-swatch-surface-dark"></rect>
                 }
                 <rect
                   width="80"
                   height="17.24"
-                  [attr.fill]="option.value === 'dark' ? '#d0bcff' : '#6750a4'"
+                  [class]="
+                    option.value === 'dark'
+                      ? 'site-theme-swatch-primary-dark'
+                      : 'site-theme-swatch-primary-light'
+                  "
                 ></rect>
                 @if (option.value === "system") {
-                  <rect x="40" width="40" height="17.24" fill="#d0bcff"></rect>
+                  <rect
+                    x="40"
+                    width="40"
+                    height="17.24"
+                    class="site-theme-swatch-primary-dark"
+                  ></rect>
                 }
                 <g [attr.clip-path]="'url(#theme-pill-' + option.value + ')'">
                   <rect
@@ -103,10 +116,20 @@ function isThemePreference(value: string | null | undefined): value is ThemePref
                     y="40"
                     width="40"
                     height="12"
-                    [attr.fill]="option.value === 'dark' ? '#d0bcff' : '#6750a4'"
+                    [class]="
+                      option.value === 'dark'
+                        ? 'site-theme-swatch-primary-dark'
+                        : 'site-theme-swatch-primary-light'
+                    "
                   ></rect>
                   @if (option.value === "system") {
-                    <rect x="40" y="40" width="20" height="12" fill="#d0bcff"></rect>
+                    <rect
+                      x="40"
+                      y="40"
+                      width="20"
+                      height="12"
+                      class="site-theme-swatch-primary-dark"
+                    ></rect>
                   }
                 </g>
               </g>
@@ -166,31 +189,24 @@ export class ThemeSwitcherComponent implements OnInit, OnDestroy {
   private readonly handleSystemThemeChange = () => {
     if (this.preference() === "system") this.applyTheme("system", false);
   };
+  private readonly handlePageShow = () => {
+    this.syncPreferenceFromStorage();
+  };
 
   ngOnInit() {
     if (typeof window === "undefined") return;
 
     this.systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
     this.systemTheme.addEventListener("change", this.handleSystemThemeChange);
-
-    let stored: string | null = null;
-    try {
-      const current = window.localStorage.getItem(STORAGE_KEY);
-      const legacy = window.localStorage.getItem(LEGACY_STORAGE_KEY);
-      stored = isThemePreference(current) ? current : legacy;
-
-      if (!isThemePreference(current) && isThemePreference(legacy)) {
-        window.localStorage.setItem(STORAGE_KEY, legacy);
-      }
-      if (legacy !== null) window.localStorage.removeItem(LEGACY_STORAGE_KEY);
-    } catch {}
-    const initial = isThemePreference(stored) ? stored : "system";
-    this.preference.set(initial);
-    this.applyTheme(initial, false);
+    window.addEventListener("pageshow", this.handlePageShow);
+    this.syncPreferenceFromStorage();
   }
 
   ngOnDestroy() {
     this.systemTheme?.removeEventListener("change", this.handleSystemThemeChange);
+    if (typeof window === "undefined") return;
+
+    window.removeEventListener("pageshow", this.handlePageShow);
   }
 
   selectPreference(preference: ThemePreference) {
@@ -212,5 +228,23 @@ export class ThemeSwitcherComponent implements OnInit, OnDestroy {
         window.localStorage.setItem(STORAGE_KEY, preference);
       } catch {}
     }
+  }
+
+  private syncPreferenceFromStorage() {
+    let stored: string | null = null;
+    try {
+      const current = window.localStorage.getItem(STORAGE_KEY);
+      const legacy = window.localStorage.getItem(LEGACY_STORAGE_KEY);
+      stored = isThemePreference(current) ? current : legacy;
+
+      if (!isThemePreference(current) && isThemePreference(legacy)) {
+        window.localStorage.setItem(STORAGE_KEY, legacy);
+      }
+      if (legacy !== null) window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+    } catch {}
+
+    const preference = isThemePreference(stored) ? stored : "system";
+    this.preference.set(preference);
+    this.applyTheme(preference, false);
   }
 }

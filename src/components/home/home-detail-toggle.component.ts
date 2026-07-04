@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component } from "@angular/core";
 import type { OnInit } from "@angular/core";
-import { MatSlideToggle } from "@angular/material/slide-toggle";
-import type { MatSlideToggleChange } from "@angular/material/slide-toggle";
+import { MatIconButton } from "@angular/material/button";
+import { MatIcon } from "@angular/material/icon";
+import { MatTooltip } from "@angular/material/tooltip";
 
 import {
   SITE_COOKIE_NAMES,
@@ -14,53 +15,43 @@ import {
 @Component({
   selector: "site-home-detail-toggle",
   standalone: true,
-  imports: [MatSlideToggle],
+  imports: [MatIconButton, MatIcon, MatTooltip],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <mat-slide-toggle
-      class="home-detail-toggle"
-      name="home-detail-view"
-      [checked]="detailed"
-      [attr.aria-describedby]="'home-detail-toggle-help'"
-      (change)="handleToggleChange($event)"
+    <button
+      matIconButton
+      type="button"
+      class="home-detail-trigger"
+      [matTooltip]="label"
+      matTooltipPosition="below"
+      [attr.aria-label]="label"
+      [attr.aria-pressed]="detailed"
+      (click)="toggleDetailedView()"
     >
-      {{ detailed ? "Affichage détaillé" : "Affichage simple" }}
-    </mat-slide-toggle>
-    <span id="home-detail-toggle-help" class="sr-only">
-      L’affichage détaillé montre les dates complètes, les informations Konachan et la rubrique
-      Tags.
-    </span>
+      <mat-icon aria-hidden="true">{{ icon }}</mat-icon>
+    </button>
   `,
   styles: `
     :host {
-      display: flex;
-      justify-content: flex-start;
-      margin-block: 0;
-    }
-
-    .home-detail-toggle.mat-mdc-slide-toggle {
-      --mat-slide-toggle-label-text-size: 1rem;
-      --mat-slide-toggle-label-text-line-height: 1.5rem;
-      --mat-slide-toggle-label-text-weight: 400;
-      --mat-slide-toggle-label-text-tracking: 0;
-    }
-
-    :host-context(:root[data-theme="dark"]) .home-detail-toggle.mat-mdc-slide-toggle {
-      --mat-slide-toggle-track-outline-color: var(--site-muted);
-      --mat-slide-toggle-unselected-focus-handle-color: var(--site-on-tonal-container);
-      --mat-slide-toggle-unselected-focus-track-color: var(--site-tonal-container);
-      --mat-slide-toggle-unselected-handle-color: var(--site-muted);
-      --mat-slide-toggle-unselected-hover-handle-color: var(--site-on-tonal-container);
-      --mat-slide-toggle-unselected-hover-track-color: var(--site-tonal-container);
-      --mat-slide-toggle-unselected-icon-color: var(--site-tonal-container);
-      --mat-slide-toggle-unselected-pressed-handle-color: var(--site-on-tonal-container);
-      --mat-slide-toggle-unselected-pressed-track-color: var(--site-tonal-container);
-      --mat-slide-toggle-unselected-track-color: var(--site-tonal-container);
+      display: block;
+      width: 2.5rem;
+      height: 2.5rem;
+      flex: 0 0 2.5rem;
     }
   `,
 })
 export class HomeDetailToggleComponent implements OnInit {
+  readonly simpleIcon = "\uE261";
+  readonly detailedIcon = "\uE8D2";
   detailed = false;
+
+  get icon() {
+    return this.detailed ? this.detailedIcon : this.simpleIcon;
+  }
+
+  get label() {
+    return this.detailed ? "Mode détaillé" : "Mode simple";
+  }
 
   ngOnInit() {
     const stored = this.readStoredDetailView();
@@ -69,8 +60,8 @@ export class HomeDetailToggleComponent implements OnInit {
     this.applyDetailView(stored);
   }
 
-  handleToggleChange(event: MatSlideToggleChange) {
-    this.setDetailedView(event.checked);
+  toggleDetailedView() {
+    this.setDetailedView(!this.detailed);
   }
 
   setDetailedView(detailed: boolean) {

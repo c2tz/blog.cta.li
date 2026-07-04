@@ -264,7 +264,7 @@ export class KonachanRatingToggleComponent implements OnInit, OnDestroy {
       this.ratingOptions.find((option) => option.value === this.ratingPreference())?.label ??
       RATING_OPTIONS[0].label;
 
-    return `Niveau Konachan : ${label}`;
+    return label;
   });
   readonly triggerIcon = computed(() => {
     return (

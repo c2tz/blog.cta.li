@@ -2,7 +2,8 @@ import { createHash } from "node:crypto";
 import { readdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-const SECURITY_HEADER_SOURCE = "/(.*)";
+const DOCUMENT_SECURITY_HEADER_SOURCE =
+  "/((?!_astro/|fonts/|giscus/|konachan-backgrounds/|favicon\\.ico$|mask\\.webp$|.*\\.(?:css|js|mjs|map|woff2?|png|jpe?g|gif|svg|webp|avif|ico|json|xml|txt|webmanifest)$).*)";
 const SCRIPT_SRC_BASE_TOKENS = ["'self'", "'wasm-unsafe-eval'", "https://giscus.app"];
 
 async function htmlFilesIn(directory) {
@@ -67,11 +68,13 @@ if (distScriptHashes.length === 0) {
 const vercelConfigPath = "vercel.json";
 const vercelConfigRaw = await readFile(vercelConfigPath, "utf8");
 const vercelConfig = JSON.parse(vercelConfigRaw);
-const securityRule = vercelConfig.headers?.find((rule) => rule.source === SECURITY_HEADER_SOURCE);
+const securityRule = vercelConfig.headers?.find(
+  (rule) => rule.source === DOCUMENT_SECURITY_HEADER_SOURCE,
+);
 const cspHeader = securityRule?.headers?.find((header) => header.key === "Content-Security-Policy");
 
 if (!cspHeader) {
-  throw new Error(`Missing Content-Security-Policy header for ${SECURITY_HEADER_SOURCE}.`);
+  throw new Error(`Missing Content-Security-Policy header for ${DOCUMENT_SECURITY_HEADER_SOURCE}.`);
 }
 
 const scriptSrc = ["script-src", ...SCRIPT_SRC_BASE_TOKENS, ...distScriptHashes].join(" ");

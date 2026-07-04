@@ -1,8 +1,14 @@
 import {
+  Hct,
+  MaterialDynamicColors,
+  SchemeTonalSpot,
   hexFromArgb,
   sourceColorFromImage,
-  themeFromSourceColor,
 } from "@material/material-color-utilities";
+
+const MATERIAL_DYNAMIC_COLORS = new MaterialDynamicColors();
+const MATERIAL_DYNAMIC_SPEC_VERSION = "2021";
+const MATERIAL_DYNAMIC_VARIANT = SchemeTonalSpot;
 
 function readHomeKonachanConfig() {
   const element = document.getElementById("home-konachan-config");
@@ -51,6 +57,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     currentImage: null,
     currentUrl: "",
     dynamicTheme: null,
+    dynamicThemeCache: new Map(),
     images: [],
     ratingPreference: "safe",
     refreshPromise: null,
@@ -149,6 +156,57 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     "tertiary-fixed",
     "tertiary-fixed-dim",
   ];
+  const HOME_DYNAMIC_ROLE_METHODS = {
+    background: "background",
+    error: "error",
+    "error-container": "errorContainer",
+    "inverse-on-surface": "inverseOnSurface",
+    "inverse-primary": "inversePrimary",
+    "inverse-surface": "inverseSurface",
+    "on-background": "onBackground",
+    "on-error": "onError",
+    "on-error-container": "onErrorContainer",
+    "on-primary": "onPrimary",
+    "on-primary-container": "onPrimaryContainer",
+    "on-primary-fixed": "onPrimaryFixed",
+    "on-primary-fixed-variant": "onPrimaryFixedVariant",
+    "on-secondary": "onSecondary",
+    "on-secondary-container": "onSecondaryContainer",
+    "on-secondary-fixed": "onSecondaryFixed",
+    "on-secondary-fixed-variant": "onSecondaryFixedVariant",
+    "on-surface": "onSurface",
+    "on-surface-variant": "onSurfaceVariant",
+    "on-tertiary": "onTertiary",
+    "on-tertiary-container": "onTertiaryContainer",
+    "on-tertiary-fixed": "onTertiaryFixed",
+    "on-tertiary-fixed-variant": "onTertiaryFixedVariant",
+    outline: "outline",
+    "outline-variant": "outlineVariant",
+    primary: "primary",
+    "primary-container": "primaryContainer",
+    "primary-fixed": "primaryFixed",
+    "primary-fixed-dim": "primaryFixedDim",
+    scrim: "scrim",
+    secondary: "secondary",
+    "secondary-container": "secondaryContainer",
+    "secondary-fixed": "secondaryFixed",
+    "secondary-fixed-dim": "secondaryFixedDim",
+    shadow: "shadow",
+    surface: "surface",
+    "surface-bright": "surfaceBright",
+    "surface-container": "surfaceContainer",
+    "surface-container-high": "surfaceContainerHigh",
+    "surface-container-highest": "surfaceContainerHighest",
+    "surface-container-low": "surfaceContainerLow",
+    "surface-container-lowest": "surfaceContainerLowest",
+    "surface-dim": "surfaceDim",
+    "surface-tint": "surfaceTint",
+    "surface-variant": "surfaceVariant",
+    tertiary: "tertiary",
+    "tertiary-container": "tertiaryContainer",
+    "tertiary-fixed": "tertiaryFixed",
+    "tertiary-fixed-dim": "tertiaryFixedDim",
+  };
 
   function cssColor(argb) {
     return hexFromArgb(argb);
@@ -159,64 +217,39 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
   }
 
   function tokensFromTheme(theme, { dark }) {
-    const scheme = dark ? theme.schemes.dark : theme.schemes.light;
-    const { primary, secondary, tertiary, neutral } = theme.palettes;
+    const scheme = dark ? theme.dark : theme.light;
+    const tokens = {};
 
-    return {
-      background: cssColor(scheme.background),
-      error: cssColor(scheme.error),
-      "error-container": cssColor(scheme.errorContainer),
-      "inverse-on-surface": cssColor(scheme.inverseOnSurface),
-      "inverse-primary": cssColor(scheme.inversePrimary),
-      "inverse-surface": cssColor(scheme.inverseSurface),
-      "on-background": cssColor(scheme.onBackground),
-      "on-error": cssColor(scheme.onError),
-      "on-error-container": cssColor(scheme.onErrorContainer),
-      "on-primary": cssColor(scheme.onPrimary),
-      "on-primary-container": cssColor(scheme.onPrimaryContainer),
-      "on-primary-fixed": cssColor(primary.tone(10)),
-      "on-primary-fixed-variant": cssColor(primary.tone(30)),
-      "on-secondary": cssColor(scheme.onSecondary),
-      "on-secondary-container": cssColor(scheme.onSecondaryContainer),
-      "on-secondary-fixed": cssColor(secondary.tone(10)),
-      "on-secondary-fixed-variant": cssColor(secondary.tone(30)),
-      "on-surface": cssColor(scheme.onSurface),
-      "on-surface-variant": cssColor(scheme.onSurfaceVariant),
-      "on-tertiary": cssColor(scheme.onTertiary),
-      "on-tertiary-container": cssColor(scheme.onTertiaryContainer),
-      "on-tertiary-fixed": cssColor(tertiary.tone(10)),
-      "on-tertiary-fixed-variant": cssColor(tertiary.tone(30)),
-      outline: cssColor(scheme.outline),
-      "outline-variant": cssColor(scheme.outlineVariant),
-      primary: cssColor(scheme.primary),
-      "primary-container": cssColor(scheme.primaryContainer),
-      "primary-fixed": cssColor(primary.tone(90)),
-      "primary-fixed-dim": cssColor(primary.tone(80)),
-      scrim: cssColor(scheme.scrim),
-      secondary: cssColor(scheme.secondary),
-      "secondary-container": cssColor(scheme.secondaryContainer),
-      "secondary-fixed": cssColor(secondary.tone(90)),
-      "secondary-fixed-dim": cssColor(secondary.tone(80)),
-      shadow: cssColor(scheme.shadow),
-      surface: cssColor(scheme.surface),
-      "surface-bright": cssColor(neutral.tone(dark ? 24 : 98)),
-      "surface-container": cssColor(neutral.tone(dark ? 12 : 94)),
-      "surface-container-high": cssColor(neutral.tone(dark ? 17 : 92)),
-      "surface-container-highest": cssColor(neutral.tone(dark ? 22 : 90)),
-      "surface-container-low": cssColor(neutral.tone(dark ? 10 : 96)),
-      "surface-container-lowest": cssColor(neutral.tone(dark ? 4 : 100)),
-      "surface-dim": cssColor(neutral.tone(dark ? 6 : 87)),
-      "surface-tint": cssColor(scheme.primary),
-      "surface-variant": cssColor(scheme.surfaceVariant),
-      tertiary: cssColor(scheme.tertiary),
-      "tertiary-container": cssColor(scheme.tertiaryContainer),
-      "tertiary-fixed": cssColor(tertiary.tone(90)),
-      "tertiary-fixed-dim": cssColor(tertiary.tone(80)),
-    };
+    for (const name of HOME_DYNAMIC_TOKEN_NAMES) {
+      const method = HOME_DYNAMIC_ROLE_METHODS[name];
+      tokens[name] = cssColor(scheme.getArgb(MATERIAL_DYNAMIC_COLORS[method]()));
+    }
+
+    return tokens;
+  }
+
+  function createHomeDynamicScheme(sourceColor, { dark }) {
+    return new MATERIAL_DYNAMIC_VARIANT(
+      Hct.fromInt(sourceColor),
+      dark,
+      0,
+      MATERIAL_DYNAMIC_SPEC_VERSION,
+    );
   }
 
   async function createHomeDynamicTheme(image) {
-    return themeFromSourceColor(await sourceColorFromImage(image));
+    const sourceColor = await sourceColorFromImage(image);
+
+    return {
+      dark: createHomeDynamicScheme(sourceColor, { dark: true }),
+      light: createHomeDynamicScheme(sourceColor, { dark: false }),
+      sourceColor,
+    };
+  }
+
+  async function createHomeDynamicThemeFromUrl(url) {
+    const { image } = await preload(url);
+    return createHomeDynamicTheme(image);
   }
 
   function applyHomeDynamicTokens(theme) {
@@ -300,12 +333,40 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     });
   }
 
-  async function applyDynamicHeroColor(target, image) {
+  async function resolveHomeDynamicTheme(image, loadedImage, loadedUrl) {
+    const candidates = imageThemeCandidates(image, loadedUrl);
+
+    for (const candidate of candidates) {
+      const cacheKey = imageThemeCacheKey(image, candidate);
+      const cachedTheme = state.dynamicThemeCache.get(cacheKey);
+      if (cachedTheme) return cachedTheme;
+
+      try {
+        const theme =
+          candidate === loadedUrl && loadedImage
+            ? await createHomeDynamicTheme(loadedImage)
+            : await createHomeDynamicThemeFromUrl(candidate);
+
+        state.dynamicThemeCache.set(cacheKey, theme);
+        return theme;
+      } catch (error) {
+        console.warn(`[Konachan] Unable to extract Material color from ${candidate}.`, error);
+      }
+    }
+
+    return null;
+  }
+
+  async function applyDynamicHeroColor(target, image, loadedImage, loadedUrl) {
     const landing = target.closest(LANDING_SELECTOR);
     if (!landing) return;
 
     try {
-      state.dynamicTheme = await createHomeDynamicTheme(image);
+      const dynamicTheme = await resolveHomeDynamicTheme(image, loadedImage, loadedUrl);
+      if (state.currentUrl !== loadedUrl) return;
+      if (!dynamicTheme) throw new Error("konachan_dynamic_theme_unavailable");
+
+      state.dynamicTheme = dynamicTheme;
       const tokens = syncHomeDynamicTheme();
       if (!tokens) return;
       applyHeroDynamicTokens(landing, state.dynamicTheme);
@@ -571,6 +632,35 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     return unique([image?.url].map(normalizeUrl)).filter(isSameOriginUrl);
   }
 
+  function imageThemeCandidates(image, loadedUrl) {
+    const variantCandidates =
+      typeof image === "object" && Array.isArray(image?.variants)
+        ? image.variants
+            .map((variant) => ({
+              url: normalizeUrl(variant?.url),
+              width: Number(variant?.width) || 0,
+            }))
+            .filter((variant) => variant.url)
+            .sort(
+              (left, right) =>
+                Math.abs(left.width - 960) - Math.abs(right.width - 960) ||
+                left.width - right.width,
+            )
+            .map((variant) => variant.url)
+        : [];
+
+    const canonicalUrl = typeof image === "string" ? image : image?.url;
+
+    return unique([...variantCandidates, loadedUrl, normalizeUrl(canonicalUrl)])
+      .map(normalizeUrl)
+      .filter(isSameOriginUrl);
+  }
+
+  function imageThemeCacheKey(image, url) {
+    if (typeof image === "object" && image?.id) return `konachan:${image.id}`;
+    return normalizeUrl(url);
+  }
+
   function ratingAllowed(image) {
     if (typeof image === "string") return true;
     return RATING_RANK[normalizeRating(image?.rating)] <= RATING_RANK[state.ratingPreference];
@@ -694,7 +784,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     target.dataset.konachanCurrentUrl = loadedUrl;
     state.currentImage = image;
     state.currentUrl = loadedUrl;
-    await applyDynamicHeroColor(target, loadedImage);
+    await applyDynamicHeroColor(target, image, loadedImage, loadedUrl);
     setCredit(typeof image === "string" ? null : image);
     rememberLoadedImage(image, loadedUrl);
     return true;

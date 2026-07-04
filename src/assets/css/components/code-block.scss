@@ -1,7 +1,9 @@
 .code-shell {
   --code-action-space: 3.25rem;
+  --code-font-size: 0.875rem;
   --code-line-number-gap: 1rem;
   --code-line-number-width: 3ch;
+  --code-line-height: 1.25rem;
   --code-inline-pad: 1.5rem;
 
   position: relative;
@@ -48,6 +50,9 @@
 
 .code-shell pre {
   font-family: var(--site-mono-font);
+  font-size: var(--code-font-size);
+  line-height: var(--code-line-height);
+  letter-spacing: 0;
   margin: 0;
   margin-inline-end: var(--code-action-space);
   padding-block: var(--code-pad);
@@ -108,6 +113,8 @@
   min-width: max-content;
   counter-reset: code-line;
   background: transparent !important;
+  font-size: inherit;
+  line-height: inherit;
 }
 
 .code-shell pre code > .line {
@@ -115,10 +122,10 @@
   box-sizing: border-box;
   display: inline-block;
   min-width: 100%;
-  min-height: 1.25rem;
+  min-height: var(--code-line-height);
   padding-inline-start: calc(var(--code-line-number-width) + var(--code-line-number-gap));
   counter-increment: code-line;
-  line-height: 1.25rem;
+  line-height: var(--code-line-height);
 }
 
 .code-shell pre code > .line::before {
@@ -127,13 +134,22 @@
   inset-block-start: 0;
   box-sizing: border-box;
   width: var(--code-line-number-width);
-  min-height: 1.25rem;
+  min-height: var(--code-line-height);
   color: var(--site-muted);
   content: counter(code-line);
   font-variant-numeric: tabular-nums;
-  line-height: 1.25rem;
+  line-height: var(--code-line-height);
   opacity: 0.72;
   text-align: start;
   -webkit-user-select: none;
   user-select: none;
+}
+
+@media (max-width: 520px) {
+  .code-shell {
+    --code-font-size: 0.8125rem;
+    --code-inline-pad: 1rem;
+    --code-line-height: 1.1875rem;
+    --code-line-number-gap: 0.75rem;
+  }
 }

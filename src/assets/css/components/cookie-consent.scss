@@ -8,7 +8,7 @@ html.interaction-disabled.consent-visible body {
 
 html.consent-visible,
 html.consent-visible body {
-  background-color: var(--home-dynamic-page-bg, #141218);
+  background-color: var(--home-dynamic-page-bg, var(--site-bg, var(--m3-background)));
 }
 
 .cookie-consent-backdrop {
@@ -22,7 +22,7 @@ html.consent-visible body {
 }
 
 .cookie-consent-backdrop--modal {
-  background: var(--home-dynamic-page-bg, #141218);
+  background: var(--home-dynamic-page-bg, var(--site-bg, var(--m3-background)));
 }
 
 .cookie-consent {

@@ -14,6 +14,9 @@ const ANGULAR_DECORATOR_IMPORTS = new Set([
 const VITE_OPTIMIZE_DEPS = [
   "@angular/cdk/a11y",
   "@angular/cdk/bidi",
+  "@angular/cdk/dialog",
+  "@angular/cdk/overlay",
+  "@angular/cdk/portal",
   "@angular/cdk/scrolling",
   "@angular/core/rxjs-interop",
   "@angular/forms",
@@ -101,7 +104,7 @@ export default defineConfig({
     inlineStylesheets: "always",
   },
   devToolbar: {
-    enabled: true,
+    enabled: false,
   },
   integrations: [
     mdx(),
@@ -122,6 +125,13 @@ export default defineConfig({
     },
     optimizeDeps: {
       include: VITE_OPTIMIZE_DEPS,
+    },
+    css: {
+      preprocessorOptions: {
+        scss: {
+          loadPaths: ["node_modules"],
+        },
+      },
     },
     build: {
       rollupOptions: {

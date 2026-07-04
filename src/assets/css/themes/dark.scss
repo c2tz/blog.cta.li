@@ -69,7 +69,7 @@
 }
 
 :root[data-theme="dark"] .cookie-consent-backdrop--modal {
-  background: #141218;
+  background: var(--site-bg);
 }
 
 :root[data-theme="dark"] .home-anime-background::after {

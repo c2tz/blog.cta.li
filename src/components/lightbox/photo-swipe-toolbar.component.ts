@@ -190,6 +190,7 @@ type PhotoSwipeAction =
         opacity 120ms cubic-bezier(0.4, 0, 1, 1),
         transform 120ms cubic-bezier(0.4, 0, 1, 1);
       animation: photo-swipe-toolbar-enter 180ms cubic-bezier(0, 0, 0.2, 1);
+      will-change: transform, opacity;
     }
 
     :host.is-fullscreen .photo-swipe-toolbar {
@@ -242,6 +243,7 @@ type PhotoSwipeAction =
         opacity 120ms cubic-bezier(0.4, 0, 1, 1),
         transform 120ms cubic-bezier(0.4, 0, 1, 1);
       animation: photo-swipe-nav-enter 180ms cubic-bezier(0, 0, 0.2, 1);
+      will-change: transform, opacity;
     }
 
     .photo-swipe-nav-previous {

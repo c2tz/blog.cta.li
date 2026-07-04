@@ -59,7 +59,7 @@
   padding-inline: var(--code-inline-pad);
   overflow: hidden;
   background-color: var(--code-block-surface) !important;
-  scrollbar-color: color-mix(in srgb, var(--site-muted) 42%, transparent) transparent;
+  -webkit-text-size-adjust: 100%;
 }
 
 @supports (overflow: clip) {
@@ -89,6 +89,8 @@
 .code-shell pre code,
 .code-shell pre code * {
   font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
 }
 
 .astro-code {
@@ -147,9 +149,9 @@
 
 @media (max-width: 520px) {
   .code-shell {
-    --code-font-size: 0.8125rem;
+    --code-font-size: 0.875rem;
     --code-inline-pad: 1rem;
-    --code-line-height: 1.1875rem;
+    --code-line-height: 1.25rem;
     --code-line-number-gap: 0.75rem;
   }
 }

@@ -59,6 +59,9 @@ importers:
       '@astrojs/rss':
         specifier: ^4.0.18
         version: 4.0.18
+      '@material/material-color-utilities':
+        specifier: ^0.4.0
+        version: 0.4.0
       '@vercel/speed-insights':
         specifier: ^2.0.0
         version: 2.0.0
@@ -935,6 +938,9 @@ packages:
     resolution: {integrity: sha512-JF1BmLCm9kGEVZgYmJq43zeQVdHVgAJnTi/NURWEsy6L1ZrrlSmdltS+D17QN4LODwf+1LMXAA9auIZVXtWwzw==}
     cpu: [x64]
     os: [win32]
+
+  '@material/material-color-utilities@0.4.0':
+    resolution: {integrity: sha512-dlq6VExJReb8dhjj3a/yTigr3ncNwoFmL5Iy2ENtbDX03EmNeOEdZ+vsaGrj7RTuO+mB7L58II4LCsl4NpM8uw==}
 
   '@mdx-js/mdx@3.1.1':
     resolution: {integrity: sha512-f6ZO2ifpwAQIpzGWaBQT2TXxPv6z3RBzQKpVftEWN78Vl/YweF1uwussDx8ECAXVtr3Rs89fKyG9YlzUs9DyGQ==}
@@ -4133,6 +4139,8 @@ snapshots:
 
   '@lmdb/lmdb-win32-x64@3.5.4':
     optional: true
+
+  '@material/material-color-utilities@0.4.0': {}
 
   '@mdx-js/mdx@3.1.1':
     dependencies:

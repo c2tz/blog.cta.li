@@ -10,13 +10,13 @@ import { MatIcon } from "@angular/material/icon";
   template: `
     <nav class="home-hero-actions" aria-label="Navigation d'accueil">
       <a
-        matButton="text"
+        matButton="tonal"
         class="home-hero-button"
         [href]="primaryActionHref()"
         [attr.aria-label]="primaryActionAriaLabel()"
       >
+        <mat-icon iconPositionStart aria-hidden="true">&#xE5D3;</mat-icon>
         {{ primaryActionLabel() }}
-        <mat-icon iconPositionEnd aria-hidden="true">&#xE5D3;</mat-icon>
       </a>
       <a
         matButton="text"

@@ -1,3 +1,9 @@
+import {
+  hexFromArgb,
+  sourceColorFromImage,
+  themeFromSourceColor,
+} from "@material/material-color-utilities";
+
 function readHomeKonachanConfig() {
   const element = document.getElementById("home-konachan-config");
   if (!element?.textContent) return null;
@@ -44,9 +50,11 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
   const state = {
     currentImage: null,
     currentUrl: "",
+    dynamicTheme: null,
     images: [],
     ratingPreference: "safe",
     refreshPromise: null,
+    themeObserver: null,
   };
 
   const pickRandom = (items) => items[Math.floor(Math.random() * items.length)];
@@ -82,6 +90,232 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     return `url("${url.replace(/["\\]/g, "\\$&")}")`;
   }
 
+  const DYNAMIC_HERO_COLOR_PROPERTIES = [
+    "--home-hero-on-image",
+    "--home-hero-on-image-muted",
+    "--home-hero-accent",
+    "--home-hero-tonal-container",
+    "--home-hero-tonal-label",
+    "--home-hero-tonal-hover",
+  ];
+  const HOME_DYNAMIC_TOKEN_NAMES = [
+    "background",
+    "error",
+    "error-container",
+    "inverse-on-surface",
+    "inverse-primary",
+    "inverse-surface",
+    "on-background",
+    "on-error",
+    "on-error-container",
+    "on-primary",
+    "on-primary-container",
+    "on-primary-fixed",
+    "on-primary-fixed-variant",
+    "on-secondary",
+    "on-secondary-container",
+    "on-secondary-fixed",
+    "on-secondary-fixed-variant",
+    "on-surface",
+    "on-surface-variant",
+    "on-tertiary",
+    "on-tertiary-container",
+    "on-tertiary-fixed",
+    "on-tertiary-fixed-variant",
+    "outline",
+    "outline-variant",
+    "primary",
+    "primary-container",
+    "primary-fixed",
+    "primary-fixed-dim",
+    "scrim",
+    "secondary",
+    "secondary-container",
+    "secondary-fixed",
+    "secondary-fixed-dim",
+    "shadow",
+    "surface",
+    "surface-bright",
+    "surface-container",
+    "surface-container-high",
+    "surface-container-highest",
+    "surface-container-low",
+    "surface-container-lowest",
+    "surface-dim",
+    "surface-tint",
+    "surface-variant",
+    "tertiary",
+    "tertiary-container",
+    "tertiary-fixed",
+    "tertiary-fixed-dim",
+  ];
+
+  function cssColor(argb) {
+    return hexFromArgb(argb);
+  }
+
+  function isDarkTheme() {
+    return document.documentElement.dataset.theme === "dark";
+  }
+
+  function tokensFromTheme(theme, { dark }) {
+    const scheme = dark ? theme.schemes.dark : theme.schemes.light;
+    const { primary, secondary, tertiary, neutral } = theme.palettes;
+
+    return {
+      background: cssColor(scheme.background),
+      error: cssColor(scheme.error),
+      "error-container": cssColor(scheme.errorContainer),
+      "inverse-on-surface": cssColor(scheme.inverseOnSurface),
+      "inverse-primary": cssColor(scheme.inversePrimary),
+      "inverse-surface": cssColor(scheme.inverseSurface),
+      "on-background": cssColor(scheme.onBackground),
+      "on-error": cssColor(scheme.onError),
+      "on-error-container": cssColor(scheme.onErrorContainer),
+      "on-primary": cssColor(scheme.onPrimary),
+      "on-primary-container": cssColor(scheme.onPrimaryContainer),
+      "on-primary-fixed": cssColor(primary.tone(10)),
+      "on-primary-fixed-variant": cssColor(primary.tone(30)),
+      "on-secondary": cssColor(scheme.onSecondary),
+      "on-secondary-container": cssColor(scheme.onSecondaryContainer),
+      "on-secondary-fixed": cssColor(secondary.tone(10)),
+      "on-secondary-fixed-variant": cssColor(secondary.tone(30)),
+      "on-surface": cssColor(scheme.onSurface),
+      "on-surface-variant": cssColor(scheme.onSurfaceVariant),
+      "on-tertiary": cssColor(scheme.onTertiary),
+      "on-tertiary-container": cssColor(scheme.onTertiaryContainer),
+      "on-tertiary-fixed": cssColor(tertiary.tone(10)),
+      "on-tertiary-fixed-variant": cssColor(tertiary.tone(30)),
+      outline: cssColor(scheme.outline),
+      "outline-variant": cssColor(scheme.outlineVariant),
+      primary: cssColor(scheme.primary),
+      "primary-container": cssColor(scheme.primaryContainer),
+      "primary-fixed": cssColor(primary.tone(90)),
+      "primary-fixed-dim": cssColor(primary.tone(80)),
+      scrim: cssColor(scheme.scrim),
+      secondary: cssColor(scheme.secondary),
+      "secondary-container": cssColor(scheme.secondaryContainer),
+      "secondary-fixed": cssColor(secondary.tone(90)),
+      "secondary-fixed-dim": cssColor(secondary.tone(80)),
+      shadow: cssColor(scheme.shadow),
+      surface: cssColor(scheme.surface),
+      "surface-bright": cssColor(neutral.tone(dark ? 24 : 98)),
+      "surface-container": cssColor(neutral.tone(dark ? 12 : 94)),
+      "surface-container-high": cssColor(neutral.tone(dark ? 17 : 92)),
+      "surface-container-highest": cssColor(neutral.tone(dark ? 22 : 90)),
+      "surface-container-low": cssColor(neutral.tone(dark ? 10 : 96)),
+      "surface-container-lowest": cssColor(neutral.tone(dark ? 4 : 100)),
+      "surface-dim": cssColor(neutral.tone(dark ? 6 : 87)),
+      "surface-tint": cssColor(scheme.primary),
+      "surface-variant": cssColor(scheme.surfaceVariant),
+      tertiary: cssColor(scheme.tertiary),
+      "tertiary-container": cssColor(scheme.tertiaryContainer),
+      "tertiary-fixed": cssColor(tertiary.tone(90)),
+      "tertiary-fixed-dim": cssColor(tertiary.tone(80)),
+    };
+  }
+
+  async function createHomeDynamicTheme(image) {
+    return themeFromSourceColor(await sourceColorFromImage(image));
+  }
+
+  function applyHomeDynamicTokens(theme) {
+    const body = document.body;
+    if (!body?.classList.contains("home-page")) return null;
+
+    const tokens = tokensFromTheme(theme, { dark: isDarkTheme() });
+    const lightTokens = tokensFromTheme(theme, { dark: false });
+    const darkTokens = tokensFromTheme(theme, { dark: true });
+    body.dataset.homeDynamicColor = "true";
+    document.documentElement.style.setProperty("--home-dynamic-page-bg", tokens.surface);
+    body.style.setProperty("--home-dynamic-light-primary", lightTokens.primary);
+    body.style.setProperty("--home-dynamic-light-surface", lightTokens.surface);
+    body.style.setProperty("--home-dynamic-dark-primary", darkTokens.primary);
+    body.style.setProperty("--home-dynamic-dark-surface", darkTokens.surface);
+
+    for (const name of HOME_DYNAMIC_TOKEN_NAMES) {
+      const value = tokens[name];
+      body.style.setProperty(`--m3-${name}`, value);
+      body.style.setProperty(`--mat-sys-${name}`, value);
+    }
+
+    return tokens;
+  }
+
+  function applyHeroDynamicTokens(landing, theme) {
+    if (!landing) return;
+
+    const tokens = tokensFromTheme(theme, { dark: true });
+    landing.dataset.heroDynamicColor = "true";
+    landing.style.setProperty("--home-hero-on-image", tokens.primary);
+    landing.style.setProperty("--home-hero-on-image-muted", tokens.secondary);
+    landing.style.setProperty("--home-hero-accent", tokens.primary);
+    landing.style.setProperty("--home-hero-tonal-container", tokens["primary-container"]);
+    landing.style.setProperty("--home-hero-tonal-label", tokens["on-primary-container"]);
+    landing.style.setProperty("--home-hero-tonal-hover", tokens["primary-container"]);
+  }
+
+  function clearDynamicHeroColor(landing) {
+    if (!landing) return;
+
+    delete landing.dataset.heroDynamicColor;
+    for (const property of DYNAMIC_HERO_COLOR_PROPERTIES) {
+      landing.style.removeProperty(property);
+    }
+  }
+
+  function clearHomeDynamicTokens() {
+    const body = document.body;
+    if (!body?.classList.contains("home-page")) return;
+
+    delete body.dataset.homeDynamicColor;
+    document.documentElement.style.removeProperty("--home-dynamic-page-bg");
+    body.style.removeProperty("--home-dynamic-light-primary");
+    body.style.removeProperty("--home-dynamic-light-surface");
+    body.style.removeProperty("--home-dynamic-dark-primary");
+    body.style.removeProperty("--home-dynamic-dark-surface");
+    for (const name of HOME_DYNAMIC_TOKEN_NAMES) {
+      body.style.removeProperty(`--m3-${name}`);
+      body.style.removeProperty(`--mat-sys-${name}`);
+    }
+  }
+
+  function syncHomeDynamicTheme() {
+    if (!state.dynamicTheme) return null;
+    return applyHomeDynamicTokens(state.dynamicTheme);
+  }
+
+  function initHomeDynamicThemeSync() {
+    if (state.themeObserver) return;
+
+    state.themeObserver = new MutationObserver(() => {
+      const tokens = syncHomeDynamicTheme();
+      if (tokens) {
+        applyHeroDynamicTokens(document.querySelector(LANDING_SELECTOR), state.dynamicTheme);
+      }
+    });
+    state.themeObserver.observe(document.documentElement, {
+      attributeFilter: ["data-theme"],
+      attributes: true,
+    });
+  }
+
+  async function applyDynamicHeroColor(target, image) {
+    const landing = target.closest(LANDING_SELECTOR);
+    if (!landing) return;
+
+    try {
+      state.dynamicTheme = await createHomeDynamicTheme(image);
+      const tokens = syncHomeDynamicTheme();
+      if (!tokens) return;
+      applyHeroDynamicTokens(landing, state.dynamicTheme);
+    } catch {
+      state.dynamicTheme = null;
+      clearHomeDynamicTokens();
+      clearDynamicHeroColor(landing);
+    }
+  }
+
   function setBackgroundImage(target, url) {
     target.style.setProperty("--home-konachan-image", toCssUrl(url));
   }
@@ -90,7 +324,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     return new Promise((resolve, reject) => {
       const image = new Image();
       image.decoding = "async";
-      image.onload = () => resolve(url);
+      image.onload = () => resolve({ image, url });
       image.onerror = reject;
       image.src = url;
     });
@@ -386,8 +620,11 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     target.style.removeProperty("--home-konachan-image");
     target.dataset.loaded = "false";
     target.dataset.konachanCurrentUrl = "";
+    clearDynamicHeroColor(target.closest(LANDING_SELECTOR));
+    clearHomeDynamicTokens();
     state.currentImage = null;
     state.currentUrl = "";
+    state.dynamicTheme = null;
   }
 
   function syncExplicitContentState(landing, target) {
@@ -438,9 +675,12 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     if (candidates.length === 0) return false;
 
     let loadedUrl = "";
+    let loadedImage = null;
     for (const candidate of candidates) {
       try {
-        loadedUrl = await preload(candidate);
+        const loaded = await preload(candidate);
+        loadedUrl = loaded.url;
+        loadedImage = loaded.image;
         break;
       } catch (error) {
         console.warn(`[Konachan] Unable to preload ${candidate}.`, error);
@@ -454,6 +694,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     target.dataset.konachanCurrentUrl = loadedUrl;
     state.currentImage = image;
     state.currentUrl = loadedUrl;
+    await applyDynamicHeroColor(target, loadedImage);
     setCredit(typeof image === "string" ? null : image);
     rememberLoadedImage(image, loadedUrl);
     return true;
@@ -479,6 +720,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     if (!target || !("style" in target) || target.dataset.ready === "true") return;
 
     target.dataset.ready = "true";
+    initHomeDynamicThemeSync();
     state.ratingPreference = readRatingPreference();
     state.currentUrl = normalizeUrl(target.dataset.konachanCurrentUrl || INITIAL_BACKGROUND?.url);
     setCredit(INITIAL_BACKGROUND);

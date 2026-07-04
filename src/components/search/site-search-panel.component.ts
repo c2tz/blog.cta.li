@@ -292,7 +292,6 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
       font-size: 16px;
       -moz-text-size-adjust: 100%;
       -webkit-text-size-adjust: 100%;
-      text-size-adjust: 100%;
     }
 
     .site-search-panel-input::placeholder {

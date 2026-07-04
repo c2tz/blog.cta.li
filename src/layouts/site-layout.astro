@@ -30,6 +30,7 @@ interface Props {
 }
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
+const STATIC_ASSET_VERSION = "20260704";
 
 const {
   locale = "fr",
@@ -157,7 +158,7 @@ const speedInsightsVersion = speedInsightsPackage.version;
     </script>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/x-icon" href={`/favicon.ico?v=${STATIC_ASSET_VERSION}`} />
     <link
       rel="alternate"
       type="application/rss+xml"

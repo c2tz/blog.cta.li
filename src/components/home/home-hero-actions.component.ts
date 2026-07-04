@@ -7,6 +7,9 @@ import { MatIcon } from "@angular/material/icon";
   standalone: true,
   imports: [MatButton, MatIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    "data-angular-component": "home-hero-actions",
+  },
   template: `
     <nav class="home-hero-actions" aria-label="Navigation d'accueil">
       <a

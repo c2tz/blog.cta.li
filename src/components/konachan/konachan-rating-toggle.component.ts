@@ -62,6 +62,9 @@ function normalizeRatingPreference(
   standalone: true,
   imports: [MatIconButton, MatIcon, MatTooltip],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    "data-angular-component": "konachan-rating-toggle",
+  },
   template: `
     <div
       class="home-anime-rating-picker"

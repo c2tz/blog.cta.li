@@ -25,6 +25,9 @@ function isThemePreference(value: string | null | undefined): value is ThemePref
   standalone: true,
   imports: [MatIconButton, MatIcon, MatMenu, MatMenuItem, MatMenuTrigger, MatTooltip],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    "data-angular-component": "theme-switcher",
+  },
   template: `
     <button
       matIconButton

@@ -17,6 +17,9 @@ import {
   standalone: true,
   imports: [MatIconButton, MatIcon, MatTooltip],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    "data-angular-component": "home-detail-toggle",
+  },
   template: `
     <button
       matIconButton

@@ -124,6 +124,7 @@ export default defineConfig({
       },
     },
     optimizeDeps: {
+      force: true,
       include: VITE_OPTIMIZE_DEPS,
     },
     css: {

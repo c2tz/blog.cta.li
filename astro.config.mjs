@@ -182,7 +182,7 @@ export default defineConfig({
           },
         ],
         () => (tree) => {
-          let firstMarkdownImage = true;
+          let eagerMarkdownImageCount = 0;
 
           const walk = (node) => {
             if (!node || typeof node !== "object") return;
@@ -192,10 +192,10 @@ export default defineConfig({
               node.properties["data-lightbox"] = "";
               node.properties.decoding = "async";
 
-              if (firstMarkdownImage) {
+              if (eagerMarkdownImageCount < 2) {
                 node.properties.loading = "eager";
-                node.properties.fetchpriority = "high";
-                firstMarkdownImage = false;
+                if (eagerMarkdownImageCount === 0) node.properties.fetchpriority = "high";
+                eagerMarkdownImageCount += 1;
               } else {
                 node.properties.loading = "lazy";
               }

@@ -253,6 +253,20 @@ async function copyTextToClipboard(text: string) {
             <mat-icon aria-hidden="true">{{ moreIcon }}</mat-icon>
           </button>
 
+          @if (isFullscreen()) {
+            <button
+              matIconButton
+              type="button"
+              class="site-image-dialog-button"
+              aria-label="Quitter le plein écran"
+              matTooltip="Quitter le plein écran"
+              matTooltipPosition="below"
+              (click)="handleFullscreenClick()"
+            >
+              <mat-icon aria-hidden="true">{{ fullscreenIcon() }}</mat-icon>
+            </button>
+          }
+
           <button
             matIconButton
             type="button"
@@ -529,6 +543,9 @@ async function copyTextToClipboard(text: string) {
 
     .site-image-dialog-shell.is-fullscreen-mode .site-image-dialog-content.mat-mdc-dialog-content,
     .site-image-dialog-shell:fullscreen .site-image-dialog-content.mat-mdc-dialog-content,
+    .site-image-dialog-fullscreen-host:fullscreen .site-image-dialog-content.mat-mdc-dialog-content,
+    .site-image-dialog-fullscreen-host:-webkit-full-screen
+      .site-image-dialog-content.mat-mdc-dialog-content,
     :fullscreen .site-image-dialog-content.mat-mdc-dialog-content {
       width: 100vw;
       width: 100dvw;
@@ -541,11 +558,15 @@ async function copyTextToClipboard(text: string) {
 
     .site-image-dialog-shell.is-fullscreen-mode .site-image-dialog-image,
     .site-image-dialog-shell:fullscreen .site-image-dialog-image,
+    .site-image-dialog-fullscreen-host:fullscreen .site-image-dialog-image,
+    .site-image-dialog-fullscreen-host:-webkit-full-screen .site-image-dialog-image,
     :fullscreen .site-image-dialog-image {
-      width: 100%;
-      max-width: 100%;
-      height: 100%;
-      max-height: 100%;
+      width: auto;
+      max-width: 100vw;
+      max-width: 100dvw;
+      height: auto;
+      max-height: 100vh;
+      max-height: 100dvh;
       object-fit: contain;
       object-position: center center;
       background: #000;
@@ -559,10 +580,7 @@ async function copyTextToClipboard(text: string) {
       .site-image-dialog-content.mat-mdc-dialog-content,
     :fullscreen
       .site-image-dialog-shell:not(.has-visible-controls)
-      .site-image-dialog-content.mat-mdc-dialog-content,
-    .site-image-dialog-shell.is-fullscreen-mode:not(.has-visible-controls) .site-image-dialog-image,
-    .site-image-dialog-shell:fullscreen:not(.has-visible-controls) .site-image-dialog-image,
-    :fullscreen .site-image-dialog-shell:not(.has-visible-controls) .site-image-dialog-image {
+      .site-image-dialog-content.mat-mdc-dialog-content {
       height: 100%;
       max-height: 100%;
     }
@@ -610,11 +628,15 @@ async function copyTextToClipboard(text: string) {
 
       .site-image-dialog-shell.is-fullscreen-mode .site-image-dialog-image,
       .site-image-dialog-shell:fullscreen .site-image-dialog-image,
+      .site-image-dialog-fullscreen-host:fullscreen .site-image-dialog-image,
+      .site-image-dialog-fullscreen-host:-webkit-full-screen .site-image-dialog-image,
       :fullscreen .site-image-dialog-image {
-        width: 100%;
-        max-width: 100% !important;
-        height: 100%;
-        max-height: 100% !important;
+        width: auto;
+        max-width: 100vw !important;
+        max-width: 100dvw !important;
+        height: auto;
+        max-height: 100vh !important;
+        max-height: 100dvh !important;
       }
     }
   `,

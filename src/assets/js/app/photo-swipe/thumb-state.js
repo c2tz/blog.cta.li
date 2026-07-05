@@ -174,6 +174,7 @@ export function initLightboxRadiusState(pswp) {
     const activeThumb = thumb;
 
     hideSiteTooltip();
+    pswp.element?.classList.remove("pswp--closing");
     flatThumbs.forEach((img) => {
       restoreThumbRadiusInstant(img);
     });

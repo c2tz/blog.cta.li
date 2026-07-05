@@ -43,8 +43,6 @@ const VITE_OPTIMIZE_DEPS = [
   "@angular/material/table",
   "@angular/material/tooltip",
   "@material/material-color-utilities",
-  "photoswipe",
-  "photoswipe/lightbox",
 ];
 
 function isCompiledAngularDecoratorWarning(warning) {
@@ -189,7 +187,7 @@ export default defineConfig({
 
             if (node.type === "element" && node.tagName === "img") {
               node.properties ||= {};
-              node.properties["data-lightbox"] = "";
+              node.properties["data-image-dialog"] = "";
               node.properties.decoding = "async";
 
               if (eagerMarkdownImageCount < 2) {

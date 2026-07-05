@@ -1,7 +1,5 @@
 import { DOCUMENT } from "@angular/common";
-import { Overlay, OverlayContainer } from "@angular/cdk/overlay";
-import type { OverlayRef } from "@angular/cdk/overlay";
-import { CdkPortal } from "@angular/cdk/portal";
+import { OverlayContainer } from "@angular/cdk/overlay";
 import {
   ChangeDetectionStrategy,
   Component,
@@ -9,7 +7,6 @@ import {
   computed,
   inject,
   signal,
-  viewChild,
   viewChildren,
 } from "@angular/core";
 import type { AfterViewInit, OnDestroy, OnInit } from "@angular/core";
@@ -363,7 +360,6 @@ class ImageInformationDialogComponent implements OnInit {
   selector: "site-image-preview-dialog",
   standalone: true,
   imports: [
-    CdkPortal,
     MatDialogModule,
     MatIcon,
     MatIconButton,
@@ -451,83 +447,81 @@ class ImageInformationDialogComponent implements OnInit {
         </button>
       </mat-menu>
 
-      <ng-template cdkPortal>
-        <mat-toolbar
-          class="site-image-dialog-toolbar"
-          [class.is-hidden]="!controlsVisible()"
-          [class.is-closing]="isClosing()"
-          [attr.aria-hidden]="controlsVisible() ? null : 'true'"
-          role="toolbar"
-          aria-label="Commandes de l'image"
+      <mat-toolbar
+        class="site-image-dialog-toolbar"
+        [class.is-hidden]="!controlsVisible()"
+        [class.is-closing]="isClosing()"
+        [attr.aria-hidden]="controlsVisible() ? null : 'true'"
+        role="toolbar"
+        aria-label="Commandes de l'image"
+      >
+        @if (canNavigate()) {
+          <button
+            matIconButton
+            type="button"
+            class="site-image-dialog-button"
+            aria-label="Image précédente"
+            matTooltip="Image précédente"
+            matTooltipPosition="below"
+            (click)="previous()"
+          >
+            <mat-icon aria-hidden="true">{{ previousIcon }}</mat-icon>
+          </button>
+
+          <button
+            matIconButton
+            type="button"
+            class="site-image-dialog-button"
+            aria-label="Image suivante"
+            matTooltip="Image suivante"
+            matTooltipPosition="below"
+            (click)="next()"
+          >
+            <mat-icon aria-hidden="true">{{ nextIcon }}</mat-icon>
+          </button>
+
+          <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            Image {{ displayIndex() }} sur {{ total() }}
+          </span>
+        }
+
+        <button
+          matIconButton
+          type="button"
+          class="site-image-dialog-button"
+          [matMenuTriggerFor]="imageMenu"
+          aria-label="Options de l'image"
+          aria-haspopup="menu"
+          matTooltip="Options"
+          matTooltipPosition="below"
         >
-          @if (canNavigate()) {
-            <button
-              matIconButton
-              type="button"
-              class="site-image-dialog-button"
-              aria-label="Image précédente"
-              matTooltip="Image précédente"
-              matTooltipPosition="below"
-              (click)="previous()"
-            >
-              <mat-icon aria-hidden="true">{{ previousIcon }}</mat-icon>
-            </button>
+          <mat-icon aria-hidden="true">{{ moreIcon }}</mat-icon>
+        </button>
 
-            <button
-              matIconButton
-              type="button"
-              class="site-image-dialog-button"
-              aria-label="Image suivante"
-              matTooltip="Image suivante"
-              matTooltipPosition="below"
-              (click)="next()"
-            >
-              <mat-icon aria-hidden="true">{{ nextIcon }}</mat-icon>
-            </button>
+        <button
+          matIconButton
+          type="button"
+          class="site-image-dialog-button site-image-dialog-fullscreen-exit-button"
+          aria-label="Quitter le plein écran"
+          matTooltip="Quitter le plein écran"
+          matTooltipPosition="below"
+          (click)="handleFullscreenClick()"
+        >
+          <mat-icon aria-hidden="true">{{ fullscreenExitIcon }}</mat-icon>
+        </button>
 
-            <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
-              Image {{ displayIndex() }} sur {{ total() }}
-            </span>
-          }
-
-          <button
-            matIconButton
-            type="button"
-            class="site-image-dialog-button"
-            [matMenuTriggerFor]="imageMenu"
-            aria-label="Options de l'image"
-            aria-haspopup="menu"
-            matTooltip="Options"
-            matTooltipPosition="below"
-          >
-            <mat-icon aria-hidden="true">{{ moreIcon }}</mat-icon>
-          </button>
-
-          <button
-            matIconButton
-            type="button"
-            class="site-image-dialog-button site-image-dialog-fullscreen-exit-button"
-            aria-label="Quitter le plein écran"
-            matTooltip="Quitter le plein écran"
-            matTooltipPosition="below"
-            (click)="handleFullscreenClick()"
-          >
-            <mat-icon aria-hidden="true">{{ fullscreenExitIcon }}</mat-icon>
-          </button>
-
-          <button
-            matIconButton
-            type="button"
-            class="site-image-dialog-button"
-            aria-label="Fermer"
-            matTooltip="Fermer"
-            matTooltipPosition="below"
-            (click)="close()"
-          >
-            <mat-icon aria-hidden="true">{{ closeIcon }}</mat-icon>
-          </button>
-        </mat-toolbar>
-      </ng-template>
+        <button
+          matIconButton
+          type="button"
+          class="site-image-dialog-button"
+          aria-label="Fermer"
+          matTooltip="Fermer"
+          matTooltipPosition="below"
+          (click)="close()"
+        >
+          <mat-icon aria-hidden="true">{{ closeIcon }}</mat-icon>
+        </button>
+      </mat-toolbar>
     </section>
   `,
   styles: `
@@ -667,15 +661,6 @@ class ImageInformationDialogComponent implements OnInit {
       background: #000;
     }
 
-    .site-image-dialog-toolbar-overlay.cdk-overlay-pane {
-      position: absolute !important;
-      top: max(1rem, env(safe-area-inset-top, 0px)) !important;
-      right: max(1rem, env(safe-area-inset-right, 0px)) !important;
-      bottom: auto !important;
-      left: auto !important;
-      pointer-events: none;
-    }
-
     .site-image-dialog-toolbar.mat-toolbar {
       --image-dialog-toolbar-height: 3.5rem;
       --mat-toolbar-container-background-color: var(--m3-surface-container);
@@ -684,7 +669,9 @@ class ImageInformationDialogComponent implements OnInit {
       align-items: center;
       justify-content: center;
       gap: 1rem;
-      position: relative;
+      position: fixed;
+      top: max(1rem, env(safe-area-inset-top, 0px));
+      right: max(1rem, env(safe-area-inset-right, 0px));
       margin: 0;
       width: max-content;
       max-width: calc(100vw - 2rem);
@@ -702,7 +689,7 @@ class ImageInformationDialogComponent implements OnInit {
         transform 160ms var(--ease-out-3);
       pointer-events: auto;
       will-change: opacity, transform;
-      z-index: 1;
+      z-index: 1001;
     }
 
     .site-image-dialog-toolbar.mat-toolbar.is-hidden {
@@ -904,10 +891,8 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
   private readonly dialog = inject(MatDialog);
   private readonly dialogRef = inject(MatDialogRef<ImagePreviewDialogComponent>);
   private readonly document = inject(DOCUMENT);
-  private readonly overlay = inject(Overlay);
   private readonly overlayContainer = inject(OverlayContainer);
   private readonly snackBar = inject(MatSnackBar);
-  private readonly toolbarPortal = viewChild.required(CdkPortal);
   private readonly tooltips = viewChildren(MatTooltip);
 
   readonly closeIcon = CLOSE_ICON;
@@ -947,7 +932,6 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
   private lastTap?: PointerPosition & { time: number };
   private shareLabelTimer?: number;
   private tapTimer?: number;
-  private toolbarOverlayRef?: OverlayRef;
   private overlayContainerElement?: HTMLElement;
   private fullscreenHostElement?: HTMLDivElement;
 
@@ -997,12 +981,6 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
       this.overlayContainerElement,
     );
     this.fullscreenHostElement.appendChild(this.overlayContainerElement);
-    this.toolbarOverlayRef = this.overlay.create({
-      panelClass: "site-image-dialog-toolbar-overlay",
-      positionStrategy: this.overlay.position().global(),
-      scrollStrategy: this.overlay.scrollStrategies.noop(),
-    });
-    this.toolbarOverlayRef.attach(this.toolbarPortal());
   }
 
   ngOnDestroy() {
@@ -1015,7 +993,6 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
     if (this.shareLabelTimer) window.clearTimeout(this.shareLabelTimer);
     this.clearTapTimer();
     this.hideTooltip();
-    this.toolbarOverlayRef?.dispose();
     const overlayContainerElement = this.overlayContainerElement;
     const fullscreenHostElement = this.fullscreenHostElement;
     void this.exitFullscreen().finally(() => {

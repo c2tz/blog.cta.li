@@ -2,15 +2,18 @@ import { DOCUMENT } from "@angular/common";
 import { ChangeDetectionStrategy, Component, NgZone, inject } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
 import { MatDialog } from "@angular/material/dialog";
-import type { ImagePreviewDialogData } from "./image-preview-dialog.component";
+import type { ImagePreviewDialogData, ImagePreviewItem } from "./image-preview-dialog.component";
 
 type ImagePreviewDialogModule = typeof import("./image-preview-dialog.component");
 
 const IMAGE_PREVIEW_DIALOG_ID = "site-image-preview-dialog";
 
-function filenameFromURL(src: string) {
+function filenameFromURL(src: string, baseURI: string) {
   try {
-    const url = new URL(src, document.baseURI);
+    const url = new URL(src, baseURI);
+    const sourceUrl = url.searchParams.get("href");
+    if (sourceUrl && url.pathname.endsWith("/_image")) return filenameFromURL(sourceUrl, baseURI);
+
     return decodeURIComponent(url.pathname.split("/").filter(Boolean).at(-1) ?? "image");
   } catch {
     return "image";
@@ -94,18 +97,28 @@ export class ImageDialogControllerComponent implements OnInit, OnDestroy {
     if (!src) return;
 
     const { ImagePreviewDialogComponent } = await this.preload();
-    const label = this.getImageLabel(img, src);
-    const data: ImagePreviewDialogData = {
+    const images = this.getImagePreviewCandidates(img);
+    const items = images
+      .map((candidate) => this.getImagePreviewItem(candidate))
+      .filter((item): item is ImagePreviewItem => Boolean(item));
+    const fallbackItem = this.getImagePreviewItem(img);
+    const selectedItem = fallbackItem ?? {
       alt: img.alt,
-      height: img.naturalHeight || this.getNumericAttribute(img, "height"),
-      label,
+      label: this.getImageLabel(img, src),
       src,
-      width: img.naturalWidth || this.getNumericAttribute(img, "width"),
+    };
+    const initialIndex = Math.max(
+      0,
+      items.findIndex((item) => item.src === selectedItem.src),
+    );
+    const data: ImagePreviewDialogData = {
+      initialIndex,
+      items: items.length ? items : [selectedItem],
     };
 
     this.dialog.open(ImagePreviewDialogComponent, {
       id: IMAGE_PREVIEW_DIALOG_ID,
-      ariaLabel: `Aperçu de l'image : ${label}`,
+      ariaLabel: `Aperçu de l'image : ${selectedItem.label}`,
       autoFocus: false,
       backdropClass: "site-image-dialog-backdrop",
       data,
@@ -116,6 +129,31 @@ export class ImageDialogControllerComponent implements OnInit, OnDestroy {
     });
   }
 
+  private getImagePreviewCandidates(activeImage: HTMLImageElement) {
+    const container = activeImage.closest(".site-prose") ?? this.document;
+    const images = [...container.querySelectorAll<HTMLImageElement>("img")].filter((img) => {
+      if (!img.src) return false;
+      if (img.closest("header, footer, nav, [data-no-image-dialog]")) return false;
+      if (img.closest("a[href], button, input, select, textarea")) return false;
+      return true;
+    });
+
+    return images.length ? images : [activeImage];
+  }
+
+  private getImagePreviewItem(img: HTMLImageElement): ImagePreviewItem | null {
+    const src = img.currentSrc || img.src;
+    if (!src) return null;
+
+    return {
+      alt: img.alt,
+      height: img.naturalHeight || this.getNumericAttribute(img, "height"),
+      label: this.getImageLabel(img, src),
+      src,
+      width: img.naturalWidth || this.getNumericAttribute(img, "width"),
+    };
+  }
+
   private getImageLabel(img: HTMLImageElement, src: string) {
     return (
       img.alt.trim() ||
@@ -124,7 +162,7 @@ export class ImageDialogControllerComponent implements OnInit, OnDestroy {
         ?.replace(/^Agrandir l'image\s*:\s*/i, "")
         .trim() ||
       img.title.trim() ||
-      filenameFromURL(src)
+      filenameFromURL(src, this.document.baseURI)
     );
   }
 

@@ -1,39 +1,39 @@
 :root {
   color-scheme: light;
-  --color-canvas-default: #fff;
-  --color-canvas-subtle: #f7f9fb;
-  --color-canvas-inset: #f3f6f8;
-  --color-fg-default: #000;
-  --color-fg-muted: #616161;
-  --color-fg-subtle: #616161;
-  --color-border-default: #ddd;
-  --color-border-muted: #ddd;
-  --color-accent-fg: #1565c0;
-  --color-accent-emphasis: #1565c0;
-  --color-accent-muted: #90caf9;
-  --color-accent-subtle: #e3f2fd;
-  --color-success-fg: #1565c0;
-  --color-attention-fg: #3f2e00;
-  --color-attention-subtle: #ffefb2;
-  --color-btn-text: #0b3d67;
-  --color-btn-bg: #e3f2fd;
+  --color-canvas-default: #fffbfe;
+  --color-canvas-subtle: #f7f2fa;
+  --color-canvas-inset: #f3edf7;
+  --color-fg-default: #1d1b20;
+  --color-fg-muted: #49454f;
+  --color-fg-subtle: #625b71;
+  --color-border-default: #cac4d0;
+  --color-border-muted: #e7e0ec;
+  --color-accent-fg: #6750a4;
+  --color-accent-emphasis: #6750a4;
+  --color-accent-muted: #d0bcff;
+  --color-accent-subtle: #eaddff;
+  --color-success-fg: #6750a4;
+  --color-attention-fg: #7d5260;
+  --color-attention-subtle: #ffd8e4;
+  --color-btn-text: #21005d;
+  --color-btn-bg: #eaddff;
   --color-btn-border: transparent;
-  --color-btn-hover-bg: #cbe7fb;
+  --color-btn-hover-bg: #d0bcff;
   --color-btn-hover-border: transparent;
-  --color-btn-active-bg: #b7ddf7;
+  --color-btn-active-bg: #ccc2dc;
   --color-btn-active-border: transparent;
   --color-btn-primary-text: #fff;
-  --color-btn-primary-bg: #1565c0;
+  --color-btn-primary-bg: #6750a4;
   --color-btn-primary-border: transparent;
-  --color-btn-primary-hover-bg: #0f57a8;
+  --color-btn-primary-hover-bg: #4f378b;
   --color-btn-primary-hover-border: transparent;
-  --color-btn-primary-selected-bg: #0b4a91;
-  --color-input-bg: #fff;
-  --color-input-border: #ddd;
-  --color-neutral-muted: rgb(21 101 192 / 16%);
-  --color-neutral-subtle: rgb(21 101 192 / 8%);
-  --color-severe-fg: #c62828;
-  --color-primer-shadow-focus: 0 0 0 3px rgb(21 101 192 / 22%);
+  --color-btn-primary-selected-bg: #381e72;
+  --color-input-bg: #ffffff;
+  --color-input-border: #79747e;
+  --color-neutral-muted: rgb(103 80 164 / 16%);
+  --color-neutral-subtle: rgb(103 80 164 / 8%);
+  --color-severe-fg: #ba1a1a;
+  --color-primer-shadow-focus: 0 0 0 3px rgb(103 80 164 / 22%);
 }
 
 body,
@@ -80,6 +80,10 @@ a:focus-visible {
 .gsc-reactions,
 .gsc-timeline {
   border-color: var(--color-border-default);
+}
+
+.gsc-reactions {
+  display: none;
 }
 
 .gsc-reply-box,

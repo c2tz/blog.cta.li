@@ -22,6 +22,10 @@
       "source": "/((?!_astro/|fonts/|giscus/|konachan-backgrounds/|favicon\\.ico$|mask\\.webp$|.*\\.(?:css|js|mjs|map|woff2?|png|jpe?g|gif|svg|webp|avif|ico|json|xml|txt|webmanifest)$).*)",
       "headers": [
         {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400"
+        },
+        {
           "key": "Content-Security-Policy",
           "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'wasm-unsafe-eval' https://giscus.app 'sha256-1+vbLZVocjZkB9zoeBTcybspMGAFSXS0QUfCttToPoI=' 'sha256-I8esRuN1RfFCq9psW+TGOYOYUQldN1YW+GDNougVNiY=' 'sha256-LCxG7jHLOixrGCn7Wb2zQaagXah2j8M57tKAhhV5q/A=' 'sha256-ROWGxEhLmXrBaJHnaFsqAHYZ64A2YnmiY8T03Xt4Z6A=' 'sha256-WmcX2v58SC3cXZIh+MSyU+oiHq5VqV4XAU96ioJjB5s=' 'sha256-dopWPuv/gwFqf3DN4vgSW/nK87WlwgY9jEKfSqbOUag='; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://giscus.app; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://giscus.app https://get.geojs.io https://ipapi.co https://api64.ipify.org; worker-src 'self' blob:; frame-src https://giscus.app; manifest-src 'self'; media-src 'self'; upgrade-insecure-requests"
         },

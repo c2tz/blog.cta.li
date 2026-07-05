@@ -19,6 +19,7 @@ html.consent-visible body {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
   animation: cookie-backdrop-in 180ms ease both;
+  will-change: opacity;
 }
 
 .cookie-consent-backdrop--modal {
@@ -56,6 +57,7 @@ html.consent-visible body {
   transform: translateY(0);
   transform-origin: bottom left;
   animation: cookie-bottom-sheet-in 220ms cubic-bezier(0.2, 0, 0, 1) both;
+  will-change: transform, opacity;
   @include mat.theme-overrides(
     (
       primary: var(--site-link),

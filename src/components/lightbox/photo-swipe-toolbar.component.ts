@@ -23,6 +23,14 @@ interface PhotoSwipeToolbarState {
 type PhotoSwipeAction =
   "close" | "download" | "fullscreen" | "next" | "previous" | "share" | "zoom";
 
+const CLOSE_ICON = "\uE5CD";
+const DOWNLOAD_ICON = "\uE2C4";
+const FULLSCREEN_ICON = "\uF1CE";
+const NEXT_ICON = "\uE5C8";
+const OPEN_IN_NEW_ICON = "\uE89E";
+const PREVIOUS_ICON = "\uE5C4";
+const SHARE_ICON = "\uE157";
+
 @Component({
   selector: "site-photo-swipe-toolbar",
   standalone: true,
@@ -73,9 +81,11 @@ type PhotoSwipeAction =
               matTooltipPosition="below"
               (click)="hideTooltip()"
             >
-              <mat-icon aria-hidden="true">&#xE89E;</mat-icon>
+              <mat-icon aria-hidden="true">{{ openInNewIcon }}</mat-icon>
             </a>
+          }
 
+          @if (!isFullscreen()) {
             <button
               matIconButton
               type="button"
@@ -85,7 +95,7 @@ type PhotoSwipeAction =
               matTooltipPosition="below"
               (click)="act('download')"
             >
-              <mat-icon aria-hidden="true">&#xE2C4;</mat-icon>
+              <mat-icon aria-hidden="true">{{ downloadIcon }}</mat-icon>
             </button>
 
             <button
@@ -97,7 +107,7 @@ type PhotoSwipeAction =
               matTooltipPosition="below"
               (click)="share()"
             >
-              <mat-icon aria-hidden="true">&#xE157;</mat-icon>
+              <mat-icon aria-hidden="true">{{ shareIcon }}</mat-icon>
             </button>
           }
 
@@ -125,7 +135,7 @@ type PhotoSwipeAction =
           matTooltipPosition="right"
           (click)="act('previous')"
         >
-          <mat-icon aria-hidden="true">&#xE5C4;</mat-icon>
+          <mat-icon aria-hidden="true">{{ previousIcon }}</mat-icon>
         </button>
 
         <button
@@ -137,7 +147,7 @@ type PhotoSwipeAction =
           matTooltipPosition="left"
           (click)="act('next')"
         >
-          <mat-icon aria-hidden="true">&#xE5C8;</mat-icon>
+          <mat-icon aria-hidden="true">{{ nextIcon }}</mat-icon>
         </button>
       }
 
@@ -184,12 +194,6 @@ type PhotoSwipeAction =
       pointer-events: auto;
       touch-action: pinch-zoom;
       color: #fff;
-      opacity: 1;
-      transform: translateY(0);
-      transition:
-        opacity 120ms cubic-bezier(0.4, 0, 1, 1),
-        transform 120ms cubic-bezier(0.4, 0, 1, 1);
-      animation: photo-swipe-toolbar-enter 180ms cubic-bezier(0, 0, 0.2, 1);
     }
 
     :host.is-fullscreen .photo-swipe-toolbar {
@@ -213,7 +217,6 @@ type PhotoSwipeAction =
       min-height: 2rem;
       padding-inline: 0.75rem;
       border-radius: var(--mat-sys-corner-full);
-      background-color: rgb(0 0 0 / 32%);
       color: #fff;
       font: var(--mat-sys-label-large);
       -webkit-backdrop-filter: blur(6px);
@@ -223,10 +226,7 @@ type PhotoSwipeAction =
     }
 
     .photo-swipe-button {
-      background-color: rgb(0 0 0 / 32%);
       touch-action: manipulation;
-      -webkit-backdrop-filter: blur(6px);
-      backdrop-filter: blur(6px);
     }
 
     .photo-swipe-nav {
@@ -237,11 +237,6 @@ type PhotoSwipeAction =
       transform-origin: center;
       pointer-events: auto;
       touch-action: manipulation;
-      opacity: 1;
-      transition:
-        opacity 120ms cubic-bezier(0.4, 0, 1, 1),
-        transform 120ms cubic-bezier(0.4, 0, 1, 1);
-      animation: photo-swipe-nav-enter 180ms cubic-bezier(0, 0, 0.2, 1);
     }
 
     .photo-swipe-nav-previous {
@@ -261,8 +256,6 @@ type PhotoSwipeAction =
       pointer-events: none;
       transform: translate(-50%, -50%) scale(var(--photo-swipe-system-zoom-inverse-scale, 1));
       transform-origin: center;
-      opacity: 1;
-      transition: opacity 120ms cubic-bezier(0.4, 0, 1, 1);
     }
 
     :host.is-closing .photo-swipe-toolbar,
@@ -294,7 +287,6 @@ type PhotoSwipeAction =
           scale(0.92);
       }
     }
-
     @media (max-width: 47.99rem) {
       .photo-swipe-toolbar {
         gap: 0.25rem;
@@ -306,22 +298,6 @@ type PhotoSwipeAction =
 
       .photo-swipe-nav-next {
         right: 0.5rem;
-      }
-    }
-
-    @media (prefers-contrast: more) {
-      .photo-swipe-counter-set,
-      .photo-swipe-button {
-        background-color: rgb(0 0 0 / 58%);
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .photo-swipe-toolbar,
-      .photo-swipe-nav,
-      .photo-swipe-loading {
-        animation: none;
-        transition-duration: 1ms;
       }
     }
   `,
@@ -342,7 +318,13 @@ export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
   readonly progress = this.loadingProgress.value;
   private readonly tooltips = viewChildren(MatTooltip);
 
-  readonly fullscreenIcon = () => "\uF1CE";
+  readonly closeIcon = CLOSE_ICON;
+  readonly downloadIcon = DOWNLOAD_ICON;
+  readonly fullscreenIcon = FULLSCREEN_ICON;
+  readonly nextIcon = NEXT_ICON;
+  readonly openInNewIcon = OPEN_IN_NEW_ICON;
+  readonly previousIcon = PREVIOUS_ICON;
+  readonly shareIcon = SHARE_ICON;
   readonly fullscreenLabel = () => "Plein écran";
   private shareLabelTimer = 0;
 

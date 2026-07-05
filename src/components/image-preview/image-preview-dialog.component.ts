@@ -6,10 +6,9 @@ import {
   computed,
   inject,
   signal,
-  viewChild,
   viewChildren,
 } from "@angular/core";
-import type { ElementRef, OnDestroy, OnInit } from "@angular/core";
+import type { OnDestroy, OnInit } from "@angular/core";
 import { MatIconButton } from "@angular/material/button";
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from "@angular/material/dialog";
 import { MatIcon } from "@angular/material/icon";
@@ -120,7 +119,6 @@ async function copyTextToClipboard(text: string) {
   encapsulation: ViewEncapsulation.None,
   template: `
     <section
-      #dialogShell
       class="site-image-dialog-shell"
       [class.has-visible-controls]="controlsVisible()"
       [class.is-fullscreen-mode]="isFullscreen()"
@@ -281,6 +279,7 @@ async function copyTextToClipboard(text: string) {
       background: transparent;
       color: var(--site-text);
       box-shadow: none;
+      transform: none;
     }
 
     .site-image-dialog-shell {
@@ -512,7 +511,6 @@ export class ImagePreviewDialogComponent implements OnInit, OnDestroy {
   private readonly dialogRef = inject(MatDialogRef<ImagePreviewDialogComponent>);
   private readonly document = inject(DOCUMENT);
   private readonly snackBar = inject(MatSnackBar);
-  private readonly shell = viewChild<ElementRef<HTMLElement>>("dialogShell");
   private readonly tooltips = viewChildren(MatTooltip);
 
   readonly closeIcon = CLOSE_ICON;
@@ -620,10 +618,10 @@ export class ImagePreviewDialogComponent implements OnInit, OnDestroy {
     }
 
     try {
-      const shell = this.shell()?.nativeElement;
-      if (!shell?.requestFullscreen) throw new Error("fullscreen_unavailable");
+      const fullscreenHost = this.document.documentElement;
+      if (!fullscreenHost.requestFullscreen) throw new Error("fullscreen_unavailable");
 
-      await shell.requestFullscreen({ navigationUI: "hide" });
+      await fullscreenHost.requestFullscreen({ navigationUI: "hide" });
     } catch {
       this.fullscreenFallback = true;
       this.isFullscreen.set(true);

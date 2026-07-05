@@ -60,6 +60,7 @@ interface WebkitFullscreenElement extends HTMLElement {
 type ImageMotion = "next" | "previous";
 
 const CLOSE_ICON = "\uE5CD";
+const CHECK_ICON = "\uE5CA";
 const DOWNLOAD_ICON = "\uE2C4";
 const FULLSCREEN_EXIT_ICON = "\uE5D1";
 const FULLSCREEN_ICON = "\uE5D0";
@@ -67,6 +68,7 @@ const MORE_ICON = "\uE5D4";
 const NEXT_ICON = "\uE5C8";
 const PREVIOUS_ICON = "\uE5C4";
 const SHARE_ICON = "\uE157";
+const SHARE_FEEDBACK_DURATION_MS = 2200;
 const DOUBLE_TAP_DISTANCE = 34;
 const DOUBLE_TAP_MS = 280;
 const TAP_DISTANCE = 10;
@@ -184,7 +186,7 @@ async function copyTextToClipboard(text: string) {
           class="site-image-dialog-menu-item"
           (click)="share($event)"
         >
-          <mat-icon matMenuItemIcon aria-hidden="true">{{ shareIcon }}</mat-icon>
+          <mat-icon matMenuItemIcon aria-hidden="true">{{ shareActionIcon() }}</mat-icon>
           <span>{{ shareLabel() }}</span>
         </button>
 
@@ -253,19 +255,17 @@ async function copyTextToClipboard(text: string) {
             <mat-icon aria-hidden="true">{{ moreIcon }}</mat-icon>
           </button>
 
-          @if (isFullscreen()) {
-            <button
-              matIconButton
-              type="button"
-              class="site-image-dialog-button"
-              aria-label="Quitter le plein écran"
-              matTooltip="Quitter le plein écran"
-              matTooltipPosition="below"
-              (click)="handleFullscreenClick()"
-            >
-              <mat-icon aria-hidden="true">{{ fullscreenIcon() }}</mat-icon>
-            </button>
-          }
+          <button
+            matIconButton
+            type="button"
+            class="site-image-dialog-button site-image-dialog-fullscreen-exit-button"
+            aria-label="Quitter le plein écran"
+            matTooltip="Quitter le plein écran"
+            matTooltipPosition="below"
+            (click)="handleFullscreenClick()"
+          >
+            <mat-icon aria-hidden="true">{{ fullscreenExitIcon }}</mat-icon>
+          </button>
 
           <button
             matIconButton
@@ -479,6 +479,20 @@ async function copyTextToClipboard(text: string) {
       touch-action: manipulation;
     }
 
+    .site-image-dialog-fullscreen-exit-button.mat-mdc-icon-button {
+      display: none;
+    }
+
+    .site-image-dialog-shell.is-fullscreen-mode
+      .site-image-dialog-fullscreen-exit-button.mat-mdc-icon-button,
+    .site-image-dialog-fullscreen-host:fullscreen
+      .site-image-dialog-fullscreen-exit-button.mat-mdc-icon-button,
+    .site-image-dialog-fullscreen-host:-webkit-full-screen
+      .site-image-dialog-fullscreen-exit-button.mat-mdc-icon-button,
+    :fullscreen .site-image-dialog-fullscreen-exit-button.mat-mdc-icon-button {
+      display: inline-flex;
+    }
+
     .site-image-dialog-panel .site-image-dialog-content.mat-mdc-dialog-content {
       display: grid;
       place-items: center;
@@ -654,14 +668,16 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
   readonly closeIcon = CLOSE_ICON;
   readonly controlsVisible = signal(true);
   readonly downloadIcon = DOWNLOAD_ICON;
+  readonly fullscreenExitIcon = FULLSCREEN_EXIT_ICON;
   readonly fullscreenIcon = computed(() =>
     this.isFullscreen() ? FULLSCREEN_EXIT_ICON : FULLSCREEN_ICON,
   );
   readonly moreIcon = MORE_ICON;
   readonly nextIcon = NEXT_ICON;
   readonly previousIcon = PREVIOUS_ICON;
-  readonly shareIcon = SHARE_ICON;
+  readonly shareActionIcon = computed(() => (this.shareCopied() ? CHECK_ICON : SHARE_ICON));
   readonly shareLabel = signal("Partager");
+  readonly shareCopied = signal(false);
   readonly isFullscreen = signal(false);
   readonly fullscreenAvailable = signal(
     typeof document !== "undefined" && this.isFullscreenSupported(),
@@ -1060,14 +1076,18 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
   }
 
   private setShareFeedback(message: string) {
+    this.shareCopied.set(message === "Lien copié");
     this.shareLabel.set(message);
     this.snackBar.open(message, undefined, {
-      duration: 2200,
+      duration: SHARE_FEEDBACK_DURATION_MS,
       horizontalPosition: "center",
       verticalPosition: "bottom",
     });
     if (this.shareLabelTimer) window.clearTimeout(this.shareLabelTimer);
-    this.shareLabelTimer = window.setTimeout(() => this.shareLabel.set("Partager"), 1400);
+    this.shareLabelTimer = window.setTimeout(() => {
+      this.shareCopied.set(false);
+      this.shareLabel.set("Partager");
+    }, SHARE_FEEDBACK_DURATION_MS);
   }
 
   private async getShareFile(url: string) {

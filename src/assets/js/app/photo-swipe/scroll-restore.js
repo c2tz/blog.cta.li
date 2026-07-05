@@ -33,17 +33,7 @@ export function initLightboxPageScrollRestore(pswp) {
   };
 
   const markUserScrollKeyIntent = (event) => {
-    if (
-      ![
-        " ",
-        "ArrowDown",
-        "ArrowUp",
-        "End",
-        "Home",
-        "PageDown",
-        "PageUp",
-      ].includes(event.key)
-    ) {
+    if (![" ", "ArrowDown", "ArrowUp", "End", "Home", "PageDown", "PageUp"].includes(event.key)) {
       return;
     }
 
@@ -61,17 +51,17 @@ export function initLightboxPageScrollRestore(pswp) {
   const restoreScroll = () => {
     if (userScrolledAfterClose) return;
 
-    if (
-      Math.abs(window.scrollX - scrollX) > 1 ||
-      Math.abs(window.scrollY - scrollY) > 1
-    ) {
+    if (Math.abs(window.scrollX - scrollX) > 1 || Math.abs(window.scrollY - scrollY) > 1) {
       window.scrollTo(scrollX, scrollY);
     }
   };
 
   const scheduleFallbackCleanup = () => {
     window.clearTimeout(cleanupFallback);
-    cleanupFallback = window.setTimeout(restorePageStyles, 600);
+    cleanupFallback = window.setTimeout(() => {
+      restorePageStyles();
+      restoreScroll();
+    }, 600);
   };
 
   window.addEventListener("wheel", markUserScrollIntent, { capture: true, passive: true });
@@ -92,9 +82,5 @@ export function initLightboxPageScrollRestore(pswp) {
 
     restorePageStyles();
     restoreScroll();
-    requestAnimationFrame(() => {
-      restorePageStyles();
-      restoreScroll();
-    });
   });
 }

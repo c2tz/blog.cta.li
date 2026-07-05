@@ -24,7 +24,9 @@ function restoreScrollLockStyle(element, property, value) {
 export function initLightboxPageScrollRestore(pswp) {
   const scrollX = window.scrollX;
   const scrollY = window.scrollY;
+  const bodyRect = document.body.getBoundingClientRect();
   const htmlOverflow = document.documentElement.style.overflow;
+  const htmlOverflowY = document.documentElement.style.overflowY;
   const htmlOverscrollBehavior = document.documentElement.style.overscrollBehavior;
   const htmlTouchAction = document.documentElement.style.touchAction;
   const bodyOverflow = document.body.style.overflow;
@@ -40,15 +42,15 @@ export function initLightboxPageScrollRestore(pswp) {
   let cleanupFallback = 0;
 
   const lockPageScroll = () => {
-    document.documentElement.style.overflow = "hidden";
+    document.documentElement.style.overflowY = "scroll";
     document.documentElement.style.overscrollBehavior = "none";
     document.body.style.overflow = "hidden";
     document.body.style.overscrollBehavior = "none";
     document.body.style.position = "fixed";
     document.body.style.top = `-${scrollY}px`;
-    document.body.style.left = `-${scrollX}px`;
-    document.body.style.right = "0";
-    document.body.style.width = "100%";
+    document.body.style.left = `${bodyRect.left - scrollX}px`;
+    document.body.style.right = "auto";
+    document.body.style.width = `${bodyRect.width}px`;
   };
 
   const markUserScrollIntent = () => {
@@ -65,6 +67,7 @@ export function initLightboxPageScrollRestore(pswp) {
 
   const restorePageStyles = () => {
     restoreScrollLockStyle(document.documentElement, "overflow", htmlOverflow);
+    restoreScrollLockStyle(document.documentElement, "overflowY", htmlOverflowY);
     restoreScrollLockStyle(document.documentElement, "overscrollBehavior", htmlOverscrollBehavior);
     restoreScrollLockStyle(document.documentElement, "touchAction", htmlTouchAction);
     restoreScrollLockStyle(document.body, "overflow", bodyOverflow);

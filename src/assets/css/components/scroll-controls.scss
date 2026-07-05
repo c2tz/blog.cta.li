@@ -111,6 +111,11 @@ html.consent-visible .site-scroll-top {
   display: none;
 }
 
+html.cdk-global-scrollblock .site-scroll-top,
+html.site-image-dialog-fullscreen-document .site-scroll-top {
+  display: none;
+}
+
 body.reading-progress-disabled .site-scroll-progress {
   display: none;
 }

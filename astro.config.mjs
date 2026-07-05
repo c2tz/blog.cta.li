@@ -2,8 +2,11 @@ import angular from "@analogjs/astro-angular";
 import mdx from "@astrojs/mdx";
 import { unified } from "@astrojs/markdown-remark";
 import { defineConfig } from "astro/config";
+import { existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeSlug from "rehype-slug";
+import { getFileGitDates } from "./src/lib/git-dates.mjs";
 
 const ANGULAR_DECORATOR_IMPORTS = new Set([
   "ChangeDetectionStrategy",
@@ -41,11 +44,33 @@ const VITE_OPTIMIZE_DEPS = [
   "@angular/material/sort",
   "@angular/material/snack-bar",
   "@angular/material/table",
+  "@angular/material/toolbar",
   "@angular/material/tooltip",
   "@material/material-color-utilities",
-  "photoswipe",
-  "photoswipe/lightbox",
 ];
+
+const IMAGE_GIT_DATES_CACHE = new Map();
+
+function getLocalImageGitDates(src, markdownPath) {
+  if (
+    !markdownPath ||
+    typeof src !== "string" ||
+    !src ||
+    URL.canParse(src) ||
+    src.startsWith("/")
+  ) {
+    return null;
+  }
+
+  const imagePath = resolve(dirname(markdownPath), src.split(/[?#]/, 1)[0]);
+  if (!existsSync(imagePath)) return null;
+
+  if (!IMAGE_GIT_DATES_CACHE.has(imagePath)) {
+    IMAGE_GIT_DATES_CACHE.set(imagePath, getFileGitDates(imagePath));
+  }
+
+  return IMAGE_GIT_DATES_CACHE.get(imagePath);
+}
 
 function isCompiledAngularDecoratorWarning(warning) {
   return (
@@ -181,24 +206,22 @@ export default defineConfig({
             },
           },
         ],
-        () => (tree) => {
-          let eagerMarkdownImageCount = 0;
-
+        () => (tree, file) => {
           const walk = (node) => {
             if (!node || typeof node !== "object") return;
 
             if (node.type === "element" && node.tagName === "img") {
               node.properties ||= {};
-              node.properties["data-lightbox"] = "";
+              node.properties["data-image-dialog"] = "";
               node.properties.decoding = "async";
-
-              if (eagerMarkdownImageCount < 2) {
-                node.properties.loading = "eager";
-                if (eagerMarkdownImageCount === 0) node.properties.fetchpriority = "high";
-                eagerMarkdownImageCount += 1;
-              } else {
-                node.properties.loading = "lazy";
+              const imageGitDates = getLocalImageGitDates(node.properties.src, file.path);
+              if (imageGitDates?.createdAt) {
+                node.properties["data-image-created-at"] = imageGitDates.createdAt;
               }
+              if (imageGitDates?.lastModified) {
+                node.properties["data-image-modified-at"] = imageGitDates.lastModified;
+              }
+              node.properties.loading = "lazy";
             }
 
             if (!Array.isArray(node.children)) return;

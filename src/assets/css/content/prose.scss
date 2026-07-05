@@ -107,13 +107,6 @@
   font-weight: 400;
 }
 
-.site-prose
-  :where(a[data-pswp-item], a[data-pswp-item]:visited):is(:hover, :focus-visible):not(
-    :where([class~="not-prose"], [class~="not-prose"] *)
-  ) {
-  text-decoration-line: none;
-}
-
 .site-prose .footnotes {
   color: var(--site-muted);
   font-size: 70%;
@@ -140,6 +133,19 @@
     transform 180ms ease,
     opacity 300ms cubic-bezier(0, 0, 0.2, 1),
     filter 360ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.site-prose
+  :where(img[data-image-dialog]):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
+  cursor: zoom-in;
+}
+
+.site-prose
+  :where(img[data-image-dialog]:focus-visible):not(
+    :where([class~="not-prose"], [class~="not-prose"] *)
+  ) {
+  outline: 2px solid var(--site-link);
+  outline-offset: 4px;
 }
 
 .site-prose

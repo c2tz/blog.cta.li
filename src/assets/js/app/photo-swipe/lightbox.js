@@ -5,6 +5,7 @@ import { SITE_EVENTS } from "@/lib/site-contracts";
 import { wrapMarkdownImages } from "../blog-images.js";
 import { fileNameFromURL } from "../url.js";
 import { downloadViaFetch, sharePhotoSwipeImage } from "./share.js";
+import { LIGHTBOX_CLOSE_DURATION, LIGHTBOX_OPEN_DURATION, initLightboxMotion } from "./motion.js";
 import { initLightboxPageScrollRestore } from "./scroll-restore.js";
 import { initLightboxRadiusState } from "./thumb-state.js";
 import {
@@ -15,6 +16,8 @@ import {
   initLightboxPhotoSwipeZoomDisable,
   initLightboxVisualViewport,
 } from "./viewport.js";
+
+const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 const lightbox = new PhotoSwipeLightbox({
   gallery: ".site-prose",
@@ -39,8 +42,9 @@ const lightbox = new PhotoSwipeLightbox({
   tapAction: false,
   doubleTapAction: false,
   trapFocus: false,
-  showAnimationDuration: 540,
-  hideAnimationDuration: 320,
+  showHideAnimationType: "fade",
+  showAnimationDuration: prefersReducedMotion ? 0 : LIGHTBOX_OPEN_DURATION,
+  hideAnimationDuration: prefersReducedMotion ? 0 : LIGHTBOX_CLOSE_DURATION,
   easing: "cubic-bezier(0.2, 0, 0, 1)",
   bgOpacity: 0.68,
   arrowPrevTitle: "Image précédente",
@@ -266,6 +270,7 @@ lightbox.on("uiRegister", () => {
   if (!pswp || !ui) return;
 
   initLightboxVisualViewport(pswp, () => dispatchPhotoSwipeState(pswp));
+  initLightboxMotion(pswp);
   initLightboxRadiusState(pswp);
   initLightboxPageScrollRestore(pswp);
   initLightboxFocusTrap(pswp);

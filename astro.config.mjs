@@ -46,9 +46,6 @@ const VITE_OPTIMIZE_DEPS = [
   "@material/material-color-utilities",
 ];
 
-const MARKDOWN_IMAGE_SIZES = "(max-width: 832px) calc(100vw - 2rem), 800px";
-const MARKDOWN_IMAGE_WIDTHS = [480, 640, 750, 828, 960, 1280, 1600, 1920, 2560, 3000, 3840];
-
 function isCompiledAngularDecoratorWarning(warning) {
   return (
     warning.code === "UNUSED_EXTERNAL_IMPORT" &&
@@ -193,9 +190,6 @@ export default defineConfig({
               node.properties ||= {};
               node.properties["data-image-dialog"] = "";
               node.properties.decoding = "async";
-              node.properties.sizes = MARKDOWN_IMAGE_SIZES;
-              node.properties.widths = MARKDOWN_IMAGE_WIDTHS;
-
               if (eagerMarkdownImageCount < 2) {
                 node.properties.loading = "eager";
                 if (eagerMarkdownImageCount === 0) node.properties.fetchpriority = "high";

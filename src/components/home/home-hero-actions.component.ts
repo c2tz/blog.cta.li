@@ -22,7 +22,7 @@ import { MatIcon } from "@angular/material/icon";
         {{ primaryActionLabel() }}
       </a>
       <a
-        matButton="text"
+        matButton="outlined"
         class="home-hero-button"
         [href]="secondaryActionHref()"
         [attr.aria-label]="secondaryActionAriaLabel()"

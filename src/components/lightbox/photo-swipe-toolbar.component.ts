@@ -67,7 +67,7 @@ const SHARE_ICON = "\uE157";
                 matTooltipPosition="below"
                 (click)="act('fullscreen')"
               >
-                <mat-icon aria-hidden="true">{{ fullscreenIcon() }}</mat-icon>
+                <mat-icon aria-hidden="true">{{ fullscreenIcon }}</mat-icon>
               </button>
             }
 

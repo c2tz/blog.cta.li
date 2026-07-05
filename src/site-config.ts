@@ -10,7 +10,7 @@ export const SITE_GISCUS_CONFIG = Object.freeze({
   categoryId: "DIC_kwDOTI4GOc4DAN2f",
   mapping: "pathname",
   strict: "0",
-  reactionsEnabled: "1",
+  reactionsEnabled: "0",
   emitMetadata: "0",
   inputPosition: "bottom",
   lang: "fr",

@@ -8,7 +8,7 @@ import { CodeBlockEnhancerComponent } from "@/components/post/code-block-enhance
 import { CookieConsentBannerComponent } from "@/components/feedback/cookie-consent-banner.component";
 import { GlobalTooltipComponent } from "@/components/feedback/global-tooltip.component";
 import { PageLoadingIndicatorComponent } from "@/components/feedback/page-loading-indicator.component";
-import { PhotoSwipeToolbarComponent } from "@/components/lightbox/photo-swipe-toolbar.component";
+import { ImageDialogControllerComponent } from "@/components/image-preview/image-dialog-controller.component";
 import { ScrollTopButtonComponent } from "@/components/navigation/scroll-top-button.component";
 import {
   SITE_COOKIE_NAMES,
@@ -245,7 +245,7 @@ const speedInsightsVersion = speedInsightsPackage.version;
     {isPost && <CodeBlockEnhancerComponent client:idle />}
     {isPost && <GlobalTooltipComponent client:idle />}
     <PageLoadingIndicatorComponent client:idle />
-    {isPost && <PhotoSwipeToolbarComponent client:idle />}
+    {isPost && <ImageDialogControllerComponent client:load />}
     {readingProgress && <ScrollTopButtonComponent client:idle />}
     {
       shouldLoadSpeedInsights && (

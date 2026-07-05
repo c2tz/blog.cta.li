@@ -273,7 +273,7 @@ function createFrenchPaginatorIntl() {
     }
 
     :host ::ng-deep .tag-posts-table .mat-sort-header-arrow::before {
-      content: "\\e5d8";
+      content: "\uE5D8";
     }
 
     .tag-posts-table .mat-sort-header-sorted {

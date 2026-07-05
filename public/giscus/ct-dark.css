@@ -1,39 +1,39 @@
 :root {
   color-scheme: dark;
-  --color-canvas-default: #000;
-  --color-canvas-subtle: #111;
-  --color-canvas-inset: #15191b;
-  --color-fg-default: #fff;
-  --color-fg-muted: #9f9f9f;
-  --color-fg-subtle: #9f9f9f;
-  --color-border-default: #222;
-  --color-border-muted: #222;
-  --color-accent-fg: #90caf9;
-  --color-accent-emphasis: #90caf9;
-  --color-accent-muted: #12344a;
-  --color-accent-subtle: #12344a;
-  --color-success-fg: #90caf9;
-  --color-attention-fg: #ffefb2;
-  --color-attention-subtle: #5f4300;
-  --color-btn-text: #d6efff;
-  --color-btn-bg: #12344a;
+  --color-canvas-default: #141218;
+  --color-canvas-subtle: #1d1b20;
+  --color-canvas-inset: #211f26;
+  --color-fg-default: #e6e0e9;
+  --color-fg-muted: #cac4d0;
+  --color-fg-subtle: #cac4d0;
+  --color-border-default: #49454f;
+  --color-border-muted: #49454f;
+  --color-accent-fg: #d0bcff;
+  --color-accent-emphasis: #d0bcff;
+  --color-accent-muted: #6750a4;
+  --color-accent-subtle: #4f378b;
+  --color-success-fg: #d0bcff;
+  --color-attention-fg: #efb8c8;
+  --color-attention-subtle: #633b48;
+  --color-btn-text: #eaddff;
+  --color-btn-bg: #4f378b;
   --color-btn-border: transparent;
-  --color-btn-hover-bg: #194761;
+  --color-btn-hover-bg: #6750a4;
   --color-btn-hover-border: transparent;
-  --color-btn-active-bg: #1d536f;
+  --color-btn-active-bg: #7f67be;
   --color-btn-active-border: transparent;
-  --color-btn-primary-text: #00131f;
-  --color-btn-primary-bg: #90caf9;
+  --color-btn-primary-text: #381e72;
+  --color-btn-primary-bg: #d0bcff;
   --color-btn-primary-border: transparent;
-  --color-btn-primary-hover-bg: #aad7fb;
+  --color-btn-primary-hover-bg: #eaddff;
   --color-btn-primary-hover-border: transparent;
-  --color-btn-primary-selected-bg: #c6e5fd;
-  --color-input-bg: #000;
-  --color-input-border: #222;
-  --color-neutral-muted: rgb(144 202 249 / 18%);
-  --color-neutral-subtle: rgb(144 202 249 / 10%);
+  --color-btn-primary-selected-bg: #f4efff;
+  --color-input-bg: #141218;
+  --color-input-border: #938f99;
+  --color-neutral-muted: rgb(208 188 255 / 18%);
+  --color-neutral-subtle: rgb(208 188 255 / 10%);
   --color-severe-fg: #ffb4ab;
-  --color-primer-shadow-focus: 0 0 0 3px rgb(144 202 249 / 24%);
+  --color-primer-shadow-focus: 0 0 0 3px rgb(208 188 255 / 24%);
 }
 
 body,
@@ -80,6 +80,10 @@ a:focus-visible {
 .gsc-reactions,
 .gsc-timeline {
   border-color: var(--color-border-default);
+}
+
+.gsc-reactions {
+  display: none;
 }
 
 .gsc-reply-box,

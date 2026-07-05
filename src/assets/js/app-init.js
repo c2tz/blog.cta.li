@@ -14,23 +14,10 @@ function syncDetailViewBodyState() {
 
 async function initProseImageEnhancements() {
   const hasProseImage = document.querySelector(".site-prose img");
-  const hasLightboxCandidate = document.querySelector(
-    ".site-prose img:not([data-no-lightbox]), .site-prose a[data-pswp-item]",
-  );
+  if (!hasProseImage) return;
 
-  if (!hasProseImage && !hasLightboxCandidate) return;
-
-  if (hasLightboxCandidate) {
-    const [{ initLightbox }, { initBlogImageReveal }] = await Promise.all([
-      import("./app/photo-swipe/lightbox.js"),
-      import("./app/blog-images.js"),
-    ]);
-    initLightbox();
-    initBlogImageReveal();
-    return;
-  }
-
-  const { initBlogImageReveal } = await import("./app/blog-images.js");
+  const { initBlogImageReveal, prepareBlogImageDialogs } = await import("./app/blog-images.js");
+  prepareBlogImageDialogs();
   initBlogImageReveal();
 }
 

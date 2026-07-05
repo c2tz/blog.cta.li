@@ -4,7 +4,6 @@
 @use "base/elements";
 @use "pages/home-hero";
 @use "pages/search";
-@use "components/photo-swipe-controls";
 @use "content/prose";
 @use "utilities/screen-reader";
 @use "content/heading-links";
@@ -14,7 +13,6 @@
 @use "content/post-meta";
 @use "content/footnotes";
 @use "components/code-block";
-@use "components/lightbox";
 @use "components/cookie-consent";
 @use "components/scroll-controls";
 @use "motion/keyframes";

@@ -11,8 +11,8 @@ import {
   getDisabledPhotoSwipeZoomLevel,
   getLightboxViewportSize,
   initLightboxFocusTrap,
-  initLightboxPhotoSwipeZoomDisable,
   initLightboxSystemZoomPassThrough,
+  initLightboxPhotoSwipeZoomDisable,
   initLightboxVisualViewport,
 } from "./viewport.js";
 
@@ -20,8 +20,8 @@ const lightbox = new PhotoSwipeLightbox({
   gallery: ".site-prose",
   children: "a[data-pswp-item]",
   pswpModule: PhotoSwipe,
-  mainClass: "pswp--system-zoom",
   getViewportSizeFn: getLightboxViewportSize,
+  mainClass: "pswp--system-zoom",
   initialZoomLevel: "fit",
   secondaryZoomLevel: getDisabledPhotoSwipeZoomLevel,
   maxZoomLevel: getDisabledPhotoSwipeZoomLevel,
@@ -39,8 +39,9 @@ const lightbox = new PhotoSwipeLightbox({
   tapAction: false,
   doubleTapAction: false,
   trapFocus: false,
-  showAnimationDuration: 0,
-  hideAnimationDuration: 0,
+  showAnimationDuration: 540,
+  hideAnimationDuration: 320,
+  easing: "cubic-bezier(0.2, 0, 0, 1)",
   bgOpacity: 0.68,
   arrowPrevTitle: "Image précédente",
   arrowNextTitle: "Image suivante",
@@ -51,6 +52,7 @@ let activePhotoSwipe = null;
 let activePhotoSwipeLoading = false;
 let activePhotoSwipeClosing = false;
 let activePhotoSwipeFullscreenRoot = null;
+let activePhotoSwipeControlsVisible = true;
 
 function getPhotoSwipeFullscreenRoot(pswp) {
   return pswp?.element || document.documentElement;
@@ -104,9 +106,89 @@ function dispatchPhotoSwipeState(pswp, open = true) {
         zoomed: open && zoom.zoomed,
         loading: open && activePhotoSwipeLoading,
         closing: open && activePhotoSwipeClosing,
+        controlsVisible: open && activePhotoSwipeControlsVisible,
       },
     }),
   );
+}
+
+function setPhotoSwipeControlsVisible(pswp, visible) {
+  activePhotoSwipeControlsVisible = visible;
+  pswp.element?.classList.toggle("pswp--controls-hidden", !visible);
+  dispatchPhotoSwipeState(pswp);
+}
+
+function initPhotoSwipeControlsToggle(pswp) {
+  const root = pswp.element;
+  if (!root) return;
+
+  let start = null;
+  const activeTouchPointers = new Set();
+  const interactiveSelector = [
+    "a[href]",
+    "button",
+    "input",
+    "select",
+    "textarea",
+    '[role="button"]',
+    ".photo-swipe-fullscreen-close",
+  ].join(",");
+
+  const isInteractiveTarget = (target) =>
+    target instanceof Element && Boolean(target.closest(interactiveSelector));
+
+  const clearPointer = (event) => {
+    if (event.pointerType === "touch") activeTouchPointers.delete(event.pointerId);
+    if (start?.id === event.pointerId) start = null;
+  };
+
+  const handlePointerDown = (event) => {
+    if (event.pointerType === "touch") activeTouchPointers.add(event.pointerId);
+
+    if (isInteractiveTarget(event.target) || activeTouchPointers.size > 1) {
+      start = null;
+      return;
+    }
+
+    start = {
+      id: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      time: performance.now(),
+    };
+  };
+
+  const handlePointerUp = (event) => {
+    const wasMultitouch = event.pointerType === "touch" && activeTouchPointers.size > 1;
+    if (event.pointerType === "touch") activeTouchPointers.delete(event.pointerId);
+
+    if (
+      !start ||
+      start.id !== event.pointerId ||
+      wasMultitouch ||
+      isInteractiveTarget(event.target)
+    ) {
+      start = null;
+      return;
+    }
+
+    const distance = Math.hypot(event.clientX - start.x, event.clientY - start.y);
+    const elapsed = performance.now() - start.time;
+    start = null;
+
+    if (distance > 12 || elapsed > 650) return;
+    setPhotoSwipeControlsVisible(pswp, !activePhotoSwipeControlsVisible);
+  };
+
+  root.addEventListener("pointerdown", handlePointerDown);
+  root.addEventListener("pointerup", handlePointerUp);
+  root.addEventListener("pointercancel", clearPointer);
+
+  pswp.on("destroy", () => {
+    root.removeEventListener("pointerdown", handlePointerDown);
+    root.removeEventListener("pointerup", handlePointerUp);
+    root.removeEventListener("pointercancel", clearPointer);
+  });
 }
 
 document.addEventListener("fullscreenchange", () => {
@@ -189,11 +271,13 @@ lightbox.on("uiRegister", () => {
   initLightboxFocusTrap(pswp);
   initLightboxSystemZoomPassThrough(pswp);
   initLightboxPhotoSwipeZoomDisable(pswp);
+  initPhotoSwipeControlsToggle(pswp);
 
   ui.uiElementsData = [];
 
   activePhotoSwipe = pswp;
   activePhotoSwipeClosing = false;
+  setPhotoSwipeControlsVisible(pswp, true);
   const syncToolbar = () => dispatchPhotoSwipeState(pswp);
   const setToolbarLoading = (loading) => {
     activePhotoSwipeLoading = loading;
@@ -227,6 +311,7 @@ lightbox.on("uiRegister", () => {
     if (activePhotoSwipe === pswp) activePhotoSwipe = null;
     activePhotoSwipeLoading = false;
     activePhotoSwipeClosing = false;
+    activePhotoSwipeControlsVisible = true;
     pswp.element?.style.removeProperty("pointer-events");
     dispatchPhotoSwipeState(pswp, false);
   });

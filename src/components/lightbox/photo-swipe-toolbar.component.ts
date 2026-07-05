@@ -18,6 +18,7 @@ interface PhotoSwipeToolbarState {
   zoomed?: boolean;
   loading?: boolean;
   closing?: boolean;
+  controlsVisible?: boolean;
 }
 
 type PhotoSwipeAction =
@@ -44,88 +45,88 @@ const SHARE_ICON = "\uE157";
   },
   template: `
     @if (open()) {
-      <div class="photo-swipe-toolbar" role="toolbar" aria-label="Commandes de l'image">
-        @if (!isFullscreen()) {
-          <span class="photo-swipe-counter-set" aria-hidden="true">
-            {{ index() }} / {{ total() }}
-          </span>
-          <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
-            Image {{ index() }} sur {{ total() }}
-          </span>
-        }
-
-        <span class="photo-swipe-toolbar-actions">
-          @if (!isFullscreen() && fullscreenAvailable()) {
-            <button
-              matIconButton
-              type="button"
-              class="photo-swipe-button"
-              [attr.aria-label]="fullscreenLabel()"
-              [matTooltip]="fullscreenLabel()"
-              matTooltipPosition="below"
-              (click)="act('fullscreen')"
-            >
-              <mat-icon aria-hidden="true">{{ fullscreenIcon() }}</mat-icon>
-            </button>
-          }
-
+      @if (controlsVisible()) {
+        <div class="photo-swipe-toolbar" role="toolbar" aria-label="Commandes de l'image">
           @if (!isFullscreen()) {
-            <a
-              matIconButton
-              class="photo-swipe-button"
-              [href]="src()"
-              target="_blank"
-              rel="noopener"
-              aria-label="Ouvrir l'image"
-              matTooltip="Ouvrir l'image"
-              matTooltipPosition="below"
-              (click)="hideTooltip()"
-            >
-              <mat-icon aria-hidden="true">{{ openInNewIcon }}</mat-icon>
-            </a>
+            <span class="photo-swipe-counter-set" aria-hidden="true">
+              {{ index() }} / {{ total() }}
+            </span>
+            <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+              Image {{ index() }} sur {{ total() }}
+            </span>
           }
 
-          @if (!isFullscreen()) {
+          <span class="photo-swipe-toolbar-actions">
+            @if (!isFullscreen() && fullscreenAvailable()) {
+              <button
+                matIconButton
+                type="button"
+                class="photo-swipe-button"
+                [attr.aria-label]="fullscreenLabel()"
+                [matTooltip]="fullscreenLabel()"
+                matTooltipPosition="below"
+                (click)="act('fullscreen')"
+              >
+                <mat-icon aria-hidden="true">{{ fullscreenIcon() }}</mat-icon>
+              </button>
+            }
+
+            @if (!isFullscreen()) {
+              <a
+                matIconButton
+                class="photo-swipe-button"
+                [href]="src()"
+                target="_blank"
+                rel="noopener"
+                aria-label="Ouvrir l'image"
+                matTooltip="Ouvrir l'image"
+                matTooltipPosition="below"
+                (click)="hideTooltip()"
+              >
+                <mat-icon aria-hidden="true">&#xE89E;</mat-icon>
+              </a>
+
+              <button
+                matIconButton
+                type="button"
+                class="photo-swipe-button"
+                aria-label="Télécharger"
+                matTooltip="Télécharger"
+                matTooltipPosition="below"
+                (click)="act('download')"
+              >
+                <mat-icon aria-hidden="true">&#xE2C4;</mat-icon>
+              </button>
+
+              <button
+                matIconButton
+                type="button"
+                class="photo-swipe-button"
+                [attr.aria-label]="shareLabel()"
+                [matTooltip]="shareLabel()"
+                matTooltipPosition="below"
+                (click)="share()"
+              >
+                <mat-icon aria-hidden="true">&#xE157;</mat-icon>
+              </button>
+            }
+
             <button
               matIconButton
               type="button"
               class="photo-swipe-button"
-              aria-label="Télécharger"
-              matTooltip="Télécharger"
+              aria-label="Fermer"
+              matTooltip="Fermer"
               matTooltipPosition="below"
-              (click)="act('download')"
+              (click)="act('close')"
             >
-              <mat-icon aria-hidden="true">{{ downloadIcon }}</mat-icon>
+              <mat-icon aria-hidden="true">{{ closeIcon }}</mat-icon>
             </button>
+          </span>
+        </div>
+      }
 
-            <button
-              matIconButton
-              type="button"
-              class="photo-swipe-button"
-              [attr.aria-label]="shareLabel()"
-              [matTooltip]="shareLabel()"
-              matTooltipPosition="below"
-              (click)="share()"
-            >
-              <mat-icon aria-hidden="true">{{ shareIcon }}</mat-icon>
-            </button>
-          }
-
-          <button
-            matIconButton
-            type="button"
-            class="photo-swipe-button"
-            aria-label="Fermer"
-            matTooltip="Fermer"
-            matTooltipPosition="below"
-            (click)="act('close')"
-          >
-            <mat-icon aria-hidden="true">&#xE5CD;</mat-icon>
-          </button>
-        </span>
-      </div>
-
-      @if (!isFullscreen() && total() > 1) {
+      @if (!isFullscreen() && total() > 1 && controlsVisible()) {
         <button
           matIconButton
           type="button"
@@ -172,7 +173,6 @@ const SHARE_ICON = "\uE157";
       z-index: 100010;
       pointer-events: none;
       touch-action: pinch-zoom;
-      --photo-swipe-system-zoom-inverse-scale: 1;
       color: #fff;
     }
 
@@ -207,8 +207,6 @@ const SHARE_ICON = "\uE157";
       gap: 0.25rem;
       height: 2.5rem;
       line-height: 0;
-      transform: scale(var(--photo-swipe-system-zoom-inverse-scale, 1));
-      transform-origin: top right;
     }
 
     .photo-swipe-counter-set {
@@ -221,8 +219,6 @@ const SHARE_ICON = "\uE157";
       font: var(--mat-sys-label-large);
       -webkit-backdrop-filter: blur(6px);
       backdrop-filter: blur(6px);
-      transform: scale(var(--photo-swipe-system-zoom-inverse-scale, 1));
-      transform-origin: top left;
     }
 
     .photo-swipe-button {
@@ -233,7 +229,7 @@ const SHARE_ICON = "\uE157";
       position: fixed;
       top: 50%;
       z-index: 1;
-      transform: translateY(-50%) scale(var(--photo-swipe-system-zoom-inverse-scale, 1));
+      transform: translateY(-50%);
       transform-origin: center;
       pointer-events: auto;
       touch-action: manipulation;
@@ -254,7 +250,7 @@ const SHARE_ICON = "\uE157";
       display: grid;
       place-items: center;
       pointer-events: none;
-      transform: translate(-50%, -50%) scale(var(--photo-swipe-system-zoom-inverse-scale, 1));
+      transform: translate(-50%, -50%);
       transform-origin: center;
     }
 
@@ -270,7 +266,7 @@ const SHARE_ICON = "\uE157";
     }
 
     :host.is-closing .photo-swipe-nav {
-      transform: translateY(-50%) scale(var(--photo-swipe-system-zoom-inverse-scale, 1)) scale(0.92);
+      transform: translateY(-50%);
     }
 
     @keyframes photo-swipe-toolbar-enter {
@@ -283,8 +279,7 @@ const SHARE_ICON = "\uE157";
     @keyframes photo-swipe-nav-enter {
       from {
         opacity: 0;
-        transform: translateY(-50%) scale(var(--photo-swipe-system-zoom-inverse-scale, 1))
-          scale(0.92);
+        transform: translateY(-50%);
       }
     }
     @media (max-width: 47.99rem) {
@@ -313,6 +308,7 @@ export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
   readonly zoomed = signal(false);
   readonly loading = signal(false);
   readonly closing = signal(false);
+  readonly controlsVisible = signal(true);
   readonly shareLabel = signal("Partager");
   private readonly loadingProgress = new SimulatedLoadingProgress();
   readonly progress = this.loadingProgress.value;
@@ -356,6 +352,9 @@ export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
     if (typeof detail.closing === "boolean") {
       this.closing.set(detail.closing);
       if (detail.closing) this.hideTooltip();
+    }
+    if (typeof detail.controlsVisible === "boolean") {
+      this.controlsVisible.set(detail.controlsVisible);
     }
   };
 
@@ -414,6 +413,7 @@ export class PhotoSwipeToolbarComponent implements OnInit, OnDestroy {
     this.zoomed.set(false);
     this.loading.set(false);
     this.closing.set(false);
+    this.controlsVisible.set(true);
     this.shareLabel.set("Partager");
   }
 }

@@ -46,6 +46,8 @@ const seoDescription = description ?? SITE_DESCRIPTION;
 const themeStorageKey = SITE_STORAGE_KEYS.themePreference;
 const legacyThemeStorageKey = SITE_LEGACY_STORAGE_KEYS.themePreference;
 const detailStorageKey = SITE_STORAGE_KEYS.homeDetailView;
+const explicitContentCookieName = SITE_COOKIE_NAMES.explicitContentAcknowledgement;
+const explicitContentStorageKey = SITE_STORAGE_KEYS.explicitContentAcknowledgement;
 const legacyDetailStorageKey = SITE_LEGACY_STORAGE_KEYS.homeDetailView;
 const detailCookieName = SITE_COOKIE_NAMES.homeDetailView;
 const legacyDetailCookieName = SITE_LEGACY_COOKIE_NAMES.homeDetailView;
@@ -179,6 +181,59 @@ const speedInsightsVersion = speedInsightsPackage.version;
     class:list={[bodyClass, { "reading-progress-disabled": !readingProgress }]}
     data-reading-progress={readingProgress ? "on" : "off"}
   >
+    <script
+      is:inline
+      define:vars={{
+        explicitContentCookieName,
+        explicitContentStorageKey,
+      }}
+    >
+      (() => {
+        const readCookie = (name) => {
+          const encodedName = `${encodeURIComponent(name)}=`;
+          const cookie = document.cookie
+            .split(";")
+            .map((part) => part.trim())
+            .find((part) => part.startsWith(encodedName));
+
+          if (!cookie) return null;
+
+          try {
+            return decodeURIComponent(cookie.slice(encodedName.length));
+          } catch {
+            return null;
+          }
+        };
+        const hasExplicitContentAcknowledgement = () => {
+          try {
+            const parsed = JSON.parse(localStorage.getItem(explicitContentStorageKey) || "null");
+            if (parsed?.version === 1 && parsed.acknowledged === true) return true;
+          } catch {}
+
+          return readCookie(explicitContentCookieName) === "acknowledged";
+        };
+        const blockPreConsentInteraction = (event) => {
+          if (!document.documentElement.classList.contains("consent-prelock")) return;
+          if (event.target?.closest?.("site-cookie-consent-banner, .cookie-consent")) return;
+
+          event.preventDefault();
+          event.stopPropagation();
+          event.stopImmediatePropagation?.();
+        };
+
+        if (!hasExplicitContentAcknowledgement()) {
+          document.documentElement.classList.add(
+            "interaction-disabled",
+            "consent-prelock",
+            "consent-visible",
+          );
+          document.addEventListener("click", blockPreConsentInteraction, true);
+          document.addEventListener("pointerdown", blockPreConsentInteraction, true);
+          document.addEventListener("submit", blockPreConsentInteraction, true);
+          document.addEventListener("keydown", blockPreConsentInteraction, true);
+        }
+      })();
+    </script>
     <main class="site-main">
       <Header />
       <div id="main-content" class="site-content">
@@ -186,7 +241,7 @@ const speedInsightsVersion = speedInsightsPackage.version;
       </div>
     </main>
     <Footer />
-    <CookieConsentBannerComponent client:idle />
+    <CookieConsentBannerComponent client:load />
     {isPost && <CodeBlockEnhancerComponent client:idle />}
     {isPost && <GlobalTooltipComponent client:idle />}
     <PageLoadingIndicatorComponent client:idle />

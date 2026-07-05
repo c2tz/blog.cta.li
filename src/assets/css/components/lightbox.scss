@@ -8,6 +8,35 @@ img[data-lightbox],
 }
 
 .pswp,
+.pswp__bg {
+  transition: none !important;
+  animation: none !important;
+}
+
+.pswp.pswp--custom-motion .pswp__bg,
+.pswp.pswp--custom-motion .pswp__zoom-wrap {
+  opacity: 0 !important;
+}
+
+.lightbox-motion-layer {
+  position: fixed;
+  z-index: 100001;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.lightbox-motion-image {
+  position: fixed;
+  display: block;
+  max-width: none;
+  margin: 0;
+  object-fit: cover;
+  pointer-events: none;
+  will-change: inset, width, height, border-radius;
+}
+
+.pswp,
 .pswp__scroll-wrap,
 .pswp__container {
   overscroll-behavior: none;

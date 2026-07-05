@@ -95,6 +95,9 @@ function transitionPhotoSwipeImageRadius(pswp, radius, { instant = false } = {})
 }
 
 export function initLightboxRadiusState(pswp) {
+  pswp.addFilter("useContentPlaceholder", () => false);
+  pswp.addFilter("isKeepingPlaceholder", () => false);
+
   let thumb = null;
   const flatThumbs = new Set();
   const hiddenThumbs = new Set();

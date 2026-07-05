@@ -1,4 +1,7 @@
 import { DOCUMENT } from "@angular/common";
+import { Overlay, OverlayContainer } from "@angular/cdk/overlay";
+import type { OverlayRef } from "@angular/cdk/overlay";
+import { CdkPortal } from "@angular/cdk/portal";
 import {
   ChangeDetectionStrategy,
   Component,
@@ -6,9 +9,10 @@ import {
   computed,
   inject,
   signal,
+  viewChild,
   viewChildren,
 } from "@angular/core";
-import type { OnDestroy, OnInit } from "@angular/core";
+import type { AfterViewInit, OnDestroy, OnInit } from "@angular/core";
 import { MatIconButton } from "@angular/material/button";
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from "@angular/material/dialog";
 import { MatIcon } from "@angular/material/icon";
@@ -43,6 +47,16 @@ interface PointerPosition {
   y: number;
 }
 
+interface WebkitFullscreenDocument extends Document {
+  webkitExitFullscreen?: () => Promise<void> | void;
+  webkitFullscreenElement?: Element | null;
+  webkitFullscreenEnabled?: boolean;
+}
+
+interface WebkitFullscreenElement extends HTMLElement {
+  webkitRequestFullscreen?: () => Promise<void> | void;
+}
+
 type ImageMotion = "next" | "previous";
 
 const CLOSE_ICON = "\uE5CD";
@@ -56,6 +70,9 @@ const SHARE_ICON = "\uE157";
 const DOUBLE_TAP_DISTANCE = 34;
 const DOUBLE_TAP_MS = 280;
 const TAP_DISTANCE = 10;
+const IMAGE_DIALOG_FULLSCREEN_HOST_CLASS = "site-image-dialog-fullscreen-host";
+const IMAGE_DIALOG_FULLSCREEN_ACTIVE_CLASS = "is-fullscreen-active";
+const IMAGE_DIALOG_FULLSCREEN_DOCUMENT_CLASS = "site-image-dialog-fullscreen-document";
 
 function fileNameFromURL(src: string, baseURI: string) {
   try {
@@ -106,6 +123,7 @@ async function copyTextToClipboard(text: string) {
   selector: "site-image-preview-dialog",
   standalone: true,
   imports: [
+    CdkPortal,
     MatDialogModule,
     MatIcon,
     MatIconButton,
@@ -183,68 +201,71 @@ async function copyTextToClipboard(text: string) {
         }
       </mat-menu>
 
-      <mat-toolbar
-        class="site-image-dialog-toolbar"
-        [class.is-hidden]="!controlsVisible()"
-        [attr.aria-hidden]="controlsVisible() ? null : 'true'"
-        role="toolbar"
-        aria-label="Commandes de l'image"
-      >
-        @if (canNavigate()) {
+      <ng-template cdkPortal>
+        <mat-toolbar
+          class="site-image-dialog-toolbar"
+          [class.is-hidden]="!controlsVisible()"
+          [class.is-closing]="isClosing()"
+          [attr.aria-hidden]="controlsVisible() ? null : 'true'"
+          role="toolbar"
+          aria-label="Commandes de l'image"
+        >
+          @if (canNavigate()) {
+            <button
+              matIconButton
+              type="button"
+              class="site-image-dialog-button"
+              aria-label="Image précédente"
+              matTooltip="Image précédente"
+              matTooltipPosition="below"
+              (click)="previous()"
+            >
+              <mat-icon aria-hidden="true">{{ previousIcon }}</mat-icon>
+            </button>
+
+            <button
+              matIconButton
+              type="button"
+              class="site-image-dialog-button"
+              aria-label="Image suivante"
+              matTooltip="Image suivante"
+              matTooltipPosition="below"
+              (click)="next()"
+            >
+              <mat-icon aria-hidden="true">{{ nextIcon }}</mat-icon>
+            </button>
+
+            <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+              Image {{ displayIndex() }} sur {{ total() }}
+            </span>
+          }
+
           <button
             matIconButton
             type="button"
             class="site-image-dialog-button"
-            aria-label="Image précédente"
-            matTooltip="Image précédente"
+            [matMenuTriggerFor]="imageMenu"
+            aria-label="Options de l'image"
+            aria-haspopup="menu"
+            matTooltip="Options"
             matTooltipPosition="below"
-            (click)="previous()"
           >
-            <mat-icon aria-hidden="true">{{ previousIcon }}</mat-icon>
+            <mat-icon aria-hidden="true">{{ moreIcon }}</mat-icon>
           </button>
 
           <button
             matIconButton
             type="button"
             class="site-image-dialog-button"
-            aria-label="Image suivante"
-            matTooltip="Image suivante"
+            aria-label="Fermer"
+            matTooltip="Fermer"
             matTooltipPosition="below"
-            (click)="next()"
+            (click)="close()"
           >
-            <mat-icon aria-hidden="true">{{ nextIcon }}</mat-icon>
+            <mat-icon aria-hidden="true">{{ closeIcon }}</mat-icon>
           </button>
-
-          <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
-            Image {{ displayIndex() }} sur {{ total() }}
-          </span>
-        }
-
-        <button
-          matIconButton
-          type="button"
-          class="site-image-dialog-button"
-          [matMenuTriggerFor]="imageMenu"
-          aria-label="Options de l'image"
-          aria-haspopup="menu"
-          matTooltip="Options"
-          matTooltipPosition="below"
-        >
-          <mat-icon aria-hidden="true">{{ moreIcon }}</mat-icon>
-        </button>
-
-        <button
-          matIconButton
-          type="button"
-          class="site-image-dialog-button"
-          aria-label="Fermer"
-          matTooltip="Fermer"
-          matTooltipPosition="below"
-          (click)="close()"
-        >
-          <mat-icon aria-hidden="true">{{ closeIcon }}</mat-icon>
-        </button>
-      </mat-toolbar>
+        </mat-toolbar>
+      </ng-template>
     </section>
   `,
   styles: `
@@ -252,6 +273,84 @@ async function copyTextToClipboard(text: string) {
       background: color-mix(in srgb, var(--m3-scrim) 68%, transparent);
       -webkit-backdrop-filter: blur(2px);
       backdrop-filter: blur(2px);
+    }
+
+    html.cdk-global-scrollblock body {
+      overflow-y: visible;
+    }
+
+    html.site-image-dialog-fullscreen-document,
+    html.site-image-dialog-fullscreen-document body {
+      background: #000;
+    }
+
+    html.site-image-dialog-fullscreen-document.cdk-global-scrollblock {
+      overflow-y: hidden !important;
+      scrollbar-gutter: auto;
+    }
+
+    html.site-image-dialog-fullscreen-document body {
+      overflow-y: hidden;
+    }
+
+    .site-image-dialog-fullscreen-host {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    .site-image-dialog-fullscreen-host:fullscreen,
+    .site-image-dialog-fullscreen-host:-webkit-full-screen,
+    .site-image-dialog-fullscreen-host.is-fullscreen-active {
+      inset: 0 auto auto 0;
+      width: 100vw;
+      width: 100dvw;
+      height: 100vh;
+      height: 100dvh;
+      background: #000;
+    }
+
+    .site-image-dialog-fullscreen-host:fullscreen > .cdk-overlay-container,
+    .site-image-dialog-fullscreen-host:-webkit-full-screen > .cdk-overlay-container,
+    .site-image-dialog-fullscreen-host.is-fullscreen-active > .cdk-overlay-container {
+      position: absolute;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: #000;
+    }
+
+    .site-image-dialog-fullscreen-host.is-fullscreen-active .cdk-global-overlay-wrapper {
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+    }
+
+    .site-image-dialog-fullscreen-host.is-fullscreen-active
+      .site-image-dialog-panel-fullscreen.cdk-overlay-pane {
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100vw !important;
+      width: 100dvw !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+      max-width: 100vw !important;
+      max-width: 100dvw !important;
+      max-height: 100vh !important;
+      max-height: 100dvh !important;
+      margin: 0 !important;
+      background: #000;
+    }
+
+    .site-image-dialog-fullscreen-host:fullscreen .site-image-dialog-backdrop,
+    .site-image-dialog-fullscreen-host:-webkit-full-screen .site-image-dialog-backdrop,
+    .site-image-dialog-fullscreen-host.is-fullscreen-active .site-image-dialog-backdrop {
+      background: #000;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
     }
 
     .site-image-dialog-panel.cdk-overlay-pane {
@@ -262,8 +361,12 @@ async function copyTextToClipboard(text: string) {
     .site-image-dialog-panel-fullscreen.cdk-overlay-pane,
     :fullscreen .site-image-dialog-panel.cdk-overlay-pane {
       width: 100vw !important;
+      width: 100dvw !important;
+      height: 100vh !important;
       height: 100dvh !important;
       max-width: 100vw !important;
+      max-width: 100dvw !important;
+      max-height: 100vh !important;
       max-height: 100dvh !important;
     }
 
@@ -279,11 +382,9 @@ async function copyTextToClipboard(text: string) {
       background: transparent;
       color: var(--site-text);
       box-shadow: none;
-      transform: none;
     }
 
     .site-image-dialog-shell {
-      --image-dialog-toolbar-height: 3.5rem;
       position: relative;
       display: grid;
       max-width: inherit;
@@ -299,28 +400,36 @@ async function copyTextToClipboard(text: string) {
     .site-image-dialog-shell:fullscreen,
     :fullscreen .site-image-dialog-shell {
       width: 100vw;
+      width: 100dvw;
+      height: 100vh;
       height: 100dvh;
       max-width: none;
       max-height: none;
       border-radius: 0;
-      background: var(--m3-scrim);
+      background: #000;
+    }
+
+    .site-image-dialog-toolbar-overlay.cdk-overlay-pane {
+      position: absolute !important;
+      top: max(1rem, env(safe-area-inset-top, 0px)) !important;
+      right: max(1rem, env(safe-area-inset-right, 0px)) !important;
+      bottom: auto !important;
+      left: auto !important;
+      pointer-events: none;
     }
 
     .site-image-dialog-toolbar.mat-toolbar {
+      --image-dialog-toolbar-height: 3.5rem;
       --mat-toolbar-container-background-color: var(--m3-surface-container);
       --mat-toolbar-container-text-color: var(--site-muted);
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 1rem;
-      position: fixed;
-      top: max(1rem, env(safe-area-inset-top, 0px));
-      right: max(1rem, env(safe-area-inset-right, 0px));
-      bottom: auto;
-      left: auto;
+      position: relative;
       margin: 0;
       width: max-content;
-      max-width: calc(100% - 1rem);
+      max-width: calc(100vw - 2rem);
       min-height: var(--image-dialog-toolbar-height);
       height: var(--image-dialog-toolbar-height);
       max-height: var(--image-dialog-toolbar-height);
@@ -331,22 +440,22 @@ async function copyTextToClipboard(text: string) {
       color: var(--site-muted);
       box-shadow: var(--mat-sys-level2, 0 3px 8px rgb(0 0 0 / 18%));
       transition:
-        max-height 180ms var(--ease-out-3),
         opacity 160ms var(--ease-out-3),
-        padding 180ms var(--ease-out-3),
         transform 160ms var(--ease-out-3);
-      will-change: max-height, opacity, transform;
+      pointer-events: auto;
+      will-change: opacity, transform;
       z-index: 1;
     }
 
     .site-image-dialog-toolbar.mat-toolbar.is-hidden {
-      min-height: 0;
-      max-height: 0;
-      height: 0;
-      padding-block: 0;
       opacity: 0;
       pointer-events: none;
       transform: translateY(-0.45rem);
+    }
+
+    .site-image-dialog-toolbar.mat-toolbar.is-closing {
+      transition-duration: 75ms;
+      transition-timing-function: linear;
     }
 
     .site-image-dialog-button.mat-mdc-icon-button {
@@ -375,8 +484,9 @@ async function copyTextToClipboard(text: string) {
       height: auto;
       max-height: calc(100dvh - 2rem);
       object-fit: contain;
+      object-position: center center;
       background: var(--m3-surface-container-high);
-      border-radius: var(--image-radius);
+      border-radius: 0;
       box-shadow: var(--mat-sys-level4, 0 10px 28px rgb(0 0 0 / 22%));
       touch-action: pan-y pinch-zoom;
       -webkit-user-drag: none;
@@ -421,18 +531,24 @@ async function copyTextToClipboard(text: string) {
     .site-image-dialog-shell:fullscreen .site-image-dialog-content.mat-mdc-dialog-content,
     :fullscreen .site-image-dialog-content.mat-mdc-dialog-content {
       width: 100vw;
+      width: 100dvw;
+      height: 100vh;
       height: 100dvh;
       max-width: none;
       max-height: none;
+      background: #000;
     }
 
     .site-image-dialog-shell.is-fullscreen-mode .site-image-dialog-image,
     .site-image-dialog-shell:fullscreen .site-image-dialog-image,
     :fullscreen .site-image-dialog-image {
-      width: 100vw;
-      max-width: 100vw;
-      height: 100dvh;
-      max-height: 100dvh;
+      width: 100%;
+      max-width: 100%;
+      height: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      object-position: center center;
+      background: #000;
       border-radius: 0;
       box-shadow: none;
     }
@@ -447,8 +563,8 @@ async function copyTextToClipboard(text: string) {
     .site-image-dialog-shell.is-fullscreen-mode:not(.has-visible-controls) .site-image-dialog-image,
     .site-image-dialog-shell:fullscreen:not(.has-visible-controls) .site-image-dialog-image,
     :fullscreen .site-image-dialog-shell:not(.has-visible-controls) .site-image-dialog-image {
-      height: 100dvh;
-      max-height: 100dvh;
+      height: 100%;
+      max-height: 100%;
     }
 
     .site-image-dialog-menu.mat-mdc-menu-panel {
@@ -467,10 +583,6 @@ async function copyTextToClipboard(text: string) {
     }
 
     @media (max-width: 720px), (pointer: coarse) {
-      .site-image-dialog-shell {
-        --image-dialog-toolbar-height: 3.25rem;
-      }
-
       .site-image-dialog-panel.cdk-overlay-pane,
       .site-image-dialog-image {
         max-width: calc(
@@ -479,6 +591,7 @@ async function copyTextToClipboard(text: string) {
       }
 
       .site-image-dialog-toolbar.mat-toolbar {
+        --image-dialog-toolbar-height: 3.25rem;
         gap: 0.45rem;
         padding-inline: 0.5rem;
       }
@@ -498,19 +611,22 @@ async function copyTextToClipboard(text: string) {
       .site-image-dialog-shell.is-fullscreen-mode .site-image-dialog-image,
       .site-image-dialog-shell:fullscreen .site-image-dialog-image,
       :fullscreen .site-image-dialog-image {
-        width: 100vw;
-        max-width: 100vw !important;
-        height: 100dvh;
-        max-height: 100dvh !important;
+        width: 100%;
+        max-width: 100% !important;
+        height: 100%;
+        max-height: 100% !important;
       }
     }
   `,
 })
-export class ImagePreviewDialogComponent implements OnInit, OnDestroy {
+export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly data = inject<ImagePreviewDialogData>(MAT_DIALOG_DATA);
   private readonly dialogRef = inject(MatDialogRef<ImagePreviewDialogComponent>);
   private readonly document = inject(DOCUMENT);
+  private readonly overlay = inject(Overlay);
+  private readonly overlayContainer = inject(OverlayContainer);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly toolbarPortal = viewChild.required(CdkPortal);
   private readonly tooltips = viewChildren(MatTooltip);
 
   readonly closeIcon = CLOSE_ICON;
@@ -526,9 +642,10 @@ export class ImagePreviewDialogComponent implements OnInit, OnDestroy {
   readonly shareLabel = signal("Partager");
   readonly isFullscreen = signal(false);
   readonly fullscreenAvailable = signal(
-    typeof document !== "undefined" && Boolean(this.document.fullscreenEnabled),
+    typeof document !== "undefined" && this.isFullscreenSupported(),
   );
   readonly imageMotion = signal<ImageMotion | null>(null);
+  readonly isClosing = signal(false);
   readonly items = signal(this.normalizeItems(this.data.items));
   readonly currentIndex = signal(this.clampIndex(this.data.initialIndex ?? 0));
   readonly current = computed(() => this.items()[this.currentIndex()] ?? this.items()[0]);
@@ -546,14 +663,14 @@ export class ImagePreviewDialogComponent implements OnInit, OnDestroy {
   private lastTap?: PointerPosition & { time: number };
   private shareLabelTimer?: number;
   private tapTimer?: number;
+  private toolbarOverlayRef?: OverlayRef;
+  private overlayContainerElement?: HTMLElement;
+  private fullscreenHostElement?: HTMLDivElement;
 
   private readonly handleFullscreenChange = () => {
-    const fullscreenElement = this.document.fullscreenElement;
-    this.isFullscreen.set(Boolean(fullscreenElement) || this.fullscreenFallback);
-
-    if (!fullscreenElement && !this.fullscreenFallback) {
-      this.restoreDialogSize();
-    }
+    const fullscreenElement = this.getFullscreenElement();
+    const isFullscreen = Boolean(fullscreenElement) || this.fullscreenFallback;
+    this.setFullscreenLayout(isFullscreen);
   };
 
   private readonly handleGlobalKeydown = (event: KeyboardEvent) => {
@@ -580,20 +697,51 @@ export class ImagePreviewDialogComponent implements OnInit, OnDestroy {
     if (typeof document === "undefined") return;
 
     this.document.addEventListener("fullscreenchange", this.handleFullscreenChange);
+    this.document.addEventListener("webkitfullscreenchange", this.handleFullscreenChange);
     this.document.addEventListener("keydown", this.handleGlobalKeydown);
+    this.dialogRef.beforeClosed().subscribe(() => this.beginCloseAnimation());
     this.preloadAdjacentImages();
+  }
+
+  ngAfterViewInit() {
+    this.overlayContainerElement = this.overlayContainer.getContainerElement();
+    this.fullscreenHostElement = this.document.createElement("div");
+    this.fullscreenHostElement.classList.add(IMAGE_DIALOG_FULLSCREEN_HOST_CLASS);
+    this.overlayContainerElement.parentElement?.insertBefore(
+      this.fullscreenHostElement,
+      this.overlayContainerElement,
+    );
+    this.fullscreenHostElement.appendChild(this.overlayContainerElement);
+    this.toolbarOverlayRef = this.overlay.create({
+      panelClass: "site-image-dialog-toolbar-overlay",
+      positionStrategy: this.overlay.position().global(),
+      scrollStrategy: this.overlay.scrollStrategies.noop(),
+    });
+    this.toolbarOverlayRef.attach(this.toolbarPortal());
   }
 
   ngOnDestroy() {
     if (typeof document === "undefined") return;
 
     this.document.removeEventListener("fullscreenchange", this.handleFullscreenChange);
+    this.document.removeEventListener("webkitfullscreenchange", this.handleFullscreenChange);
     this.document.removeEventListener("keydown", this.handleGlobalKeydown);
     if (this.imageMotionTimer) window.clearTimeout(this.imageMotionTimer);
     if (this.shareLabelTimer) window.clearTimeout(this.shareLabelTimer);
     this.clearTapTimer();
     this.hideTooltip();
-    void this.exitFullscreen();
+    this.toolbarOverlayRef?.dispose();
+    const overlayContainerElement = this.overlayContainerElement;
+    const fullscreenHostElement = this.fullscreenHostElement;
+    void this.exitFullscreen().finally(() => {
+      if (overlayContainerElement && fullscreenHostElement?.parentElement) {
+        fullscreenHostElement.parentElement.insertBefore(
+          overlayContainerElement,
+          fullscreenHostElement,
+        );
+      }
+      fullscreenHostElement?.remove();
+    });
   }
 
   previous() {
@@ -605,6 +753,7 @@ export class ImagePreviewDialogComponent implements OnInit, OnDestroy {
   }
 
   close() {
+    this.beginCloseAnimation();
     this.hideTooltip();
     void this.exitFullscreen().finally(() => this.dialogRef.close());
   }
@@ -612,21 +761,29 @@ export class ImagePreviewDialogComponent implements OnInit, OnDestroy {
   async toggleFullscreen() {
     this.hideTooltip();
 
-    if (this.document.fullscreenElement || this.fullscreenFallback) {
+    if (this.getFullscreenElement() || this.fullscreenFallback) {
       await this.exitFullscreen();
       return;
     }
 
-    try {
-      const fullscreenHost = this.document.documentElement;
-      if (!fullscreenHost.requestFullscreen) throw new Error("fullscreen_unavailable");
+    this.setFullscreenLayout(true);
 
-      await fullscreenHost.requestFullscreen({ navigationUI: "hide" });
+    try {
+      const fullscreenHost = this.fullscreenHostElement;
+      if (!fullscreenHost) throw new Error("fullscreen_unavailable");
+
+      if (fullscreenHost.requestFullscreen) {
+        await fullscreenHost.requestFullscreen();
+      } else {
+        const webkitFullscreenHost = fullscreenHost as WebkitFullscreenElement;
+        if (!webkitFullscreenHost.webkitRequestFullscreen) {
+          throw new Error("fullscreen_unavailable");
+        }
+        await webkitFullscreenHost.webkitRequestFullscreen();
+      }
     } catch {
       this.fullscreenFallback = true;
-      this.isFullscreen.set(true);
-      this.dialogRef.addPanelClass("site-image-dialog-panel-fullscreen");
-      this.dialogRef.updateSize("100vw", "100dvh");
+      this.setFullscreenLayout(true);
     }
   }
 
@@ -821,26 +978,58 @@ export class ImagePreviewDialogComponent implements OnInit, OnDestroy {
     this.tapTimer = undefined;
   }
 
+  private beginCloseAnimation() {
+    if (this.isClosing()) return;
+
+    this.isClosing.set(true);
+    this.controlsVisible.set(false);
+  }
+
   private async exitFullscreen() {
-    if (!this.document.fullscreenElement) {
+    if (!this.getFullscreenElement()) {
       this.fullscreenFallback = false;
-      this.isFullscreen.set(false);
-      this.restoreDialogSize();
+      this.setFullscreenLayout(false);
       return;
     }
 
     try {
-      await this.document.exitFullscreen?.();
+      if (this.document.exitFullscreen) {
+        await this.document.exitFullscreen();
+      } else {
+        await (this.document as WebkitFullscreenDocument).webkitExitFullscreen?.();
+      }
     } catch {}
 
     this.fullscreenFallback = false;
-    this.isFullscreen.set(false);
-    this.restoreDialogSize();
+    this.setFullscreenLayout(false);
   }
 
   private restoreDialogSize() {
     this.dialogRef.removePanelClass("site-image-dialog-panel-fullscreen");
     this.dialogRef.updateSize("", "");
+  }
+
+  private getFullscreenElement() {
+    const webkitDocument = this.document as WebkitFullscreenDocument;
+    return this.document.fullscreenElement ?? webkitDocument.webkitFullscreenElement ?? null;
+  }
+
+  private isFullscreenSupported() {
+    const webkitDocument = this.document as WebkitFullscreenDocument;
+    return Boolean(this.document.fullscreenEnabled || webkitDocument.webkitFullscreenEnabled);
+  }
+
+  private setFullscreenLayout(active: boolean) {
+    this.isFullscreen.set(active);
+    this.document.documentElement.classList.toggle(IMAGE_DIALOG_FULLSCREEN_DOCUMENT_CLASS, active);
+    this.fullscreenHostElement?.classList.toggle(IMAGE_DIALOG_FULLSCREEN_ACTIVE_CLASS, active);
+
+    if (active) {
+      this.dialogRef.addPanelClass("site-image-dialog-panel-fullscreen");
+      this.dialogRef.updateSize("100%", "100%");
+    } else {
+      this.restoreDialogSize();
+    }
   }
 
   private hideTooltip() {

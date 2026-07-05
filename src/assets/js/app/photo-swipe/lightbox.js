@@ -16,6 +16,8 @@ import {
   initLightboxVisualViewport,
 } from "./viewport.js";
 
+const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
 const lightbox = new PhotoSwipeLightbox({
   gallery: ".site-prose",
   children: "a[data-pswp-item]",
@@ -39,8 +41,9 @@ const lightbox = new PhotoSwipeLightbox({
   tapAction: false,
   doubleTapAction: false,
   trapFocus: false,
-  showAnimationDuration: 540,
-  hideAnimationDuration: 320,
+  showHideAnimationType: "zoom",
+  showAnimationDuration: prefersReducedMotion ? 0 : 360,
+  hideAnimationDuration: prefersReducedMotion ? 0 : 260,
   easing: "cubic-bezier(0.2, 0, 0, 1)",
   bgOpacity: 0.68,
   arrowPrevTitle: "Image précédente",

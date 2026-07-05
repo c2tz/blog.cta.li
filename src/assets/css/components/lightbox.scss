@@ -8,17 +8,6 @@ img[data-lightbox],
 }
 
 .pswp,
-.pswp__bg,
-.pswp__scroll-wrap,
-.pswp__container,
-.pswp__item,
-.pswp__zoom-wrap,
-.pswp__img {
-  transition: none !important;
-  animation: none !important;
-}
-
-.pswp,
 .pswp__scroll-wrap,
 .pswp__container {
   overscroll-behavior: none;

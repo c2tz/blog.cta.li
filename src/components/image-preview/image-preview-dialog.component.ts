@@ -14,7 +14,12 @@ import {
 } from "@angular/core";
 import type { AfterViewInit, OnDestroy, OnInit } from "@angular/core";
 import { MatIconButton } from "@angular/material/button";
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from "@angular/material/dialog";
+import {
+  MAT_DIALOG_DATA,
+  MatDialog,
+  MatDialogModule,
+  MatDialogRef,
+} from "@angular/material/dialog";
 import { MatIcon } from "@angular/material/icon";
 import { MatMenu, MatMenuItem, MatMenuTrigger } from "@angular/material/menu";
 import { MatSnackBar } from "@angular/material/snack-bar";
@@ -24,8 +29,10 @@ import { SITE_EVENTS } from "@/lib/site-contracts";
 
 export interface ImagePreviewItem {
   alt?: string;
+  createdAt?: string;
   height?: number;
   label: string;
+  lastModified?: string;
   src: string;
   width?: number;
 }
@@ -59,11 +66,21 @@ interface WebkitFullscreenElement extends HTMLElement {
 
 type ImageMotion = "next" | "previous";
 
+interface ImageInformationDialogData {
+  createdAt?: string;
+  height?: number;
+  lastModified?: string;
+  name: string;
+  src: string;
+  width?: number;
+}
+
 const CLOSE_ICON = "\uE5CD";
 const CHECK_ICON = "\uE5CA";
 const DOWNLOAD_ICON = "\uE2C4";
 const FULLSCREEN_EXIT_ICON = "\uE5D1";
 const FULLSCREEN_ICON = "\uE5D0";
+const INFO_ICON = "\uE88E";
 const MORE_ICON = "\uE5D4";
 const NEXT_ICON = "\uE5C8";
 const PREVIOUS_ICON = "\uE5C4";
@@ -75,6 +92,7 @@ const TAP_DISTANCE = 10;
 const IMAGE_DIALOG_FULLSCREEN_HOST_CLASS = "site-image-dialog-fullscreen-host";
 const IMAGE_DIALOG_FULLSCREEN_ACTIVE_CLASS = "is-fullscreen-active";
 const IMAGE_DIALOG_FULLSCREEN_DOCUMENT_CLASS = "site-image-dialog-fullscreen-document";
+const IMAGE_INFORMATION_DIALOG_ID = "site-image-information-dialog";
 
 function fileNameFromURL(src: string, baseURI: string) {
   try {
@@ -92,6 +110,64 @@ function fileNameFromURL(src: string, baseURI: string) {
 
 function distanceBetween(first: PointerPosition, second: PointerPosition) {
   return Math.hypot(second.x - first.x, second.y - first.y);
+}
+
+function formatByteSize(bytes: number) {
+  const exact = new Intl.NumberFormat("fr-FR").format(bytes);
+  if (bytes < 1024) return `${exact} octet${bytes > 1 ? "s" : ""}`;
+
+  const units = ["ko", "Mo", "Go"];
+  const unitIndex = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)) - 1, units.length - 1);
+  const value = bytes / 1024 ** (unitIndex + 1);
+  const compact = new Intl.NumberFormat("fr-FR", {
+    maximumFractionDigits: value >= 100 ? 0 : value >= 10 ? 1 : 2,
+  }).format(value);
+
+  return `${compact} ${units[unitIndex]} (${exact} octets)`;
+}
+
+function formatImageDate(value?: string) {
+  if (!value) return "Indisponible";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.valueOf())) return "Indisponible";
+
+  return new Intl.DateTimeFormat("fr-FR", {
+    dateStyle: "long",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function imageTypeLabel(src: string, contentType?: string | null) {
+  const mimeSubtype = contentType?.match(/^image\/([^;]+)/i)?.[1];
+  let format = mimeSubtype;
+
+  try {
+    const parsed = new URL(src, document.baseURI);
+    format ||= parsed.searchParams.get("f") || undefined;
+    format ||= fileNameFromURL(src, document.baseURI).split(".").pop();
+  } catch {}
+
+  const normalized = format?.toLowerCase();
+  const labels = new Map([
+    ["avif", "AVIF"],
+    ["gif", "GIF"],
+    ["jpeg", "JPEG"],
+    ["jpg", "JPEG"],
+    ["png", "PNG"],
+    ["svg+xml", "SVG"],
+    ["webp", "WebP"],
+  ]);
+
+  return normalized ? `Image ${labels.get(normalized) ?? normalized.toUpperCase()}` : "Image";
+}
+
+function loadedResourceSize(src: string) {
+  if (typeof performance === "undefined") return 0;
+
+  const entries = performance.getEntriesByName(src, "resource") as PerformanceResourceTiming[];
+  const entry = entries.at(-1);
+  return entry?.encodedBodySize || entry?.transferSize || 0;
 }
 
 async function copyTextToClipboard(text: string) {
@@ -118,6 +194,168 @@ async function copyTextToClipboard(text: string) {
   } finally {
     textarea.remove();
     window.getSelection()?.removeAllRanges();
+  }
+}
+
+@Component({
+  selector: "site-image-information-dialog",
+  standalone: true,
+  imports: [MatDialogModule, MatIcon, MatIconButton],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  template: `
+    <section class="site-image-information">
+      <header class="site-image-information-header">
+        <h2 mat-dialog-title>Informations sur l’image</h2>
+        <button matIconButton mat-dialog-close type="button" aria-label="Fermer les informations">
+          <mat-icon aria-hidden="true">{{ closeIcon }}</mat-icon>
+        </button>
+      </header>
+
+      <mat-dialog-content>
+        <dl class="site-image-information-list">
+          <div>
+            <dt>Nom</dt>
+            <dd>{{ data.name }}</dd>
+          </div>
+          <div>
+            <dt>Format affiché</dt>
+            <dd>{{ typeLabel() }}</dd>
+          </div>
+          <div>
+            <dt>Taille chargée</dt>
+            <dd>{{ sizeLabel() }}</dd>
+          </div>
+          <div>
+            <dt>Dimensions</dt>
+            <dd>{{ dimensionsLabel }}</dd>
+          </div>
+          <div>
+            <dt>Ajoutée le</dt>
+            <dd>{{ createdLabel }}</dd>
+          </div>
+          <div>
+            <dt>Modifiée le</dt>
+            <dd>{{ modifiedLabel }}</dd>
+          </div>
+        </dl>
+      </mat-dialog-content>
+    </section>
+  `,
+  styles: `
+    .site-image-information-dialog-panel .mat-mdc-dialog-container,
+    .site-image-information-dialog-panel .mat-mdc-dialog-surface {
+      border-radius: var(--site-shape-large);
+    }
+
+    .site-image-information-dialog-panel .mat-mdc-dialog-surface {
+      background: var(--m3-surface-container);
+      color: var(--site-text);
+      box-shadow: var(--mat-sys-level3, 0 6px 18px rgb(0 0 0 / 20%));
+    }
+
+    .site-image-information {
+      min-width: min(28rem, calc(100vw - 2rem));
+      max-width: min(32rem, calc(100vw - 2rem));
+    }
+
+    .site-image-information-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding-inline: 1.5rem 0.75rem;
+    }
+
+    .site-image-information-header h2.mat-mdc-dialog-title {
+      flex: 1;
+      margin: 0;
+      padding: 1.25rem 0 1rem;
+      color: var(--site-text);
+    }
+
+    .site-image-information-header .mat-mdc-icon-button {
+      color: var(--site-muted);
+    }
+
+    .site-image-information .mat-mdc-dialog-content {
+      padding: 0 1.5rem 1.5rem;
+    }
+
+    .site-image-information-list {
+      display: grid;
+      gap: 0;
+      margin: 0;
+    }
+
+    .site-image-information-list > div {
+      display: grid;
+      grid-template-columns: minmax(7rem, 0.55fr) minmax(0, 1fr);
+      gap: 1rem;
+      padding-block: 0.8rem;
+      border-bottom: 1px solid var(--site-border);
+    }
+
+    .site-image-information-list > div:last-child {
+      border-bottom: 0;
+    }
+
+    .site-image-information-list dt {
+      color: var(--site-muted);
+      font-weight: 500;
+    }
+
+    .site-image-information-list dd {
+      min-width: 0;
+      margin: 0;
+      overflow-wrap: anywhere;
+      color: var(--site-text);
+    }
+
+    @media (max-width: 520px) {
+      .site-image-information-list > div {
+        grid-template-columns: 1fr;
+        gap: 0.25rem;
+      }
+    }
+  `,
+})
+class ImageInformationDialogComponent implements OnInit {
+  readonly data = inject<ImageInformationDialogData>(MAT_DIALOG_DATA);
+  readonly closeIcon = CLOSE_ICON;
+  readonly createdLabel = formatImageDate(this.data.createdAt);
+  readonly dimensionsLabel =
+    this.data.width && this.data.height
+      ? `${this.data.width} × ${this.data.height} px`
+      : "Indisponibles";
+  readonly modifiedLabel = formatImageDate(this.data.lastModified);
+  readonly sizeLabel = signal("Calcul…");
+  readonly typeLabel = signal(imageTypeLabel(this.data.src));
+
+  ngOnInit() {
+    void this.resolveFileInformation();
+  }
+
+  private async resolveFileInformation() {
+    const resourceUrl = new URL(this.data.src, document.baseURI).href;
+    let bytes = loadedResourceSize(resourceUrl);
+
+    if (!bytes) {
+      try {
+        const response = await fetch(resourceUrl, {
+          cache: "force-cache",
+          credentials: new URL(resourceUrl).origin === location.origin ? "same-origin" : "omit",
+          method: "HEAD",
+          mode: "cors",
+        });
+        if (response.ok) {
+          const contentLength = Number.parseInt(response.headers.get("content-length") ?? "", 10);
+          if (Number.isFinite(contentLength) && contentLength > 0) bytes = contentLength;
+          this.typeLabel.set(imageTypeLabel(resourceUrl, response.headers.get("content-type")));
+        }
+      } catch {}
+    }
+
+    this.sizeLabel.set(bytes ? formatByteSize(bytes) : "Indisponible");
   }
 }
 
@@ -201,6 +439,16 @@ async function copyTextToClipboard(text: string) {
             <span>{{ fullscreenLabel() }}</span>
           </button>
         }
+
+        <button
+          mat-menu-item
+          type="button"
+          class="site-image-dialog-menu-item"
+          (click)="openInformation()"
+        >
+          <mat-icon matMenuItemIcon aria-hidden="true">{{ infoIcon }}</mat-icon>
+          <span>Informations</span>
+        </button>
       </mat-menu>
 
       <ng-template cdkPortal>
@@ -653,6 +901,7 @@ async function copyTextToClipboard(text: string) {
 })
 export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly data = inject<ImagePreviewDialogData>(MAT_DIALOG_DATA);
+  private readonly dialog = inject(MatDialog);
   private readonly dialogRef = inject(MatDialogRef<ImagePreviewDialogComponent>);
   private readonly document = inject(DOCUMENT);
   private readonly overlay = inject(Overlay);
@@ -668,6 +917,7 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
   readonly fullscreenIcon = computed(() =>
     this.isFullscreen() ? FULLSCREEN_EXIT_ICON : FULLSCREEN_ICON,
   );
+  readonly infoIcon = INFO_ICON;
   readonly moreIcon = MORE_ICON;
   readonly nextIcon = NEXT_ICON;
   readonly previousIcon = PREVIOUS_ICON;
@@ -713,6 +963,7 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
       event.altKey ||
       event.ctrlKey ||
       event.metaKey ||
+      this.dialog.openDialogs.some((dialogRef) => dialogRef.id === IMAGE_INFORMATION_DIALOG_ID) ||
       !this.canNavigate()
     ) {
       return;
@@ -846,6 +1097,30 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
 
   handleFullscreenClick() {
     void this.toggleFullscreen();
+  }
+
+  openInformation() {
+    this.hideTooltip();
+    const item = this.current();
+    const previewImage = this.document.querySelector<HTMLImageElement>(".site-image-dialog-image");
+
+    this.dialog.open(ImageInformationDialogComponent, {
+      id: IMAGE_INFORMATION_DIALOG_ID,
+      ariaLabel: `Informations sur l'image : ${item.label}`,
+      autoFocus: false,
+      backdropClass: "site-image-dialog-backdrop",
+      data: {
+        createdAt: item.createdAt,
+        height: previewImage?.naturalHeight || item.height,
+        lastModified: item.lastModified,
+        name: item.alt?.trim() || item.label || fileNameFromURL(item.src, this.document.baseURI),
+        src: item.src,
+        width: previewImage?.naturalWidth || item.width,
+      } satisfies ImageInformationDialogData,
+      maxWidth: "calc(100vw - 2rem)",
+      panelClass: "site-image-information-dialog-panel",
+      restoreFocus: true,
+    });
   }
 
   async share(event?: MouseEvent) {

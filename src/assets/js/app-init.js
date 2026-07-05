@@ -1,4 +1,5 @@
 import { initScrollProgressBar, removeReadingProgress } from "./app/reading-progress.js";
+import { initConsoleArt } from "./app/console-art.js";
 import { initSiteTooltips } from "./app/site-tooltips.js";
 
 function syncDetailViewBodyState() {
@@ -34,6 +35,7 @@ async function initProseImageEnhancements() {
 }
 
 function initApp() {
+  initConsoleArt();
   syncDetailViewBodyState();
   initSiteTooltips();
   void initProseImageEnhancements();

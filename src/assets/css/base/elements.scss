@@ -4,7 +4,6 @@
     background-color: var(--home-dynamic-page-bg, var(--site-bg));
     -moz-text-size-adjust: 100%;
     -webkit-text-size-adjust: 100%;
-    text-size-adjust: 100%;
     overscroll-behavior: none;
   }
 
@@ -221,7 +220,6 @@
   }
 
   code,
-  pre,
   kbd,
   samp {
     font-family: var(--site-mono-font);
@@ -233,6 +231,15 @@
   pre {
     overflow-x: auto;
     background-color: var(--code-block-surface);
+    font-family: var(--site-mono-font);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    letter-spacing: 0;
+  }
+
+  pre code {
+    font-size: inherit;
+    line-height: inherit;
   }
 
   kbd {
@@ -242,7 +249,7 @@
     border-radius: var(--site-shape-extra-small);
     background-color: var(--m3-surface-container-highest);
     color: var(--m3-on-surface);
-    box-shadow: inset 0 -1px 0 var(--m3-outline);
+    box-shadow: none;
     font-family: var(--site-mono-font);
     font-size: 0.875em;
     line-height: 1.4;

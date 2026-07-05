@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, signal } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
-import { MatBadge } from "@angular/material/badge";
 import { MatMiniFabButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
 import { MatTooltip } from "@angular/material/tooltip";
@@ -19,7 +18,7 @@ function isScrollTopDisabledPage() {
 @Component({
   selector: "site-scroll-top-button",
   standalone: true,
-  imports: [MatBadge, MatMiniFabButton, MatIcon, MatTooltip],
+  imports: [MatMiniFabButton, MatIcon, MatTooltip],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button
@@ -30,16 +29,12 @@ function isScrollTopDisabledPage() {
       [disabled]="!visible()"
       [hidden]="!visible()"
       [attr.aria-label]="'Retour en haut, progression ' + progress() + ' %'"
-      [matBadge]="progress() + '%'"
-      [matBadgeDescription]="'Progression ' + progress() + ' %'"
-      [matBadgeHidden]="!visible()"
-      matBadgePosition="above after"
-      matBadgeSize="large"
       matTooltip="Retour en haut"
       matTooltipPosition="left"
       (click)="scrollToTop()"
     >
       <mat-icon class="site-scroll-top-icon" aria-hidden="true">&#xE5D8;</mat-icon>
+      <span class="site-scroll-top-badge" aria-hidden="true">{{ progress() }}%</span>
     </button>
   `,
 })

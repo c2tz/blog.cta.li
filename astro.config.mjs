@@ -74,6 +74,14 @@ function isKnownAngularSourcemapWarning(message) {
   );
 }
 
+function isKnownViteOxcEsbuildWarning(message) {
+  return (
+    typeof message === "string" &&
+    message.includes("Both esbuild and oxc options were set") &&
+    message.includes("{ jsxDev: true }")
+  );
+}
+
 const viteLogger = {
   hasWarned: false,
   hasErrorLogged: () => false,
@@ -84,6 +92,7 @@ const viteLogger = {
     this.warn(message);
   },
   warn(message) {
+    if (isKnownViteOxcEsbuildWarning(message)) return;
     if (isKnownAngularSourcemapWarning(message)) return;
     this.hasWarned = true;
     console.warn(message);
@@ -121,6 +130,7 @@ export default defineConfig({
       headers: {
         "Access-Control-Allow-Origin": "https://giscus.app",
         "Cross-Origin-Resource-Policy": "cross-origin",
+        "X-Content-Type-Options": "nosniff",
       },
     },
     optimizeDeps: {
@@ -135,6 +145,7 @@ export default defineConfig({
       },
     },
     build: {
+      cssMinify: "esbuild",
       rollupOptions: {
         onwarn(warning, warn) {
           if (
@@ -171,7 +182,7 @@ export default defineConfig({
           },
         ],
         () => (tree) => {
-          let firstMarkdownImage = true;
+          let eagerMarkdownImageCount = 0;
 
           const walk = (node) => {
             if (!node || typeof node !== "object") return;
@@ -181,10 +192,10 @@ export default defineConfig({
               node.properties["data-lightbox"] = "";
               node.properties.decoding = "async";
 
-              if (firstMarkdownImage) {
+              if (eagerMarkdownImageCount < 2) {
                 node.properties.loading = "eager";
-                node.properties.fetchpriority = "high";
-                firstMarkdownImage = false;
+                if (eagerMarkdownImageCount === 0) node.properties.fetchpriority = "high";
+                eagerMarkdownImageCount += 1;
               } else {
                 node.properties.loading = "lazy";
               }

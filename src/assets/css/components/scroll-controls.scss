@@ -30,14 +30,6 @@
       small-state-layer-color: var(--site-on-tonal-container),
     )
   );
-  @include mat.badge-overrides(
-    (
-      background-color: var(--site-link),
-      text-color: var(--m3-on-primary),
-      large-size-text-size: 0.6875rem,
-      large-size-line-height: 1rem,
-    )
-  );
   position: fixed;
   right: calc(2rem + env(safe-area-inset-right, 0px));
   bottom: 1rem;
@@ -69,12 +61,29 @@
   line-height: 1.35rem;
 }
 
-.site-scroll-top .mat-badge-content {
+.site-scroll-top.mat-mdc-mini-fab.mat-mdc-button-base .mdc-button__label {
+  position: static !important;
+}
+
+.site-scroll-top .site-scroll-top-badge {
+  position: absolute;
+  top: -0.45rem;
+  right: -1rem;
   z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 2rem;
   width: auto;
   height: 1rem;
+  box-sizing: border-box;
   padding-inline: 0.25rem;
+  border-radius: 9999px;
+  background: var(--site-link);
+  color: var(--m3-on-primary);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1rem;
   pointer-events: none;
 }
 

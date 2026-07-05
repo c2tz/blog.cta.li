@@ -1,28 +1,22 @@
 import { hideSiteTooltip } from "../site-tooltips.js";
 
+const FALLBACK_THUMB_RADIUS = "0px";
+
 function getSlideThumb(slide) {
   const source = slide?.data?.element;
   if (!source) return null;
   return source.matches?.("img") ? source : source.querySelector?.("img");
 }
 
-function getDefaultThumbRadius() {
-  return FALLBACK_THUMB_RADIUS;
-}
-
-function storeThumbRadius(img) {
-  if (!img) return getDefaultThumbRadius();
+function getThumbRadius(img) {
+  if (!img) return FALLBACK_THUMB_RADIUS;
 
   if (!img.dataset["lightboxThumbRadius"]) {
     img.dataset["lightboxThumbRadius"] =
-      getComputedStyle(img).borderRadius || getDefaultThumbRadius();
+      getComputedStyle(img).borderRadius || FALLBACK_THUMB_RADIUS;
   }
 
   return img.dataset["lightboxThumbRadius"];
-}
-
-function getThumbRadius(img) {
-  return img?.dataset["lightboxThumbRadius"] || storeThumbRadius(img);
 }
 
 function clearThumbRadius(img) {
@@ -30,17 +24,33 @@ function clearThumbRadius(img) {
   delete img.dataset["lightboxThumbRadius"];
 }
 
+function syncThumbRadiusTransition(img, pswp) {
+  if (!img || !pswp?.element) return;
+  const duration = getComputedStyle(pswp.element)
+    .getPropertyValue("--pswp-transition-duration")
+    .trim();
+  img.style.transitionDuration = duration || "";
+  img.style.transitionTimingFunction = "cubic-bezier(0.2, 0, 0, 1)";
+}
+
+function cleanupThumbRadiusTransition(img) {
+  if (!img) return;
+  img.style.removeProperty("transition-duration");
+  img.style.removeProperty("transition-timing-function");
+}
+
 function flattenThumbRadius(img) {
   if (!img) return;
-  storeThumbRadius(img);
+  getThumbRadius(img);
   img.style.removeProperty("border-radius");
   img.getBoundingClientRect();
   img.classList.add("is-lightbox-radius-flat");
 }
 
-function hideThumbBehindLightbox(img) {
+function hideThumbBehindLightbox(img, pswp) {
   if (!img) return;
-  storeThumbRadius(img);
+  getThumbRadius(img);
+  syncThumbRadiusTransition(img, pswp);
   img.getBoundingClientRect();
   img.classList.add("is-lightbox-thumb-hidden");
 }
@@ -49,10 +59,14 @@ function revealThumbAfterClose(img, onDone) {
   if (!img) return;
   requestAnimationFrame(() => {
     img.getBoundingClientRect();
-    img.classList.remove("is-lightbox-thumb-hidden");
+    img.classList.remove(
+      "is-lightbox-thumb-hidden",
+      "is-lightbox-thumb-fade",
+      "is-lightbox-closing",
+    );
     requestAnimationFrame(() => {
-      img.getBoundingClientRect();
-      img.classList.remove("is-lightbox-thumb-hidden", "is-lightbox-thumb-fade");
+      img.classList.remove("is-lightbox-radius-instant");
+      img.style.removeProperty("border-radius");
       onDone?.();
     });
   });
@@ -62,14 +76,21 @@ function restoreThumbRadiusInstant(img) {
   if (!img) return;
   img.classList.add("is-lightbox-radius-instant");
   img.style.borderRadius = getThumbRadius(img);
-  img.classList.remove("is-lightbox-radius-flat");
+  img.classList.remove("is-lightbox-radius-flat", "is-lightbox-closing");
+  cleanupThumbRadiusTransition(img);
   img.getBoundingClientRect();
   clearThumbRadius(img);
 }
 
-function setPhotoSwipeImageRadius(pswp, radius) {
+function transitionPhotoSwipeImageRadius(pswp, radius, { instant = false } = {}) {
   pswp.element?.querySelectorAll(".pswp__img:not(.pswp__img--placeholder)").forEach((img) => {
+    img.classList.add("pswp__img--radius-transition");
+    img.classList.toggle("pswp__img--radius-instant", instant);
     img.style.borderRadius = radius;
+    if (instant) {
+      img.getBoundingClientRect();
+      requestAnimationFrame(() => img.classList.remove("pswp__img--radius-instant"));
+    }
   });
 }
 
@@ -90,7 +111,7 @@ export function initLightboxRadiusState(pswp) {
   const hideThumb = (img) => {
     if (!img) return;
     hiddenThumbs.add(img);
-    hideThumbBehindLightbox(img);
+    hideThumbBehindLightbox(img, pswp);
   };
 
   const activateThumb = (img) => {
@@ -124,28 +145,27 @@ export function initLightboxRadiusState(pswp) {
 
   pswp.on("openingAnimationStart", () => {
     hideSiteTooltip();
-    thumb = getSlideThumb(pswp.currSlide);
-    hideThumb(thumb);
-    keepThumbFlat(thumb);
-    requestAnimationFrame(() => setPhotoSwipeImageRadius(pswp, "0px"));
+    activateThumb(getSlideThumb(pswp.currSlide));
+    requestAnimationFrame(() => transitionPhotoSwipeImageRadius(pswp, "0px"));
   });
 
   pswp.on("change", () => {
     if (!pswp.opener?.isOpen || pswp.opener?.isClosing) return;
-    thumb = getSlideThumb(pswp.currSlide) || thumb;
-    hideThumb(thumb);
-    keepThumbFlat(thumb);
-    setPhotoSwipeImageRadius(pswp, "0px");
+    activateThumb(getSlideThumb(pswp.currSlide));
+    transitionPhotoSwipeImageRadius(pswp, "0px");
   });
 
   pswp.on("closingAnimationStart", () => {
     hideSiteTooltip();
-    thumb = getSlideThumb(pswp.currSlide) || thumb;
+    pswp.element?.classList.add("pswp--closing");
+    thumb = activateThumb(getSlideThumb(pswp.currSlide)) || thumb;
+    thumb?.classList.add("is-lightbox-closing");
     resetInactiveThumbs(thumb);
-    setPhotoSwipeImageRadius(pswp, getThumbRadius(thumb));
+    transitionPhotoSwipeImageRadius(pswp, getThumbRadius(thumb));
   });
 
   pswp.on("closingAnimationEnd", () => {
+    pswp.element?.classList.remove("pswp--closing");
     restoreThumbRadiusInstant(thumb);
     flatThumbs.delete(thumb);
   });

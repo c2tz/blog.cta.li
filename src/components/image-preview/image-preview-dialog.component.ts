@@ -289,10 +289,6 @@ async function copyTextToClipboard(text: string) {
       backdrop-filter: blur(2px);
     }
 
-    html.cdk-global-scrollblock body {
-      overflow-y: visible;
-    }
-
     html.site-image-dialog-fullscreen-document,
     html.site-image-dialog-fullscreen-document body {
       background: #000;

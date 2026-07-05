@@ -207,8 +207,6 @@ export default defineConfig({
           },
         ],
         () => (tree, file) => {
-          let eagerMarkdownImageCount = 0;
-
           const walk = (node) => {
             if (!node || typeof node !== "object") return;
 
@@ -223,13 +221,7 @@ export default defineConfig({
               if (imageGitDates?.lastModified) {
                 node.properties["data-image-modified-at"] = imageGitDates.lastModified;
               }
-              if (eagerMarkdownImageCount < 2) {
-                node.properties.loading = "eager";
-                if (eagerMarkdownImageCount === 0) node.properties.fetchpriority = "high";
-                eagerMarkdownImageCount += 1;
-              } else {
-                node.properties.loading = "lazy";
-              }
+              node.properties.loading = "lazy";
             }
 
             if (!Array.isArray(node.children)) return;

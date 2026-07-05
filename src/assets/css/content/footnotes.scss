@@ -1,3 +1,9 @@
+.site-prose a[data-footnote-ref],
+.site-prose a.footnote-ref-tooltip,
+.site-prose sup > a[href^="#user-content-fn-"] {
+  font-style: italic;
+}
+
 .site-prose a.data-footnote-backref,
 .site-prose a[data-footnote-backref] {
   position: relative;

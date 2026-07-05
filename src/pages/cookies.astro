@@ -3,12 +3,12 @@ import Layout from "@/layouts/site-layout.astro";
 ---
 
 <Layout
-  title="Cookies et confidentialité"
+  title="Données personnelles"
   description="Détails sur les cookies, le stockage local et les services utilisés par ct-blog."
 >
   <Fragment slot="content">
     <article class="site-prose" aria-labelledby="cookies-title">
-      <h1 id="cookies-title">Cookies et confidentialité</h1>
+      <h1 id="cookies-title">Données personnelles</h1>
 
       <p>
         Cette page détaille les cookies, le stockage local et les services utilisés par ct-blog.
@@ -16,7 +16,9 @@ import Layout from "@/layouts/site-layout.astro";
         les traceurs.
       </p>
 
-      <h2>Stockage nécessaire au site</h2>
+      <h2 id="stockage-necessaire-au-site">
+        <a href="#stockage-necessaire-au-site" class="heading-link">Stockage nécessaire au site</a>
+      </h2>
       <p>
         Le site conserve certaines préférences dans votre navigateur pour éviter de vous redemander
         les mêmes choix à chaque visite.
@@ -38,7 +40,9 @@ import Layout from "@/layouts/site-layout.astro";
         </li>
       </ul>
 
-      <h2>Fonctionnalités locales</h2>
+      <h2 id="fonctionnalites-locales">
+        <a href="#fonctionnalites-locales" class="heading-link">Fonctionnalités locales</a>
+      </h2>
       <p>
         Certaines options améliorent l’expérience sans créer de compte utilisateur. Les fonds
         Konachan de la page d’accueil, leur préférence de classement et la géolocalisation IP
@@ -59,14 +63,18 @@ import Layout from "@/layouts/site-layout.astro";
         </li>
       </ul>
 
-      <h2>Services externes</h2>
+      <h2 id="services-externes">
+        <a href="#services-externes" class="heading-link">Services externes</a>
+      </h2>
       <p>
         Le site peut contacter des services externes uniquement pour les fonctionnalités visibles:
         récupérer une géolocalisation IP, charger les commentaires Giscus sur les articles, ou
         mesurer les performances de navigation en production via Vercel Speed Insights.
       </p>
 
-      <h2>Réinitialiser vos choix</h2>
+      <h2 id="reinitialiser-vos-choix">
+        <a href="#reinitialiser-vos-choix" class="heading-link">Réinitialiser vos choix</a>
+      </h2>
       <p>
         Vous pouvez supprimer ces données depuis les réglages de votre navigateur en effaçant les
         cookies et les données de site associées à <code>ct-blog.cta.li</code>. Au prochain passage,

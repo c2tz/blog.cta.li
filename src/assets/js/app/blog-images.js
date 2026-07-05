@@ -1,65 +1,60 @@
 import { hideSiteTooltip } from "./site-tooltips.js";
 import { fileNameFromURL } from "./url.js";
 
-export function wrapMarkdownImages() {
+function isDialogImageCandidate(img) {
+  return !img.closest("header, footer, nav, [data-no-image-dialog], a, button");
+}
+
+function setImageDialogLabel(img) {
+  const filename = fileNameFromURL(img.currentSrc || img.src);
+  img.setAttribute("aria-label", `Agrandir l'image : ${filename}`);
+  img.setAttribute("title", filename);
+}
+
+export function prepareBlogImageDialogs() {
   document.querySelectorAll(".site-prose").forEach((container) => {
-    container
-      .querySelectorAll("img:not([data-no-lightbox])")
-      .forEach((img) => {
-        if (img.closest("header, footer, nav, [data-no-lightbox], a")) return;
-        if (!img.src) return;
-        const imageRect = img.getBoundingClientRect();
-        const isPriorityImage =
-          img.loading === "eager" ||
-          img.getAttribute("fetchpriority") === "high" ||
-          (imageRect.bottom >= -240 && imageRect.top <= window.innerHeight + 240);
+    container.querySelectorAll("img:not([data-no-image-dialog])").forEach((img) => {
+      if (!isDialogImageCandidate(img)) return;
+      if (!img.src) return;
+      if (img.dataset.imageDialogPrepared === "true") {
+        setImageDialogLabel(img);
+        return;
+      }
 
-        const initialSrc = img.currentSrc || img.src;
-        const link = document.createElement("a");
-        const setLightboxLabel = (src) => {
-          const filename = fileNameFromURL(src);
-          link.setAttribute("aria-label", `Agrandir l'image : ${filename}`);
-          link.setAttribute("title", filename);
-        };
+      const imageRect = img.getBoundingClientRect();
+      const isPriorityImage =
+        img.loading === "eager" ||
+        img.getAttribute("fetchpriority") === "high" ||
+        (imageRect.bottom >= -240 && imageRect.top <= window.innerHeight + 240);
 
-        link.href = initialSrc;
-        link.setAttribute("data-pswp-item", "");
-        setLightboxLabel(initialSrc);
+      img.dataset.imageDialog = "";
+      img.dataset.imageDialogPrepared = "true";
+      img.setAttribute("role", "button");
+      if (!img.hasAttribute("tabindex")) img.tabIndex = 0;
+      setImageDialogLabel(img);
 
-        link.addEventListener("keydown", (event) => {
-          if (event.key !== " ") return;
-          event.preventDefault();
-          link.click();
-        });
-        link.addEventListener("click", hideSiteTooltip);
+      const setSize = () => {
+        setImageDialogLabel(img);
+      };
 
-        const setSize = () => {
-          const src = img.currentSrc || img.src;
-          const width =
-            img.naturalWidth || parseInt(img.getAttribute("width") || "0") || 1400;
-          const height =
-            img.naturalHeight || parseInt(img.getAttribute("height") || "0") || 933;
-          link.href = src;
-          link.setAttribute("data-pswp-width", String(width));
-          link.setAttribute("data-pswp-height", String(height));
-          setLightboxLabel(src);
-        };
+      if (img.complete) {
+        setSize();
+      } else {
+        img.addEventListener("load", setSize, { once: true });
+      }
 
-        if (img.complete) {
-          setSize();
-        } else {
-          img.addEventListener("load", setSize, { once: true });
-        }
+      if (!img.dataset.imageDialogTooltipBound) {
+        img.dataset.imageDialogTooltipBound = "true";
+        img.addEventListener("click", hideSiteTooltip);
+      }
 
-        img.parentNode?.insertBefore(link, img);
-        link.appendChild(img);
-        img.decoding = "async";
-        img.loading = isPriorityImage ? "eager" : "lazy";
-        if (isPriorityImage) {
-          img.fetchPriority = "high";
-          img.setAttribute("fetchpriority", "high");
-        }
-      });
+      img.decoding = "async";
+      img.loading = isPriorityImage ? "eager" : "lazy";
+      if (isPriorityImage) {
+        img.fetchPriority = "high";
+        img.setAttribute("fetchpriority", "high");
+      }
+    });
   });
 }
 
@@ -77,7 +72,10 @@ function revealBlogImage(img) {
     img.addEventListener(
       "load",
       () => {
-        img.decode?.().catch(() => {}).finally(finishReveal);
+        img
+          .decode?.()
+          .catch(() => {})
+          .finally(finishReveal);
       },
       { once: true },
     );
@@ -90,13 +88,14 @@ function revealBlogImage(img) {
     return;
   }
 
-  img.decode?.().catch(() => {}).finally(finishReveal);
+  img
+    .decode?.()
+    .catch(() => {})
+    .finally(finishReveal);
 }
 
 export function initBlogImageReveal() {
-  const images = document.querySelectorAll(
-    ".site-prose img:not([data-no-image-reveal])",
-  );
+  const images = document.querySelectorAll(".site-prose img:not([data-no-image-reveal])");
   if (!images.length) return;
 
   const observer =

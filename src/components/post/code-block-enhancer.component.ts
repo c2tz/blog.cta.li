@@ -10,6 +10,7 @@ import {
 import type { AfterViewInit, ComponentRef, OnDestroy } from "@angular/core";
 import { MatIconButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
+import { MatSnackBar } from "@angular/material/snack-bar";
 import { MatTooltip } from "@angular/material/tooltip";
 import { SITE_EVENTS } from "@/lib/site-contracts";
 
@@ -105,6 +106,8 @@ interface MountedCopyButton {
   `,
 })
 export class CodeCopyButtonComponent implements OnDestroy {
+  private readonly snackBar = inject(MatSnackBar);
+
   code = "";
   source: HTMLElement | null = null;
 
@@ -131,6 +134,14 @@ export class CodeCopyButtonComponent implements OnDestroy {
     this.icon.set(copied ? COPIED_ICON : ERROR_ICON);
     this.label.set(copied ? "Copié" : "Erreur de copie");
     this.tooltip.set(copied ? "Code copié" : "Erreur de copie");
+
+    if (copied) {
+      this.snackBar.open("Code copié", undefined, {
+        duration: COPY_FEEDBACK_DURATION_MS,
+        horizontalPosition: "center",
+        verticalPosition: "bottom",
+      });
+    }
 
     if (typeof window === "undefined") return;
 

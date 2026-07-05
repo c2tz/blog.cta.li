@@ -33,7 +33,7 @@ function isScrollTopDisabledPage() {
       matTooltipPosition="left"
       (click)="scrollToTop()"
     >
-      <mat-icon class="site-scroll-top-icon" aria-hidden="true">&#xE5D8;</mat-icon>
+      <mat-icon class="site-scroll-top-icon" aria-hidden="true">&#xE25A;</mat-icon>
       <span class="site-scroll-top-badge" aria-hidden="true">{{ progress() }}%</span>
     </button>
   `,

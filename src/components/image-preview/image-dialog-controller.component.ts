@@ -147,8 +147,10 @@ export class ImageDialogControllerComponent implements OnInit, OnDestroy {
 
     return {
       alt: img.alt,
+      createdAt: img.dataset["imageCreatedAt"],
       height: img.naturalHeight || this.getNumericAttribute(img, "height"),
       label: this.getImageLabel(img, src),
+      lastModified: img.dataset["imageModifiedAt"],
       src,
       width: img.naturalWidth || this.getNumericAttribute(img, "width"),
     };

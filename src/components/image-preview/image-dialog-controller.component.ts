@@ -2,9 +2,11 @@ import { DOCUMENT } from "@angular/common";
 import { ChangeDetectionStrategy, Component, NgZone, inject } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
 import { MatDialog } from "@angular/material/dialog";
-import type { ImagePreviewDialogData, ImagePreviewItem } from "./image-preview-dialog.component";
-
-type ImagePreviewDialogModule = typeof import("./image-preview-dialog.component");
+import {
+  ImagePreviewDialogComponent,
+  type ImagePreviewDialogData,
+  type ImagePreviewItem,
+} from "./image-preview-dialog.component";
 
 const IMAGE_PREVIEW_DIALOG_ID = "site-image-preview-dialog";
 
@@ -30,7 +32,6 @@ export class ImageDialogControllerComponent implements OnInit, OnDestroy {
   private readonly document = inject(DOCUMENT);
   private readonly dialog = inject(MatDialog);
   private readonly zone = inject(NgZone);
-  private imagePreviewDialogModule?: Promise<ImagePreviewDialogModule>;
 
   ngOnInit() {
     if (typeof window === "undefined") return;
@@ -46,15 +47,6 @@ export class ImageDialogControllerComponent implements OnInit, OnDestroy {
 
     this.document.removeEventListener("click", this.handleClick, true);
     this.document.removeEventListener("keydown", this.handleKeydown, true);
-  }
-
-  private preload() {
-    this.imagePreviewDialogModule ??= import("./image-preview-dialog.component").catch((error) => {
-      this.imagePreviewDialogModule = undefined;
-      throw error;
-    });
-
-    return this.imagePreviewDialogModule;
   }
 
   private readonly handleClick = (event: MouseEvent) => {
@@ -88,7 +80,7 @@ export class ImageDialogControllerComponent implements OnInit, OnDestroy {
     return img;
   }
 
-  private async openImage(img: HTMLImageElement) {
+  private openImage(img: HTMLImageElement) {
     if (this.dialog.openDialogs.some((dialogRef) => dialogRef.id === IMAGE_PREVIEW_DIALOG_ID)) {
       return;
     }
@@ -96,7 +88,6 @@ export class ImageDialogControllerComponent implements OnInit, OnDestroy {
     const src = img.currentSrc || img.src;
     if (!src) return;
 
-    const { ImagePreviewDialogComponent } = await this.preload();
     const images = this.getImagePreviewCandidates(img);
     const items = images
       .map((candidate) => this.getImagePreviewItem(candidate))

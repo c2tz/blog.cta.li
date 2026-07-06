@@ -716,6 +716,7 @@ class ImageInformationDialogComponent implements OnInit {
       display: block !important;
       width: 100% !important;
       height: 100% !important;
+      background: transparent !important;
       pointer-events: none !important;
       z-index: 2147483647 !important;
     }

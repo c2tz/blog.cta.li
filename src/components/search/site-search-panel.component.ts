@@ -821,7 +821,7 @@ export class SiteSearchPanelComponent implements AfterViewInit {
       this.sortOptions.find((option) => option.value === this.sortMode())?.label ?? "Pertinence"
     );
   });
-  readonly status = signal("Tape au moins deux caractères ou choisis un filtre.");
+  readonly status = signal("Tapez au moins deux caractères ou choisissez un filtre.");
 
   private readonly dateFormatter = new Intl.DateTimeFormat("fr-FR", {
     day: "numeric",
@@ -990,7 +990,7 @@ export class SiteSearchPanelComponent implements AfterViewInit {
       this.loading.set(false);
       this.results.set([]);
       this.setTagFilterCounts(this.allTagFilterCounts);
-      this.status.set("Tape au moins deux caractères ou choisis un filtre.");
+      this.status.set("Tapez au moins deux caractères ou choisissez un filtre.");
       return;
     }
 

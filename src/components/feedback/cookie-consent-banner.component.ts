@@ -15,7 +15,7 @@ const LEGACY_STORAGE_KEY = SITE_LEGACY_STORAGE_KEYS.cookieConsent;
 const COOKIE_NAME = SITE_COOKIE_NAMES.cookieConsent;
 const EXPLICIT_CONTENT_COOKIE_NAME = SITE_COOKIE_NAMES.explicitContentAcknowledgement;
 const LEGACY_COOKIE_NAME = SITE_LEGACY_COOKIE_NAMES.cookieConsent;
-const BACKGROUND_INTERACTION_SELECTORS = [".site-main", ".site-footer"] as const;
+const BACKGROUND_INTERACTION_SELECTORS = [".site-header", ".site-main", ".site-footer"] as const;
 const DIALOG_FOCUSABLE_SELECTOR = [
   "a[href]",
   "button:not([disabled])",
@@ -133,7 +133,9 @@ function writeExplicitContentAcknowledgement() {
 function exposeConsentApi() {
   window.cookieConsent = {
     acceptedService: (service: string, category: string) =>
-      category === "functionality" && service === "ipgeo" && Boolean(readConsent()?.functionality),
+      category === "functionality" &&
+      ["giscus", "ipgeo", "speed-insights"].includes(service) &&
+      Boolean(readConsent()?.functionality),
     isCategoryAccepted: (category: string) =>
       category === "necessary" ||
       (category === "functionality" && Boolean(readConsent()?.functionality)),
@@ -233,14 +235,18 @@ function isFocusableElement(element: HTMLElement) {
         } @else {
           <div class="cookie-consent-content">
             <p id="cookie-consent-desc">
-              Ce site utilise des cookies pour fournir ses services et analyser le trafic.
+              Vous pouvez autoriser les services optionnels : affichage de votre IP, commentaires
+              Giscus et mesure de performance Vercel. Le site reste utilisable si vous refusez.
             </p>
           </div>
 
           <div class="cookie-consent-actions">
             <a href="/cookies/" matButton="text"> PLUS DE DÉTAILS </a>
-            <button matButton="text" type="button" (click)="acknowledgePrivacyNotice()">
-              JE COMPRENDS
+            <button matButton="text" type="button" (click)="rejectOptionalServices()">
+              REFUSER
+            </button>
+            <button matButton="text" type="button" (click)="acceptOptionalServices()">
+              ACCEPTER
             </button>
           </div>
         }
@@ -253,7 +259,7 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
     if (!this.visible()) return;
 
     if (event.key === "Escape" && this.activeNotice() === "privacy") {
-      this.acknowledgePrivacyNotice();
+      this.rejectOptionalServices();
       return;
     }
 
@@ -289,8 +295,12 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
     this.unlockPage();
   }
 
-  acknowledgePrivacyNotice() {
+  acceptOptionalServices() {
     this.save(true);
+  }
+
+  rejectOptionalServices() {
+    this.save(false);
   }
 
   acknowledgeExplicitContent() {

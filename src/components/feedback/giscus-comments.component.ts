@@ -12,7 +12,7 @@ import type { AfterViewInit, OnDestroy } from "@angular/core";
 import { MatButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
 import { MatProgressBar } from "@angular/material/progress-bar";
-import { SITE_COOKIE_NAMES, SITE_STORAGE_KEYS } from "@/lib/site-contracts";
+import { SITE_COOKIE_NAMES, SITE_EVENTS, SITE_STORAGE_KEYS } from "@/lib/site-contracts";
 
 type SiteTheme = "dark" | "light";
 
@@ -81,6 +81,17 @@ function getCurrentTheme(): SiteTheme {
   return document.documentElement.dataset["theme"] === "dark" ? "dark" : "light";
 }
 
+function hasOptionalServicesConsent() {
+  try {
+    return Boolean(
+      window.cookieConsent?.acceptedService("giscus", "functionality") ||
+      window.cookieConsent?.isCategoryAccepted("functionality"),
+    );
+  } catch {
+    return false;
+  }
+}
+
 @Component({
   selector: "site-giscus-comments",
   standalone: true,
@@ -109,7 +120,7 @@ function getCurrentTheme(): SiteTheme {
             matButton="tonal"
             type="button"
             class="giscus-comments-accept-button"
-            [disabled]="!configured() || accepted()"
+            [disabled]="!configured() || accepted() || !optionalServicesAllowed()"
             (click)="acceptCodeOfConduct()"
           >
             J’accepte
@@ -121,6 +132,12 @@ function getCurrentTheme(): SiteTheme {
         <p id="giscus-comments-config" class="giscus-comments-config">
           Configuration Giscus en attente : ajoutez le repo public, le repo ID, la catégorie et le
           category ID.
+        </p>
+      }
+
+      @if (!optionalServicesAllowed()) {
+        <p class="giscus-comments-config">
+          Les commentaires externes sont désactivés par votre choix de confidentialité.
         </p>
       }
 
@@ -315,6 +332,7 @@ export class GiscusCommentsComponent implements AfterViewInit, OnDestroy {
   readonly lang = input("fr");
 
   readonly accepted = signal(false);
+  readonly optionalServicesAllowed = signal(false);
   readonly loading = signal(false);
   readonly loaded = signal(false);
   readonly error = signal(false);
@@ -332,11 +350,14 @@ export class GiscusCommentsComponent implements AfterViewInit, OnDestroy {
 
   private themeObserver?: MutationObserver;
   private themeSyncTimers = new Set<number>();
+  private readonly handleConsentChange = () => this.syncOptionalServicesConsent();
 
   ngAfterViewInit() {
     if (typeof window === "undefined") return;
 
     this.theme.set(getCurrentTheme());
+    this.syncOptionalServicesConsent();
+    document.addEventListener(SITE_EVENTS.consentChange, this.handleConsentChange);
     this.themeObserver = new MutationObserver(() => this.syncTheme());
     this.themeObserver.observe(document.documentElement, {
       attributeFilter: ["data-theme"],
@@ -345,13 +366,15 @@ export class GiscusCommentsComponent implements AfterViewInit, OnDestroy {
 
     if (hasAcceptedCodeOfConduct()) {
       this.accepted.set(true);
-      window.setTimeout(() => this.loadGiscus());
+      if (this.optionalServicesAllowed()) window.setTimeout(() => this.loadGiscus());
     }
   }
 
   ngOnDestroy() {
     this.themeObserver?.disconnect();
     if (typeof window === "undefined") return;
+
+    document.removeEventListener(SITE_EVENTS.consentChange, this.handleConsentChange);
 
     for (const timer of this.themeSyncTimers) {
       window.clearTimeout(timer);
@@ -360,11 +383,17 @@ export class GiscusCommentsComponent implements AfterViewInit, OnDestroy {
   }
 
   acceptCodeOfConduct() {
-    if (!this.configured() || this.accepted()) return;
+    if (!this.configured() || this.accepted() || !this.optionalServicesAllowed()) return;
 
     rememberCodeOfConductAcceptance();
     this.accepted.set(true);
     window.setTimeout(() => this.loadGiscus());
+  }
+
+  private syncOptionalServicesConsent() {
+    const allowed = hasOptionalServicesConsent();
+    this.optionalServicesAllowed.set(allowed);
+    if (allowed && this.accepted()) window.setTimeout(() => this.loadGiscus());
   }
 
   private loadGiscus() {

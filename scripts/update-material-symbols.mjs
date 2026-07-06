@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import fontEditor from "fonteditor-core";
+import materialSymbolCodepoints from "../src/generated/material-symbol-codepoints.json" with { type: "json" };
 
 const SOURCE_FONT_URL =
   "https://fonts.gstatic.com/s/materialsymbolsrounded/v355/syl0-zNym6YjUruM-QrEh7-nyTnjDwKNJ_190FjpZIvDmUSVOK7BDB_Qb9vUSzq3wzLK-P0J-V_Zs-QtQth3-jOcbTCVpeRL2w5rwZu2rIelXxeJKJBiCa8.woff2";
@@ -51,7 +52,9 @@ function codePointsFromFont(buffer) {
 }
 
 function assertFontContainsCodePoints(label, fontCodePoints, requiredCodePoints) {
-  const missingCodePoints = requiredCodePoints.filter((codePoint) => !fontCodePoints.has(codePoint));
+  const missingCodePoints = requiredCodePoints.filter(
+    (codePoint) => !fontCodePoints.has(codePoint),
+  );
 
   if (missingCodePoints.length) {
     throw new Error(
@@ -75,6 +78,21 @@ function codePointsFromSource(source, codePoints) {
     const codePoint = Number.parseInt(match[1], 16);
     if (isPrivateUseCodePoint(codePoint)) codePoints.add(codePoint);
   }
+
+  const iconNames = [
+    ...source.matchAll(/icon\s*[:=]\s*["'`]([a-z0-9 _-]+)["'`]/gi),
+    ...source.matchAll(/\{\{[<%]\s*icon\s+["'`]([a-z0-9 _-]+)["'`]/gi),
+  ].map((match) => match[1]);
+
+  for (const name of iconNames) {
+    const requested = name
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, "_");
+    const normalized = requested === "children_face" ? "child_care" : requested;
+    const codePoint = materialSymbolCodepoints[normalized];
+    if (codePoint && isPrivateUseCodePoint(codePoint)) codePoints.add(codePoint);
+  }
 }
 
 async function fetchSourceFont() {
@@ -90,7 +108,7 @@ async function fetchSourceFont() {
 async function main() {
   const files = rg([
     "-l",
-    String.raw`mat-icon|material-symbols|material-icons|&#x|\\u[0-9A-Fa-f]{4}`,
+    String.raw`mat-icon|material-symbols|material-icons|icon\s*[:=]|\{\{[<%]\s*icon|&#x|\\u[0-9A-Fa-f]{4}`,
     ...SOURCE_GLOBS,
   ])
     .trim()
@@ -111,11 +129,7 @@ async function main() {
   await fontEditor.woff2.init();
 
   const sourceFont = await fetchSourceFont();
-  assertFontContainsCodePoints(
-    "Source font",
-    codePointsFromFont(sourceFont),
-    codePoints,
-  );
+  assertFontContainsCodePoints("Source font", codePointsFromFont(sourceFont), codePoints);
 
   const subsetFont = fontEditor
     .createFont(sourceFont, {
@@ -130,11 +144,7 @@ async function main() {
   await fs.mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
   await fs.writeFile(OUTPUT_PATH, subsetFont);
 
-  assertFontContainsCodePoints(
-    "Generated subset font",
-    codePointsFromFont(subsetFont),
-    codePoints,
-  );
+  assertFontContainsCodePoints("Generated subset font", codePointsFromFont(subsetFont), codePoints);
 
   console.log(`Wrote ${OUTPUT_PATH} (${subsetFont.length} bytes)`);
   console.log(`Included ${codePoints.length} codepoints: ${formatCodePoints(codePoints)}`);

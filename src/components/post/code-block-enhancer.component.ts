@@ -175,18 +175,35 @@ export class CodeBlockEnhancerComponent implements AfterViewInit, OnDestroy {
   private readonly environmentInjector = inject(EnvironmentInjector);
   private readonly mounted: MountedCopyButton[] = [];
   private readonly handlePageLoad = () => this.enhance();
+  private mutationObserver?: MutationObserver;
+  private enhanceFrame = 0;
 
   ngAfterViewInit() {
     if (typeof document === "undefined") return;
     this.enhance();
     window.addEventListener("astro:page-load", this.handlePageLoad);
+    const prose = document.querySelector(".site-prose");
+    if (prose) {
+      this.mutationObserver = new MutationObserver(() => this.scheduleEnhance());
+      this.mutationObserver.observe(prose, { childList: true, subtree: true });
+    }
   }
 
   ngOnDestroy() {
     if (typeof window !== "undefined") {
       window.removeEventListener("astro:page-load", this.handlePageLoad);
+      window.cancelAnimationFrame(this.enhanceFrame);
     }
+    this.mutationObserver?.disconnect();
     for (const mounted of this.mounted.splice(0)) this.destroy(mounted);
+  }
+
+  private scheduleEnhance() {
+    if (this.enhanceFrame) return;
+    this.enhanceFrame = window.requestAnimationFrame(() => {
+      this.enhanceFrame = 0;
+      this.enhance();
+    });
   }
 
   private enhance() {

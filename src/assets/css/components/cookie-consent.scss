@@ -6,6 +6,7 @@ html.interaction-disabled.consent-visible body {
   touch-action: none;
 }
 
+html.consent-prelock .site-header,
 html.consent-prelock .site-main,
 html.consent-prelock .site-footer {
   pointer-events: none;

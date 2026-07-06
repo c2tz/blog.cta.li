@@ -12,11 +12,21 @@ import type { AfterViewInit, OnDestroy } from "@angular/core";
 import { MatButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
 import { MatProgressBar } from "@angular/material/progress-bar";
+import { SITE_COOKIE_NAMES, SITE_STORAGE_KEYS } from "@/lib/site-contracts";
 
 type SiteTheme = "dark" | "light";
 
+interface GiscusAcceptanceState {
+  accepted: true;
+  updatedAt: string;
+  version: 1;
+}
+
 const GISCUS_ORIGIN = "https://giscus.app";
 const GISCUS_SCRIPT_URL = `${GISCUS_ORIGIN}/client.js`;
+const GISCUS_ACCEPTANCE_STORAGE_KEY = SITE_STORAGE_KEYS.giscusCommentsEnabled;
+const GISCUS_ACCEPTANCE_COOKIE_NAME = SITE_COOKIE_NAMES.giscusCommentsEnabled;
+const GISCUS_ACCEPTANCE_MAX_AGE_SECONDS = 365 * 24 * 60 * 60;
 const CODE_OF_CONDUCT_URL =
   "https://raw.githubusercontent.com/c2tz/ct-blog-comments/refs/heads/main/CODE_OF_CONDUCT.md";
 const GISCUS_THEME_SYNC_DELAYS = [0, 150, 500, 1200] as const;
@@ -24,6 +34,48 @@ const GISCUS_FALLBACK_THEMES = {
   dark: "dark_dimmed",
   light: "light",
 } as const satisfies Record<SiteTheme, string>;
+
+function readCookie(name: string) {
+  const encodedName = `${encodeURIComponent(name)}=`;
+  const cookie = document.cookie
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(encodedName));
+
+  if (!cookie) return null;
+
+  try {
+    return decodeURIComponent(cookie.slice(encodedName.length));
+  } catch {
+    return null;
+  }
+}
+
+function hasAcceptedCodeOfConduct() {
+  try {
+    const value = localStorage.getItem(GISCUS_ACCEPTANCE_STORAGE_KEY);
+    const parsed = JSON.parse(value || "null") as Partial<GiscusAcceptanceState> | null;
+    if (parsed?.version === 1 && parsed.accepted === true) return true;
+
+    if (value === "true" || value === "accepted") return true;
+  } catch {}
+
+  return readCookie(GISCUS_ACCEPTANCE_COOKIE_NAME) === "accepted";
+}
+
+function rememberCodeOfConductAcceptance() {
+  const state: GiscusAcceptanceState = {
+    accepted: true,
+    updatedAt: new Date().toISOString(),
+    version: 1,
+  };
+
+  try {
+    localStorage.setItem(GISCUS_ACCEPTANCE_STORAGE_KEY, JSON.stringify(state));
+  } catch {}
+
+  document.cookie = `${GISCUS_ACCEPTANCE_COOKIE_NAME}=accepted; Max-Age=${GISCUS_ACCEPTANCE_MAX_AGE_SECONDS}; Path=/; SameSite=Lax`;
+}
 
 function getCurrentTheme(): SiteTheme {
   return document.documentElement.dataset["theme"] === "dark" ? "dark" : "light";
@@ -291,7 +343,10 @@ export class GiscusCommentsComponent implements AfterViewInit, OnDestroy {
       attributes: true,
     });
 
-    if (this.accepted()) window.setTimeout(() => this.loadGiscus());
+    if (hasAcceptedCodeOfConduct()) {
+      this.accepted.set(true);
+      window.setTimeout(() => this.loadGiscus());
+    }
   }
 
   ngOnDestroy() {
@@ -307,6 +362,7 @@ export class GiscusCommentsComponent implements AfterViewInit, OnDestroy {
   acceptCodeOfConduct() {
     if (!this.configured() || this.accepted()) return;
 
+    rememberCodeOfConductAcceptance();
     this.accepted.set(true);
     window.setTimeout(() => this.loadGiscus());
   }

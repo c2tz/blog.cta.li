@@ -52,6 +52,18 @@
         {
           "key": "X-Permitted-Cross-Domain-Policies",
           "value": "none"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-DNS-Prefetch-Control",
+          "value": "off"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "0"
         }
       ]
     },

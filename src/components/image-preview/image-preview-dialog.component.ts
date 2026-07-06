@@ -447,81 +447,83 @@ class ImageInformationDialogComponent implements OnInit {
         </button>
       </mat-menu>
 
-      <mat-toolbar
-        class="site-image-dialog-toolbar"
-        [class.is-hidden]="!controlsVisible()"
-        [class.is-closing]="isClosing()"
-        [attr.aria-hidden]="controlsVisible() ? null : 'true'"
-        role="toolbar"
-        aria-label="Commandes de l'image"
-      >
-        @if (canNavigate()) {
+      @if (toolbarReady()) {
+        <mat-toolbar
+          class="site-image-dialog-toolbar"
+          [class.is-hidden]="!controlsVisible()"
+          [class.is-closing]="isClosing()"
+          [attr.aria-hidden]="controlsVisible() ? null : 'true'"
+          role="toolbar"
+          aria-label="Commandes de l'image"
+        >
+          @if (canNavigate()) {
+            <button
+              matIconButton
+              type="button"
+              class="site-image-dialog-button"
+              aria-label="Image précédente"
+              matTooltip="Image précédente"
+              matTooltipPosition="below"
+              (click)="previous()"
+            >
+              <mat-icon aria-hidden="true">{{ previousIcon }}</mat-icon>
+            </button>
+
+            <button
+              matIconButton
+              type="button"
+              class="site-image-dialog-button"
+              aria-label="Image suivante"
+              matTooltip="Image suivante"
+              matTooltipPosition="below"
+              (click)="next()"
+            >
+              <mat-icon aria-hidden="true">{{ nextIcon }}</mat-icon>
+            </button>
+
+            <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+              Image {{ displayIndex() }} sur {{ total() }}
+            </span>
+          }
+
           <button
             matIconButton
             type="button"
             class="site-image-dialog-button"
-            aria-label="Image précédente"
-            matTooltip="Image précédente"
+            [matMenuTriggerFor]="imageMenu"
+            aria-label="Options de l'image"
+            aria-haspopup="menu"
+            matTooltip="Options"
             matTooltipPosition="below"
-            (click)="previous()"
           >
-            <mat-icon aria-hidden="true">{{ previousIcon }}</mat-icon>
+            <mat-icon aria-hidden="true">{{ moreIcon }}</mat-icon>
+          </button>
+
+          <button
+            matIconButton
+            type="button"
+            class="site-image-dialog-button site-image-dialog-fullscreen-exit-button"
+            aria-label="Quitter le plein écran"
+            matTooltip="Quitter le plein écran"
+            matTooltipPosition="below"
+            (click)="handleFullscreenClick()"
+          >
+            <mat-icon aria-hidden="true">{{ fullscreenExitIcon }}</mat-icon>
           </button>
 
           <button
             matIconButton
             type="button"
             class="site-image-dialog-button"
-            aria-label="Image suivante"
-            matTooltip="Image suivante"
+            aria-label="Fermer"
+            matTooltip="Fermer"
             matTooltipPosition="below"
-            (click)="next()"
+            (click)="close()"
           >
-            <mat-icon aria-hidden="true">{{ nextIcon }}</mat-icon>
+            <mat-icon aria-hidden="true">{{ closeIcon }}</mat-icon>
           </button>
-
-          <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
-            Image {{ displayIndex() }} sur {{ total() }}
-          </span>
-        }
-
-        <button
-          matIconButton
-          type="button"
-          class="site-image-dialog-button"
-          [matMenuTriggerFor]="imageMenu"
-          aria-label="Options de l'image"
-          aria-haspopup="menu"
-          matTooltip="Options"
-          matTooltipPosition="below"
-        >
-          <mat-icon aria-hidden="true">{{ moreIcon }}</mat-icon>
-        </button>
-
-        <button
-          matIconButton
-          type="button"
-          class="site-image-dialog-button site-image-dialog-fullscreen-exit-button"
-          aria-label="Quitter le plein écran"
-          matTooltip="Quitter le plein écran"
-          matTooltipPosition="below"
-          (click)="handleFullscreenClick()"
-        >
-          <mat-icon aria-hidden="true">{{ fullscreenExitIcon }}</mat-icon>
-        </button>
-
-        <button
-          matIconButton
-          type="button"
-          class="site-image-dialog-button"
-          aria-label="Fermer"
-          matTooltip="Fermer"
-          matTooltipPosition="below"
-          (click)="close()"
-        >
-          <mat-icon aria-hidden="true">{{ closeIcon }}</mat-icon>
-        </button>
-      </mat-toolbar>
+        </mat-toolbar>
+      }
     </section>
   `,
   styles: `
@@ -909,6 +911,7 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
   readonly shareActionIcon = computed(() => (this.shareCopied() ? CHECK_ICON : SHARE_ICON));
   readonly shareLabel = signal("Partager");
   readonly shareCopied = signal(false);
+  readonly toolbarReady = signal(false);
   readonly isFullscreen = signal(false);
   readonly fullscreenAvailable = signal(
     typeof document !== "undefined" && this.isFullscreenSupported(),
@@ -968,6 +971,7 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
     this.document.addEventListener("fullscreenchange", this.handleFullscreenChange);
     this.document.addEventListener("webkitfullscreenchange", this.handleFullscreenChange);
     this.document.addEventListener("keydown", this.handleGlobalKeydown);
+    this.dialogRef.afterOpened().subscribe(() => this.toolbarReady.set(true));
     this.dialogRef.beforeClosed().subscribe(() => this.beginCloseAnimation());
     this.preloadAdjacentImages();
   }

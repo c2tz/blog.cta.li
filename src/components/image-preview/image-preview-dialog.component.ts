@@ -711,7 +711,18 @@ class ImageInformationDialogComponent implements OnInit {
     }
 
     .site-image-dialog-toolbar-host.cdk-global-overlay-wrapper {
-      z-index: 1002;
+      position: fixed !important;
+      inset: 0 !important;
+      display: block !important;
+      width: 100% !important;
+      height: 100% !important;
+      pointer-events: none !important;
+      z-index: 2147483647 !important;
+    }
+
+    .site-image-dialog-toolbar-host .site-image-dialog-toolbar-overlay.cdk-overlay-pane {
+      pointer-events: auto;
+      z-index: 2147483647;
     }
 
     .site-image-dialog-toolbar.mat-toolbar.is-hidden {
@@ -1345,6 +1356,10 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
     this.fullscreenHostElement?.classList.toggle(IMAGE_DIALOG_FULLSCREEN_ACTIVE_CLASS, active);
 
     if (active) {
+      this.controlsVisible.set(true);
+      if (this.fullscreenHostElement && this.toolbarOverlayRef) {
+        this.fullscreenHostElement.appendChild(this.toolbarOverlayRef.hostElement);
+      }
       this.dialogRef.addPanelClass("site-image-dialog-panel-fullscreen");
       this.dialogRef.updateSize("100%", "100%");
     } else {

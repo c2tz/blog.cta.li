@@ -710,6 +710,10 @@ class ImageInformationDialogComponent implements OnInit {
       z-index: 1001;
     }
 
+    .site-image-dialog-toolbar-host.cdk-global-overlay-wrapper {
+      z-index: 1002;
+    }
+
     .site-image-dialog-toolbar.mat-toolbar.is-hidden {
       opacity: 0;
       pointer-events: none;
@@ -1007,6 +1011,8 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
       positionStrategy: this.overlay.position().global().top("0").right("0"),
       scrollStrategy: this.overlay.scrollStrategies.noop(),
     });
+    this.toolbarOverlayRef.hostElement.classList.add("site-image-dialog-toolbar-host");
+    this.fullscreenHostElement.appendChild(this.toolbarOverlayRef.hostElement);
     this.toolbarOverlayRef.attach(this.toolbarPortal());
   }
 

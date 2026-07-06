@@ -117,6 +117,9 @@ importers:
       lint-staged:
         specifier: ^17.0.8
         version: 17.0.8
+      material-symbols:
+        specifier: ^0.45.5
+        version: 0.45.5
       pagefind:
         specifier: ^1.5.2
         version: 1.5.2
@@ -2746,6 +2749,9 @@ packages:
 
   markdown-table@3.0.4:
     resolution: {integrity: sha512-wiYz4+JrLyb/DqW2hkFJxP7Vd7JuTDm77fvbM8VfEQdmSMqcImWeeRbHwZjBjIFki/VaMK2BhFi7oUUZeM5bqw==}
+
+  material-symbols@0.45.5:
+    resolution: {integrity: sha512-uQPo0keNsShmo7wstLHBwIdlqlsNonHGuaAp7CE731v4GQrhd4C3p2PkJpavxazc5+mB0LtHmJQlSuv9yIYsKg==}
 
   mdast-util-definitions@6.0.0:
     resolution: {integrity: sha512-scTllyX6pnYNZH/AIp/0ePz6s4cZtARxImwoPJ7kS42n+MnVsI4XbnG6d4ibehRIldYMWM2LD7ImQblVhUejVQ==}
@@ -6233,6 +6239,8 @@ snapshots:
   markdown-extensions@2.0.0: {}
 
   markdown-table@3.0.4: {}
+
+  material-symbols@0.45.5: {}
 
   mdast-util-definitions@6.0.0:
     dependencies:

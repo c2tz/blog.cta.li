@@ -7,6 +7,7 @@ import { dirname, resolve } from "node:path";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeSlug from "rehype-slug";
 import { getFileGitDates } from "./src/lib/git-dates.mjs";
+import remarkHugoMaterialShortcodes from "./src/lib/remark-hugo-material-shortcodes.mjs";
 
 const ANGULAR_DECORATOR_IMPORTS = new Set([
   "ChangeDetectionStrategy",
@@ -37,6 +38,7 @@ const VITE_OPTIMIZE_DEPS = [
   "@angular/material/icon",
   "@angular/material/input",
   "@angular/material/menu",
+  "@angular/material/paginator",
   "@angular/material/progress-bar",
   "@angular/material/progress-spinner",
   "@angular/material/select",
@@ -44,6 +46,7 @@ const VITE_OPTIMIZE_DEPS = [
   "@angular/material/sort",
   "@angular/material/snack-bar",
   "@angular/material/table",
+  "@angular/material/tabs",
   "@angular/material/toolbar",
   "@angular/material/tooltip",
   "@material/material-color-utilities",
@@ -195,6 +198,7 @@ export default defineConfig({
       transformers: [removeCodeBlockTabindex],
     },
     processor: unified({
+      remarkPlugins: [remarkHugoMaterialShortcodes],
       rehypePlugins: [
         rehypeSlug,
         [

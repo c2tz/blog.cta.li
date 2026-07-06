@@ -25,15 +25,40 @@ const { createdAt, lastModified } = gitDates;
 const postPriority = post.data.priority ?? 0;
 const visiblePostTags = [...(post.data.tags ?? [])].filter((tag) => tag !== "all");
 const postTags = ["all", ...visiblePostTags];
+const postUrl = new URL(`/posts/${post.id}/`, Astro.site).toString();
+const postImage = new URL(`/posts/${post.id}/og.png`, Astro.site).toString();
+const postStructuredData = {
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  headline: post.data.title,
+  description: post.data.description,
+  image: postImage,
+  datePublished: createdAt,
+  dateModified: lastModified,
+  inLanguage: "fr-FR",
+  mainEntityOfPage: postUrl,
+  author: {
+    "@type": "Person",
+    name: "c2tz",
+    url: "https://www.cta.li/",
+  },
+  publisher: {
+    "@type": "Person",
+    name: "c2tz",
+  },
+};
 ---
 
 <Layout
   title={post.data.title}
   description={post.data.description}
+  structuredData={postStructuredData}
   openGraph={{
     title: post.data.title,
     type: "article",
-    image: `${Astro.site}posts/${post.id}/og.png`,
+    image: postImage,
+    imageAlt: `Aperçu de l’article « ${post.data.title} »`,
+    url: postUrl,
     description: post.data.description,
     publishedTime: createdAt,
     modifiedTime: lastModified,

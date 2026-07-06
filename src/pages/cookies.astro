@@ -25,8 +25,8 @@ import Layout from "@/layouts/site-layout.astro";
       </p>
       <ul>
         <li>
-          <code>ct-cookie-consent</code> et <code>ct-cookie-consent-v1</code> mémorisent que l’avis de
-          confidentialité a été compris.
+          <code>ct-cookie-consent</code> et <code>ct-cookie-consent-v1</code> mémorisent votre choix d’autoriser
+          ou de refuser les services optionnels.
         </li>
         <li>
           <code>ct-explicit-content-ack</code> et <code>ct-explicit-content-ack-v1</code> mémorisent l’avertissement
@@ -70,6 +70,10 @@ import Layout from "@/layouts/site-layout.astro";
         Le site peut contacter des services externes uniquement pour les fonctionnalités visibles:
         récupérer une géolocalisation IP, charger les commentaires Giscus sur les articles, ou
         mesurer les performances de navigation en production via Vercel Speed Insights.
+      </p>
+      <p>
+        Ces trois services ne sont chargés qu’après votre accord. Si vous refusez, l’adresse IP
+        disparaît du pied de page, Giscus n’est pas chargé et Vercel Speed Insights reste inactif.
       </p>
 
       <h2 id="reinitialiser-vos-choix">

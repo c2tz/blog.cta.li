@@ -58,16 +58,27 @@ const homeCopy = {
       : "Derniers articles",
   tagsTitle: typeof introData.tagsTitle === "string" ? introData.tagsTitle : "Tags",
 };
+const homeUrl = new URL("/", Astro.site).toString();
+const homeStructuredData = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: SITE_TITLE,
+  url: homeUrl,
+  description: SITE_DESCRIPTION,
+  inLanguage: "fr-FR",
+};
 ---
 
 <Layout
   bodyClass="home-page"
   readingProgress={false}
+  structuredData={homeStructuredData}
   openGraph={{
     title: SITE_TITLE,
     type: "website",
     image: `${Astro.site}og.png`,
     description: SITE_DESCRIPTION,
+    imageAlt: `Aperçu de ${SITE_TITLE}`,
   }}
 >
   <Fragment slot="content">

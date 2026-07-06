@@ -283,48 +283,6 @@ interface LatestPostsResponse {
       display: inline;
       white-space: nowrap;
     }
-
-    @media (max-width: 520px) {
-      .home-posts-table-scroll-detailed {
-        --home-posts-date-column-content-width: 8rem;
-      }
-
-      .home-posts-table {
-        width: 100%;
-        min-width: 0;
-        table-layout: fixed;
-      }
-
-      .home-posts-table .mat-column-date {
-        width: var(--home-posts-date-column-content-width);
-        min-width: var(--home-posts-date-column-content-width);
-      }
-
-      .home-posts-table .mat-column-title {
-        width: auto;
-        min-width: 0;
-      }
-
-      .home-posts-table th,
-      .home-posts-table td {
-        height: auto;
-        padding: 0.65rem 0.75rem;
-        white-space: normal;
-      }
-
-      :host ::ng-deep .home-posts-table .home-posts-title-header .mat-sort-header-container {
-        position: static;
-        width: auto;
-        margin-inline-start: 0;
-        padding-inline: 0;
-      }
-
-      .home-post-title {
-        display: block;
-        overflow-wrap: anywhere;
-        white-space: normal;
-      }
-    }
   `,
 })
 export class HomeLatestPostsTableComponent implements AfterViewInit, OnInit, OnDestroy {

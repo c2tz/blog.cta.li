@@ -21,6 +21,9 @@ const DOCUMENT_REQUIRED_HEADERS = new Map([
     "Permissions-Policy",
     ["geolocation=()", "camera=()", "microphone=()", "clipboard-write=(self)", "fullscreen=(self)"],
   ],
+  ["X-Frame-Options", ["DENY"]],
+  ["X-DNS-Prefetch-Control", ["off"]],
+  ["X-XSS-Protection", ["0"]],
 ]);
 
 const OPTIONAL_HARDENING_HEADERS = [

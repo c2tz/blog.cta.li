@@ -1,5 +1,7 @@
 import { DOCUMENT } from "@angular/common";
-import { OverlayContainer } from "@angular/cdk/overlay";
+import { Overlay, OverlayContainer } from "@angular/cdk/overlay";
+import type { OverlayRef } from "@angular/cdk/overlay";
+import { CdkPortal } from "@angular/cdk/portal";
 import {
   ChangeDetectionStrategy,
   Component,
@@ -7,6 +9,7 @@ import {
   computed,
   inject,
   signal,
+  viewChild,
   viewChildren,
 } from "@angular/core";
 import type { AfterViewInit, OnDestroy, OnInit } from "@angular/core";
@@ -361,6 +364,7 @@ class ImageInformationDialogComponent implements OnInit {
   standalone: true,
   imports: [
     MatDialogModule,
+    CdkPortal,
     MatIcon,
     MatIconButton,
     MatMenu,
@@ -447,7 +451,7 @@ class ImageInformationDialogComponent implements OnInit {
         </button>
       </mat-menu>
 
-      @if (toolbarReady()) {
+      <ng-template cdkPortal>
         <mat-toolbar
           class="site-image-dialog-toolbar"
           [class.is-hidden]="!controlsVisible()"
@@ -523,7 +527,7 @@ class ImageInformationDialogComponent implements OnInit {
             <mat-icon aria-hidden="true">{{ closeIcon }}</mat-icon>
           </button>
         </mat-toolbar>
-      }
+      </ng-template>
     </section>
   `,
   styles: `
@@ -671,9 +675,7 @@ class ImageInformationDialogComponent implements OnInit {
       align-items: center;
       justify-content: center;
       gap: 1rem;
-      position: fixed;
-      top: max(1rem, env(safe-area-inset-top, 0px));
-      right: max(1rem, env(safe-area-inset-right, 0px));
+      position: static;
       margin: 0;
       width: max-content;
       max-width: calc(100vw - 2rem);
@@ -691,6 +693,20 @@ class ImageInformationDialogComponent implements OnInit {
         transform 160ms var(--ease-out-3);
       pointer-events: auto;
       will-change: opacity, transform;
+      z-index: auto;
+    }
+
+    .site-image-dialog-toolbar-overlay.cdk-overlay-pane {
+      position: fixed !important;
+      top: max(1rem, env(safe-area-inset-top, 0px)) !important;
+      right: max(1rem, env(safe-area-inset-right, 0px)) !important;
+      bottom: auto !important;
+      left: auto !important;
+      width: max-content;
+      max-width: calc(100vw - 2rem);
+      height: auto;
+      transform: none !important;
+      pointer-events: auto;
       z-index: 1001;
     }
 
@@ -893,8 +909,10 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
   private readonly dialog = inject(MatDialog);
   private readonly dialogRef = inject(MatDialogRef<ImagePreviewDialogComponent>);
   private readonly document = inject(DOCUMENT);
+  private readonly overlay = inject(Overlay);
   private readonly overlayContainer = inject(OverlayContainer);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly toolbarPortal = viewChild.required(CdkPortal);
   private readonly tooltips = viewChildren(MatTooltip);
 
   readonly closeIcon = CLOSE_ICON;
@@ -911,7 +929,6 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
   readonly shareActionIcon = computed(() => (this.shareCopied() ? CHECK_ICON : SHARE_ICON));
   readonly shareLabel = signal("Partager");
   readonly shareCopied = signal(false);
-  readonly toolbarReady = signal(false);
   readonly isFullscreen = signal(false);
   readonly fullscreenAvailable = signal(
     typeof document !== "undefined" && this.isFullscreenSupported(),
@@ -936,6 +953,7 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
   private shareLabelTimer?: number;
   private tapTimer?: number;
   private overlayContainerElement?: HTMLElement;
+  private toolbarOverlayRef?: OverlayRef;
   private fullscreenHostElement?: HTMLDivElement;
 
   private readonly handleFullscreenChange = () => {
@@ -971,7 +989,6 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
     this.document.addEventListener("fullscreenchange", this.handleFullscreenChange);
     this.document.addEventListener("webkitfullscreenchange", this.handleFullscreenChange);
     this.document.addEventListener("keydown", this.handleGlobalKeydown);
-    this.dialogRef.afterOpened().subscribe(() => this.toolbarReady.set(true));
     this.dialogRef.beforeClosed().subscribe(() => this.beginCloseAnimation());
     this.preloadAdjacentImages();
   }
@@ -985,6 +1002,12 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
       this.overlayContainerElement,
     );
     this.fullscreenHostElement.appendChild(this.overlayContainerElement);
+    this.toolbarOverlayRef = this.overlay.create({
+      panelClass: "site-image-dialog-toolbar-overlay",
+      positionStrategy: this.overlay.position().global().top("0").right("0"),
+      scrollStrategy: this.overlay.scrollStrategies.noop(),
+    });
+    this.toolbarOverlayRef.attach(this.toolbarPortal());
   }
 
   ngOnDestroy() {
@@ -997,6 +1020,7 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
     if (this.shareLabelTimer) window.clearTimeout(this.shareLabelTimer);
     this.clearTapTimer();
     this.hideTooltip();
+    this.toolbarOverlayRef?.dispose();
     const overlayContainerElement = this.overlayContainerElement;
     const fullscreenHostElement = this.fullscreenHostElement;
     void this.exitFullscreen().finally(() => {

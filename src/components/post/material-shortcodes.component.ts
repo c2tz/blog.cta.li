@@ -49,8 +49,9 @@ function textFromHtml(html: string) {
   template: `
     <mat-tab-group
       class="material-shortcode-tabs"
-      animationDuration="180ms"
+      animationDuration="0ms"
       [attr.aria-label]="label"
+      disableRipple
       preserveContent
     >
       @for (tab of tabs; track tab.title) {

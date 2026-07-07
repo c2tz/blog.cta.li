@@ -62,6 +62,18 @@ const VITE_OPTIMIZE_DEPS = [
   "@material/material-color-utilities",
 ];
 
+const VITE_ANGULAR_DEDUPE = [
+  "@angular/animations",
+  "@angular/cdk",
+  "@angular/common",
+  "@angular/compiler",
+  "@angular/core",
+  "@angular/forms",
+  "@angular/material",
+  "@angular/platform-browser",
+  "@angular/platform-server",
+];
+
 const IMAGE_GIT_DATES_CACHE = new Map();
 
 function getLocalImageGitDates(src, markdownPath) {
@@ -166,6 +178,9 @@ export default defineConfig({
   ],
   vite: {
     customLogger: viteLogger,
+    resolve: {
+      dedupe: VITE_ANGULAR_DEDUPE,
+    },
     server: {
       headers: {
         "Access-Control-Allow-Origin": "https://giscus.app",

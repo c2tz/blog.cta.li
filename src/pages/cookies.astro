@@ -1,5 +1,21 @@
 ---
+import { CookiePreferencesComponent } from "@/components/feedback/cookie-preferences.component";
 import Layout from "@/layouts/site-layout.astro";
+import {
+  SITE_COOKIE_NAMES,
+  SITE_EVENTS,
+  SITE_LEGACY_COOKIE_NAMES,
+  SITE_LEGACY_STORAGE_KEYS,
+  SITE_STORAGE_KEYS,
+} from "@/lib/site-contracts";
+
+const cookiePreferenceFallbackConfig = {
+  consentCookieName: SITE_COOKIE_NAMES.cookieConsent,
+  consentEvent: SITE_EVENTS.consentChange,
+  consentStorageKey: SITE_STORAGE_KEYS.cookieConsent,
+  legacyConsentCookieName: SITE_LEGACY_COOKIE_NAMES.cookieConsent,
+  legacyConsentStorageKey: SITE_LEGACY_STORAGE_KEYS.cookieConsent,
+};
 ---
 
 <Layout
@@ -76,14 +92,160 @@ import Layout from "@/layouts/site-layout.astro";
         disparaît du pied de page, Giscus n’est pas chargé et Vercel Speed Insights reste inactif.
       </p>
 
-      <h2 id="reinitialiser-vos-choix">
-        <a href="#reinitialiser-vos-choix" class="heading-link">Réinitialiser vos choix</a>
+      <h2 id="modifier-vos-choix-cookies">
+        <a href="#modifier-vos-choix-cookies" class="heading-link">Modifier vos choix cookies</a>
       </h2>
       <p>
-        Vous pouvez supprimer ces données depuis les réglages de votre navigateur en effaçant les
-        cookies et les données de site associées à <code>ct-blog.cta.li</code>. Au prochain passage,
-        le site redemandera les choix nécessaires.
+        Le panneau ci-dessous permet de modifier ou de réinitialiser le choix lié aux services
+        optionnels. Vous pouvez aussi supprimer toutes les données depuis les réglages de votre
+        navigateur en effaçant les cookies et les données de site associées à
+        <code>ct-blog.cta.li</code>.
       </p>
+
+      <CookiePreferencesComponent client:load />
+
+      <section
+        class="cookie-preferences-panel cookie-preferences-fallback not-prose"
+        data-cookie-preferences-fallback
+        hidden
+        aria-label="Choix cookies de secours"
+      >
+        <p class="cookie-preferences-fallback-note">
+          Le panneau interactif n’a pas chargé. Vous pouvez tout de même modifier votre choix ici.
+        </p>
+        <div
+          class="cookie-preferences-fallback-actions"
+          role="group"
+          aria-label="Choix des services optionnels"
+        >
+          <button type="button" data-cookie-preference-choice="accepted">Autoriser</button>
+          <button type="button" data-cookie-preference-choice="rejected">Refuser</button>
+          <button type="button" data-cookie-preference-choice="unset">Réinitialiser</button>
+        </div>
+        <p class="cookie-preferences-feedback" role="status" aria-live="polite"></p>
+      </section>
+
+      <script define:vars={{ cookiePreferenceFallbackConfig }}>
+        const controlsSelector = "mat-button-toggle-group, .mat-button-toggle-group";
+
+        function fallbackPanel() {
+          return document.querySelector("[data-cookie-preferences-fallback]");
+        }
+
+        function fallbackButtons() {
+          return [...(fallbackPanel()?.querySelectorAll("[data-cookie-preference-choice]") ?? [])];
+        }
+
+        function hasMountedPreferences() {
+          return Boolean(document.querySelector(controlsSelector));
+        }
+
+        function syncFallbackVisibility() {
+          const fallback = fallbackPanel();
+          if (!fallback) return;
+          fallback.hidden = hasMountedPreferences();
+        }
+
+        function writeCookie(name, value) {
+          document.cookie = [
+            `${encodeURIComponent(name)}=${encodeURIComponent(value)}`,
+            "Max-Age=31536000",
+            "Path=/",
+            "SameSite=Lax",
+          ].join("; ");
+        }
+
+        function expireCookie(name) {
+          document.cookie = `${encodeURIComponent(name)}=; Max-Age=0; Path=/; SameSite=Lax`;
+        }
+
+        function setSelectedFallback(choice) {
+          for (const button of fallbackButtons()) {
+            const selected = button.dataset.cookiePreferenceChoice === choice;
+            button.toggleAttribute("data-selected", selected);
+            button.setAttribute("aria-pressed", String(selected));
+          }
+        }
+
+        function updateConsent(choice) {
+          const fallback = fallbackPanel();
+          const feedback = fallback?.querySelector(".cookie-preferences-feedback");
+          if (!fallback || !feedback) return;
+
+          try {
+            if (choice === "unset") {
+              localStorage.removeItem(cookiePreferenceFallbackConfig.consentStorageKey);
+              localStorage.removeItem(cookiePreferenceFallbackConfig.legacyConsentStorageKey);
+            } else {
+              const state = {
+                functionality: choice === "accepted",
+                updatedAt: new Date().toISOString(),
+                version: 1,
+              };
+              localStorage.setItem(
+                cookiePreferenceFallbackConfig.consentStorageKey,
+                JSON.stringify(state),
+              );
+              localStorage.removeItem(cookiePreferenceFallbackConfig.legacyConsentStorageKey);
+            }
+          } catch {}
+
+          if (choice === "unset") {
+            expireCookie(cookiePreferenceFallbackConfig.consentCookieName);
+          } else {
+            writeCookie(cookiePreferenceFallbackConfig.consentCookieName, choice);
+          }
+
+          expireCookie(cookiePreferenceFallbackConfig.legacyConsentCookieName);
+          setSelectedFallback(choice);
+          feedback.textContent =
+            choice === "unset" ? "Choix cookies réinitialisé." : "Choix cookies mis à jour.";
+          document.dispatchEvent(new Event(cookiePreferenceFallbackConfig.consentEvent));
+
+          if (choice === "unset") {
+            window.setTimeout(() => {
+              if (fallback.hidden) return;
+              setSelectedFallback("");
+            }, 2200);
+          }
+        }
+
+        function initFallback() {
+          const fallback = fallbackPanel();
+          if (!fallback || fallback.dataset.cookiePreferencesFallbackReady === "true") return;
+
+          fallback.dataset.cookiePreferencesFallbackReady = "true";
+          fallback.addEventListener("click", (event) => {
+            const button =
+              event.target instanceof Element
+                ? event.target.closest("[data-cookie-preference-choice]")
+                : null;
+            if (!(button instanceof HTMLElement)) return;
+
+            const choice = button.dataset.cookiePreferenceChoice;
+            if (choice === "accepted" || choice === "rejected" || choice === "unset") {
+              updateConsent(choice);
+            }
+          });
+
+          const observer = new MutationObserver(syncFallbackVisibility);
+          observer.observe(document.body, { childList: true, subtree: true });
+
+          syncFallbackVisibility();
+          requestAnimationFrame(syncFallbackVisibility);
+          window.setTimeout(syncFallbackVisibility, 500);
+          window.setTimeout(syncFallbackVisibility, 1500);
+          window.setTimeout(syncFallbackVisibility, 3000);
+        }
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", initFallback, { once: true });
+        } else {
+          initFallback();
+        }
+
+        document.addEventListener("astro:page-load", initFallback);
+      </script>
     </article>
   </Fragment>
 </Layout>

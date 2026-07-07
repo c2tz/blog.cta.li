@@ -1,4 +1,8 @@
 @media (max-width: 735px) {
+  html {
+    scrollbar-gutter: auto;
+  }
+
   .home-anime-landing {
     --home-banner-height: clamp(22rem, 58vh, 28rem);
     --home-banner-height: clamp(22rem, 58svh, 28rem);
@@ -50,7 +54,7 @@
 
   .cookie-consent-actions {
     flex-direction: row;
-    justify-content: flex-end;
+    justify-content: flex-start;
   }
 
   .cookie-consent--modal {

@@ -1,0 +1,130 @@
+---
+import { CookiePreferencesComponent } from "@/components/feedback/cookie-preferences.component";
+import { GiscusCommentsComponent } from "@/components/feedback/giscus-comments.component";
+import Layout from "@/layouts/site-layout.astro";
+
+const admonitions = [
+  ["note", "Note", "description"],
+  ["abstract", "Résumé", "subject"],
+  ["info", "Information", "info"],
+  ["tip", "Astuce", "tips_and_updates"],
+  ["success", "Succès", "check_circle"],
+  ["question", "Question", "help"],
+  ["warning", "Avertissement", "warning"],
+  ["failure", "Échec", "cancel"],
+  ["danger", "Danger", "dangerous"],
+  ["bug", "Bug", "bug_report"],
+  ["example", "Exemple", "science"],
+  ["quote", "Citation", "format_quote"],
+] as const;
+---
+
+<Layout
+  title="Visual test"
+  description="Page locale de contrôle visuel des composants du blog."
+  bodyClass="visual-test-page"
+  contentEnhancements
+>
+  <Fragment slot="content">
+    <article class="site-prose visual-test" aria-labelledby="visual-test-title">
+      <h1 id="visual-test-title">Visual test</h1>
+
+      <h2 id="admonitions">
+        <a href="#admonitions" class="heading-link">Admonitions</a>
+      </h2>
+      <div class="visual-test-grid not-prose">
+        {
+          admonitions.map(([type, title, icon]) => (
+            <aside class={`material-admonition material-admonition-${type}`}>
+              <div class="material-admonition-title">
+                <span class="material-symbols-rounded material-admonition-icon" aria-hidden="true">
+                  {icon}
+                </span>
+                <span>{title}</span>
+              </div>
+              <div class="material-admonition-content">
+                <p>
+                  Une ligne de contenu pour contrôler la teinte, la bordure, l’icône et le contraste
+                  du texte.
+                </p>
+              </div>
+            </aside>
+          ))
+        }
+      </div>
+
+      <details class="material-admonition material-admonition-info not-prose" open>
+        <summary class="material-admonition-title">
+          <span class="material-symbols-rounded material-admonition-icon" aria-hidden="true">
+            unfold_more
+          </span>
+          <span>Admonition repliable</span>
+        </summary>
+        <div class="material-admonition-content">
+          <p>État ouvert pour vérifier le summary, l’icône et le contenu.</p>
+        </div>
+      </details>
+
+      <h2 id="blocs-code">
+        <a href="#blocs-code" class="heading-link">Blocs code</a>
+      </h2>
+
+      <pre
+        class="astro-code"
+        tabindex="0"><code><span class="line highlighted info"><span style="--shiki-light:#005cc5;--shiki-dark:#79c0ff">const</span><span> state = signal(</span><span style="--shiki-light:#116329;--shiki-dark:#7ee787">0</span><span>)</span></span>
+<span class="line diff remove"><span style="--shiki-light:#cf222e;--shiki-dark:#ff7b72">const oldValue = state()</span></span>
+<span class="line diff add"><span style="--shiki-light:#116329;--shiki-dark:#7ee787">const nextValue = state() + 1</span></span>
+<span class="line highlighted warning"><span style="--shiki-light:#953800;--shiki-dark:#ffa657">console.warn</span><span>("attention")</span></span>
+<span class="line" />
+<span class="line"><span style="--shiki-light:#24292f;--shiki-dark:#e6edf3">state.update((value) =&gt; value + nextValue)</span></span></code></pre>
+
+      <pre
+        class="astro-code"
+        tabindex="0"><code><span class="line"><span style="--shiki-light:#8250df;--shiki-dark:#d2a8ff">mov</span><span> rax, qword [rel extremely_long_symbol_name_used_to_verify_horizontal_scroll_without_moving_the_page_viewport_00112233445566778899]</span></span>
+<span class="line"><span style="--shiki-light:#8250df;--shiki-dark:#d2a8ff">xor</span><span> rbx, rbx</span></span>
+<span class="line highlighted info"><span style="--shiki-light:#8250df;--shiki-dark:#d2a8ff">cmp</span><span> rax, 0x00000000000000ff</span></span>
+<span class="line diff remove"><span style="--shiki-light:#8250df;--shiki-dark:#d2a8ff">jne</span><span> .slow_path_removed</span></span>
+<span class="line diff add"><span style="--shiki-light:#8250df;--shiki-dark:#d2a8ff">je</span><span> .fast_path_added</span></span>
+<span class="line highlighted warning"><span style="--shiki-light:#8250df;--shiki-dark:#d2a8ff">call</span><span> qword [rel warning_probe]</span></span></code></pre>
+
+      <h2 id="tabs">
+        <a href="#tabs" class="heading-link">Tabs Material</a>
+      </h2>
+      <div class="material-tabs not-prose" data-material-tabs aria-label="Contrôle des tabs">
+        {
+          ["Système", "Clair", "Foncé", "Code", "Cookies", "Commentaires"].map((title) => (
+            <section class="material-tab-panel" data-material-tab data-title={title}>
+              <p>
+                Contenu de l’onglet {title}. Ce bloc force la pagination officielle Material sur
+                petit écran.
+              </p>
+            </section>
+          ))
+        }
+      </div>
+
+      <h2 id="cookies">
+        <a href="#cookies" class="heading-link">Cookies</a>
+      </h2>
+      <CookiePreferencesComponent client:load />
+
+      <h2 id="commentaires">
+        <a href="#commentaires" class="heading-link">Commentaires désactivés</a>
+      </h2>
+      <GiscusCommentsComponent client:load />
+    </article>
+  </Fragment>
+
+  <style slot="head">
+    .visual-test-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+      gap: 1rem;
+      margin-block: 1rem 1.5rem;
+    }
+
+    .visual-test-grid .material-admonition {
+      margin-block: 0;
+    }
+  </style>
+</Layout>

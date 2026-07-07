@@ -48,6 +48,19 @@
   --m3-tertiary-container: #633b48;
   --m3-tertiary-fixed: #ffd8e4;
   --m3-tertiary-fixed-dim: #efb8c8;
+  --admonition-tint-strength: 22%;
+  --admonition-note: #64b5f6;
+  --admonition-abstract: #7986cb;
+  --admonition-info: #4dd0e1;
+  --admonition-tip: #4db6ac;
+  --admonition-success: #81c784;
+  --admonition-question: #dce775;
+  --admonition-warning: #ffca28;
+  --admonition-failure: #ef5350;
+  --admonition-danger: #ff8a65;
+  --admonition-bug: #f06292;
+  --admonition-example: #ba68c8;
+  --admonition-quote: #90a4ae;
   --code-surface: var(--m3-surface-container-high);
   --code-block-surface: var(--site-bg);
 }
@@ -83,16 +96,32 @@
   --home-media-surface: var(--m3-surface-container-lowest);
 }
 
+:root[data-theme="dark"] :where(.code-shell, pre.astro-code) {
+  --code-line-info: #64b5f6;
+  --code-line-info-text: #90caf9;
+  --code-line-info-bg: color-mix(in srgb, var(--code-line-info) 24%, transparent);
+  --code-line-add: #81c784;
+  --code-line-add-text: #a5d6a7;
+  --code-line-add-bg: color-mix(in srgb, var(--code-line-add) 24%, transparent);
+  --code-line-remove: #ef5350;
+  --code-line-remove-text: #ef9a9a;
+  --code-line-remove-bg: color-mix(in srgb, var(--code-line-remove) 24%, transparent);
+  --code-line-warning: #ffca28;
+  --code-line-warning-text: #ffd54f;
+  --code-line-warning-bg: color-mix(in srgb, var(--code-line-warning) 28%, transparent);
+  --code-line-number: color-mix(in srgb, var(--site-muted) 78%, transparent);
+}
+
 :root[data-theme="dark"] .code-shell {
   border-color: var(--m3-outline-variant);
 }
 
-:root[data-theme="dark"] .code-shell pre {
+:root[data-theme="dark"] :where(.code-shell pre, pre.astro-code) {
   scrollbar-color: color-mix(in srgb, var(--m3-outline) 82%, var(--code-block-surface))
     var(--code-block-surface);
 }
 
-:root[data-theme="dark"] .code-shell pre::-webkit-scrollbar-thumb {
+:root[data-theme="dark"] :where(.code-shell pre, pre.astro-code)::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--m3-outline) 82%, var(--code-block-surface));
 }
 

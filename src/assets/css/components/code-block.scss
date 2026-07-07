@@ -1,9 +1,33 @@
-.code-shell {
+.code-shell,
+pre.astro-code {
   --code-action-space: 3.25rem;
   --code-font-size: 0.9rem;
   --code-line-height: 1.5rem;
   --code-inline-pad: 1.5rem;
+  --code-line-marker-width: 2px;
+  --code-line-marker-dash: 1px;
+  --code-line-marker-gap: 1px;
+  --code-line-number-width: 2rem;
+  --code-line-number-offset: -1.3rem;
+  --code-line-separator-position: 1.2rem;
+  --code-line-separator-width: 2px;
+  --code-line-code-gap: 0.45rem;
+  --code-line-info: #2196f3;
+  --code-line-info-text: #1565c0;
+  --code-line-info-bg: color-mix(in srgb, var(--code-line-info) 18%, transparent);
+  --code-line-add: #4caf50;
+  --code-line-add-text: #1b5e20;
+  --code-line-add-bg: color-mix(in srgb, var(--code-line-add) 18%, transparent);
+  --code-line-remove: #f44336;
+  --code-line-remove-text: #b71c1c;
+  --code-line-remove-bg: color-mix(in srgb, var(--code-line-remove) 17%, transparent);
+  --code-line-warning: #ffca28;
+  --code-line-warning-text: #bf360c;
+  --code-line-warning-bg: color-mix(in srgb, var(--code-line-warning) 24%, transparent);
+  --code-line-number: color-mix(in srgb, var(--site-muted) 82%, transparent);
+}
 
+.code-shell {
   position: relative;
   margin-block: 1rem;
   overflow: hidden;
@@ -46,7 +70,8 @@
   opacity: 0;
 }
 
-.code-shell pre {
+.code-shell pre,
+pre.astro-code {
   scrollbar-color: color-mix(in srgb, var(--site-muted) 68%, var(--code-block-surface))
     var(--code-block-surface);
   font-family: var(--site-mono-font);
@@ -54,12 +79,21 @@
   line-height: var(--code-line-height);
   letter-spacing: 0;
   margin: 0;
-  margin-inline-end: var(--code-action-space);
   padding-block: var(--code-pad);
   padding-inline: var(--code-inline-pad);
-  overflow: hidden;
+  overflow-x: auto;
   background-color: var(--code-block-surface) !important;
   -webkit-text-size-adjust: 100%;
+}
+
+pre.astro-code {
+  margin-block: 1rem;
+}
+
+.code-shell pre {
+  margin: 0;
+  margin-inline-end: var(--code-action-space);
+  overflow: hidden;
 }
 
 @supports (overflow: clip) {
@@ -72,15 +106,18 @@
   overflow-x: auto;
 }
 
-.code-shell pre::-webkit-scrollbar {
+.code-shell pre::-webkit-scrollbar,
+pre.astro-code::-webkit-scrollbar {
   height: 0.625rem;
 }
 
-.code-shell pre::-webkit-scrollbar-track {
+.code-shell pre::-webkit-scrollbar-track,
+pre.astro-code::-webkit-scrollbar-track {
   background: var(--code-block-surface);
 }
 
-.code-shell pre::-webkit-scrollbar-thumb {
+.code-shell pre::-webkit-scrollbar-thumb,
+pre.astro-code::-webkit-scrollbar-thumb {
   border: 2px solid var(--code-block-surface);
   border-radius: 9999px;
   background: color-mix(in srgb, var(--site-muted) 68%, var(--code-block-surface));
@@ -88,10 +125,11 @@
 
 .code-shell pre *,
 .code-shell pre code,
-.code-shell pre code * {
+.code-shell pre code *,
+pre.astro-code *,
+pre.astro-code code,
+pre.astro-code code * {
   font-family: inherit;
-  font-size: inherit;
-  line-height: inherit;
 }
 
 .astro-code {
@@ -111,95 +149,140 @@
   text-decoration: var(--shiki-light-text-decoration, inherit);
 }
 
-.code-shell pre code {
-  display: block;
-  min-width: max-content;
+:where(.code-shell pre, pre.astro-code) code {
+  counter-reset: code-line;
+  display: flex;
+  flex-direction: column;
+  width: max-content;
+  min-width: 100%;
   background: transparent !important;
-  font-size: inherit;
-  line-height: inherit;
+  font-size: 0;
+  line-height: 0;
 }
 
-.code-shell pre code > .line {
+:where(.code-shell pre, pre.astro-code) code > .line {
+  --code-line-background: transparent;
+  --code-line-marker-color: transparent;
+  --code-line-number-color: var(--code-line-number);
+  --code-line-separator-color: transparent;
+
+  counter-increment: code-line;
   position: relative;
   box-sizing: border-box;
-  display: inline-block;
+  display: block;
   min-width: 100%;
   min-height: var(--code-line-height);
+  padding-inline-start: calc(
+    var(--code-line-separator-position) + var(--code-line-separator-width) +
+      var(--code-line-code-gap)
+  );
+  font-size: var(--code-font-size);
   line-height: var(--code-line-height);
 }
 
-.code-shell pre.has-focused code > .line:not(.focused) {
+:where(.code-shell pre, pre.astro-code).has-focused code > .line:not(.focused) {
   opacity: 0.46;
   transition: opacity 160ms ease;
 }
 
-.code-shell pre.has-focused:hover code > .line:not(.focused),
-.code-shell pre.has-focused:focus-within code > .line:not(.focused) {
+:where(.code-shell pre, pre.astro-code).has-focused:hover code > .line:not(.focused),
+:where(.code-shell pre, pre.astro-code).has-focused:focus-within code > .line:not(.focused) {
   opacity: 0.72;
 }
 
-.code-shell pre code > .line.highlighted,
-.code-shell pre code > .line.focused {
-  background: color-mix(in srgb, var(--m3-primary) 14%, transparent);
-  box-shadow: inset 0.22rem 0 var(--m3-primary);
+:where(.code-shell pre, pre.astro-code) code > .line.highlighted,
+:where(.code-shell pre, pre.astro-code) code > .line.focused {
+  --code-line-background: var(--code-line-info-bg);
+  --code-line-marker-color: var(--code-line-info);
+  --code-line-number-color: var(--code-line-info-text);
+  --code-line-separator-color: var(--code-block-surface);
 }
 
-.code-shell pre code > .line.highlighted.info {
-  background: color-mix(in srgb, var(--m3-primary) 14%, transparent);
-  box-shadow: inset 0.22rem 0 var(--m3-primary);
+:where(.code-shell pre, pre.astro-code) code > .line.highlighted.info {
+  --code-line-background: var(--code-line-info-bg);
+  --code-line-marker-color: var(--code-line-info);
+  --code-line-number-color: var(--code-line-info-text);
+  --code-line-separator-color: var(--code-block-surface);
 }
 
-.code-shell pre code > .line.highlighted.warning {
-  background: color-mix(in srgb, var(--m3-tertiary) 18%, transparent);
-  box-shadow: inset 0.22rem 0 var(--m3-tertiary);
+:where(.code-shell pre, pre.astro-code) code > .line.highlighted.warning {
+  --code-line-background: var(--code-line-warning-bg);
+  --code-line-marker-color: var(--code-line-warning);
+  --code-line-number-color: var(--code-line-warning-text);
+  --code-line-separator-color: var(--code-block-surface);
 }
 
-.code-shell pre code > .line.highlighted.error {
-  background: color-mix(in srgb, var(--m3-error) 16%, transparent);
-  box-shadow: inset 0.22rem 0 var(--m3-error);
+:where(.code-shell pre, pre.astro-code) code > .line.highlighted.error {
+  --code-line-background: var(--code-line-remove-bg);
+  --code-line-marker-color: var(--code-line-remove);
+  --code-line-number-color: var(--code-line-remove-text);
+  --code-line-separator-color: var(--code-block-surface);
 }
 
-.code-shell pre code > .line.diff {
-  position: relative;
-  padding-inline-start: 1.35rem;
+:where(.code-shell pre, pre.astro-code) code > .line:is(.highlighted, .focused, .diff) {
+  background:
+    linear-gradient(var(--code-line-separator-color), var(--code-line-separator-color))
+      var(--code-line-separator-position) 0 / var(--code-line-separator-width) 100% no-repeat,
+    var(--code-line-background);
+  box-shadow: calc(var(--code-inline-pad) * -1) 0 0 0 var(--code-line-background);
 }
 
-.code-shell pre code > .line.diff::after {
+:where(.code-shell pre, pre.astro-code) code > .line::before {
   position: absolute;
-  inset-inline-start: 0.35rem;
+  inset-block-start: 0;
+  inset-inline-start: var(--code-line-number-offset);
+  z-index: 1;
+  width: var(--code-line-number-width);
+  color: var(--code-line-number-color);
+  content: counter(code-line);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+:where(.code-shell pre, pre.astro-code) code > .line:is(.highlighted, .focused, .diff)::after {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: calc(var(--code-inline-pad) * -1);
+  width: var(--code-line-marker-width);
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--code-line-marker-color) 0 var(--code-line-marker-dash),
+    transparent var(--code-line-marker-dash)
+      calc(var(--code-line-marker-dash) + var(--code-line-marker-gap))
+  );
   content: "";
-  font-weight: 700;
 }
 
-.code-shell pre code > .line.diff.add {
-  background: color-mix(in srgb, var(--m3-primary) 13%, transparent);
-  box-shadow: inset 0.22rem 0 var(--m3-primary);
+:where(.code-shell pre, pre.astro-code) code > .line.diff {
+  position: relative;
 }
 
-.code-shell pre code > .line.diff.add::after {
-  color: var(--m3-primary);
-  content: "+";
+:where(.code-shell pre, pre.astro-code) code > .line.diff.add {
+  --code-line-background: var(--code-line-add-bg);
+  --code-line-marker-color: var(--code-line-add);
+  --code-line-number-color: var(--code-line-add-text);
+  --code-line-separator-color: var(--code-block-surface);
 }
 
-.code-shell pre code > .line.diff.remove {
-  background: color-mix(in srgb, var(--m3-error) 14%, transparent);
-  box-shadow: inset 0.22rem 0 var(--m3-error);
+:where(.code-shell pre, pre.astro-code) code > .line.diff.remove {
+  --code-line-background: var(--code-line-remove-bg);
+  --code-line-marker-color: var(--code-line-remove);
+  --code-line-number-color: var(--code-line-remove-text);
+  --code-line-separator-color: var(--code-block-surface);
 }
 
-.code-shell pre code > .line.diff.remove::after {
-  color: var(--m3-error);
-  content: "-";
-}
-
-.code-shell pre code .highlighted-word {
+:where(.code-shell pre, pre.astro-code) code .highlighted-word {
   border-radius: 0.22rem;
   background: color-mix(in srgb, var(--m3-tertiary) 24%, transparent);
   box-shadow: 0 0 0 0.12rem color-mix(in srgb, var(--m3-tertiary) 32%, transparent);
 }
 
 @media (max-width: 520px) {
-  .code-shell {
+  .code-shell,
+  pre.astro-code {
     --code-font-size: 0.95rem;
-    --code-inline-pad: 1rem;
+    --code-inline-pad: 1.25rem;
+    --code-line-number-width: 1.5rem;
+    --code-line-number-offset: -0.75rem;
   }
 }

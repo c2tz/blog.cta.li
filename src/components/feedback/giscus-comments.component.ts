@@ -136,8 +136,9 @@ function hasOptionalServicesConsent() {
       }
 
       @if (!optionalServicesAllowed()) {
-        <p class="giscus-comments-config">
-          Les commentaires externes sont désactivés par votre choix de confidentialité.
+        <p class="giscus-comments-config giscus-comments-privacy">
+          Les commentaires externes sont désactivés par
+          <a href="/cookies/#modifier-vos-choix-cookies">votre choix de confidentialité</a>.
         </p>
       }
 
@@ -192,6 +193,10 @@ function hasOptionalServicesConsent() {
     .giscus-comments-config {
       margin-block-end: 0.5rem;
       color: var(--site-link);
+    }
+
+    .giscus-comments-privacy {
+      color: var(--site-text);
     }
 
     .giscus-comments-header {

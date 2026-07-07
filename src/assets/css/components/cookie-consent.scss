@@ -79,7 +79,7 @@ html.consent-visible body {
     (
       text-label-text-font: var(--site-font),
       text-label-text-size: 1rem,
-      text-label-text-weight: 400,
+      text-label-text-weight: 700,
       text-label-text-tracking: 0,
     )
   );
@@ -234,15 +234,29 @@ html.consent-visible body {
 .cookie-consent-actions {
   display: flex;
   flex-wrap: nowrap;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 0.5rem;
 }
 
-.cookie-consent:is(.cookie-consent--privacy, .cookie-consent--explicit-content)
-  .cookie-consent-actions {
+.cookie-consent--privacy .cookie-consent-actions {
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  justify-content: space-between;
+  margin: 0.25rem -0.5rem 0 -0.5rem;
+}
+
+.cookie-consent--explicit-content .cookie-consent-actions {
   flex-wrap: nowrap;
   gap: 0;
-  margin: 0.25rem -0.5rem 0 0;
+  justify-content: flex-start;
+  margin: 0.25rem 0 0 -0.5rem;
+}
+
+.cookie-consent-choice-actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  margin-inline-start: auto;
 }
 
 .cookie-consent:is(.cookie-consent--privacy, .cookie-consent--explicit-content)
@@ -270,7 +284,7 @@ html.consent-visible body {
 .cookie-consent:is(.cookie-consent--privacy, .cookie-consent--explicit-content)
   .cookie-consent-actions
   .mdc-button__label {
-  font-size: var(--mat-sys-label-large-size, 0.875rem);
-  font-weight: var(--mat-sys-label-large-weight, 500);
-  line-height: var(--mat-sys-label-large-line-height, 1.25rem);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.5rem;
 }

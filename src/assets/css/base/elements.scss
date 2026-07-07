@@ -4,6 +4,7 @@
     background-color: var(--home-dynamic-page-bg, var(--site-bg));
     -moz-text-size-adjust: 100%;
     -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
     overscroll-behavior: none;
     scrollbar-gutter: stable;
   }
@@ -16,6 +17,7 @@
     min-height: 100dvh;
     margin: 0;
     padding: 0;
+    overflow-x: hidden;
     overflow-y: scroll;
     background-color: var(--site-bg);
     color: var(--site-text);
@@ -23,6 +25,13 @@
     line-height: 1.5;
     letter-spacing: 0;
     overscroll-behavior: none;
+  }
+
+  @supports (overflow: clip) {
+    html,
+    body {
+      overflow-x: clip;
+    }
   }
 
   body.reading-progress-disabled {

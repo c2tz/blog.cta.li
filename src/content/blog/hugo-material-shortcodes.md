@@ -397,6 +397,304 @@ console.warn("Attention") // [!code warning]
 console.error("Erreur") // [!code error]
 ```
 
+Stress test avec un bloc volontairement long :
+
+```asm
+; x86_64 Linux/NASM - boucle de simulation volontairement longue pour tester le gutter, les lignes vides et le scroll horizontal. ; [!code info]
+global _start
+section .data
+trace_banner db "render-wide-precode-stress: register lanes, branch table, diff markers and very long assembly comments stay aligned", 10
+trace_banner_len equ $ - trace_banner
+state_seed dq 0x9e3779b97f4a7c15
+state_mask dq 0x0000ffffffffffff
+dispatch_table dq stage_000, stage_001, stage_002, stage_003, stage_004, stage_005, stage_006, stage_007
+
+section .bss
+scratch resq 64
+mirror resq 64
+
+section .text
+_start:
+    mov rax, 1
+    mov rdi, 1
+    lea rsi, [rel trace_banner]
+    mov rdx, trace_banner_len
+    syscall
+
+    xor r8, r8
+    mov r9, [rel state_seed]
+    lea r10, [rel scratch]
+    lea r11, [rel mirror]
+    mov r12, 0x0102030405060708
+    mov r13, 0xfedcba9876543210
+    mov r14, 0x13579bdf2468ace0
+    mov r15, 0x0000000000000040
+
+stage_000:
+    mov rax, r9
+    rol rax, 7
+    xor rax, r12
+    add rax, 0x0000000000000001
+    mov [r10 + r8 * 8], rax
+    mov [r11 + r8 * 8], r13
+    cmp rax, r14
+    cmova r13, rax
+    inc r8
+    and r8, 0x3f
+
+stage_001:
+    mov rbx, [r10 + r8 * 8]
+    ror rbx, 11
+    xor rbx, r9
+    add rbx, 0x0000000000000101
+    mov [r11 + r8 * 8], rbx
+    test bl, 0x03
+    cmovz r12, rbx
+    lea r9, [rbx + r12 * 2 + 0x22]
+    inc r8
+    and r8, 0x3f
+
+stage_002:
+    mov rcx, [r11 + r8 * 8]
+    shl rcx, 3
+    xor rcx, r13
+    add rcx, 0x0000000000000202
+    mov [r10 + r8 * 8], rcx
+    bt rcx, 17
+    cmovc r14, rcx
+    lea r13, [rcx + r14 + 0x3333333333333333]
+    inc r8
+    and r8, 0x3f
+
+stage_003:
+    mov rdx, [r10 + r8 * 8] ; [!code --]
+    mov rdx, [r11 + r8 * 8] ; [!code ++]
+    ror rdx, 19
+    xor rdx, r12
+    add rdx, 0x0000000000000303
+    mov [r10 + r8 * 8], rdx
+    mov [r11 + r8 * 8], r9
+    cmp rdx, 0x7fffffffffffffff
+    cmovbe r9, rdx
+    inc r8
+    and r8, 0x3f
+
+stage_004:
+    mov rax, [r11 + r8 * 8]
+    rol rax, 23
+    xor rax, r13
+    add rax, 0x0000000000000404
+    mov [r10 + r8 * 8], rax
+    mov [r11 + r8 * 8], r12
+    test ah, 0x80
+    cmovnz r12, rax
+    inc r8
+    and r8, 0x3f
+
+stage_005:
+    mov rbx, [r10 + r8 * 8]
+    shrd rbx, r13, 5
+    xor rbx, r14
+    add rbx, 0x0000000000000505
+    mov [r11 + r8 * 8], rbx
+    mov [r10 + r8 * 8], r15
+    cmp rbx, r9
+    cmovae r15, rbx
+    inc r8
+    and r8, 0x3f
+
+stage_006:
+
+    mov rcx, [r11 + r8 * 8]
+    rol rcx, 31
+    xor rcx, r15
+    add rcx, 0x0000000000000606
+    mov [r10 + r8 * 8], rcx
+    mov [r11 + r8 * 8], r14
+    test rcx, 0x000000000000ff00
+    cmovnz r14, rcx
+    inc r8
+    and r8, 0x3f
+
+stage_007:
+    mov rdx, [r10 + r8 * 8]
+    ror rdx, 37
+    xor rdx, r9
+    add rdx, 0x0000000000000707 ; [!code info]
+    mov [r11 + r8 * 8], rdx
+    mov [r10 + r8 * 8], r13
+    cmp rdx, r12
+    cmovb r12, rdx
+    inc r8
+    and r8, 0x3f
+
+stage_008:
+    mov rax, [r11 + r8 * 8]
+    shld rax, r12, 9
+    xor rax, r15
+    add rax, 0x0000000000000808
+    mov [r10 + r8 * 8], rax
+    mov [r11 + r8 * 8], r9
+    test al, 0x11
+    cmovnz r9, rax
+    inc r8
+    and r8, 0x3f
+
+stage_009:
+    mov rbx, [r10 + r8 * 8]
+    rol rbx, 41
+    xor rbx, r13
+    add rbx, 0x0000000000000909
+    mov [r11 + r8 * 8], rbx
+    mov qword [r10 + r8 * 8], 0x1111111111111111 ; [!code --]
+    mov qword [r10 + r8 * 8], 0x2222222222222222 ; [!code ++]
+    inc r8
+    and r8, 0x3f
+
+stage_010:
+    mov rcx, [r11 + r8 * 8]
+    ror rcx, 43
+    xor rcx, r14
+    add rcx, 0x0000000000001010
+    mov [r10 + r8 * 8], rcx
+    mov [r11 + r8 * 8], r15
+    cmp rcx, rbx
+    cmovne r15, rcx
+    inc r8
+    and r8, 0x3f
+
+stage_011:
+    mov rdx, [r10 + r8 * 8]
+    rol rdx, 47
+    xor rdx, r12
+    add rdx, 0x0000000000001111
+    mov [r11 + r8 * 8], rdx
+    mov [r10 + r8 * 8], r9
+    cmp rdx, r13
+    cmovg r13, rdx
+    inc r8
+    and r8, 0x3f
+
+stage_012:
+    mov rax, [r11 + r8 * 8]
+    ror rax, 53
+    xor rax, r15
+    add rax, 0x0000000000001212
+    mov [r10 + r8 * 8], rax
+    mov [r11 + r8 * 8], r14
+    test rax, 0x000000ff00000000
+    cmovnz r14, rax
+    inc r8
+    and r8, 0x3f
+
+stage_013:
+    mov rbx, [r10 + r8 * 8]
+    rol rbx, 59
+    xor rbx, r9
+    add rbx, 0x0000000000001313
+    mov [r11 + r8 * 8], rbx
+    mov [r10 + r8 * 8], r12
+    cmp rbx, r15
+    cmova r15, rbx
+    inc r8
+    and r8, 0x3f
+
+stage_014:
+    mov rcx, [r11 + r8 * 8]
+    ror rcx, 3
+    xor rcx, r13
+    add rcx, 0x0000000000001414
+    mov [r10 + r8 * 8], rcx
+    mov [r11 + r8 * 8], r9
+    cmp rcx, r14
+    cmovl r14, rcx
+    inc r8
+    and r8, 0x3f
+
+stage_015:
+    mov rdx, [r10 + r8 * 8]
+    rol rdx, 13
+    xor rdx, r12
+    add rdx, 0x0000000000001515
+    mov [r11 + r8 * 8], rdx
+    mov [r10 + r8 * 8], r15
+    cmp rdx, r9
+    cmovae r9, rdx
+    inc r8
+    and r8, 0x3f
+
+stage_016:
+    mov rax, [r11 + r8 * 8]
+    ror rax, 17
+    xor rax, r14
+    add rax, 0x0000000000001616
+    mov [r10 + r8 * 8], rax
+    mov [r11 + r8 * 8], r13
+    test rax, 0x00000000000000f0
+    cmovnz r13, rax
+    inc r8
+    and r8, 0x3f
+
+stage_017:
+    mov rbx, [r10 + r8 * 8]
+    shld rbx, r9, 7
+    xor rbx, r15
+    add rbx, 0x0000000000001717
+    mov [r11 + r8 * 8], rbx
+    mov [r10 + r8 * 8], r12
+    cmp rbx, r14
+    cmovbe r14, rbx
+    inc r8
+    and r8, 0x3f
+
+stage_018:
+    mov rcx, [r11 + r8 * 8]
+    shrd rcx, r13, 11
+    xor rcx, r9
+    add rcx, 0x0000000000001818
+    mov [r10 + r8 * 8], rcx
+    mov [r11 + r8 * 8], r15
+    cmp rcx, r12
+    cmovge r12, rcx
+    inc r8
+    and r8, 0x3f
+
+stage_019:
+    mov rdx, [r10 + r8 * 8]
+    rol rdx, 29
+    xor rdx, r14
+    add rdx, 0x0000000000001919
+    mov [r11 + r8 * 8], rdx
+    mov [r10 + r8 * 8], r13
+    cmp rdx, r15
+    cmovb r15, rdx
+    inc r8
+    and r8, 0x3f
+
+stage_020:
+    mov rax, [r11 + r8 * 8]
+    xor rax, r9
+    xor rax, r12
+    xor rax, r13
+    xor rax, r14
+    xor rax, r15
+    mov [r10 + r8 * 8], rax
+    mov rdi, rax
+    call finalize_checksum_with_a_deliberately_long_symbol_name_to_force_horizontal_overflow_and_keep_the_copy_button_outside_the_text_column
+
+finalize_checksum_with_a_deliberately_long_symbol_name_to_force_horizontal_overflow_and_keep_the_copy_button_outside_the_text_column:
+    mov rax, rdi
+    and rax, [rel state_mask]
+    cmp rax, 0
+    je exit_success
+    jmp exit_success
+
+exit_success:
+    mov rax, 60
+    xor rdi, rdi
+    syscall
+```
+
 Les notations utiles sont :
 
 | Notation | Effet |

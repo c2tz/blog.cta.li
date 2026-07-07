@@ -235,19 +235,20 @@ function isFocusableElement(element: HTMLElement) {
         } @else {
           <div class="cookie-consent-content">
             <p id="cookie-consent-desc">
-              Vous pouvez autoriser les services optionnels : affichage de votre IP, commentaires
-              Giscus et mesure de performance Vercel. Le site reste utilisable si vous refusez.
+              Ce site utilise des cookies pour fournir ses services et analyser le trafic.
             </p>
           </div>
 
           <div class="cookie-consent-actions">
             <a href="/cookies/" matButton="text"> PLUS DE DÉTAILS </a>
-            <button matButton="text" type="button" (click)="rejectOptionalServices()">
-              REFUSER
-            </button>
-            <button matButton="text" type="button" (click)="acceptOptionalServices()">
-              ACCEPTER
-            </button>
+            <div class="cookie-consent-choice-actions">
+              <button matButton="text" type="button" (click)="rejectOptionalServices()">
+                REFUSER
+              </button>
+              <button matButton="text" type="button" (click)="acceptOptionalServices()">
+                ACCEPTER
+              </button>
+            </div>
           </div>
         }
       </section>
@@ -255,6 +256,7 @@ function isFocusableElement(element: HTMLElement) {
   `,
 })
 export class CookieConsentBannerComponent implements OnInit, OnDestroy {
+  private readonly handleExternalConsentChange = () => this.syncExternalConsent();
   private readonly handleKeydown = (event: KeyboardEvent) => {
     if (!this.visible()) return;
 
@@ -284,6 +286,7 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
     this.cookieConsentPending = readConsent() === null;
 
     this.showNextNotice();
+    document.addEventListener(SITE_EVENTS.consentChange, this.handleExternalConsentChange);
     window.addEventListener("keydown", this.handleKeydown);
   }
 
@@ -291,6 +294,7 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
     if (typeof window === "undefined") return;
 
     window.removeEventListener("keydown", this.handleKeydown);
+    document.removeEventListener(SITE_EVENTS.consentChange, this.handleExternalConsentChange);
     if (this.focusFrame) cancelAnimationFrame(this.focusFrame);
     this.unlockPage();
   }
@@ -324,6 +328,14 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
     exposeConsentApi();
     this.cookieConsentPending = false;
     document.dispatchEvent(new Event(SITE_EVENTS.consentChange));
+    this.showNextNotice();
+  }
+
+  private syncExternalConsent() {
+    const cookieConsentPending = readConsent() === null;
+    if (cookieConsentPending === this.cookieConsentPending) return;
+
+    this.cookieConsentPending = cookieConsentPending;
     this.showNextNotice();
   }
 

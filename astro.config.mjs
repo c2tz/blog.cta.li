@@ -1,6 +1,16 @@
 import angular from "@analogjs/astro-angular";
 import mdx from "@astrojs/mdx";
 import { unified } from "@astrojs/markdown-remark";
+import {
+  transformerMetaHighlight,
+  transformerMetaWordHighlight,
+  transformerNotationDiff,
+  transformerNotationErrorLevel,
+  transformerNotationFocus,
+  transformerNotationHighlight,
+  transformerNotationWordHighlight,
+  transformerRemoveNotationEscape,
+} from "@shikijs/transformers";
 import { defineConfig } from "astro/config";
 import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -135,6 +145,8 @@ const removeCodeBlockTabindex = {
   },
 };
 
+const SHIKI_NOTATION_OPTIONS = { matchAlgorithm: "v3" };
+
 export default defineConfig({
   site: "https://ct-blog.cta.li/",
   build: {
@@ -195,7 +207,17 @@ export default defineConfig({
       },
       defaultColor: false,
       wrap: false,
-      transformers: [removeCodeBlockTabindex],
+      transformers: [
+        transformerNotationDiff(SHIKI_NOTATION_OPTIONS),
+        transformerNotationHighlight(SHIKI_NOTATION_OPTIONS),
+        transformerNotationWordHighlight(SHIKI_NOTATION_OPTIONS),
+        transformerNotationFocus(SHIKI_NOTATION_OPTIONS),
+        transformerNotationErrorLevel(SHIKI_NOTATION_OPTIONS),
+        transformerMetaHighlight(),
+        transformerMetaWordHighlight(),
+        transformerRemoveNotationEscape(),
+        removeCodeBlockTabindex,
+      ],
     },
     processor: unified({
       remarkPlugins: [remarkHugoMaterialShortcodes],

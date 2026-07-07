@@ -42,6 +42,18 @@ Itatur? Quiatae cullecum rem ent aut odis in re eossequodi nonsequ idebis ne sap
 ![konachan-382339.jpg](./images/konachan-382339.jpg)
 ![konachan-405790.png](./images/konachan-405790.png)
 
+{{< admonition type="danger" icon="taunt" >}}
+
+The blockquote element represents content that is quoted from another source, optionally with a citation which must be within a `footer` or `cite` element, and optionally with in-line changes such as annotations and abbreviations.
+
+{{< admonition type="danger" icon="taunt" >}}
+
+The blockquote element represents content that is quoted from another source, optionally with a citation which must be within a `footer` or `cite` element, and optionally with in-line changes such as annotations and abbreviations.
+
+{{< /admonition >}}
+
+{{< /admonition >}}
+
 ## Blockquotes
 
 The blockquote element represents content that is quoted from another source, optionally with a citation which must be within a `footer` or `cite` element, and optionally with in-line changes such as annotations and abbreviations.

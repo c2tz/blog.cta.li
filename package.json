@@ -20,7 +20,7 @@
     "sync:headers": "node scripts/sync-security-header-hashes.mjs",
     "check:headers": "node scripts/check-security-headers.mjs",
     "verify": "pnpm verify:project",
-    "verify:project": "pnpm test && pnpm check && pnpm format:check && pnpm build && pnpm check:headers",
+    "verify:project": "pnpm test && pnpm check && pnpm check:material-symbols && pnpm format:check && pnpm build && pnpm check:headers",
     "commit:auto": "node scripts/create-codex-commit.mjs",
     "commit:normalize": "node scripts/normalize-commit-messages.mjs",
     "lint:commit": "commitlint",
@@ -33,6 +33,7 @@
     "prepare": "husky",
     "astro": "astro",
     "update:konachan": "node scripts/refresh-konachan-backgrounds.mjs",
+    "check:material-symbols": "node scripts/update-material-symbols.mjs --check",
     "update:material-symbol-map": "node scripts/generate-material-symbol-codepoints.mjs",
     "update:material-symbols": "node scripts/update-material-symbols.mjs"
   },

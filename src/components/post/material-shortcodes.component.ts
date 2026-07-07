@@ -74,7 +74,11 @@ export class MaterialTabsViewComponent {
   encapsulation: ViewEncapsulation.None,
   template: `
     @if (filterEnabled()) {
-      <mat-form-field class="material-shortcode-table-filter" appearance="outline">
+      <mat-form-field
+        class="material-shortcode-table-filter"
+        appearance="outline"
+        subscriptSizing="dynamic"
+      >
         <mat-label>Filtrer le tableau</mat-label>
         <input matInput type="search" autocomplete="off" (input)="applyFilter($event)" />
       </mat-form-field>
@@ -117,6 +121,7 @@ export class MaterialTabsViewComponent {
 
     @if (paginateEnabled()) {
       <mat-paginator
+        class="material-shortcode-table-paginator"
         aria-label="Pagination du tableau"
         [pageSize]="pageSize()"
         [pageSizeOptions]="pageSizeOptions()"

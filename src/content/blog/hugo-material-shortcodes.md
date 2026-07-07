@@ -32,7 +32,7 @@ comportement est inspiré de Material for MkDocs, mais les icônes viennent de M
 ### Syntaxe
 
 ```markdown
-{{< admonition type="warning" title="Attention" icon="children-face" >}}
+{{< admonition type="warning" title="Attention" >}}
 
 Le contenu reste du **Markdown**. Vous pouvez mettre des listes, des liens, du code ou même une
 autre admonition.
@@ -42,7 +42,7 @@ autre admonition.
 
 ### Rendu
 
-{{< admonition type="warning" title="Attention" icon="children-face" >}}
+{{< admonition type="warning" title="Attention" >}}
 
 Le contenu reste du **Markdown**. Vous pouvez mettre des listes, des liens, du code ou même une
 autre admonition.
@@ -66,6 +66,10 @@ Les types canoniques sont `note`, `abstract`, `info`, `tip`, `success`, `questio
 
 Les alias pratiques sont également acceptés : `summary`, `tldr`, `todo`, `hint`, `important`,
 `check`, `done`, `help`, `faq`, `attention`, `caution`, `fail`, `missing`, `error` et `cite`.
+
+Les icônes par défaut suivent le type : `info` utilise `info`, `warning` utilise `warning`,
+`danger` utilise `dangerous`, `bug` utilise `bug-report`, etc. Vous pouvez toujours forcer une
+autre icône avec le paramètre `icon`.
 
 {{< admonition type="note" >}}
 
@@ -197,7 +201,13 @@ Si un symbole ne fonctionne pas :
    pnpm update:material-symbols
    ```
 
-4. Si le symbole n’existe pas dans `material-symbol-codepoints.json`, mettez à jour la carte depuis
+4. Vérifiez que la fonte livrée contient bien toutes les icônes détectées :
+
+   ```bash
+   pnpm check:material-symbols
+   ```
+
+5. Si le symbole n’existe pas dans `material-symbol-codepoints.json`, mettez à jour la carte depuis
    le paquet `material-symbols` :
 
    ```bash
@@ -205,11 +215,14 @@ Si un symbole ne fonctionne pas :
    pnpm update:material-symbols
    ```
 
-5. Si le nom public que vous voulez écrire ne correspond pas au nom réel du glyph, ajoutez un alias
+6. Si le nom public que vous voulez écrire ne correspond pas au nom réel du glyph, ajoutez un alias
    dans `MATERIAL_SYMBOL_ALIASES` dans `src/lib/remark-hugo-material-shortcodes.mjs`.
 
 Le moteur échoue volontairement au build si une icône est inconnue. C’est mieux qu’un carré vide
 silencieux en production.
+
+Le script `pnpm check:material-symbols` est aussi exécuté par `pnpm verify:project`. Le workflow
+GitHub détecte donc automatiquement une icône ajoutée sans régénération du subset.
 
 ## Onglets
 
@@ -309,6 +322,9 @@ Les blocs de code Markdown normaux utilisent déjà Shiki via Astro. Le shortcod
 couche éditoriale optionnelle : titre, nom de fichier, légende et icône. Le code lui-même reste un
 vrai bloc fenced Markdown, donc la coloration reste celle d’Astro/Shiki.
 
+Le site n’affiche pas de numéros de ligne par défaut. Les annotations Shiki restent disponibles :
+focus, diff, warning, error, info et highlight.
+
 ### Syntaxe
 
 ````markdown
@@ -392,6 +408,39 @@ Les notations utiles sont :
 | `[!code focus]` | Met une ligne au focus et atténue les autres. |
 | `[!code warning]`, `[!code error]`, `[!code info]` | Marque une ligne par niveau. |
 | `[!code word:signal]` | Surligne un mot dans les lignes suivantes. |
+
+### Code inline
+
+Astro colore déjà les blocs fenced Markdown avec Shiki. Shiki sait aussi colorer du code inline via
+`@shikijs/rehype` avec une option dédiée, par exemple une syntaxe de type
+`` `const value = 1{:ts}` ``. Ce n’est pas activé ici pour l’instant : les `<code>` inline restent
+volontairement simples et intégrés au style du texte.
+
+## Maintenance automatique
+
+### Material Symbols
+
+- `pnpm update:material-symbols` scanne `src/`, détecte les codepoints utilisés et régénère
+  `public/fonts/material-symbols-rounded-subset.woff2`.
+- Le même script met à jour le cache-buster de `src/assets/css/base/fonts.scss` avec un hash du
+  fichier WOFF2.
+- `pnpm check:material-symbols` échoue si une icône utilisée manque dans le subset.
+- `pnpm verify:project` lance ce check, donc la CI attrape les oublis.
+
+### Headers et hashes CSP
+
+Les hashes de scripts inline dépendent du HTML généré. Si le build change ces scripts, il faut
+mettre à jour `vercel.json` :
+
+```bash
+pnpm build
+pnpm sync:headers
+pnpm check:headers
+```
+
+Le workflow `Sync security header hashes` lance la même séquence sur les pull requests internes et
+commite automatiquement `vercel.json` si les hashes CSP ont changé. Le build Vercel vérifie ensuite
+les headers avec `pnpm build:vercel`.
 
 ## Règles à garder en tête
 

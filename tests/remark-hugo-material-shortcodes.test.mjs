@@ -54,6 +54,16 @@ Danger.
   assert.match(html, />Erreur</);
 });
 
+test("utilise l’icône Material Symbol par défaut associée au type d’admonition", async () => {
+  const html = await render(`{{< admonition type="warning" >}}
+
+Attention.
+
+{{< /admonition >}}`);
+  assert.match(html, /material-admonition-warning/);
+  assert.match(html, /data-material-symbol="warning"/);
+});
+
 test("accepte une icône Material Symbol nommée au milieu d’une phrase", async () => {
   const html = await render('Enfants {{< icon name="children-face" label="Enfants" />}} présents.');
   assert.match(html, /data-material-symbol="children-face"/);

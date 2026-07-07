@@ -1,14 +1,14 @@
 .material-admonition {
-  --material-admonition-color: #448aff;
+  --material-admonition-color: var(--m3-primary);
   --material-admonition-container: color-mix(
     in srgb,
-    var(--material-admonition-color) 9%,
+    var(--material-admonition-color) 8%,
     var(--m3-surface-container-low)
   );
 
   margin-block: 1.25rem;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--material-admonition-color) 38%, var(--site-border));
+  border: 1px solid color-mix(in srgb, var(--material-admonition-color) 46%, var(--site-border));
   border-inline-start-width: 0.3rem;
   border-radius: var(--site-shape-medium);
   background: var(--material-admonition-container);
@@ -16,51 +16,96 @@
 }
 
 .material-admonition-note {
-  --material-admonition-color: #448aff;
+  --material-admonition-color: #245db5;
 }
 
 .material-admonition-abstract {
-  --material-admonition-color: #00b0ff;
+  --material-admonition-color: #006493;
 }
 
 .material-admonition-info {
-  --material-admonition-color: #00b8d4;
+  --material-admonition-color: #006a6a;
 }
 
 .material-admonition-tip {
-  --material-admonition-color: #00bfa5;
+  --material-admonition-color: #006b5d;
 }
 
 .material-admonition-success {
-  --material-admonition-color: #00c853;
+  --material-admonition-color: #1b6c2e;
 }
 
 .material-admonition-question {
-  --material-admonition-color: #64dd17;
+  --material-admonition-color: #4f6700;
 }
 
 .material-admonition-warning {
-  --material-admonition-color: #ff9100;
+  --material-admonition-color: #8a5100;
 }
 
 .material-admonition-failure {
-  --material-admonition-color: #ff5252;
+  --material-admonition-color: #ba1a1a;
 }
 
 .material-admonition-danger {
-  --material-admonition-color: #ff1744;
+  --material-admonition-color: var(--m3-error);
 }
 
 .material-admonition-bug {
-  --material-admonition-color: #f50057;
+  --material-admonition-color: #b00058;
 }
 
 .material-admonition-example {
-  --material-admonition-color: #7c4dff;
+  --material-admonition-color: var(--m3-primary);
 }
 
 .material-admonition-quote {
-  --material-admonition-color: #9e9e9e;
+  --material-admonition-color: #5f5e62;
+}
+
+:root[data-theme="dark"] .material-admonition-note {
+  --material-admonition-color: #adc6ff;
+}
+
+:root[data-theme="dark"] .material-admonition-abstract {
+  --material-admonition-color: #8ecfff;
+}
+
+:root[data-theme="dark"] .material-admonition-info {
+  --material-admonition-color: #80d5d4;
+}
+
+:root[data-theme="dark"] .material-admonition-tip {
+  --material-admonition-color: #7bd8c7;
+}
+
+:root[data-theme="dark"] .material-admonition-success {
+  --material-admonition-color: #8bd995;
+}
+
+:root[data-theme="dark"] .material-admonition-question {
+  --material-admonition-color: #c4d978;
+}
+
+:root[data-theme="dark"] .material-admonition-warning {
+  --material-admonition-color: #ffbf63;
+}
+
+:root[data-theme="dark"] .material-admonition-failure,
+:root[data-theme="dark"] .material-admonition-danger {
+  --material-admonition-color: var(--m3-error);
+}
+
+:root[data-theme="dark"] .material-admonition-bug {
+  --material-admonition-color: #ffafd2;
+}
+
+:root[data-theme="dark"] .material-admonition-example {
+  --material-admonition-color: var(--m3-primary);
+}
+
+:root[data-theme="dark"] .material-admonition-quote {
+  --material-admonition-color: var(--m3-on-surface-variant);
 }
 
 .material-admonition-title {
@@ -136,13 +181,22 @@ summary.material-admonition-title::-webkit-details-marker {
 }
 
 .material-shortcode-tabs {
-  border: 1px solid var(--site-border);
-  border-radius: var(--site-shape-medium);
-  background: var(--m3-surface-container-low);
+  --mat-tab-header-active-label-text-color: var(--m3-primary);
+  --mat-tab-header-active-focus-label-text-color: var(--m3-primary);
+  --mat-tab-header-active-hover-label-text-color: var(--m3-primary);
+  --mat-tab-header-divider-color: var(--site-border);
+  --mat-tab-header-inactive-label-text-color: var(--m3-on-surface-variant);
+  --mat-tab-header-inactive-focus-label-text-color: var(--m3-on-surface);
+  --mat-tab-header-inactive-hover-label-text-color: var(--m3-on-surface);
+  --mat-tab-header-active-ripple-color: color-mix(in srgb, var(--m3-primary) 12%, transparent);
+  --mat-tab-header-inactive-ripple-color: color-mix(in srgb, var(--m3-on-surface) 12%, transparent);
+  --mat-tab-header-active-focus-indicator-color: var(--m3-primary);
+  --mat-tab-header-active-hover-indicator-color: var(--m3-primary);
+  --mdc-tab-indicator-active-indicator-color: var(--m3-primary);
 }
 
 .material-shortcode-tab-content {
-  padding: 1rem;
+  padding-block: 1rem 0;
 }
 
 .material-shortcode-tab-content .code-shell {
@@ -151,14 +205,24 @@ summary.material-admonition-title::-webkit-details-marker {
 
 .material-shortcode-table-filter {
   width: min(100%, 24rem);
+  margin-block-end: 0.75rem;
 }
 
 .material-shortcode-table-scroll {
   max-width: 100%;
+  margin-block: 0 1rem;
   overflow-x: auto;
-  border: 1px solid var(--site-border);
-  border-radius: var(--site-shape-medium);
+  overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
+}
+
+.material-shortcode-table-scroll::-webkit-scrollbar {
+  height: 0.5rem;
+}
+
+.material-shortcode-table-scroll::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--site-muted) 42%, transparent);
 }
 
 .material-shortcode-table-scroll:focus-visible {
@@ -168,21 +232,84 @@ summary.material-admonition-title::-webkit-details-marker {
 
 .material-shortcode-table {
   min-width: max(42rem, 100%);
-  background: var(--site-bg);
+  border-collapse: separate;
+  border-spacing: 0;
+  background: transparent;
+  color: var(--site-text);
+  font-family: var(--site-font);
 }
 
 .material-shortcode-table th,
 .material-shortcode-table td {
-  padding-inline: 1rem;
-  border-block-end-color: var(--site-border);
+  height: 3rem;
+  padding: 0 2rem 0 1rem;
+  border: 0;
+  border-block-end: 1px solid var(--site-border);
+  background: var(--site-bg);
   color: var(--site-text);
+  font-family: var(--site-font);
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.5;
+  text-align: start;
   white-space: nowrap;
+}
+
+.material-shortcode-table th {
+  color: var(--site-muted);
+  font-weight: 600;
+}
+
+.material-shortcode-table .mat-sort-header {
+  --mat-sort-arrow-color: currentColor;
+}
+
+.material-shortcode-table .mat-sort-header-arrow {
+  display: inline-grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-inline-start: 0.25rem;
+  color: currentColor;
+  font-family: "Material Symbols Rounded";
+  font-size: 1.25rem;
+  font-style: normal;
+  font-weight: 400;
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 20;
+  line-height: 1;
+}
+
+.material-shortcode-table .mat-sort-header-arrow svg {
+  display: none;
+}
+
+.material-shortcode-table .mat-sort-header-arrow::before {
+  content: "\e5d8";
+}
+
+.material-shortcode-table .mat-sort-header-sorted {
+  color: var(--site-text);
+}
+
+.material-shortcode-table tr:last-child td,
+.material-shortcode-table-empty {
+  border-block-end: 0;
 }
 
 .material-shortcode-table-empty {
   padding: 1.5rem !important;
   color: var(--site-muted) !important;
   text-align: center;
+}
+
+.material-shortcode-table-paginator {
+  background: transparent;
+  color: var(--site-text);
 }
 
 .material-data-table > table {
@@ -194,7 +321,7 @@ summary.material-admonition-title::-webkit-details-marker {
 .material-shiki {
   margin-block: 1.25rem;
   overflow: hidden;
-  border: 1px solid var(--site-border);
+  border: 1px solid var(--m3-outline-variant);
   border-radius: var(--code-radius);
   background: var(--code-block-surface);
 }
@@ -217,14 +344,14 @@ summary.material-admonition-title::-webkit-details-marker {
 }
 
 .material-shiki-header {
-  border-block-end: 1px solid var(--site-border);
-  background: color-mix(in srgb, var(--m3-primary-container) 16%, var(--code-block-surface));
+  border-block-end: 1px solid var(--m3-outline-variant);
+  background: color-mix(in srgb, var(--m3-primary-container) 22%, var(--code-block-surface));
   color: var(--site-text);
   font-weight: 600;
 }
 
 .material-shiki-caption {
-  border-block-start: 1px solid var(--site-border);
+  border-block-start: 1px solid var(--m3-outline-variant);
   background: var(--m3-surface-container-low);
 }
 

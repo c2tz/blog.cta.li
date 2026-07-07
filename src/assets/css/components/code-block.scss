@@ -1,8 +1,6 @@
 .code-shell {
   --code-action-space: 3.25rem;
   --code-font-size: 0.9rem;
-  --code-line-number-gap: 1rem;
-  --code-line-number-width: 3ch;
   --code-line-height: 1.5rem;
   --code-inline-pad: 1.5rem;
 
@@ -116,7 +114,6 @@
 .code-shell pre code {
   display: block;
   min-width: max-content;
-  counter-reset: code-line;
   background: transparent !important;
   font-size: inherit;
   line-height: inherit;
@@ -128,26 +125,7 @@
   display: inline-block;
   min-width: 100%;
   min-height: var(--code-line-height);
-  padding-inline-start: calc(var(--code-line-number-width) + var(--code-line-number-gap));
-  counter-increment: code-line;
   line-height: var(--code-line-height);
-}
-
-.code-shell pre code > .line::before {
-  position: absolute;
-  inset-inline-start: 0;
-  inset-block-start: 0;
-  box-sizing: border-box;
-  width: var(--code-line-number-width);
-  min-height: var(--code-line-height);
-  color: var(--site-muted);
-  content: counter(code-line);
-  font-variant-numeric: tabular-nums;
-  line-height: var(--code-line-height);
-  opacity: 0.72;
-  text-align: start;
-  -webkit-user-select: none;
-  user-select: none;
 }
 
 .code-shell pre.has-focused code > .line:not(.focused) {
@@ -167,13 +145,13 @@
 }
 
 .code-shell pre code > .line.highlighted.info {
-  background: color-mix(in srgb, #00b8d4 14%, transparent);
-  box-shadow: inset 0.22rem 0 #00b8d4;
+  background: color-mix(in srgb, var(--m3-primary) 14%, transparent);
+  box-shadow: inset 0.22rem 0 var(--m3-primary);
 }
 
 .code-shell pre code > .line.highlighted.warning {
-  background: color-mix(in srgb, #ff9100 16%, transparent);
-  box-shadow: inset 0.22rem 0 #ff9100;
+  background: color-mix(in srgb, var(--m3-tertiary) 18%, transparent);
+  box-shadow: inset 0.22rem 0 var(--m3-tertiary);
 }
 
 .code-shell pre code > .line.highlighted.error {
@@ -183,22 +161,23 @@
 
 .code-shell pre code > .line.diff {
   position: relative;
+  padding-inline-start: 1.35rem;
 }
 
 .code-shell pre code > .line.diff::after {
   position: absolute;
-  inset-inline-start: calc(var(--code-line-number-width) + var(--code-line-number-gap) - 0.95rem);
+  inset-inline-start: 0.35rem;
   content: "";
   font-weight: 700;
 }
 
 .code-shell pre code > .line.diff.add {
-  background: color-mix(in srgb, #00c853 15%, transparent);
-  box-shadow: inset 0.22rem 0 #00c853;
+  background: color-mix(in srgb, var(--m3-primary) 13%, transparent);
+  box-shadow: inset 0.22rem 0 var(--m3-primary);
 }
 
 .code-shell pre code > .line.diff.add::after {
-  color: #00a844;
+  color: var(--m3-primary);
   content: "+";
 }
 
@@ -222,6 +201,5 @@
   .code-shell {
     --code-font-size: 0.95rem;
     --code-inline-pad: 1rem;
-    --code-line-number-gap: 0.75rem;
   }
 }

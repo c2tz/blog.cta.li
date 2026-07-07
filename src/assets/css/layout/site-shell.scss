@@ -8,7 +8,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-block: 2rem 1rem;
+  width: 100%;
+  max-width: 832px;
+  box-sizing: border-box;
+  margin: 2rem auto 1rem;
+  padding-inline: 1rem;
 }
 
 .site-header-title {

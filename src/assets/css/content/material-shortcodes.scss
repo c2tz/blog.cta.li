@@ -1,0 +1,253 @@
+.material-admonition {
+  --material-admonition-color: #448aff;
+  --material-admonition-container: color-mix(
+    in srgb,
+    var(--material-admonition-color) 9%,
+    var(--m3-surface-container-low)
+  );
+
+  margin-block: 1.25rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--material-admonition-color) 38%, var(--site-border));
+  border-inline-start-width: 0.3rem;
+  border-radius: var(--site-shape-medium);
+  background: var(--material-admonition-container);
+  color: var(--site-text);
+}
+
+.material-admonition-note {
+  --material-admonition-color: #448aff;
+}
+
+.material-admonition-abstract {
+  --material-admonition-color: #00b0ff;
+}
+
+.material-admonition-info {
+  --material-admonition-color: #00b8d4;
+}
+
+.material-admonition-tip {
+  --material-admonition-color: #00bfa5;
+}
+
+.material-admonition-success {
+  --material-admonition-color: #00c853;
+}
+
+.material-admonition-question {
+  --material-admonition-color: #64dd17;
+}
+
+.material-admonition-warning {
+  --material-admonition-color: #ff9100;
+}
+
+.material-admonition-failure {
+  --material-admonition-color: #ff5252;
+}
+
+.material-admonition-danger {
+  --material-admonition-color: #ff1744;
+}
+
+.material-admonition-bug {
+  --material-admonition-color: #f50057;
+}
+
+.material-admonition-example {
+  --material-admonition-color: #7c4dff;
+}
+
+.material-admonition-quote {
+  --material-admonition-color: #9e9e9e;
+}
+
+.material-admonition-title {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem 1rem;
+  background: color-mix(in srgb, var(--material-admonition-color) 10%, transparent);
+  color: var(--material-admonition-color);
+  font-weight: 600;
+  list-style: none;
+}
+
+summary.material-admonition-title {
+  cursor: pointer;
+}
+
+summary.material-admonition-title::-webkit-details-marker {
+  display: none;
+}
+
+.material-shortcode-icon {
+  color: currentColor;
+}
+
+.material-admonition-icon {
+  flex: 0 0 auto;
+  width: 1.25rem;
+  height: 1.25rem;
+  font-size: 1.25rem;
+}
+
+.material-shortcode-inline-icon {
+  margin-inline: 0.12em;
+  font-size: 1.2em;
+  vertical-align: -0.18em;
+}
+
+.material-admonition-content {
+  padding: 0.85rem 1rem;
+}
+
+.material-admonition-content > :first-child,
+.material-shortcode-tab-content > :first-child {
+  margin-block-start: 0 !important;
+}
+
+.material-admonition-content > :last-child,
+.material-shortcode-tab-content > :last-child {
+  margin-block-end: 0 !important;
+}
+
+.material-tabs,
+.material-data-table {
+  display: block;
+  margin-block: 1.25rem;
+}
+
+.material-tab-panel + .material-tab-panel {
+  margin-block-start: 1rem;
+}
+
+.material-tab-panel::before {
+  content: attr(data-title);
+  display: block;
+  margin-block-end: 0.5rem;
+  color: var(--site-muted);
+  font-weight: 600;
+}
+
+.material-tabs[data-angular-mounted="true"] .material-tab-panel::before {
+  content: none;
+}
+
+.material-shortcode-tabs {
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-shape-medium);
+  background: var(--m3-surface-container-low);
+}
+
+.material-shortcode-tab-content {
+  padding: 1rem;
+}
+
+.material-shortcode-tab-content .code-shell {
+  margin-block: 0;
+}
+
+.material-shortcode-table-filter {
+  width: min(100%, 24rem);
+}
+
+.material-shortcode-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-shape-medium);
+  -webkit-overflow-scrolling: touch;
+}
+
+.material-shortcode-table-scroll:focus-visible {
+  outline: 2px solid var(--site-link);
+  outline-offset: 2px;
+}
+
+.material-shortcode-table {
+  min-width: max(42rem, 100%);
+  background: var(--site-bg);
+}
+
+.material-shortcode-table th,
+.material-shortcode-table td {
+  padding-inline: 1rem;
+  border-block-end-color: var(--site-border);
+  color: var(--site-text);
+  white-space: nowrap;
+}
+
+.material-shortcode-table-empty {
+  padding: 1.5rem !important;
+  color: var(--site-muted) !important;
+  text-align: center;
+}
+
+.material-data-table > table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.material-shiki {
+  margin-block: 1.25rem;
+  overflow: hidden;
+  border: 1px solid var(--site-border);
+  border-radius: var(--code-radius);
+  background: var(--code-block-surface);
+}
+
+.material-shiki .code-shell {
+  margin-block: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.material-shiki-header,
+.material-shiki-caption {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0.72rem 1rem;
+  color: var(--site-muted);
+  font-size: 0.88rem;
+}
+
+.material-shiki-header {
+  border-block-end: 1px solid var(--site-border);
+  background: color-mix(in srgb, var(--m3-primary-container) 16%, var(--code-block-surface));
+  color: var(--site-text);
+  font-weight: 600;
+}
+
+.material-shiki-caption {
+  border-block-start: 1px solid var(--site-border);
+  background: var(--m3-surface-container-low);
+}
+
+.material-shiki-icon {
+  flex: 0 0 auto;
+  color: var(--site-link);
+  font-size: 1.15rem;
+}
+
+.material-shiki-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.material-shiki-filename {
+  margin-inline-start: auto;
+  overflow: hidden;
+  color: var(--site-muted);
+  font-family: var(--site-mono-font);
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

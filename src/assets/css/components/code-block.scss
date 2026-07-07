@@ -150,6 +150,74 @@
   user-select: none;
 }
 
+.code-shell pre.has-focused code > .line:not(.focused) {
+  opacity: 0.46;
+  transition: opacity 160ms ease;
+}
+
+.code-shell pre.has-focused:hover code > .line:not(.focused),
+.code-shell pre.has-focused:focus-within code > .line:not(.focused) {
+  opacity: 0.72;
+}
+
+.code-shell pre code > .line.highlighted,
+.code-shell pre code > .line.focused {
+  background: color-mix(in srgb, var(--m3-primary) 14%, transparent);
+  box-shadow: inset 0.22rem 0 var(--m3-primary);
+}
+
+.code-shell pre code > .line.highlighted.info {
+  background: color-mix(in srgb, #00b8d4 14%, transparent);
+  box-shadow: inset 0.22rem 0 #00b8d4;
+}
+
+.code-shell pre code > .line.highlighted.warning {
+  background: color-mix(in srgb, #ff9100 16%, transparent);
+  box-shadow: inset 0.22rem 0 #ff9100;
+}
+
+.code-shell pre code > .line.highlighted.error {
+  background: color-mix(in srgb, var(--m3-error) 16%, transparent);
+  box-shadow: inset 0.22rem 0 var(--m3-error);
+}
+
+.code-shell pre code > .line.diff {
+  position: relative;
+}
+
+.code-shell pre code > .line.diff::after {
+  position: absolute;
+  inset-inline-start: calc(var(--code-line-number-width) + var(--code-line-number-gap) - 0.95rem);
+  content: "";
+  font-weight: 700;
+}
+
+.code-shell pre code > .line.diff.add {
+  background: color-mix(in srgb, #00c853 15%, transparent);
+  box-shadow: inset 0.22rem 0 #00c853;
+}
+
+.code-shell pre code > .line.diff.add::after {
+  color: #00a844;
+  content: "+";
+}
+
+.code-shell pre code > .line.diff.remove {
+  background: color-mix(in srgb, var(--m3-error) 14%, transparent);
+  box-shadow: inset 0.22rem 0 var(--m3-error);
+}
+
+.code-shell pre code > .line.diff.remove::after {
+  color: var(--m3-error);
+  content: "-";
+}
+
+.code-shell pre code .highlighted-word {
+  border-radius: 0.22rem;
+  background: color-mix(in srgb, var(--m3-tertiary) 24%, transparent);
+  box-shadow: 0 0 0 0.12rem color-mix(in srgb, var(--m3-tertiary) 32%, transparent);
+}
+
 @media (max-width: 520px) {
   .code-shell {
     --code-font-size: 0.95rem;

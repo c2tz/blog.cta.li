@@ -42,6 +42,18 @@ Itatur? Quiatae cullecum rem ent aut odis in re eossequodi nonsequ idebis ne sap
 ![konachan-382339.jpg](./images/konachan-382339.jpg)
 ![konachan-405790.png](./images/konachan-405790.png)
 
+{{< admonition type="danger" icon="taunt" >}}
+
+The blockquote element represents content that is quoted from another source, optionally with a citation which must be within a `footer` or `cite` element, and optionally with in-line changes such as annotations and abbreviations.
+
+{{< admonition type="danger" icon="taunt" >}}
+
+The blockquote element represents content that is quoted from another source, optionally with a citation which must be within a `footer` or `cite` element, and optionally with in-line changes such as annotations and abbreviations.
+
+{{< /admonition >}}
+
+{{< /admonition >}}
+
 ## Blockquotes
 
 The blockquote element represents content that is quoted from another source, optionally with a citation which must be within a `footer` or `cite` element, and optionally with in-line changes such as annotations and abbreviations.
@@ -209,3 +221,92 @@ X<sup>n</sup> + Y<sup>n</sup> = Z<sup>n</sup>
 Press <kbd>CTRL</kbd> + <kbd>ALT</kbd> + <kbd>Delete</kbd> to end the session.
 
 Most <mark>salamanders</mark> are nocturnal, and hunt for insects, worms, and other small creatures.
+
+## Hugo Material Shortcodes
+
+Ces composants sont optionnels. Le Markdown et le MDX standards continuent de fonctionner sans
+shortcode.
+
+### Admonition
+
+#### Syntax
+
+```markdown
+{{< admonition type="warning" title="Attention" >}}
+
+Le contenu reste du **Markdown** et peut contenir des listes, des liens ou du code.
+
+{{< /admonition >}}
+```
+
+#### Output
+
+{{< admonition type="warning" title="Attention" >}}
+
+Le contenu reste du **Markdown** et peut contenir des listes, des liens ou du code.
+
+{{< /admonition >}}
+
+Une admonition peut être repliable avec `collapsible=true` et ouverte par défaut avec `open=true`.
+L’icône peut être remplacée par son nom Material Symbol en kebab-case, par exemple
+`icon="children-face"`. Une icône seule s’insère avec `{{< icon "children-face" />}}`.
+
+### Code Tabs
+
+#### Syntax
+
+````markdown
+{{< tabs label="Exemples de commandes" >}}
+{{< tab title="pnpm" >}}
+```bash
+pnpm install
+```
+{{< /tab >}}
+{{< tab title="npm" >}}
+```bash
+npm install
+```
+{{< /tab >}}
+{{< /tabs >}}
+````
+
+#### Output
+
+{{< tabs label="Exemples de commandes" >}}
+{{< tab title="pnpm" >}}
+```bash
+pnpm install
+```
+{{< /tab >}}
+{{< tab title="npm" >}}
+```bash
+npm install
+```
+{{< /tab >}}
+{{< /tabs >}}
+
+### Angular Material Data Table
+
+#### Syntax
+
+```markdown
+{{< material-table filter=true sort=true paginate=true pageSize=5 >}}
+| Composant | Rôle | Interactif |
+| --- | --- | --- |
+| MatTable | Données tabulaires | Oui |
+| MatTabs | Contenu à onglets | Oui |
+| Admonition | Information contextuelle | Non |
+
+{{< /material-table >}}
+```
+
+#### Output
+
+{{< material-table filter=true sort=true paginate=true pageSize=5 >}}
+| Composant | Rôle | Interactif |
+| --- | --- | --- |
+| MatTable | Données tabulaires | Oui |
+| MatTabs | Contenu à onglets | Oui |
+| Admonition | Information contextuelle | Non |
+
+{{< /material-table >}}

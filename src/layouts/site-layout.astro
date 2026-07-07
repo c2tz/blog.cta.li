@@ -5,6 +5,7 @@ import Seo, { type OpenGraphData } from "@/components/layout/seo.astro";
 import Footer from "@/components/layout/site-footer.astro";
 import Header from "@/components/layout/site-header.astro";
 import { CodeBlockEnhancerComponent } from "@/components/post/code-block-enhancer.component";
+import { MaterialShortcodeControllerComponent } from "@/components/post/material-shortcodes.component";
 import { CookieConsentBannerComponent } from "@/components/feedback/cookie-consent-banner.component";
 import { GlobalTooltipComponent } from "@/components/feedback/global-tooltip.component";
 import { PageLoadingIndicatorComponent } from "@/components/feedback/page-loading-indicator.component";
@@ -27,6 +28,7 @@ interface Props {
   bodyClass?: string;
   readingProgress?: boolean;
   openGraph?: OpenGraphData;
+  structuredData?: Record<string, unknown> | readonly Record<string, unknown>[];
 }
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
@@ -39,6 +41,7 @@ const {
   bodyClass,
   readingProgress = true,
   openGraph,
+  structuredData,
 } = Astro.props as Props;
 
 const seoTitle = title ? `${SITE_ARTICLE_TITLE_PREFIX} ${title}` : SITE_DEFAULT_TITLE;
@@ -173,6 +176,7 @@ const speedInsightsVersion = speedInsightsPackage.version;
       description={seoDescription}
       canonical={canonicalUrl}
       openGraph={openGraph}
+      structuredData={structuredData}
     />
 
     <slot name="head" />
@@ -181,6 +185,9 @@ const speedInsightsVersion = speedInsightsPackage.version;
   <body
     class:list={[bodyClass, { "reading-progress-disabled": !readingProgress }]}
     data-reading-progress={readingProgress ? "on" : "off"}
+    data-speed-insights-enabled={shouldLoadSpeedInsights ? "true" : undefined}
+    data-speed-insights-route={shouldLoadSpeedInsights ? speedInsightsRoute : undefined}
+    data-speed-insights-version={shouldLoadSpeedInsights ? speedInsightsVersion : undefined}
   >
     <script
       is:inline
@@ -235,33 +242,23 @@ const speedInsightsVersion = speedInsightsPackage.version;
         }
       })();
     </script>
+    <Header />
     <main class="site-main">
-      <Header />
       <div id="main-content" class="site-content">
         <slot name="content" />
       </div>
     </main>
     <Footer />
     <CookieConsentBannerComponent client:load />
+    {isPost && <MaterialShortcodeControllerComponent client:load />}
     {isPost && <CodeBlockEnhancerComponent client:idle />}
     {isPost && <GlobalTooltipComponent client:idle />}
     <PageLoadingIndicatorComponent client:idle />
     {isPost && <ImageDialogControllerComponent client:load />}
     {readingProgress && <ScrollTopButtonComponent client:idle />}
-    {
-      shouldLoadSpeedInsights && (
-        <script
-          defer
-          src="/_vercel/speed-insights/script.js"
-          data-sdkn="@vercel/speed-insights/astro"
-          data-sdkv={speedInsightsVersion}
-          data-route={speedInsightsRoute}
-        />
-      )
-    }
-
     <script>
       import "@/assets/js/app-init.js";
+      import "@/assets/js/optional-services.js";
     </script>
   </body>
 </html>

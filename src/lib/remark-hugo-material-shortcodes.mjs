@@ -5,23 +5,38 @@ const SHORTCODE_PATTERN = /^\s*\{\{([<%])\s*([\s\S]*?)\s*([>%])\}\}\s*$/;
 const ADMONITIONS = Object.freeze({
   note: { icon: "label", label: "Note" },
   abstract: { icon: "checklist", label: "Résumé" },
+  summary: { canonical: "abstract", icon: "checklist", label: "Résumé" },
+  tldr: { canonical: "abstract", icon: "checklist", label: "Résumé" },
   info: { icon: "info", label: "Information" },
+  todo: { canonical: "info", icon: "info", label: "À faire" },
   tip: { icon: "tips-and-updates", label: "Astuce" },
+  hint: { canonical: "tip", icon: "tips-and-updates", label: "Indice" },
+  important: { canonical: "tip", icon: "tips-and-updates", label: "Important" },
   success: { icon: "check-circle", label: "Succès" },
+  check: { canonical: "success", icon: "check-circle", label: "Succès" },
+  done: { canonical: "success", icon: "check-circle", label: "Terminé" },
   question: { icon: "help", label: "Question" },
+  help: { canonical: "question", icon: "help", label: "Aide" },
+  faq: { canonical: "question", icon: "help", label: "FAQ" },
   warning: { icon: "warning", label: "Attention" },
+  attention: { canonical: "warning", icon: "warning", label: "Attention" },
+  caution: { canonical: "warning", icon: "warning", label: "Prudence" },
   failure: { icon: "error", label: "Échec" },
+  fail: { canonical: "failure", icon: "error", label: "Échec" },
+  missing: { canonical: "failure", icon: "error", label: "Manquant" },
   danger: { icon: "bolt", label: "Danger" },
+  error: { canonical: "danger", icon: "bolt", label: "Erreur" },
   bug: { icon: "bug-report", label: "Bug" },
   example: { icon: "science", label: "Exemple" },
   quote: { icon: "format-quote", label: "Citation" },
+  cite: { canonical: "quote", icon: "format-quote", label: "Citation" },
 });
 
 const MATERIAL_SYMBOL_ALIASES = Object.freeze({
   "children-face": "child-care",
 });
 
-const PAIRED_SHORTCODES = new Set(["admonition", "material-table", "tab", "tabs"]);
+const PAIRED_SHORTCODES = new Set(["admonition", "material-table", "shiki", "tab", "tabs"]);
 
 function textNode(value, data) {
   return data ? { type: "text", value, data } : { type: "text", value };
@@ -226,8 +241,8 @@ function parameter(shortcode, name, position, fallback) {
 
 function createAdmonition(shortcode, children, file) {
   const requestedType = String(parameter(shortcode, "type", 0, "note")).toLowerCase();
-  const type = ADMONITIONS[requestedType] ? requestedType : "note";
-  const definition = ADMONITIONS[type];
+  const definition = ADMONITIONS[requestedType] ?? ADMONITIONS.note;
+  const type = definition.canonical ?? (ADMONITIONS[requestedType] ? requestedType : "note");
   const title = parameter(shortcode, "title", 1, definition.label);
   const icon = shortcode.named.icon ?? definition.icon;
   const collapsible = booleanParameter(shortcode.named.collapsible, false);
@@ -304,6 +319,75 @@ function createMaterialTable(shortcode, children) {
   );
 }
 
+function findFirstCodeNode(children) {
+  return children.find((child) => child?.type === "code");
+}
+
+function mergeCodeMeta(...values) {
+  return values
+    .map((value) => String(value ?? "").trim())
+    .filter(Boolean)
+    .join(" ");
+}
+
+function createShiki(shortcode, children, file) {
+  const codeNode = findFirstCodeNode(children);
+  if (!codeNode) {
+    file.fail(
+      "Le shortcode shiki doit contenir un bloc de code fenced Markdown, par exemple ```ts ... ```.",
+    );
+  }
+
+  const lang = parameter(shortcode, "lang", 0, undefined);
+  const meta = shortcode.named.meta;
+  const title = shortcode.named.title ?? shortcode.named.filename ?? shortcode.named.file;
+  const filename = shortcode.named.filename ?? shortcode.named.file;
+  const caption = shortcode.named.caption;
+  const icon = shortcode.named.icon ?? "terminal";
+
+  if (lang) codeNode.lang = String(lang);
+  if (meta) codeNode.meta = mergeCodeMeta(codeNode.meta, meta);
+
+  const shikiChildren = [];
+  if (title || filename) {
+    shikiChildren.push(
+      elementNode("figcaption", { className: ["material-shiki-header"] }, [
+        materialSymbolNode(icon, file, {
+          className: ["material-shiki-icon"],
+        }),
+        elementNode("span", { className: ["material-shiki-title"] }, [
+          textNode(String(title ?? filename)),
+        ]),
+        ...(filename && filename !== title
+          ? [
+              elementNode("span", { className: ["material-shiki-filename"] }, [
+                textNode(String(filename)),
+              ]),
+            ]
+          : []),
+      ]),
+    );
+  }
+
+  shikiChildren.push(...children);
+  if (caption) {
+    shikiChildren.push(
+      elementNode("figcaption", { className: ["material-shiki-caption"] }, [
+        textNode(String(caption)),
+      ]),
+    );
+  }
+
+  return elementNode(
+    "figure",
+    {
+      className: ["material-shiki"],
+      dataShikiShortcode: "",
+    },
+    shikiChildren,
+  );
+}
+
 function renderShortcode(shortcode, children, file) {
   switch (shortcode.name) {
     case "admonition":
@@ -312,6 +396,8 @@ function renderShortcode(shortcode, children, file) {
       return createMaterialIcon(shortcode, file);
     case "material-table":
       return createMaterialTable(shortcode, children);
+    case "shiki":
+      return createShiki(shortcode, children, file);
     case "tab":
       return createTab(shortcode, children);
     case "tabs":

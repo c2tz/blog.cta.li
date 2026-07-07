@@ -44,6 +44,16 @@ Contenu **Markdown**.
   assert.match(html, /Contenu <strong>Markdown<\/strong>/);
 });
 
+test("mappe les alias d’admonitions MkDocs Material vers leurs familles visuelles", async () => {
+  const html = await render(`{{< admonition type="error" >}}
+
+Danger.
+
+{{< /admonition >}}`);
+  assert.match(html, /material-admonition-danger/);
+  assert.match(html, />Erreur</);
+});
+
 test("accepte une icône Material Symbol nommée au milieu d’une phrase", async () => {
   const html = await render('Enfants {{< icon name="children-face" label="Enfants" />}} présents.');
   assert.match(html, /data-material-symbol="children-face"/);
@@ -76,6 +86,24 @@ pnpm install
   assert.match(html, /data-material-table/);
   assert.match(html, /data-filter="true"/);
   assert.match(html, /data-page-size="5"/);
+});
+
+test("rend un shortcode Shiki autour d’un vrai bloc de code Markdown", async () => {
+  const html =
+    await render(`{{< shiki title="Contrôleur" filename="demo.ts" lang="ts" meta="{2}" >}}
+
+\`\`\`
+const state = signal("idle")
+state.set("done")
+\`\`\`
+
+{{< /shiki >}}`);
+  assert.match(html, /data-shiki-shortcode/);
+  assert.match(html, /material-shiki-header/);
+  assert.match(html, /Contrôleur/);
+  assert.match(html, /demo\.ts/);
+  assert.match(html, /data-language="ts"/);
+  assert.match(html, /state\.<\/span><span[^>]*>set/);
 });
 
 test("refuse un shortcode inconnu au lieu de produire silencieusement du HTML cassé", async () => {

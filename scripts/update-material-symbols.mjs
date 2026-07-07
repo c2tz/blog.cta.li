@@ -81,6 +81,7 @@ function codePointsFromSource(source, codePoints) {
 
   const iconNames = [
     ...source.matchAll(/icon\s*[:=]\s*["'`]([a-z0-9 _-]+)["'`]/gi),
+    ...source.matchAll(/\bicon\s*=\s*[^;\n]*\?\?\s*["'`]([a-z0-9 _-]+)["'`]/gi),
     ...source.matchAll(/\{\{[<%]\s*icon\s+["'`]([a-z0-9 _-]+)["'`]/gi),
   ].map((match) => match[1]);
 

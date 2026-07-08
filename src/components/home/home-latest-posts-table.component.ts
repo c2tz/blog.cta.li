@@ -299,17 +299,9 @@ export class HomeLatestPostsTableComponent implements AfterViewInit, OnInit, OnD
   readonly detailedPosts = signal<readonly HomeLatestPost[] | null>(null);
   readonly loading = signal(false);
   readonly tablePosts = computed(() => {
-    if (this.loading()) return [];
-
-    const posts =
-      this.detailed() && this.detailedPosts() ? (this.detailedPosts() ?? []) : this.posts();
+    const posts = this.detailed() ? (this.detailedPosts() ?? this.posts()) : this.posts();
 
     return this.detailed() ? posts : posts.slice(0, 3);
-  });
-
-  private readonly syncTablePosts = effect(() => {
-    this.dataSource.data = [...this.tablePosts()];
-    this.queueDateColumnMeasure();
   });
 
   private detailRequest: Promise<void> | null = null;
@@ -323,6 +315,10 @@ export class HomeLatestPostsTableComponent implements AfterViewInit, OnInit, OnD
 
       return "";
     };
+    effect(() => {
+      this.dataSource.data = [...this.tablePosts()];
+      this.queueDateColumnMeasure();
+    });
   }
 
   ngOnInit() {

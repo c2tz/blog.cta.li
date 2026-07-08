@@ -42,13 +42,28 @@ async function walkSourceFiles(directory) {
   return files.flat();
 }
 
+async function existingFiles(files) {
+  const checks = await Promise.all(
+    files.map(async (file) => {
+      try {
+        await fs.access(file);
+        return file;
+      } catch {
+        return null;
+      }
+    }),
+  );
+
+  return checks.filter(Boolean);
+}
+
 async function listCandidateFiles() {
   const gitFiles = git(["ls-files", "--", ...SOURCE_GLOBS])
     .trim()
     .split(/\r?\n/)
     .filter((file) => TEXT_SOURCE_PATTERN.test(file));
 
-  if (gitFiles.length > 0) return gitFiles;
+  if (gitFiles.length > 0) return existingFiles(gitFiles);
 
   const files = await Promise.all(SOURCE_GLOBS.map((sourceRoot) => walkSourceFiles(sourceRoot)));
 

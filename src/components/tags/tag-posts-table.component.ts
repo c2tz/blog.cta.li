@@ -346,11 +346,6 @@ export class TagPostsTableComponent {
     return `Articles ${start} à ${end} sur ${total} pour le tag ${this.tag()}.`;
   });
 
-  private readonly syncPosts = effect(() => {
-    this.dataSource.data = [...this.posts()];
-    this.dataSource.filter = this.normalizedFilter();
-  });
-
   constructor() {
     this.dataSource.sortingDataAccessor = (post, column) => {
       if (column === "created") return new Date(post.createdIso).valueOf();
@@ -366,6 +361,10 @@ export class TagPostsTableComponent {
 
       return searchable.includes(filter);
     };
+    effect(() => {
+      this.dataSource.data = [...this.posts()];
+      this.dataSource.filter = this.normalizedFilter();
+    });
   }
 
   applyFilter(event: Event) {

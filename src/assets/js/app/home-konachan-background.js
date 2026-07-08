@@ -34,6 +34,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
   const CREDIT_LINK_SELECTOR = "[data-konachan-credit-link]";
   const LANDING_SELECTOR = ".home-anime-landing";
   const STATUS_SELECTOR = "[data-konachan-status]";
+  const THEME_COLOR_SELECTOR = "meta[name='theme-color'][data-site-theme-color]";
   const MANIFEST_URL = new URL("/konachan-backgrounds.json?v=5", window.location.href).toString();
   const EXPLICIT_CONTENT_CHANGE_EVENT = konachanClientConfig.events.explicitContentChange;
   const EXPLICIT_CONTENT_COOKIE = konachanClientConfig.explicitContentCookieName;
@@ -265,6 +266,10 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     body.style.setProperty("--home-dynamic-light-surface", lightTokens.surface);
     body.style.setProperty("--home-dynamic-dark-primary", darkTokens.primary);
     body.style.setProperty("--home-dynamic-dark-surface", darkTokens.surface);
+    applyHomeBrowserThemeColor({
+      dark: darkTokens.surface,
+      light: lightTokens.surface,
+    });
 
     for (const name of HOME_DYNAMIC_TOKEN_NAMES) {
       const value = tokens[name];
@@ -273,6 +278,36 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     }
 
     return tokens;
+  }
+
+  function updateThemeColorMeta(meta, color) {
+    if (!meta || !color) return;
+
+    meta.dataset.dynamicContent = color;
+    if (meta.getAttribute("content") === color) return;
+    meta.setAttribute("content", color);
+    meta.parentNode?.append(meta);
+  }
+
+  function applyHomeBrowserThemeColor({ dark, light }) {
+    const metas = document.querySelectorAll(THEME_COLOR_SELECTOR);
+
+    for (const meta of metas) {
+      const scheme = meta.dataset.siteThemeColor;
+      updateThemeColorMeta(meta, scheme === "dark" ? dark : light);
+    }
+  }
+
+  function clearHomeBrowserThemeColor() {
+    const metas = document.querySelectorAll(THEME_COLOR_SELECTOR);
+
+    for (const meta of metas) {
+      const fallback = meta.dataset.defaultContent;
+      if (!fallback) continue;
+
+      updateThemeColorMeta(meta, fallback);
+      delete meta.dataset.dynamicContent;
+    }
   }
 
   function applyHeroDynamicTokens(landing, theme) {
@@ -307,6 +342,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     body.style.removeProperty("--home-dynamic-light-surface");
     body.style.removeProperty("--home-dynamic-dark-primary");
     body.style.removeProperty("--home-dynamic-dark-surface");
+    clearHomeBrowserThemeColor();
     for (const name of HOME_DYNAMIC_TOKEN_NAMES) {
       body.style.removeProperty(`--m3-${name}`);
       body.style.removeProperty(`--mat-sys-${name}`);

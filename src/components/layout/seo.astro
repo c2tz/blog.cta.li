@@ -29,8 +29,20 @@ const structuredDataJson = structuredData
 <title>{title}</title>
 <meta name="description" content={description} />
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
-<meta name="theme-color" content="#fffbfe" media="(prefers-color-scheme: light)" />
-<meta name="theme-color" content="#141218" media="(prefers-color-scheme: dark)" />
+<meta
+  name="theme-color"
+  content="#fffbfe"
+  media="(prefers-color-scheme: light)"
+  data-site-theme-color="light"
+  data-default-content="#fffbfe"
+/>
+<meta
+  name="theme-color"
+  content="#141218"
+  media="(prefers-color-scheme: dark)"
+  data-site-theme-color="dark"
+  data-default-content="#141218"
+/>
 <link rel="canonical" href={canonicalUrl} />
 
 {

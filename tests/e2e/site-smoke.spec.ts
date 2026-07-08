@@ -94,6 +94,32 @@ test("keeps latest posts visible on the home page", async ({ page }) => {
   await expect(page.getByText("Aucun article à afficher.")).toHaveCount(0);
 });
 
+test("syncs the home browser theme color with the dynamic palette", async ({ page }, testInfo) => {
+  const scheme = testInfo.project.name.includes("dark") ? "dark" : "light";
+
+  await page.goto("/");
+
+  await expect
+    .poll(() => page.locator("body").getAttribute("data-home-dynamic-color"))
+    .toBe("true");
+
+  const themeColor = await page.evaluate((colorScheme) => {
+    const bodyStyle = getComputedStyle(document.body);
+    const expected = bodyStyle.getPropertyValue(`--home-dynamic-${colorScheme}-surface`).trim();
+    const meta = document.querySelector(
+      `meta[name="theme-color"][data-site-theme-color="${colorScheme}"]`,
+    );
+
+    return {
+      actual: meta?.getAttribute("content") ?? "",
+      expected,
+    };
+  }, scheme);
+
+  expect(themeColor.expected).toMatch(/^#[0-9a-f]{6}$/i);
+  expect(themeColor.actual).toBe(themeColor.expected);
+});
+
 test("renders the cookie preferences controls", async ({ page }) => {
   await page.goto("/cookies/#modifier-vos-choix-cookies");
 

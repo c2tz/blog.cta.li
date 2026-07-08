@@ -38,6 +38,13 @@ async function clearConsentPreferences(page: Page) {
   });
 }
 
+async function clearCookieConsentPreference(page: Page) {
+  await page.addInitScript(() => {
+    localStorage.removeItem("ct-cookie-consent-v1");
+    document.cookie = "ct-cookie-consent=; Max-Age=0; Path=/; SameSite=Lax";
+  });
+}
+
 async function expectResolvedTheme(page: Page) {
   const expectedTheme = test.info().project.name.includes("dark") ? "dark" : "light";
 
@@ -88,17 +95,48 @@ for (const route of ROUTES) {
 test("keeps latest posts visible on the home page", async ({ page }) => {
   await page.goto("/");
 
+  const latestPostsTable = page.getByRole("table", { name: "Derniers articles" });
+
   await expect(page.getByRole("heading", { name: "Derniers articles" })).toBeVisible();
-  await expect(page.locator(".home-post-title").first()).toBeVisible();
-  expect(await page.locator(".home-post-title").count()).toBeGreaterThan(0);
+  await expect(latestPostsTable).toBeVisible();
+  expect(await latestPostsTable.getByRole("link").count()).toBeGreaterThan(0);
+  expect(await latestPostsTable.getByRole("row").count()).toBeGreaterThan(1);
   await expect(page.getByText("Aucun article à afficher.")).toHaveCount(0);
 });
 
-test("syncs the home browser theme color with the dynamic palette", async ({ page }, testInfo) => {
-  const scheme = testInfo.project.name.includes("dark") ? "dark" : "light";
-
+test("requests a transparent home browser theme color with the dynamic palette", async ({
+  page,
+}) => {
   await page.goto("/");
 
+  await expect
+    .poll(() => page.locator("body").getAttribute("data-home-dynamic-color"))
+    .toBe("true");
+
+  const themeColor = await page.evaluate(() => {
+    const bodyStyle = getComputedStyle(document.body);
+    const dynamicSurface = bodyStyle.getPropertyValue("--home-dynamic-light-surface").trim();
+    const metas = [...document.querySelectorAll('meta[name="theme-color"][data-site-theme-color]')];
+
+    return {
+      dynamicSurface,
+      values: metas.map((meta) => meta.getAttribute("content") ?? ""),
+    };
+  });
+
+  expect(themeColor.dynamicSurface).toMatch(/^#[0-9a-f]{6}$/i);
+  expect(themeColor.values).toEqual(["transparent", "transparent"]);
+});
+
+test("keeps a solid home browser theme color while the consent banner is visible", async ({
+  page,
+}, testInfo) => {
+  const scheme = testInfo.project.name.includes("dark") ? "dark" : "light";
+
+  await clearCookieConsentPreference(page);
+  await page.goto("/");
+
+  await expect(page.getByRole("region", { name: "Avis de confidentialité" })).toBeVisible();
   await expect
     .poll(() => page.locator("body").getAttribute("data-home-dynamic-color"))
     .toBe("true");

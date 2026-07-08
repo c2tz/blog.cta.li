@@ -9,6 +9,7 @@ import {
 const MATERIAL_DYNAMIC_COLORS = new MaterialDynamicColors();
 const MATERIAL_DYNAMIC_SPEC_VERSION = "2021";
 const MATERIAL_DYNAMIC_VARIANT = SchemeTonalSpot;
+const HOME_BROWSER_THEME_COLOR = "transparent";
 
 function readHomeKonachanConfig() {
   const element = document.getElementById("home-konachan-config");
@@ -57,6 +58,8 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
   const state = {
     currentImage: null,
     currentUrl: "",
+    browserThemeColors: null,
+    browserThemeObserver: null,
     dynamicTheme: null,
     dynamicThemeCache: new Map(),
     images: [],
@@ -289,13 +292,39 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     meta.parentNode?.append(meta);
   }
 
-  function applyHomeBrowserThemeColor({ dark, light }) {
+  function hasVisibleConsentNotice() {
+    return Boolean(document.querySelector(".cookie-consent"));
+  }
+
+  function applyHomeBrowserThemeColor(colors) {
     const metas = document.querySelectorAll(THEME_COLOR_SELECTOR);
+    state.browserThemeColors = colors;
 
     for (const meta of metas) {
       const scheme = meta.dataset.siteThemeColor;
-      updateThemeColorMeta(meta, scheme === "dark" ? dark : light);
+      const color = hasVisibleConsentNotice()
+        ? scheme === "dark"
+          ? colors.dark
+          : colors.light
+        : HOME_BROWSER_THEME_COLOR;
+
+      updateThemeColorMeta(meta, color);
     }
+  }
+
+  function syncHomeBrowserThemeColor() {
+    if (!state.browserThemeColors) return;
+    applyHomeBrowserThemeColor(state.browserThemeColors);
+  }
+
+  function initHomeBrowserThemeColorSync() {
+    if (state.browserThemeObserver || !document.body) return;
+
+    state.browserThemeObserver = new MutationObserver(syncHomeBrowserThemeColor);
+    state.browserThemeObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
   }
 
   function clearHomeBrowserThemeColor() {
@@ -342,6 +371,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     body.style.removeProperty("--home-dynamic-light-surface");
     body.style.removeProperty("--home-dynamic-dark-primary");
     body.style.removeProperty("--home-dynamic-dark-surface");
+    state.browserThemeColors = null;
     clearHomeBrowserThemeColor();
     for (const name of HOME_DYNAMIC_TOKEN_NAMES) {
       body.style.removeProperty(`--m3-${name}`);
@@ -846,6 +876,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     if (!target || !("style" in target) || target.dataset.ready === "true") return;
 
     target.dataset.ready = "true";
+    initHomeBrowserThemeColorSync();
     initHomeDynamicThemeSync();
     state.ratingPreference = readRatingPreference();
     state.currentUrl = normalizeUrl(target.dataset.konachanCurrentUrl || INITIAL_BACKGROUND?.url);

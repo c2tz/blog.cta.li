@@ -1,5 +1,5 @@
 import { DOCUMENT } from "@angular/common";
-import { ChangeDetectionStrategy, Component, NgZone, inject } from "@angular/core";
+import { ChangeDetectionStrategy, Component, inject } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
 import { MatDialog } from "@angular/material/dialog";
 import {
@@ -31,15 +31,12 @@ function filenameFromURL(src: string, baseURI: string) {
 export class ImageDialogControllerComponent implements OnInit, OnDestroy {
   private readonly document = inject(DOCUMENT);
   private readonly dialog = inject(MatDialog);
-  private readonly zone = inject(NgZone);
 
   ngOnInit() {
     if (typeof window === "undefined") return;
 
-    this.zone.runOutsideAngular(() => {
-      this.document.addEventListener("click", this.handleClick, true);
-      this.document.addEventListener("keydown", this.handleKeydown, true);
-    });
+    this.document.addEventListener("click", this.handleClick, true);
+    this.document.addEventListener("keydown", this.handleKeydown, true);
   }
 
   ngOnDestroy() {
@@ -55,7 +52,7 @@ export class ImageDialogControllerComponent implements OnInit, OnDestroy {
 
     event.preventDefault();
     event.stopPropagation();
-    this.zone.run(() => void this.openImage(img));
+    this.openImage(img);
   };
 
   private readonly handleKeydown = (event: KeyboardEvent) => {
@@ -66,7 +63,7 @@ export class ImageDialogControllerComponent implements OnInit, OnDestroy {
 
     event.preventDefault();
     event.stopPropagation();
-    this.zone.run(() => void this.openImage(img));
+    this.openImage(img);
   };
 
   private getDialogImage(event: Event) {

@@ -7,6 +7,8 @@ const ROUTES = [
   "/posts/markdown-style-guide/",
 ];
 
+const pageRuntimeErrors = new WeakMap<Page, string[]>();
+
 async function seedLocalPreferences(page: Page) {
   await page.addInitScript(() => {
     const updatedAt = new Date().toISOString();
@@ -40,7 +42,18 @@ async function expectNoPageOverflow(page: Page) {
 }
 
 test.beforeEach(async ({ page }) => {
+  const runtimeErrors: string[] = [];
+  pageRuntimeErrors.set(page, runtimeErrors);
+  page.on("pageerror", (error) => runtimeErrors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") runtimeErrors.push(message.text());
+  });
+
   await seedLocalPreferences(page);
+});
+
+test.afterEach(async ({ page }) => {
+  expect(pageRuntimeErrors.get(page) ?? []).toEqual([]);
 });
 
 for (const route of ROUTES) {

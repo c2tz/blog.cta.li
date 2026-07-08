@@ -1,6 +1,5 @@
-import { createHash } from "node:crypto";
-import { readdir, readFile, stat } from "node:fs/promises";
-import path from "node:path";
+import { readFile } from "node:fs/promises";
+import { collectExecutableInlineScriptHashes } from "./lib/inline-script-hashes.mjs";
 
 const GLOBAL_SECURITY_HEADER_SOURCE = "/(.*)";
 const DOCUMENT_SECURITY_HEADER_SOURCE =
@@ -64,41 +63,6 @@ function cspDirectiveAllowsUrlOrigin(csp, directiveName, expectedUrl) {
       return false;
     }
   });
-}
-
-async function htmlFilesIn(directory) {
-  const entries = await readdir(directory, { withFileTypes: true });
-  const files = await Promise.all(
-    entries.map(async (entry) => {
-      const entryPath = path.join(directory, entry.name);
-      if (entry.isDirectory()) return htmlFilesIn(entryPath);
-      if (entry.isFile() && entry.name.endsWith(".html")) return [entryPath];
-      return [];
-    }),
-  );
-
-  return files.flat();
-}
-
-async function collectInlineScriptHashes(directory) {
-  try {
-    if (!(await stat(directory)).isDirectory()) return [];
-  } catch {
-    return [];
-  }
-
-  const hashes = new Set();
-
-  for (const file of await htmlFilesIn(directory)) {
-    const html = await readFile(file, "utf8");
-    const inlineScriptPattern = /<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
-
-    for (const match of html.matchAll(inlineScriptPattern)) {
-      hashes.add(`'sha256-${createHash("sha256").update(match[1]).digest("base64")}'`);
-    }
-  }
-
-  return [...hashes].sort();
 }
 
 const vercelConfig = JSON.parse(await readFile("vercel.json", "utf8"));
@@ -171,18 +135,18 @@ if (contentSecurityPolicy) {
     problems.push("script-src must not use 'trusted-types-eval'.");
   }
 
-  const distScriptHashes = await collectInlineScriptHashes("dist");
+  const distScriptHashes = await collectExecutableInlineScriptHashes("dist");
   const distScriptHashSet = new Set(distScriptHashes);
 
   for (const hash of distScriptHashes) {
     if (!scriptSrc?.includes(hash)) {
-      problems.push(`script-src is missing inline script hash ${hash}.`);
+      problems.push(`script-src is missing executable inline script hash ${hash}.`);
     }
   }
 
   for (const match of scriptSrc?.matchAll(/'sha256-[^']+'/g) ?? []) {
     if (distScriptHashSet.size > 0 && !distScriptHashSet.has(match[0])) {
-      problems.push(`script-src contains stale inline script hash ${match[0]}.`);
+      problems.push(`script-src contains stale executable inline script hash ${match[0]}.`);
     }
   }
 
@@ -221,7 +185,7 @@ if (problems.length > 0) {
       `- ${problems.join("\n- ")}`,
       "",
       "Fix hints:",
-      "- If an inline script hash is missing or stale, run `pnpm build && pnpm sync:headers && pnpm verify`, then commit vercel.json.",
+      "- If an executable inline script hash is missing or stale, run `pnpm build && pnpm sync:headers && pnpm verify`, then commit vercel.json.",
       "- If a required header or Giscus source is missing, edit vercel.json and rerun `pnpm verify`.",
       "- If this failed on Vercel, reproduce locally with `pnpm build:vercel` to get the same header checks.",
     ].join("\n"),

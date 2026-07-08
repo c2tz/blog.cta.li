@@ -18,7 +18,7 @@ export default defineConfig({
     video: "off",
   },
   webServer: {
-    command: "pnpm build:debug && pnpm preview:local",
+    command: "pnpm build && pnpm preview:local",
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

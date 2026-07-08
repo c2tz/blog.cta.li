@@ -1,45 +1,9 @@
-import { createHash } from "node:crypto";
-import { readdir, readFile, stat, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { readFile, writeFile } from "node:fs/promises";
+import { collectExecutableInlineScriptHashes } from "./lib/inline-script-hashes.mjs";
 
 const DOCUMENT_SECURITY_HEADER_SOURCE =
   "/((?!_astro/|fonts/|giscus/|konachan-backgrounds/|favicon\\.ico$|mask\\.webp$|.*\\.(?:css|js|mjs|map|woff2?|png|jpe?g|gif|svg|webp|avif|ico|json|xml|txt|webmanifest)$).*)";
 const SCRIPT_SRC_BASE_TOKENS = ["'self'", "'wasm-unsafe-eval'", "https://giscus.app"];
-
-async function htmlFilesIn(directory) {
-  const entries = await readdir(directory, { withFileTypes: true });
-  const files = await Promise.all(
-    entries.map(async (entry) => {
-      const entryPath = path.join(directory, entry.name);
-      if (entry.isDirectory()) return htmlFilesIn(entryPath);
-      if (entry.isFile() && entry.name.endsWith(".html")) return [entryPath];
-      return [];
-    }),
-  );
-
-  return files.flat();
-}
-
-async function collectInlineScriptHashes(directory) {
-  try {
-    if (!(await stat(directory)).isDirectory()) return [];
-  } catch {
-    return [];
-  }
-
-  const hashes = new Set();
-
-  for (const file of await htmlFilesIn(directory)) {
-    const html = await readFile(file, "utf8");
-    const inlineScriptPattern = /<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
-
-    for (const match of html.matchAll(inlineScriptPattern)) {
-      hashes.add(`'sha256-${createHash("sha256").update(match[1]).digest("base64")}'`);
-    }
-  }
-
-  return [...hashes].sort();
-}
 
 function replaceCspDirective(csp, directiveName, directiveValue) {
   const directives = csp
@@ -59,10 +23,12 @@ function replaceCspDirective(csp, directiveName, directiveValue) {
   return directives.join("; ");
 }
 
-const distScriptHashes = await collectInlineScriptHashes("dist");
+const distScriptHashes = await collectExecutableInlineScriptHashes("dist");
 
 if (distScriptHashes.length === 0) {
-  throw new Error("No inline script hashes found in dist. Run pnpm build before syncing headers.");
+  throw new Error(
+    "No executable inline script hashes found in dist. Run pnpm build before syncing headers.",
+  );
 }
 
 const vercelConfigPath = "vercel.json";
@@ -87,5 +53,7 @@ if (nextVercelConfigRaw === vercelConfigRaw) {
   console.info("Security header hashes are already up to date.");
 } else {
   await writeFile(vercelConfigPath, nextVercelConfigRaw);
-  console.info(`Updated ${distScriptHashes.length} inline script hash(es) in vercel.json.`);
+  console.info(
+    `Updated ${distScriptHashes.length} executable inline script hash(es) in vercel.json.`,
+  );
 }

@@ -215,7 +215,17 @@ if (crossOriginEmbedderPolicy === "require-corp" && allowsGiscusFrame) {
 }
 
 if (problems.length > 0) {
-  throw new Error(`Security header check failed:\n- ${problems.join("\n- ")}`);
+  throw new Error(
+    [
+      "Security header check failed:",
+      `- ${problems.join("\n- ")}`,
+      "",
+      "Fix hints:",
+      "- If an inline script hash is missing or stale, run `pnpm build && pnpm sync:headers && pnpm verify`, then commit vercel.json.",
+      "- If a required header or Giscus source is missing, edit vercel.json and rerun `pnpm verify`.",
+      "- If this failed on Vercel, reproduce locally with `pnpm build:vercel` to get the same header checks.",
+    ].join("\n"),
+  );
 }
 
 console.info("Security headers look ready for Vercel.");

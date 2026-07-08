@@ -1,6 +1,5 @@
 export const KONACHAN_API_ORIGINS = ["https://konachan.com", "https://konachan.net"];
-export const KONACHAN_API_URLS = KONACHAN_API_ORIGINS.map((origin) => `${origin}/post.json`);
-export const KONACHAN_POST_URL = `${KONACHAN_API_ORIGINS[0]}/post/show/`;
+const KONACHAN_API_URLS = KONACHAN_API_ORIGINS.map((origin) => `${origin}/post.json`);
 export const KONACHAN_TAGS = "rating:safe width:>=1920 height:>=1080";
 export const KONACHAN_SAFE_TAG_QUERIES = [
   KONACHAN_TAGS,
@@ -38,8 +37,8 @@ export const KONACHAN_BLOCKED_ADULT_TAGS = [
   "young",
 ];
 export const KONACHAN_BLOCKED_SENSITIVE_TAGS = KONACHAN_BLOCKED_ADULT_TAGS;
-export const KONACHAN_FETCH_LIMIT = 80;
-export const KONACHAN_FETCH_PAGES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+const KONACHAN_FETCH_LIMIT = 80;
+const KONACHAN_FETCH_PAGES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 export const KONACHAN_RATING_TARGETS = Object.freeze({
   safe: 20,
   questionable: 70,
@@ -50,7 +49,7 @@ export const KONACHAN_MANIFEST_LIMIT = Object.values(KONACHAN_RATING_TARGETS).re
   (total, count) => total + count,
   0,
 );
-export const KONACHAN_RATING_CANDIDATE_LIMIT = KONACHAN_MANIFEST_LIMIT * 3;
+const KONACHAN_RATING_CANDIDATE_LIMIT = KONACHAN_MANIFEST_LIMIT * 3;
 export const KONACHAN_OUTPUT_WIDTH = 1920;
 export const KONACHAN_OUTPUT_HEIGHT = 1080;
 export const KONACHAN_MAX_BYTES = 1024 * 1024;

@@ -1,4 +1,4 @@
-export interface PagefindResultData {
+interface PagefindResultData {
   excerpt?: string;
   meta?: {
     created?: string;
@@ -11,12 +11,12 @@ export interface PagefindResultData {
   url: string;
 }
 
-export interface PagefindResultRef {
+interface PagefindResultRef {
   data: () => Promise<PagefindResultData>;
   score: number;
 }
 
-export type PagefindFilterCounts = Record<string, Record<string, number>>;
+type PagefindFilterCounts = Record<string, Record<string, number>>;
 export type PagefindSortDirection = "asc" | "desc";
 
 export interface PagefindSearchOptions {
@@ -24,7 +24,7 @@ export interface PagefindSearchOptions {
   sort?: Record<string, PagefindSortDirection>;
 }
 
-export interface PagefindResponse {
+interface PagefindResponse {
   filters?: PagefindFilterCounts;
   results: PagefindResultRef[];
   totalFilters?: PagefindFilterCounts;

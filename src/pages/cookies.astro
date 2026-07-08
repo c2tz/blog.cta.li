@@ -104,6 +104,21 @@ const cookiePreferenceFallbackConfig = {
 
       <CookiePreferencesComponent client:load />
 
+      <noscript>
+        <section class="cookie-preferences-panel cookie-preferences-fallback not-prose">
+          <h2>Choix cookies indisponible</h2>
+          <p class="cookie-preferences-fallback-note">
+            JavaScript est désactivé dans votre navigateur. Le panneau interactif ne peut donc pas
+            enregistrer votre choix depuis cette page.
+          </p>
+          <p>
+            Vous pouvez continuer à utiliser le site sans services optionnels, ou modifier vos
+            données depuis les réglages de votre navigateur en supprimant les cookies et les données
+            associées à <code>ct-blog.cta.li</code>.
+          </p>
+        </section>
+      </noscript>
+
       <section
         class="cookie-preferences-panel cookie-preferences-fallback not-prose"
         data-cookie-preferences-fallback

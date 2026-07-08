@@ -1,0 +1,41 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "astro.config.mjs",
+    "playwright.config.ts",
+    "src/content.config.ts",
+    "src/layouts/**/*.astro",
+    "src/pages/**/*.{astro,js,ts}",
+    "src/assets/js/app/home-konachan-background.js",
+    "scripts/**/*.mjs",
+    "tests/**/*.test.mjs",
+    "tests/e2e/**/*.spec.ts"
+  ],
+  "project": [
+    ".github/workflows/*.yml",
+    "astro.config.mjs",
+    "playwright.config.ts",
+    "src/**/*.{astro,js,mjs,ts}",
+    "scripts/**/*.mjs",
+    "tests/**/*.{mjs,ts}"
+  ],
+  "ignore": [".astro/**", "dist/**", "public/pagefind/**"],
+  "ignoreBinaries": ["codex"],
+  "ignoreDependencies": [
+    "@angular/animations",
+    "@angular/build",
+    "@angular/compiler",
+    "@angular/compiler-cli",
+    "@angular/language-service",
+    "@angular/platform-server",
+    "@types/node",
+    "material-symbols",
+    "prettier-plugin-astro",
+    "sass",
+    "typescript",
+    "zone.js"
+  ],
+  "ignoreIssues": {
+    "src/lib/konachan-backgrounds.mjs": ["duplicates"]
+  }
+}

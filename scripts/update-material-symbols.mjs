@@ -112,7 +112,9 @@ function assertFontContainsCodePoints(label, fontCodePoints, requiredCodePoints)
 
   if (missingCodePoints.length) {
     throw new Error(
-      `${label} is missing requested Material Symbols codepoints: ${formatCodePoints(missingCodePoints)}`,
+      `${label} is missing requested Material Symbols codepoints: ${formatCodePoints(missingCodePoints)}.\n` +
+        "Fix: run `pnpm update:material-symbols` and commit the regenerated font. " +
+        "A missing glyph often appears as a square/tofu icon in the browser.",
     );
   }
 }
@@ -153,9 +155,10 @@ function codePointsFromSource(source, codePoints, file) {
 
   if (unknownIconNames.size > 0) {
     throw new Error(
-      `${file} references unknown Material Symbol(s): ${[...unknownIconNames].join(", ")}. ` +
-        "Run pnpm update:material-symbol-map if the upstream font package changed, " +
-        "or add an alias in src/lib/remark-hugo-material-shortcodes.mjs.",
+      `${file} references unknown Material Symbol(s): ${[...unknownIconNames].join(", ")}.\n` +
+        "Fix: check the icon name in src/generated/material-symbol-codepoints.json. " +
+        "If the upstream font package changed, run `pnpm update:material-symbol-map` then `pnpm update:material-symbols`. " +
+        "If this is an alias such as a kebab-case shortcode name, add it in src/lib/remark-hugo-material-shortcodes.mjs.",
     );
   }
 }
@@ -193,8 +196,9 @@ async function checkGeneratedSubset(codePoints) {
 
   if (missing.length) {
     throw new Error(
-      `Material Symbols subset is missing required codepoints ${formatCodePoints(missing)}. ` +
-        "Run pnpm update:material-symbols and commit the generated font.",
+      `Material Symbols subset is missing required codepoints ${formatCodePoints(missing)}.\n` +
+        "Fix: run `pnpm update:material-symbols`, then `pnpm verify`, and commit the generated font. " +
+        "A missing glyph often appears as a square/tofu icon in the browser.",
     );
   }
 
@@ -220,8 +224,8 @@ async function syncFontCacheVersion(fontBuffer, { write }) {
 
   if (!write) {
     throw new Error(
-      `Material Symbols cache version is out of date (${match[2]} !== ${version}). ` +
-        "Run pnpm update:material-symbols and commit src/assets/css/base/fonts.scss.",
+      `Material Symbols cache version is out of date (${match[2]} !== ${version}).\n` +
+        "Fix: run `pnpm update:material-symbols`, then `pnpm verify`, and commit src/assets/css/base/fonts.scss.",
     );
   }
 

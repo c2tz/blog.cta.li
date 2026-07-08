@@ -64,7 +64,13 @@ function normalizeMaterialSymbolName(name) {
 function materialSymbolNode(name, file, { className = [], label } = {}) {
   const normalized = normalizeMaterialSymbolName(name);
   const codepoint = MATERIAL_SYMBOL_CODEPOINTS[normalized];
-  if (!codepoint) file.fail(`Material Symbol inconnu : ${name}`);
+  if (!codepoint) {
+    file.fail(
+      `Material Symbol inconnu : ${name}. Vérifiez le nom dans src/generated/material-symbol-codepoints.json. ` +
+        "Si le symbole existe mais s’affiche en carré, lancez pnpm update:material-symbols puis pnpm verify. " +
+        "Si le symbole n’existe pas dans la carte, lancez pnpm update:material-symbol-map puis pnpm update:material-symbols.",
+    );
+  }
 
   return textNode(String.fromCodePoint(codepoint), {
     hName: "span",
@@ -85,7 +91,7 @@ function paragraphText(node) {
   return node.children.map((child) => child.value).join("");
 }
 
-export function tokenizeHugoShortcode(source) {
+function tokenizeHugoShortcode(source) {
   const tokens = [];
   let value = "";
   let quote = null;

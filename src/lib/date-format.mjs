@@ -27,7 +27,7 @@ export function formatFrenchDate(value) {
   return formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
 }
 
-export function formatFrenchTime(value) {
+function formatFrenchTime(value) {
   return TIME_FORMATTER.format(toDate(value)).replace("UTC−", "UTC-");
 }
 

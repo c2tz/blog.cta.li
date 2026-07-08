@@ -62,7 +62,7 @@ function textFromHtml(html: string) {
     </mat-tab-group>
   `,
 })
-export class MaterialTabsViewComponent {
+class MaterialTabsViewComponent {
   label = "Contenu à onglets";
   tabs: readonly MaterialTabData[] = [];
 }
@@ -131,7 +131,7 @@ export class MaterialTabsViewComponent {
     }
   `,
 })
-export class MaterialTableViewComponent implements AfterViewInit {
+class MaterialTableViewComponent implements AfterViewInit {
   @ViewChild(MatSort) private sort?: MatSort;
   @ViewChild(MatPaginator) private paginator?: MatPaginator;
 

@@ -40,7 +40,6 @@ Itatur? Quiatae cullecum rem ent aut odis in re eossequodi nonsequ idebis ne sap
 ### Output
 
 ![konachan-382339.jpg](./images/konachan-382339.jpg)
-![konachan-405790.png](./images/konachan-405790.png)
 
 {{< admonition type="danger" icon="taunt" >}}
 

@@ -105,7 +105,7 @@ interface MountedCopyButton {
     }
   `,
 })
-export class CodeCopyButtonComponent implements OnDestroy {
+class CodeCopyButtonComponent implements OnDestroy {
   private readonly snackBar = inject(MatSnackBar);
 
   code = "";

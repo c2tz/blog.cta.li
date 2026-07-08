@@ -3,6 +3,7 @@
   --color-canvas-default: #fffbfe;
   --color-canvas-subtle: #f7f2fa;
   --color-canvas-inset: #f3edf7;
+  --color-canvas-overlay: #fffbfe;
   --color-fg-default: #1d1b20;
   --color-fg-muted: #49454f;
   --color-fg-subtle: #625b71;
@@ -90,6 +91,16 @@ a:focus-visible {
 .gsc-comment-box {
   border-color: var(--color-border-default);
   background: var(--color-canvas-default);
+}
+
+.gsc-reactions-popover.color-bg-overlay {
+  border-color: var(--color-border-default);
+  background: var(--color-canvas-overlay);
+  box-shadow: 0 8px 24px rgb(29 27 32 / 14%);
+}
+
+.gsc-reactions-popover .border-t {
+  border-color: var(--color-border-default);
 }
 
 .gsc-btn {

@@ -29,6 +29,7 @@ const GISCUS_ACCEPTANCE_COOKIE_NAME = SITE_COOKIE_NAMES.giscusCommentsEnabled;
 const GISCUS_ACCEPTANCE_MAX_AGE_SECONDS = 365 * 24 * 60 * 60;
 const CODE_OF_CONDUCT_URL =
   "https://raw.githubusercontent.com/c2tz/ct-blog-comments/refs/heads/main/CODE_OF_CONDUCT.md";
+const GISCUS_THEME_VERSION = "20260708-emoji-popover";
 const GISCUS_THEME_SYNC_DELAYS = [0, 150, 500, 1200] as const;
 const GISCUS_FALLBACK_THEMES = {
   dark: "dark_dimmed",
@@ -191,6 +192,7 @@ function hasOptionalServicesConsent() {
     }
 
     .giscus-comments-config {
+      margin-block-start: 1rem;
       margin-block-end: 0.5rem;
       color: var(--site-link);
     }
@@ -304,6 +306,10 @@ function hasOptionalServicesConsent() {
       .giscus-comments-actions {
         justify-content: center;
         width: 100%;
+      }
+
+      .giscus-comments-config {
+        margin-block-start: 1.25rem;
       }
 
       .giscus-comments-conduct-link.mat-mdc-button-base,
@@ -491,6 +497,9 @@ export class GiscusCommentsComponent implements AfterViewInit, OnDestroy {
       return GISCUS_FALLBACK_THEMES[theme];
     }
 
-    return new URL(`/giscus/ct-${theme}.css`, window.location.origin).toString();
+    const themeUrl = new URL(`/giscus/ct-${theme}.css`, window.location.origin);
+    themeUrl.searchParams.set("v", GISCUS_THEME_VERSION);
+
+    return themeUrl.toString();
   }
 }

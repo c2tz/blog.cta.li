@@ -10,6 +10,8 @@ import {
   signal,
 } from "@angular/core";
 import type { AfterViewInit, ComponentRef, OnDestroy } from "@angular/core";
+import { DomSanitizer } from "@angular/platform-browser";
+import type { SafeHtml } from "@angular/platform-browser";
 import { MatFormField, MatLabel } from "@angular/material/form-field";
 import { MatInput } from "@angular/material/input";
 import { MatPaginator, MatPaginatorModule } from "@angular/material/paginator";
@@ -40,6 +42,10 @@ function textFromHtml(html: string) {
   return element.textContent?.trim().toLocaleLowerCase("fr") ?? "";
 }
 
+function trustedContentHtml(sanitizer: DomSanitizer, html: string): SafeHtml {
+  return sanitizer.bypassSecurityTrustHtml(html);
+}
+
 @Component({
   selector: "site-material-tabs-view",
   standalone: true,
@@ -56,15 +62,21 @@ function textFromHtml(html: string) {
     >
       @for (tab of tabs; track tab.title) {
         <mat-tab [label]="tab.title">
-          <div class="material-shortcode-tab-content" [innerHTML]="tab.html"></div>
+          <div class="material-shortcode-tab-content" [innerHTML]="trustedHtml(tab.html)"></div>
         </mat-tab>
       }
     </mat-tab-group>
   `,
 })
 class MaterialTabsViewComponent {
+  private readonly sanitizer = inject(DomSanitizer);
+
   label = "Contenu à onglets";
   tabs: readonly MaterialTabData[] = [];
+
+  trustedHtml(html: string) {
+    return trustedContentHtml(this.sanitizer, html);
+  }
 }
 
 @Component({
@@ -105,7 +117,7 @@ class MaterialTabsViewComponent {
               {{ column.label }}
             </th>
             <td mat-cell *matCellDef="let row">
-              <span [innerHTML]="row[column.key]"></span>
+              <span [innerHTML]="trustedHtml(row[column.key])"></span>
             </td>
           </ng-container>
         }
@@ -132,6 +144,8 @@ class MaterialTabsViewComponent {
   `,
 })
 class MaterialTableViewComponent implements AfterViewInit {
+  private readonly sanitizer = inject(DomSanitizer);
+
   @ViewChild(MatSort) private sort?: MatSort;
   @ViewChild(MatPaginator) private paginator?: MatPaginator;
 
@@ -174,6 +188,10 @@ class MaterialTableViewComponent implements AfterViewInit {
     const value = (event.target as HTMLInputElement).value.trim().toLocaleLowerCase("fr");
     this.dataSource.filter = value;
     this.dataSource.paginator?.firstPage();
+  }
+
+  trustedHtml(html: string) {
+    return trustedContentHtml(this.sanitizer, html);
   }
 
   private connectControls() {

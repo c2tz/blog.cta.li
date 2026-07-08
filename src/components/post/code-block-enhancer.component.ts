@@ -9,15 +9,11 @@ import {
 } from "@angular/core";
 import type { AfterViewInit, ComponentRef, OnDestroy } from "@angular/core";
 import { MatIconButton } from "@angular/material/button";
-import { MatIcon } from "@angular/material/icon";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { MatTooltip } from "@angular/material/tooltip";
 import { SITE_EVENTS } from "@/lib/site-contracts";
 
 const COPY_FEEDBACK_DURATION_MS = 2200;
-const COPY_ICON = "\uE14D";
-const COPIED_ICON = "\uE5CA";
-const ERROR_ICON = "\uE000";
 
 function restoreSelection(selection: Selection | null, selectedRange: Range | null) {
   if (!selection || !selectedRange) return;
@@ -81,7 +77,7 @@ interface MountedCopyButton {
 @Component({
   selector: "site-code-copy-button",
   standalone: true,
-  imports: [MatIconButton, MatIcon, MatTooltip],
+  imports: [MatIconButton, MatTooltip],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button
@@ -95,13 +91,51 @@ interface MountedCopyButton {
       matTooltipPosition="below"
       (click)="copyCode()"
     >
-      <mat-icon aria-hidden="true">{{ icon() }}</mat-icon>
+      <span class="code-copy-icon" aria-hidden="true">
+        @switch (state()) {
+          @case ("copied") {
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M5 12.5 9.2 16.7 19 6.8" />
+            </svg>
+          }
+          @case ("error") {
+            <svg viewBox="0 0 24 24" focusable="false">
+              <circle cx="12" cy="12" r="8.5" />
+              <path d="M12 7.5v5.25" />
+              <path d="M12 16.5h.01" />
+            </svg>
+          }
+          @default {
+            <svg viewBox="0 0 24 24" focusable="false">
+              <rect x="8" y="8" width="10" height="12" rx="1.75" />
+              <path
+                d="M6 16h-.25A1.75 1.75 0 0 1 4 14.25v-8.5A1.75 1.75 0 0 1 5.75 4h8.5A1.75 1.75 0 0 1 16 5.75V6"
+              />
+            </svg>
+          }
+        }
+      </span>
     </button>
     <span class="sr-only" role="status" aria-live="polite">{{ status() }}</span>
   `,
   styles: `
     :host {
       display: inline-flex;
+    }
+
+    .code-copy-icon,
+    .code-copy-icon svg {
+      display: block;
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+
+    .code-copy-icon svg {
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 2.15;
     }
   `,
 })
@@ -113,7 +147,6 @@ class CodeCopyButtonComponent implements OnDestroy {
 
   readonly state = signal<"idle" | "copied" | "error">("idle");
   readonly status = signal("");
-  readonly icon = signal(COPY_ICON);
   readonly label = signal("Copier le code");
   readonly tooltip = signal("Copier le code source");
 
@@ -131,7 +164,6 @@ class CodeCopyButtonComponent implements OnDestroy {
 
     this.state.set(state);
     this.status.set(copied ? "Code copié" : "Impossible de copier le code");
-    this.icon.set(copied ? COPIED_ICON : ERROR_ICON);
     this.label.set(copied ? "Copié" : "Erreur de copie");
     this.tooltip.set(copied ? "Code copié" : "Erreur de copie");
 
@@ -153,7 +185,6 @@ class CodeCopyButtonComponent implements OnDestroy {
     this.resetTimer = 0;
     this.state.set("idle");
     this.status.set("");
-    this.icon.set(COPY_ICON);
     this.label.set("Copier le code");
     this.tooltip.set("Copier le code source");
   }

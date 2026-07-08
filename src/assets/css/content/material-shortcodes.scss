@@ -222,41 +222,6 @@ summary.material-admonition-title::-webkit-details-marker {
   font-weight: 600;
 }
 
-.material-shortcode-table .mat-sort-header {
-  --mat-sort-arrow-color: currentColor;
-}
-
-.material-shortcode-table .mat-sort-header-arrow {
-  display: inline-grid;
-  place-items: center;
-  width: 1.25rem;
-  height: 1.25rem;
-  margin-inline-start: 0.25rem;
-  color: currentColor;
-  font-family: "Material Symbols Rounded";
-  font-size: 1.25rem;
-  font-style: normal;
-  font-weight: 400;
-  font-variation-settings:
-    "FILL" 0,
-    "wght" 400,
-    "GRAD" 0,
-    "opsz" 20;
-  line-height: 1;
-}
-
-.material-shortcode-table .mat-sort-header-arrow svg {
-  display: none;
-}
-
-.material-shortcode-table .mat-sort-header-arrow::before {
-  content: "\e5d8";
-}
-
-.material-shortcode-table .mat-sort-header-sorted {
-  color: var(--site-text);
-}
-
 .material-shortcode-table tr:last-child td,
 .material-shortcode-table-empty {
   border-block-end: 0;

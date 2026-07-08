@@ -25,6 +25,19 @@ async function seedLocalPreferences(page: Page) {
   });
 }
 
+async function clearConsentPreferences(page: Page) {
+  await page.addInitScript(() => {
+    const expireCookie = (name: string) => {
+      document.cookie = `${encodeURIComponent(name)}=; Max-Age=0; Path=/; SameSite=Lax`;
+    };
+
+    localStorage.removeItem("ct-explicit-content-ack-v1");
+    localStorage.removeItem("ct-cookie-consent-v1");
+    expireCookie("ct-explicit-content-ack-v1");
+    expireCookie("ct-cookie-consent-v1");
+  });
+}
+
 async function expectResolvedTheme(page: Page) {
   const expectedTheme = test.info().project.name.includes("dark") ? "dark" : "light";
 
@@ -41,7 +54,7 @@ async function expectNoPageOverflow(page: Page) {
   expect(overflow).toBeLessThanOrEqual(2);
 }
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page }, testInfo) => {
   const runtimeErrors: string[] = [];
   pageRuntimeErrors.set(page, runtimeErrors);
   page.on("pageerror", (error) => runtimeErrors.push(error.message));
@@ -49,7 +62,9 @@ test.beforeEach(async ({ page }) => {
     if (message.type() === "error") runtimeErrors.push(message.text());
   });
 
-  await seedLocalPreferences(page);
+  if (testInfo.title !== "renders consent notices") {
+    await seedLocalPreferences(page);
+  }
 });
 
 test.afterEach(async ({ page }) => {
@@ -62,7 +77,10 @@ for (const route of ROUTES) {
 
     await expectResolvedTheme(page);
     await expect(page.locator("main")).toBeVisible();
-    await expect(page.locator(".cookie-consent")).toHaveCount(0);
+    await expect(page.getByRole("dialog", { name: "Avis de confidentialité" })).toHaveCount(0);
+    await expect(
+      page.getByRole("dialog", { name: "Avertissement relatif aux images" }),
+    ).toHaveCount(0);
     await expectNoPageOverflow(page);
   });
 }
@@ -86,9 +104,27 @@ test("renders the cookie preferences controls", async ({ page }) => {
   await expect(page.getByLabel("Réinitialiser le choix des services optionnels")).toBeVisible();
 });
 
+test("renders consent notices", async ({ page }) => {
+  await clearConsentPreferences(page);
+  await page.goto("/");
+
+  await expect(
+    page.getByRole("dialog", { name: "Avertissement relatif aux images" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "J’ACCEPTE ET J’ENTRE" }).click();
+
+  await expect(page.getByRole("region", { name: "Avis de confidentialité" })).toBeVisible();
+  await expect(page.getByText("Ce site utilise des cookies")).toBeVisible();
+  await page.getByRole("button", { name: "REFUSER" }).click();
+  await expect(page.getByRole("region", { name: "Avis de confidentialité" })).toHaveCount(0);
+});
+
 test("renders shortcode code blocks with highlighted lines and copy controls", async ({ page }) => {
   await page.goto("/posts/hugo-material-shortcodes/");
 
+  await expect(page.getByRole("heading", { exact: true, name: "Sommaire" })).toBeVisible();
+  await expect(page.locator(".post-toc h2 a")).toHaveAttribute("href", "#sommaire");
+  await expect(page.locator(".post-toc a[href='#admonitions']")).toBeVisible();
   await expect(page.locator(".code-shell").first()).toBeVisible();
   await expect(page.locator(".code-copy-button").first()).toBeVisible();
   expect(await page.locator("pre code .line").count()).toBeGreaterThan(10);
@@ -98,10 +134,23 @@ test("renders shortcode code blocks with highlighted lines and copy controls", a
   await expectNoPageOverflow(page);
 });
 
+test("renders the table of contents on the markdown style guide", async ({ page }) => {
+  await page.goto("/posts/markdown-style-guide/");
+
+  await expect(page.getByRole("heading", { exact: true, name: "Sommaire" })).toBeVisible();
+  await expect(page.locator(".post-toc h2 a")).toHaveAttribute("href", "#sommaire");
+  await expect(page.locator(".post-toc a[href='#headings']")).toBeVisible();
+  await expectNoPageOverflow(page);
+});
+
 test("keeps Giscus disabled behind the privacy choice", async ({ page }) => {
   await page.goto("/posts/hugo-material-shortcodes/");
 
-  await expect(page.getByRole("heading", { name: "Commentaires" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 3, name: "Commentaires" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Commentaires" })).toHaveAttribute(
+    "href",
+    "#commentaires",
+  );
   await expect(page.getByText("Les commentaires externes sont désactivés par")).toBeVisible();
   await expect(page.getByRole("link", { name: "votre choix de confidentialité" })).toHaveAttribute(
     "href",

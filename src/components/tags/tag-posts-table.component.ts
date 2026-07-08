@@ -30,6 +30,12 @@ interface TagPostItem {
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
+function searchablePostText(post: TagPostItem) {
+  return `${post.createdLabelCompact} ${post.createdLabelFull} ${post.createdIso} ${post.title}`.toLocaleLowerCase(
+    "fr",
+  );
+}
+
 function createFrenchPaginatorIntl() {
   const intl = new MatPaginatorIntl();
 
@@ -159,12 +165,6 @@ function createFrenchPaginatorIntl() {
     }
 
     .tag-posts-table-scroll {
-      --tag-posts-date-column-content-width: 16rem;
-      --tag-posts-date-column-fallback-width: calc(
-        var(--tag-posts-date-column-content-width) + 3rem
-      );
-      --tag-posts-date-column-width: var(--tag-posts-date-column-fallback-width);
-
       position: relative;
       max-width: 100%;
       margin-block: 0 1rem;
@@ -219,65 +219,13 @@ function createFrenchPaginatorIntl() {
     }
 
     .tag-posts-table .mat-column-created {
-      width: var(--tag-posts-date-column-content-width);
-      min-width: var(--tag-posts-date-column-content-width);
+      width: 16rem;
+      min-width: 16rem;
       border-inline-end: 1px solid var(--site-border);
     }
 
     .tag-posts-table .mat-column-title {
       min-width: 24rem;
-    }
-
-    .tag-posts-table .tag-posts-title-header {
-      overflow: visible;
-    }
-
-    :host ::ng-deep .tag-posts-table .tag-posts-title-header .mat-sort-header-container {
-      position: sticky;
-      left: 0;
-      z-index: 3;
-      box-sizing: border-box;
-      width: var(--tag-posts-date-column-width);
-      height: 100%;
-      min-height: 3rem;
-      margin-inline-start: -1rem;
-      padding-inline: 1rem 0.65rem;
-      background: var(--site-bg);
-    }
-
-    .tag-posts-table .mat-sort-header {
-      --mat-sort-arrow-color: currentColor;
-    }
-
-    :host ::ng-deep .tag-posts-table .mat-sort-header-arrow {
-      display: inline-grid;
-      place-items: center;
-      width: 1.25rem;
-      height: 1.25rem;
-      margin-inline-start: 0.25rem;
-      color: currentColor;
-      font-family: "Material Symbols Rounded";
-      font-size: 1.25rem;
-      font-style: normal;
-      font-weight: 400;
-      font-variation-settings:
-        "FILL" 0,
-        "wght" 400,
-        "GRAD" 0,
-        "opsz" 20;
-      line-height: 1;
-    }
-
-    :host ::ng-deep .tag-posts-table .mat-sort-header-arrow svg {
-      display: none;
-    }
-
-    :host ::ng-deep .tag-posts-table .mat-sort-header-arrow::before {
-      content: "\uE5D8";
-    }
-
-    .tag-posts-table .mat-sort-header-sorted {
-      color: var(--site-text);
     }
 
     .tag-posts-table .tag-posts-table-row:last-child td,
@@ -296,17 +244,13 @@ function createFrenchPaginatorIntl() {
     }
 
     @media (max-width: 520px) {
-      .tag-posts-table-scroll {
-        --tag-posts-date-column-content-width: 13rem;
-      }
-
       .tag-posts-table {
         min-width: 36rem;
       }
 
       .tag-posts-table .mat-column-created {
-        width: var(--tag-posts-date-column-content-width);
-        min-width: var(--tag-posts-date-column-content-width);
+        width: 13rem;
+        min-width: 13rem;
       }
 
       .tag-posts-table .mat-column-title {
@@ -354,12 +298,7 @@ export class TagPostsTableComponent {
       return "";
     };
     this.dataSource.filterPredicate = (post, filter) => {
-      const searchable =
-        `${post.createdLabelCompact} ${post.createdLabelFull} ${post.createdIso} ${post.title}`.toLocaleLowerCase(
-          "fr",
-        );
-
-      return searchable.includes(filter);
+      return searchablePostText(post).includes(filter);
     };
     effect(() => {
       this.dataSource.data = [...this.posts()];
@@ -400,10 +339,6 @@ export class TagPostsTableComponent {
     const filter = this.normalizedFilter();
     if (!filter) return posts;
 
-    return posts.filter((post) =>
-      `${post.createdLabelCompact} ${post.createdLabelFull} ${post.createdIso} ${post.title}`
-        .toLocaleLowerCase("fr")
-        .includes(filter),
-    );
+    return posts.filter((post) => searchablePostText(post).includes(filter));
   }
 }

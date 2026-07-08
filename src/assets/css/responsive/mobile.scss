@@ -51,16 +51,6 @@
     justify-content: flex-end;
     max-width: min(18rem, calc(100vw - 1.3rem));
   }
-
-  .cookie-consent-actions {
-    flex-direction: row;
-    justify-content: flex-start;
-  }
-
-  .cookie-consent--modal {
-    top: 50%;
-    left: 50%;
-  }
 }
 
 @media (max-width: 430px) {

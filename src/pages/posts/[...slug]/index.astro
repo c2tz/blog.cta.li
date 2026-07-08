@@ -3,9 +3,15 @@ import { type CollectionEntry, getCollection, render } from "astro:content";
 
 import { GiscusCommentsComponent } from "@/components/feedback/giscus-comments.component";
 import PostGitDates from "@/components/post/post-git-dates.astro";
+import PostTableOfContents from "@/components/post/post-table-of-contents.astro";
 import Prose from "@/components/post/prose.astro";
 import Layout from "@/layouts/site-layout.astro";
 import { getContentEntryGitDates } from "@/lib/git-dates.mjs";
+import {
+  buildTableOfContents,
+  extractTableOfContentsHeadings,
+  readTableOfContentsPreference,
+} from "@/lib/table-of-contents.mjs";
 import { SITE_GISCUS_CONFIG } from "@/site-config";
 
 export async function getStaticPaths() {
@@ -25,6 +31,11 @@ const { createdAt, lastModified } = gitDates;
 const postPriority = post.data.priority ?? 0;
 const visiblePostTags = [...(post.data.tags ?? [])].filter((tag) => tag !== "all");
 const postTags = ["all", ...visiblePostTags];
+const postBody = "body" in post ? post.body : "";
+const tocShortcodePreference = readTableOfContentsPreference(postBody);
+const tocPreference = tocShortcodePreference ?? post.data.toc;
+const tocItems = buildTableOfContents(extractTableOfContentsHeadings(postBody));
+const showTableOfContents = (tocPreference ?? true) && tocItems.length > 0;
 const postUrl = new URL(`/posts/${post.id}/`, Astro.site).toString();
 const postImage = new URL(`/posts/${post.id}/og.png`, Astro.site).toString();
 const postStructuredData = {
@@ -94,6 +105,7 @@ const postStructuredData = {
         </span>
         {visiblePostTags.map((tag) => <span data-pagefind-filter="tag">{tag}</span>)}
       </div>
+      {showTableOfContents && <PostTableOfContents items={tocItems} />}
       <Prose>
         <Content />
       </Prose>
@@ -131,7 +143,9 @@ const postStructuredData = {
       />
       <noscript>
         <section class="giscus-comments-noscript" data-pagefind-ignore>
-          <h2>Commentaires</h2>
+          <h3 id="commentaires">
+            <a href="#commentaires" class="heading-link">Commentaires</a>
+          </h3>
           <p>
             Les commentaires externes nécessitent JavaScript et un accord pour les services
             optionnels. Vous pouvez consulter ou modifier votre choix sur la page

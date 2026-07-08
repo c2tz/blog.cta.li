@@ -5,6 +5,7 @@ tags:
   - documentation
   - shortcodes
   - material
+toc: true
 ---
 
 Ce site garde le Markdown et le MDX standards comme base. Les shortcodes ci-dessous sont
@@ -23,6 +24,17 @@ Contenu Markdown.
 
 Les blocs appairés doivent être isolés par des lignes vides. Le shortcode inline `icon` est la
 seule exception prévue pour vivre au milieu d’une phrase.
+
+## Sommaire d’article
+
+Le sommaire est actif par défaut sur les articles. Vous pouvez aussi le piloter depuis le
+frontmatter avec `toc: true` ou `toc: false`, ou depuis le Markdown avec un shortcode isolé :
+
+```markdown
+{{< toc enabled=false >}}
+```
+
+Le sommaire reprend les titres de niveau `h2` à `h4` et pointe vers les ancres générées par le site.
 
 ## Admonitions
 

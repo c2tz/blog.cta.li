@@ -6,6 +6,8 @@ import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatTooltip } from "@angular/material/tooltip";
 import { SITE_EVENTS } from "@/lib/site-contracts";
 
+const REFRESH_ICON = "\uE5D5";
+
 interface RefreshState {
   busy?: boolean;
   loaded?: boolean;
@@ -31,40 +33,22 @@ interface RefreshState {
     >
       @if (busy()) {
         <mat-progress-spinner
-          class="home-anime-refresh-spinner"
           mode="indeterminate"
           diameter="24"
           strokeWidth="3"
           aria-hidden="true"
         />
       } @else {
-        <mat-icon aria-hidden="true">&#xE5D5;</mat-icon>
+        <mat-icon aria-hidden="true">{{ refreshIcon }}</mat-icon>
       }
     </button>
     <span class="sr-only" role="status" aria-live="polite" data-konachan-status>
       {{ status() }}
     </span>
   `,
-  styles: `
-    .home-anime-refresh.mat-mdc-icon-button {
-      --mat-icon-button-disabled-icon-color: #fff;
-      --mdc-icon-button-disabled-icon-color: #fff;
-    }
-
-    .home-anime-refresh.mat-mdc-icon-button:disabled {
-      color: #fff;
-      opacity: 0.92;
-    }
-
-    .home-anime-refresh-spinner {
-      display: inline-flex;
-      color: currentColor;
-      --mat-progress-spinner-active-indicator-color: currentColor;
-      --mdc-circular-progress-active-indicator-color: currentColor;
-    }
-  `,
 })
 export class KonachanRefreshButtonComponent implements OnInit, OnDestroy {
+  readonly refreshIcon = REFRESH_ICON;
   readonly busy = signal(false);
   readonly loaded = signal(false);
   readonly status = signal("");

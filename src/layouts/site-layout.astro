@@ -225,7 +225,12 @@ const speedInsightsVersion = speedInsightsPackage.version;
         };
         const blockPreConsentInteraction = (event) => {
           if (!document.documentElement.classList.contains("consent-prelock")) return;
-          if (event.target?.closest?.("site-cookie-consent-banner, .cookie-consent")) return;
+          const target =
+            event.target instanceof Element ? event.target : event.target?.parentElement;
+          if (
+            target?.closest?.("site-cookie-consent-banner, .cookie-consent, .cdk-overlay-container")
+          )
+            return;
 
           event.preventDefault();
           event.stopPropagation();

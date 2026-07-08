@@ -22,6 +22,12 @@ interface GiscusAcceptanceState {
   version: 1;
 }
 
+interface GiscusReturnTarget {
+  path: string;
+  updatedAt: number;
+  version: 1;
+}
+
 const GISCUS_ORIGIN = "https://giscus.app";
 const GISCUS_SCRIPT_URL = `${GISCUS_ORIGIN}/client.js`;
 const GISCUS_ACCEPTANCE_STORAGE_KEY = SITE_STORAGE_KEYS.giscusCommentsEnabled;
@@ -29,6 +35,10 @@ const GISCUS_ACCEPTANCE_COOKIE_NAME = SITE_COOKIE_NAMES.giscusCommentsEnabled;
 const GISCUS_ACCEPTANCE_MAX_AGE_SECONDS = 365 * 24 * 60 * 60;
 const CODE_OF_CONDUCT_URL =
   "https://raw.githubusercontent.com/c2tz/ct-blog-comments/refs/heads/main/CODE_OF_CONDUCT.md";
+const GISCUS_COMMENTS_ANCHOR_ID = "commentaires";
+const GISCUS_RETURN_STORAGE_KEY = "ct-giscus-return-target-v1";
+const GISCUS_RETURN_MAX_AGE_MS = 10 * 60 * 1000;
+const GISCUS_SCROLL_RESTORE_DELAYS = [0, 150, 600, 1200, 2500, 5000] as const;
 const GISCUS_THEME_VERSION = "20260708-emoji-popover";
 const GISCUS_THEME_SYNC_DELAYS = [0, 150, 500, 1200] as const;
 const GISCUS_FALLBACK_THEMES = {
@@ -78,6 +88,58 @@ function rememberCodeOfConductAcceptance() {
   document.cookie = `${GISCUS_ACCEPTANCE_COOKIE_NAME}=accepted; Max-Age=${GISCUS_ACCEPTANCE_MAX_AGE_SECONDS}; Path=/; SameSite=Lax`;
 }
 
+function currentGiscusReturnPath() {
+  return `${window.location.pathname}${window.location.search}`;
+}
+
+function rememberGiscusReturnTarget() {
+  const target: GiscusReturnTarget = {
+    path: currentGiscusReturnPath(),
+    updatedAt: Date.now(),
+    version: 1,
+  };
+
+  try {
+    sessionStorage.setItem(GISCUS_RETURN_STORAGE_KEY, JSON.stringify(target));
+  } catch {}
+}
+
+function forgetGiscusReturnTarget() {
+  try {
+    sessionStorage.removeItem(GISCUS_RETURN_STORAGE_KEY);
+  } catch {}
+}
+
+function readGiscusReturnTarget() {
+  try {
+    const parsed = JSON.parse(
+      sessionStorage.getItem(GISCUS_RETURN_STORAGE_KEY) || "null",
+    ) as Partial<GiscusReturnTarget> | null;
+
+    if (parsed?.version !== 1 || !parsed.path || typeof parsed.updatedAt !== "number") {
+      forgetGiscusReturnTarget();
+      return null;
+    }
+
+    if (Date.now() - parsed.updatedAt > GISCUS_RETURN_MAX_AGE_MS) {
+      forgetGiscusReturnTarget();
+      return null;
+    }
+
+    return parsed;
+  } catch {
+    forgetGiscusReturnTarget();
+    return null;
+  }
+}
+
+function shouldRestoreGiscusReturnTarget() {
+  if (window.location.hash === `#${GISCUS_COMMENTS_ANCHOR_ID}`) return true;
+
+  const target = readGiscusReturnTarget();
+  return Boolean(target && target.path === currentGiscusReturnPath());
+}
+
 function getCurrentTheme(): SiteTheme {
   return document.documentElement.dataset["theme"] === "dark" ? "dark" : "light";
 }
@@ -100,10 +162,17 @@ function hasOptionalServicesConsent() {
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
-    <section class="giscus-comments" aria-label="Commentaires" data-pagefind-ignore>
+    <section
+      #commentsSection
+      class="giscus-comments"
+      aria-labelledby="commentaires"
+      data-pagefind-ignore
+    >
       <header class="giscus-comments-header">
         <div class="giscus-comments-intro">
-          <h2>Commentaires</h2>
+          <h3 id="commentaires">
+            <a href="#commentaires" class="heading-link">Commentaires</a>
+          </h3>
           <p>Avant de participer, merci de respecter les règles de conduite du projet.</p>
         </div>
         <div class="giscus-comments-actions">
@@ -180,7 +249,9 @@ function hasOptionalServicesConsent() {
     }
 
     .giscus-comments {
+      margin-block-start: 1.5rem;
       padding-block-start: 1rem;
+      scroll-margin-block-start: 5rem;
     }
 
     .giscus-comments-config,
@@ -212,11 +283,12 @@ function hasOptionalServicesConsent() {
       min-width: 0;
     }
 
-    .giscus-comments-intro h2 {
-      margin-block: 0 0.25rem;
+    .giscus-comments-intro h3 {
+      margin-block: 0 0.5rem;
+      font-family: var(--site-heading-font);
       color: var(--site-text);
-      font-size: 1rem;
-      line-height: 1.5;
+      font-size: 1.17rem;
+      line-height: 1.35;
     }
 
     .giscus-comments-intro p {
@@ -359,13 +431,33 @@ export class GiscusCommentsComponent implements AfterViewInit, OnDestroy {
   @ViewChild("giscusContainer")
   private readonly giscusContainer?: ElementRef<HTMLElement>;
 
+  @ViewChild("commentsSection")
+  private readonly commentsSection?: ElementRef<HTMLElement>;
+
   private themeObserver?: MutationObserver;
   private themeSyncTimers = new Set<number>();
+  private scrollRestoreTimers = new Set<number>();
   private readonly handleConsentChange = () => this.syncOptionalServicesConsent();
+  private readonly handleCommentsInteraction = () => rememberGiscusReturnTarget();
+  private readonly handleWindowBlur = () => {
+    const iframe = this.getGiscusFrame();
+    if (iframe && document.activeElement === iframe) rememberGiscusReturnTarget();
+  };
 
   ngAfterViewInit() {
     if (typeof window === "undefined") return;
 
+    this.commentsSection?.nativeElement.addEventListener(
+      "pointerdown",
+      this.handleCommentsInteraction,
+      true,
+    );
+    this.commentsSection?.nativeElement.addEventListener(
+      "focusin",
+      this.handleCommentsInteraction,
+      true,
+    );
+    window.addEventListener("blur", this.handleWindowBlur);
     this.theme.set(getCurrentTheme());
     this.syncOptionalServicesConsent();
     document.addEventListener(SITE_EVENTS.consentChange, this.handleConsentChange);
@@ -379,18 +471,32 @@ export class GiscusCommentsComponent implements AfterViewInit, OnDestroy {
       this.accepted.set(true);
       if (this.optionalServicesAllowed()) window.setTimeout(() => this.loadGiscus());
     }
+
+    this.restoreGiscusReturnScroll();
   }
 
   ngOnDestroy() {
     this.themeObserver?.disconnect();
     if (typeof window === "undefined") return;
 
+    this.commentsSection?.nativeElement.removeEventListener(
+      "pointerdown",
+      this.handleCommentsInteraction,
+      true,
+    );
+    this.commentsSection?.nativeElement.removeEventListener(
+      "focusin",
+      this.handleCommentsInteraction,
+      true,
+    );
+    window.removeEventListener("blur", this.handleWindowBlur);
     document.removeEventListener(SITE_EVENTS.consentChange, this.handleConsentChange);
 
     for (const timer of this.themeSyncTimers) {
       window.clearTimeout(timer);
     }
     this.themeSyncTimers.clear();
+    this.clearScrollRestoreTimers();
   }
 
   acceptCodeOfConduct() {
@@ -436,6 +542,7 @@ export class GiscusCommentsComponent implements AfterViewInit, OnDestroy {
       this.loaded.set(true);
       this.loading.set(false);
       this.scheduleThemeSync();
+      this.restoreGiscusReturnScroll();
     });
     script.addEventListener("error", () => {
       this.error.set(true);
@@ -460,6 +567,39 @@ export class GiscusCommentsComponent implements AfterViewInit, OnDestroy {
       }, delay);
       this.themeSyncTimers.add(timer);
     }
+  }
+
+  private clearScrollRestoreTimers() {
+    for (const timer of this.scrollRestoreTimers) {
+      window.clearTimeout(timer);
+    }
+    this.scrollRestoreTimers.clear();
+  }
+
+  private restoreGiscusReturnScroll() {
+    if (!shouldRestoreGiscusReturnTarget()) return;
+
+    this.clearScrollRestoreTimers();
+    for (const delay of GISCUS_SCROLL_RESTORE_DELAYS) {
+      const timer = window.setTimeout(() => {
+        this.scrollRestoreTimers.delete(timer);
+        this.commentsSection?.nativeElement.scrollIntoView({
+          block: "start",
+        });
+      }, delay);
+      this.scrollRestoreTimers.add(timer);
+    }
+
+    const cleanupTimer = window.setTimeout(
+      () => {
+        this.scrollRestoreTimers.delete(cleanupTimer);
+        if (window.location.hash !== `#${GISCUS_COMMENTS_ANCHOR_ID}`) {
+          forgetGiscusReturnTarget();
+        }
+      },
+      GISCUS_SCROLL_RESTORE_DELAYS[GISCUS_SCROLL_RESTORE_DELAYS.length - 1] + 500,
+    );
+    this.scrollRestoreTimers.add(cleanupTimer);
   }
 
   private postTheme(theme: SiteTheme) {

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, signal } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
 import { MatButtonToggleModule } from "@angular/material/button-toggle";
 import type { MatButtonToggleChange } from "@angular/material/button-toggle";
+import { MatCardModule } from "@angular/material/card";
 
 import {
   SITE_COOKIE_NAMES,
@@ -24,54 +25,60 @@ type ConsentChoice = keyof typeof STATUS_LABELS;
 @Component({
   selector: "site-cookie-preferences",
   standalone: true,
-  imports: [MatButtonToggleModule],
+  imports: [MatButtonToggleModule, MatCardModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: "not-prose",
     "data-angular-component": "cookie-preferences",
   },
   template: `
-    <section class="cookie-preferences-panel" aria-labelledby="modifier-vos-choix-cookies">
-      <p>
-        Services optionnels :
-        <strong>{{ statusLabel() }}</strong>
-      </p>
-      <div class="cookie-preferences-actions" aria-label="Choix des services optionnels">
-        <mat-button-toggle-group
-          class="cookie-preferences-toggle-group"
-          appearance="standard"
-          name="cookie-optional-services"
-          aria-label="Choix des services optionnels"
-          [value]="selectedChoice()"
-          (change)="handleChoiceChange($event)"
-        >
-          <mat-button-toggle
-            class="cookie-preferences-toggle"
-            value="accepted"
-            aria-label="Autoriser les services optionnels"
+    <mat-card
+      class="cookie-preferences-panel"
+      appearance="outlined"
+      aria-labelledby="modifier-vos-choix-cookies"
+    >
+      <mat-card-content>
+        <p>
+          Services optionnels :
+          <strong>{{ statusLabel() }}</strong>
+        </p>
+        <div class="cookie-preferences-actions" aria-label="Choix des services optionnels">
+          <mat-button-toggle-group
+            class="cookie-preferences-toggle-group"
+            appearance="standard"
+            name="cookie-optional-services"
+            aria-label="Choix des services optionnels"
+            [value]="selectedToggle()"
+            (change)="handleChoiceChange($event)"
           >
-            Autoriser
-          </mat-button-toggle>
-          <mat-button-toggle
-            class="cookie-preferences-toggle"
-            value="rejected"
-            aria-label="Refuser les services optionnels"
-          >
-            Refuser
-          </mat-button-toggle>
-          <mat-button-toggle
-            class="cookie-preferences-toggle"
-            value="unset"
-            aria-label="Réinitialiser le choix des services optionnels"
-          >
-            Réinitialiser
-          </mat-button-toggle>
-        </mat-button-toggle-group>
-      </div>
-      <p class="cookie-preferences-feedback" role="status" aria-live="polite">
-        {{ feedback() }}
-      </p>
-    </section>
+            <mat-button-toggle
+              class="cookie-preferences-toggle"
+              value="accepted"
+              aria-label="Autoriser les services optionnels"
+            >
+              Autoriser
+            </mat-button-toggle>
+            <mat-button-toggle
+              class="cookie-preferences-toggle"
+              value="rejected"
+              aria-label="Refuser les services optionnels"
+            >
+              Refuser
+            </mat-button-toggle>
+            <mat-button-toggle
+              class="cookie-preferences-toggle"
+              value="unset"
+              aria-label="Réinitialiser le choix des services optionnels"
+            >
+              Réinitialiser
+            </mat-button-toggle>
+          </mat-button-toggle-group>
+        </div>
+        <p class="cookie-preferences-feedback" role="status" aria-live="polite">
+          {{ feedback() }}
+        </p>
+      </mat-card-content>
+    </mat-card>
   `,
 })
 export class CookiePreferencesComponent implements OnDestroy, OnInit {
@@ -79,7 +86,6 @@ export class CookiePreferencesComponent implements OnDestroy, OnInit {
   readonly feedback = signal("");
   readonly selectedToggle = signal<ConsentChoice | null>(null);
   readonly statusLabel = () => STATUS_LABELS[this.choice()];
-  readonly selectedChoice = () => this.selectedToggle();
 
   private resetFeedbackTimer = 0;
 

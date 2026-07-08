@@ -15,23 +15,17 @@ site-cookie-preferences {
 }
 
 .cookie-preferences-panel {
+  color: var(--site-text);
+}
+
+.cookie-preferences-panel .mat-mdc-card-content {
   display: grid;
   gap: 0.85rem;
   padding: 1rem;
-  border: 1px solid var(--site-border);
-  border-radius: var(--site-shape-small);
-  background: var(--m3-surface-container-low);
-  color: var(--site-text);
 }
 
 .cookie-preferences-panel p {
   margin: 0;
-}
-
-.cookie-preferences-panel h2 {
-  margin: 0;
-  font-size: 1.35rem;
-  line-height: 1.35;
 }
 
 .cookie-preferences-actions {
@@ -52,63 +46,4 @@ site-cookie-preferences {
 .cookie-preferences-feedback {
   min-height: 1.5rem;
   color: var(--site-muted);
-}
-
-.cookie-preferences-fallback[hidden] {
-  display: none;
-}
-
-.cookie-preferences-fallback-note {
-  color: var(--site-muted);
-}
-
-.cookie-preferences-fallback-actions {
-  display: inline-flex;
-  flex-wrap: wrap;
-  width: fit-content;
-  max-width: 100%;
-  overflow: hidden;
-  border: 1px solid var(--m3-outline);
-  border-radius: 999px;
-}
-
-.cookie-preferences-fallback-actions button {
-  min-height: 2.5rem;
-  min-width: 7.5rem;
-  padding-inline: 1rem;
-  border: 0;
-  border-inline-start: 1px solid var(--m3-outline);
-  background: transparent;
-  color: var(--site-text);
-  font: inherit;
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: 0;
-  cursor: pointer;
-}
-
-.cookie-preferences-fallback-actions button:first-child {
-  border-inline-start: 0;
-}
-
-.cookie-preferences-fallback-actions button:is(:hover, :focus-visible),
-.cookie-preferences-fallback-actions button[data-selected] {
-  background: color-mix(in srgb, var(--site-link) 14%, transparent);
-}
-
-@media (max-width: 520px) {
-  .cookie-preferences-fallback-actions {
-    width: 100%;
-    border-radius: var(--site-shape-small);
-  }
-
-  .cookie-preferences-fallback-actions button {
-    flex: 1 1 100%;
-    border-inline-start: 0;
-    border-block-start: 1px solid var(--m3-outline);
-  }
-
-  .cookie-preferences-fallback-actions button:first-child {
-    border-block-start: 0;
-  }
 }

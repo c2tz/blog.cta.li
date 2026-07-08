@@ -238,7 +238,9 @@ function expandAdjacentMarkerParagraphs(children) {
 
 function booleanParameter(value, fallback = false) {
   if (value === undefined) return fallback;
-  return !["0", "false", "no", "off", "non"].includes(String(value).toLowerCase());
+  return !["0", "false", "no", "off", "non", "disabled", "desactive", "désactivé"].includes(
+    String(value).toLowerCase(),
+  );
 }
 
 function parameter(shortcode, name, position, fallback) {
@@ -308,6 +310,15 @@ function createTabs(shortcode, children) {
     },
     children,
   );
+}
+
+function createTableOfContentsMarker() {
+  return elementNode("span", {
+    ariaHidden: "true",
+    dataPagefindIgnore: "",
+    dataPostTocMarker: "",
+    hidden: true,
+  });
 }
 
 function createMaterialTable(shortcode, children) {
@@ -408,6 +419,8 @@ function renderShortcode(shortcode, children, file) {
       return createTab(shortcode, children);
     case "tabs":
       return createTabs(shortcode, children);
+    case "toc":
+      return createTableOfContentsMarker();
     default:
       file.fail(`Shortcode Hugo inconnu : ${shortcode.name}`);
   }

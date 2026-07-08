@@ -1,0 +1,50 @@
+---
+interface PostTableOfContentsItem {
+  children: PostTableOfContentsItem[];
+  depth: number;
+  slug: string;
+  text: string;
+}
+
+interface Props {
+  items: PostTableOfContentsItem[];
+}
+
+const { items } = Astro.props;
+
+const escapeHtml = (value: string) =>
+  value.replace(/[&<>"']/g, (character) => {
+    switch (character) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case '"':
+        return "&quot;";
+      default:
+        return "&#39;";
+    }
+  });
+
+const renderItems = (itemsToRender: PostTableOfContentsItem[]): string => {
+  if (itemsToRender.length === 0) return "";
+
+  return `<ul class="post-toc-list">${itemsToRender
+    .map(
+      (item) =>
+        `<li><a href="#${escapeHtml(item.slug)}">${escapeHtml(item.text)}</a>${renderItems(
+          item.children,
+        )}</li>`,
+    )
+    .join("")}</ul>`;
+};
+---
+
+<nav class="post-toc" aria-labelledby="sommaire" data-pagefind-ignore>
+  <h2 id="sommaire">
+    <a href="#sommaire" class="heading-link">Sommaire</a>
+  </h2>
+  <div class="post-toc-tree" set:html={renderItems(items)} />
+</nav>

@@ -1,16 +1,15 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
   ViewChild,
   computed,
   effect,
-  inject,
   input,
+  inject,
   signal,
 } from "@angular/core";
 import { LiveAnnouncer } from "@angular/cdk/a11y";
-import type { AfterViewInit, OnDestroy, OnInit } from "@angular/core";
+import type { OnDestroy, OnInit } from "@angular/core";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatSort, MatSortModule, type Sort } from "@angular/material/sort";
 import { MatTableDataSource, MatTableModule } from "@angular/material/table";
@@ -35,7 +34,7 @@ interface LatestPostsResponse {
   imports: [MatProgressSpinner, MatSortModule, MatTableModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="home-posts-table-scroll" [class.home-posts-table-scroll-detailed]="detailed()">
+    <div class="home-posts-table-scroll">
       <table
         mat-table
         [dataSource]="dataSource"
@@ -120,15 +119,6 @@ interface LatestPostsResponse {
     }
 
     .home-posts-table-scroll {
-      --home-posts-date-column-content-width: 8rem;
-      --home-posts-date-column-fallback-width: calc(
-        var(--home-posts-date-column-content-width) + 3rem
-      );
-      --home-posts-date-column-width: var(
-        --home-posts-date-column-measured-width,
-        var(--home-posts-date-column-fallback-width)
-      );
-
       position: relative;
       max-width: 100%;
       margin-block: 0 1em;
@@ -144,10 +134,6 @@ interface LatestPostsResponse {
     .home-posts-table-scroll::-webkit-scrollbar-thumb {
       border-radius: 9999px;
       background: color-mix(in srgb, var(--site-muted) 42%, transparent);
-    }
-
-    .home-posts-table-scroll-detailed {
-      --home-posts-date-column-content-width: 14rem;
     }
 
     .home-posts-table-scroll:focus-visible {
@@ -218,65 +204,13 @@ interface LatestPostsResponse {
     }
 
     .home-posts-table .mat-column-date {
-      width: var(--home-posts-date-column-content-width);
-      min-width: var(--home-posts-date-column-content-width);
+      width: 9rem;
+      min-width: 9rem;
       border-inline-end: 1px solid var(--site-border);
     }
 
     .home-posts-table .mat-column-title {
       min-width: 24rem;
-    }
-
-    .home-posts-table .home-posts-title-header {
-      overflow: visible;
-    }
-
-    :host ::ng-deep .home-posts-table .home-posts-title-header .mat-sort-header-container {
-      position: sticky;
-      left: 0;
-      z-index: 2;
-      box-sizing: border-box;
-      width: var(--home-posts-date-column-width);
-      height: 100%;
-      min-height: 2.75rem;
-      margin-inline-start: -1rem;
-      padding-inline: 1rem 0.65rem;
-      background: var(--site-bg);
-    }
-
-    .home-posts-table .mat-sort-header {
-      --mat-sort-arrow-color: currentColor;
-    }
-
-    :host ::ng-deep .home-posts-table .mat-sort-header-arrow {
-      display: inline-grid;
-      place-items: center;
-      width: 1.25rem;
-      height: 1.25rem;
-      margin-inline-start: 0.25rem;
-      color: currentColor;
-      font-family: "Material Symbols Rounded";
-      font-size: 1.25rem;
-      font-style: normal;
-      font-weight: 400;
-      font-variation-settings:
-        "FILL" 0,
-        "wght" 400,
-        "GRAD" 0,
-        "opsz" 20;
-      line-height: 1;
-    }
-
-    :host ::ng-deep .home-posts-table .mat-sort-header-arrow svg {
-      display: none;
-    }
-
-    :host ::ng-deep .home-posts-table .mat-sort-header-arrow::before {
-      content: "\uE5D8";
-    }
-
-    .home-posts-table .mat-sort-header-sorted {
-      color: var(--site-text);
     }
 
     .home-post-title {
@@ -285,11 +219,13 @@ interface LatestPostsResponse {
     }
   `,
 })
-export class HomeLatestPostsTableComponent implements AfterViewInit, OnInit, OnDestroy {
-  private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+export class HomeLatestPostsTableComponent implements OnInit, OnDestroy {
   private readonly liveAnnouncer = inject(LiveAnnouncer);
 
-  @ViewChild(MatSort) sort?: MatSort;
+  @ViewChild(MatSort)
+  set sort(sort: MatSort | undefined) {
+    this.dataSource.sort = sort ?? null;
+  }
 
   readonly detailEndpoint = input("/latest-posts.json");
   readonly posts = input<readonly HomeLatestPost[]>([]);
@@ -305,8 +241,6 @@ export class HomeLatestPostsTableComponent implements AfterViewInit, OnInit, OnD
   });
 
   private detailRequest: Promise<void> | null = null;
-  private dateColumnResizeObserver: ResizeObserver | null = null;
-  private dateColumnMeasureFrame = 0;
 
   constructor() {
     this.dataSource.sortingDataAccessor = (post, column) => {
@@ -317,7 +251,6 @@ export class HomeLatestPostsTableComponent implements AfterViewInit, OnInit, OnD
     };
     effect(() => {
       this.dataSource.data = [...this.tablePosts()];
-      this.queueDateColumnMeasure();
     });
   }
 
@@ -332,26 +265,16 @@ export class HomeLatestPostsTableComponent implements AfterViewInit, OnInit, OnD
     document.addEventListener(SITE_EVENTS.homeDetailViewChange, this.handleDetailViewChange);
   }
 
-  ngAfterViewInit() {
-    if (this.sort) this.dataSource.sort = this.sort;
-    this.watchDateColumnWidth();
-    this.queueDateColumnMeasure();
-  }
-
   ngOnDestroy() {
     if (typeof document === "undefined") return;
 
     document.removeEventListener(SITE_EVENTS.homeDetailViewChange, this.handleDetailViewChange);
-    this.dateColumnResizeObserver?.disconnect();
-    this.dateColumnResizeObserver = null;
-    this.cancelDateColumnMeasure();
   }
 
   private readonly handleDetailViewChange = (event: Event) => {
     const detailed = Boolean((event as CustomEvent<{ detailed?: boolean }>).detail?.detailed);
     this.detailed.set(detailed);
     if (detailed) void this.loadDetailedPosts();
-    this.queueDateColumnMeasure();
   };
 
   announceSortChange(sortState: Sort) {
@@ -363,52 +286,6 @@ export class HomeLatestPostsTableComponent implements AfterViewInit, OnInit, OnD
     const direction = sortState.direction === "asc" ? "croissant" : "décroissant";
     const column = sortState.active === "date" ? "date" : "titre";
     this.liveAnnouncer.announce(`Articles triés par ${column}, ordre ${direction}.`);
-  }
-
-  private watchDateColumnWidth() {
-    if (typeof ResizeObserver === "undefined") return;
-
-    const dateHeader = this.elementRef.nativeElement.querySelector<HTMLElement>(
-      ".home-posts-table .mat-column-date",
-    );
-    if (!dateHeader) return;
-
-    this.dateColumnResizeObserver = new ResizeObserver(() => {
-      this.queueDateColumnMeasure();
-    });
-    this.dateColumnResizeObserver.observe(dateHeader);
-  }
-
-  private queueDateColumnMeasure() {
-    if (typeof window === "undefined") return;
-
-    this.cancelDateColumnMeasure();
-    this.dateColumnMeasureFrame = window.requestAnimationFrame(() => {
-      this.dateColumnMeasureFrame = 0;
-      this.measureDateColumn();
-    });
-  }
-
-  private cancelDateColumnMeasure() {
-    if (typeof window === "undefined" || this.dateColumnMeasureFrame === 0) return;
-
-    window.cancelAnimationFrame(this.dateColumnMeasureFrame);
-    this.dateColumnMeasureFrame = 0;
-  }
-
-  private measureDateColumn() {
-    const scroller = this.elementRef.nativeElement.querySelector<HTMLElement>(
-      ".home-posts-table-scroll",
-    );
-    const dateHeader = this.elementRef.nativeElement.querySelector<HTMLElement>(
-      ".home-posts-table .mat-column-date",
-    );
-    if (!scroller || !dateHeader) return;
-
-    const width = dateHeader.getBoundingClientRect().width;
-    if (width <= 0) return;
-
-    scroller.style.setProperty("--home-posts-date-column-measured-width", `${width}px`);
   }
 
   private loadDetailedPosts() {

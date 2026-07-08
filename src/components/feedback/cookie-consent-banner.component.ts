@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from "@angular/core";
+import { ChangeDetectionStrategy, Component, signal } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
 import { MatButton } from "@angular/material/button";
 import {
@@ -254,27 +254,29 @@ function isFocusableElement(element: HTMLElement) {
       </section>
     }
   `,
+  styles: `
+    :host {
+      display: contents;
+    }
+  `,
 })
 export class CookieConsentBannerComponent implements OnInit, OnDestroy {
   private readonly handleExternalConsentChange = () => this.syncExternalConsent();
   private readonly handleKeydown = (event: KeyboardEvent) => {
-    if (!this.visible()) return;
+    if (!this.activeNotice()) return;
 
     if (event.key === "Escape" && this.activeNotice() === "privacy") {
       this.rejectOptionalServices();
       return;
     }
 
-    if (event.key === "Tab" && this.activeNotice() === "explicit-content") {
-      this.trapFocus(event);
-    }
+    if (event.key === "Tab" && this.activeNotice() === "explicit-content") this.trapFocus(event);
   };
 
   readonly activeNotice = signal<ActiveNotice | null>(null);
-  readonly visible = computed(() => this.activeNotice() !== null);
-  private focusFrame = 0;
   private cookieConsentPending = false;
   private explicitContentPending = false;
+  private focusFrame = 0;
 
   ngOnInit() {
     if (typeof window === "undefined") return;
@@ -305,22 +307,6 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
 
   rejectOptionalServices() {
     this.save(false);
-  }
-
-  acknowledgeExplicitContent() {
-    writeExplicitContentAcknowledgement();
-    this.explicitContentPending = false;
-    document.dispatchEvent(new Event(SITE_EVENTS.explicitContentChange));
-    this.showNextNotice();
-  }
-
-  leaveExplicitContent() {
-    if (window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-
-    window.location.assign("https://www.cta.li/");
   }
 
   private save(functionality: boolean) {
@@ -354,15 +340,20 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
 
   private syncPageState() {
     if (this.activeNotice() === "explicit-content") {
-      document.documentElement.classList.add(
-        "interaction-disabled",
-        "consent-prelock",
-        "consent-visible",
-      );
-      setBackgroundInteractionDisabled(true);
-    } else {
-      this.unlockPage();
+      this.lockPage();
+      return;
     }
+
+    this.unlockPage();
+  }
+
+  private lockPage() {
+    document.documentElement.classList.add(
+      "interaction-disabled",
+      "consent-prelock",
+      "consent-visible",
+    );
+    setBackgroundInteractionDisabled(true);
   }
 
   private unlockPage() {
@@ -372,6 +363,22 @@ export class CookieConsentBannerComponent implements OnInit, OnDestroy {
       "consent-visible",
     );
     setBackgroundInteractionDisabled(false);
+  }
+
+  acknowledgeExplicitContent() {
+    writeExplicitContentAcknowledgement();
+    this.explicitContentPending = false;
+    document.dispatchEvent(new Event(SITE_EVENTS.explicitContentChange));
+    this.showNextNotice();
+  }
+
+  leaveExplicitContent() {
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+
+    window.location.assign("https://www.cta.li/");
   }
 
   private getFocusableDialogElements() {

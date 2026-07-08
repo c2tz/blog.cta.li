@@ -98,6 +98,12 @@ pnpm install
   assert.match(html, /data-page-size="5"/);
 });
 
+test("rend un marqueur invisible pour le shortcode de sommaire", async () => {
+  const html = await render("{{< toc enabled=false >}}");
+  assert.match(html, /data-post-toc-marker/);
+  assert.match(html, /hidden/);
+});
+
 test("rend un shortcode Shiki autour d’un vrai bloc de code Markdown", async () => {
   const html =
     await render(`{{< shiki title="Contrôleur" filename="demo.ts" lang="ts" meta="{2}" >}}

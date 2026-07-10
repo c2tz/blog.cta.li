@@ -1,8 +1,5 @@
-import { ChangeDetectionStrategy, Component, signal } from "@angular/core";
+import { CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, Component, signal } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
-import { MatMiniFabButton } from "@angular/material/button";
-import { MatIcon } from "@angular/material/icon";
-import { MatTooltip } from "@angular/material/tooltip";
 import { SITE_EVENTS } from "@/lib/site-contracts";
 
 function getScrollProgress() {
@@ -18,24 +15,41 @@ function isScrollTopDisabledPage() {
 @Component({
   selector: "site-scroll-top-button",
   standalone: true,
-  imports: [MatMiniFabButton, MatIcon, MatTooltip],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <button
-      matMiniFab
-      type="button"
-      class="site-scroll-top"
-      [class.is-visible]="visible()"
-      [disabled]="!visible()"
-      [hidden]="!visible()"
-      [attr.aria-label]="'Retour en haut, progression ' + progress() + ' %'"
-      matTooltip="Retour en haut"
-      matTooltipPosition="left"
-      (click)="scrollToTop()"
-    >
-      <mat-icon class="site-scroll-top-icon" aria-hidden="true">&#xE25A;</mat-icon>
-      <span class="site-scroll-top-badge" aria-hidden="true">{{ progress() }}%</span>
-    </button>
+    <div class="site-scroll-top" [class.is-visible]="visible()" [hidden]="!visible()">
+      <md-filled-tonal-icon-button
+        class="site-scroll-top-button"
+        title="Retour en haut"
+        [attr.aria-label]="'Retour en haut, progression ' + progress() + ' %'"
+        (click)="scrollToTop()"
+      >
+        <md-icon class="site-scroll-top-icon" aria-hidden="true">&#xE25A;</md-icon>
+      </md-filled-tonal-icon-button>
+    </div>
+  `,
+  styles: `
+    .site-scroll-top {
+      position: fixed;
+      right: calc(2rem + env(safe-area-inset-right, 0px));
+      bottom: 1rem;
+      z-index: 9000;
+      width: 2.5rem;
+      height: 2.5rem;
+      overflow: visible;
+    }
+
+    .site-scroll-top-button {
+      display: inline-flex;
+    }
+
+    @media (max-width: 520px) {
+      .site-scroll-top {
+        right: calc(2rem + env(safe-area-inset-right, 0px));
+        bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+      }
+    }
   `,
 })
 export class ScrollTopButtonComponent implements OnInit, OnDestroy {

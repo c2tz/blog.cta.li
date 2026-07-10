@@ -1,5 +1,3 @@
-@use "@angular/material" as mat;
-
 .home-anime-landing {
   --home-banner-height: clamp(20rem, 52vh, 31rem);
   --home-banner-height: clamp(20rem, 52svh, 31rem);
@@ -7,27 +5,6 @@
   --home-hero-on-image-muted: #e6e0e9;
   --home-hero-accent: var(--home-hero-on-image);
   --home-hero-surface-label: var(--home-dynamic-light-surface, var(--m3-surface-bright));
-  --home-hero-tonal-container: var(--admonition-warning);
-  --home-hero-tonal-label: #241500;
-  --home-hero-tonal-hover: color-mix(in srgb, var(--admonition-warning) 88%, white);
-  @include mat.button-overrides(
-    (
-      tonal-container-color: var(--home-hero-tonal-container),
-      tonal-label-text-color: var(--home-hero-tonal-label),
-      tonal-state-layer-color: var(--home-hero-tonal-label),
-      tonal-ripple-color: color-mix(in srgb, var(--home-hero-tonal-label) 14%, transparent),
-      text-label-text-color: var(--home-hero-surface-label),
-      text-state-layer-color: var(--home-hero-surface-label),
-      text-ripple-color: color-mix(in srgb, var(--home-hero-surface-label) 12%, transparent),
-    )
-  );
-  @include mat.icon-button-overrides(
-    (
-      icon-color: var(--home-hero-surface-label),
-      state-layer-color: var(--home-hero-surface-label),
-      ripple-color: color-mix(in srgb, var(--home-hero-surface-label) 12%, transparent),
-    )
-  );
   position: relative;
   z-index: 0;
   min-height: var(--home-banner-height);
@@ -120,29 +97,38 @@
 }
 
 .home-hero-button {
-  color: var(--home-hero-tonal-label);
   text-shadow: none;
 }
 
-.home-hero-button.mat-mdc-button {
-  color: var(--home-hero-surface-label);
+md-elevated-button.home-hero-button {
+  --md-elevated-button-container-color: var(--md-sys-color-surface-container-low);
+  --md-elevated-button-label-text-color: var(--md-sys-color-primary);
+  --md-elevated-button-icon-color: var(--md-sys-color-primary);
+  --md-elevated-button-hover-label-text-color: var(--md-sys-color-primary);
+  --md-elevated-button-hover-icon-color: var(--md-sys-color-primary);
+  --md-elevated-button-hover-state-layer-color: var(--md-sys-color-primary);
+  --md-elevated-button-focus-label-text-color: var(--md-sys-color-primary);
+  --md-elevated-button-focus-icon-color: var(--md-sys-color-primary);
+  --md-elevated-button-pressed-label-text-color: var(--md-sys-color-primary);
+  --md-elevated-button-pressed-icon-color: var(--md-sys-color-primary);
+  --md-elevated-button-pressed-state-layer-color: var(--md-sys-color-primary);
 }
 
-.home-hero-button.mat-mdc-button :where(.mdc-button__label, .mat-icon) {
-  color: inherit;
+md-text-button.home-hero-button {
+  --md-text-button-label-text-color: var(--home-hero-surface-label);
+  --md-text-button-icon-color: var(--home-hero-surface-label);
+  --md-text-button-hover-label-text-color: var(--home-hero-surface-label);
+  --md-text-button-hover-icon-color: var(--home-hero-surface-label);
+  --md-text-button-hover-state-layer-color: var(--home-hero-surface-label);
+  --md-text-button-focus-label-text-color: var(--home-hero-surface-label);
+  --md-text-button-focus-icon-color: var(--home-hero-surface-label);
+  --md-text-button-pressed-label-text-color: var(--home-hero-surface-label);
+  --md-text-button-pressed-icon-color: var(--home-hero-surface-label);
+  --md-text-button-pressed-state-layer-color: var(--home-hero-surface-label);
 }
 
-.home-hero-button .mat-icon {
-  width: 1.25rem;
-  height: 1.25rem;
-  font-size: 1.25rem;
-  line-height: 1.25rem;
-}
-
-.home-hero-button.mat-mdc-unelevated-button:hover,
-.home-hero-button.mat-mdc-outlined-button:hover,
-.home-hero-button.mat-mdc-button:hover {
-  background-color: var(--home-hero-tonal-hover);
+.home-hero-button md-icon[slot="icon"] {
+  --md-icon-size: 1.125rem;
 }
 
 .home-anime-credit {

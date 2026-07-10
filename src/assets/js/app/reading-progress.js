@@ -32,13 +32,10 @@ export function initScrollProgressBar() {
     return;
   }
 
-  const bar = document.createElement("div");
+  const bar = document.createElement("md-linear-progress");
   bar.className = "site-scroll-progress";
-  bar.setAttribute("role", "progressbar");
   bar.setAttribute("aria-label", "Progression de lecture");
-  bar.setAttribute("aria-valuemin", "0");
-  bar.setAttribute("aria-valuemax", "100");
-  bar.innerHTML = '<span class="site-scroll-progress-bar"></span>';
+  bar.setAttribute("max", "100");
 
   window.addEventListener("scroll", requestReadingProgressSync, { passive: true });
   window.addEventListener("resize", requestReadingProgressSync, { passive: true });
@@ -47,10 +44,7 @@ export function initScrollProgressBar() {
 }
 
 function syncScrollProgressBar(bar, progress = getScrollProgress()) {
-  const fill = bar.querySelector(".site-scroll-progress-bar");
-
-  bar.setAttribute("aria-valuenow", String(progress));
-  fill?.style.setProperty("transform", `translate3d(0, 0, 0) scaleX(${progress / 100})`);
+  bar.setAttribute("value", String(progress));
 }
 
 export function removeReadingProgress() {

@@ -1,6 +1,6 @@
 ---
-title: "Shortcodes Hugo Material"
-description: "Guide des shortcodes Hugo optionnels du blog : admonitions, icônes Material Symbols, onglets, tableaux Angular Material et blocs Shiki."
+title: "Shortcodes Astro et Material Web"
+description: "Guide des shortcodes Astro : vrais composants Material Web et patterns éditoriaux sémantiques."
 tags:
   - documentation
   - shortcodes
@@ -9,7 +9,12 @@ tags:
 
 Ce site garde le Markdown et le MDX standards comme base. Les shortcodes ci-dessous sont
 optionnels : ils servent uniquement quand un article a besoin d’un composant plus riche, sans
-forcer tous les contenus à passer par Angular.
+forcer tous les contenus à dépendre d’une bibliothèque d’interface.
+
+Les shortcodes `button`, `icon`, `progress` et `tabs` produisent directement les Web Components
+officiels de `@material/web`. Les cartes, annotations, tableaux et admonitions restent du HTML
+sémantique stylé avec les tokens Material 3 : Material Web ne livre pas de `md-card`,
+`md-data-table`, snackbar ou tooltip, et le blog n’invente aucune balise de remplacement.
 
 La syntaxe recommandée suit Hugo :
 
@@ -21,8 +26,8 @@ Contenu Markdown.
 {{< /nom-du-shortcode >}}
 ```
 
-Les blocs appairés doivent être isolés par des lignes vides. Le shortcode inline `icon` est la
-seule exception prévue pour vivre au milieu d’une phrase.
+Les blocs appairés doivent être isolés par des lignes vides. Les shortcodes inline `icon`,
+`inline-badge`, `kbd`, `abbr` et `annotation-ref` peuvent vivre au milieu d’une phrase.
 
 ## Admonitions
 
@@ -181,7 +186,7 @@ Le contenu reste dans le HTML, mais il est fermé au premier affichage.
 
 ## Icônes Material Symbols
 
-Le shortcode `icon` insère une icône Material Symbol inline :
+Le shortcode `icon` insère un vrai `<md-icon>` Material Web inline :
 
 ### Code
 
@@ -251,19 +256,25 @@ Fermez le panneau avec {{< key "Esc" />}}.
 
 ## Progression
 
-Le shortcode `progress` affiche une progression statique dans un article : migration, couverture,
-checklist ou avancement d’une documentation.
+Le shortcode `progress` affiche un vrai `<md-linear-progress>` Material Web : migration,
+couverture, checklist ou avancement d’une documentation.
+
+Utilisez une valeur déterminée uniquement lorsqu’elle mesure un avancement réel. Pour les attentes
+applicatives, le site n’affiche rien avant 200 ms, regroupe les activités liées sous un seul
+indicateur et garde le mode indéterminé tant que la durée ou la progression reste inconnue. Une
+barre linéaire se place sur le bord du conteneur ; un indicateur circulaire se centre dans l’élément
+chargé.
 
 ### Code
 
 ```markdown
-{{< progress label="Migration Angular Material" value=72 tone="info" />}}
+{{< progress label="Migration des composants" value=72 tone="info" />}}
 {{< progress label="Couverture des exemples" value=100 tone="success" />}}
 ```
 
 ### Rendu
 
-{{< progress label="Migration Angular Material" value=72 tone="info" />}}
+{{< progress label="Migration des composants" value=72 tone="info" />}}
 
 {{< progress label="Couverture des exemples" value=100 tone="success" />}}
 
@@ -274,6 +285,127 @@ checklist ou avancement d’une documentation.
 | `label`   | `Migration` | Libellé accessible et visible.                                  |
 | `value`   | `72`        | Nombre entre `0` et `100`.                                      |
 | `tone`    | `info`      | Ton visuel : `neutral`, `info`, `success`, `warning`, `danger`. |
+
+## Boutons Material Web
+
+Le shortcode `button` produit directement l’un des cinq composants officiellement livrés :
+`<md-filled-button>`, `<md-filled-tonal-button>`, `<md-outlined-button>`,
+`<md-text-button>` ou `<md-elevated-button>`. Leur propriété `href` crée le lien interne au
+composant et les URL sont validées au build. Gardez un libellé bref, idéalement de un à trois mots,
+en casse de phrase. Réservez `filled` à l’action principale et `elevated` aux fonds visuellement
+chargés qui nécessitent une séparation ; la série ci-dessous sert d’inventaire technique.
+
+```markdown
+{{< button href="/tags/all/" variant="filled" icon="article" >}}
+
+Voir les articles
+
+{{< /button >}}
+
+{{< button href="/search/" variant="outlined" label="Rechercher" />}}
+
+{{< button href="/cookies/" variant="tonal" label="Préférences" />}}
+
+{{< button href="/" variant="text" label="Accueil" />}}
+
+{{< button href="/tags/material/" variant="elevated" label="Material" />}}
+```
+
+{{< button href="/tags/all/" variant="filled" icon="article" >}}
+
+Voir les articles
+
+{{< /button >}}
+
+{{< button href="/search/" variant="outlined" label="Rechercher" />}}
+
+{{< button href="/cookies/" variant="tonal" label="Préférences" />}}
+
+{{< button href="/" variant="text" label="Accueil" />}}
+
+{{< button href="/tags/material/" variant="elevated" label="Material" />}}
+
+## Surfaces éditoriales en grille
+
+`cards` organise de une à quatre colonnes responsives. Chaque `card` accepte du Markdown, une
+icône et un lien optionnel. Ce pattern utilise `<article>` et les vrais rôles de couleur M3 ;
+il n’est pas présenté comme un composant Material Web, car `<md-card>` n’existe pas.
+
+```markdown
+{{< cards columns=2 >}}
+
+{{< card title="Installation" icon="download" href="/tags/all/" >}}
+
+Accéder aux guides et aux articles publiés.
+
+{{< /card >}}
+
+{{< card title="Recherche" icon="search" href="/search/" >}}
+
+Retrouver rapidement un contenu.
+
+{{< /card >}}
+
+{{< /cards >}}
+```
+
+{{< cards columns=2 >}}
+
+{{< card title="Installation" icon="download" href="/tags/all/" >}}
+
+Accéder aux guides et aux articles publiés.
+
+{{< /card >}}
+
+{{< card title="Recherche" icon="search" href="/search/" >}}
+
+Retrouver rapidement un contenu.
+
+{{< /card >}}
+
+{{< /cards >}}
+
+## Annotations et abréviations
+
+Les références d’annotation sont des liens clavier vers des blocs `<details>` natifs. Elles restent
+donc consultables sans JavaScript. `abbr` utilise l’attribut HTML natif `title`.
+
+```markdown
+API {{< abbr text="HTTP" title="Hypertext Transfer Protocol" />}}
+{{< annotation-ref id="note-http" label="1" />}}
+
+{{< annotations label="Notes" >}}
+{{< annotation id="note-http" label="1" >}}
+
+Le contenu de l’annotation reste du **Markdown**.
+
+{{< /annotation >}}
+{{< /annotations >}}
+```
+
+API {{< abbr text="HTTP" title="Hypertext Transfer Protocol" />}}
+{{< annotation-ref id="note-http" label="1" />}}
+
+{{< annotations label="Notes" >}}
+
+{{< annotation id="note-http" label="1" >}}
+
+Le contenu de l’annotation reste du **Markdown**.
+
+{{< /annotation >}}
+
+{{< /annotations >}}
+
+## Figures
+
+Le shortcode `figure` associe une image, son texte alternatif et une légende, avec dimensions
+optionnelles pour stabiliser la mise en page.
+
+```markdown
+{{< figure src="/mask.webp" alt="Logo du site" caption="Logo de c2tz" width=60 height=60 />}}
+```
+
+{{< figure src="/mask.webp" alt="Logo du site" caption="Logo de c2tz" width=60 height=60 />}}
 
 ### Ajouter un symbole qui n’est pas enregistré
 
@@ -322,8 +454,9 @@ GitHub détecte donc automatiquement une icône ajoutée sans régénération du
 
 ## Onglets
 
-Les onglets sont rendus par Angular Material. Ils sont utiles pour proposer plusieurs commandes ou
-plusieurs variantes sans dupliquer le texte autour.
+Les onglets sont enrichis avec les vrais `<md-tabs>` et `<md-primary-tab>` Material Web. Le
+contenu reste lisible avant l’enregistrement des Web Components et le contrôleur associe chaque
+onglet à son panneau.
 
 ### Syntaxe
 
@@ -407,10 +540,11 @@ Version {{< badge label="audit" tone="warning" />}} à relire avant publication.
 
 {{< /tabs >}}
 
-## Tableaux Angular Material
+## Tableaux interactifs
 
-Le Markdown standard reste disponible pour les tableaux simples. Le shortcode `material-table`
-active un tableau Angular Material uniquement quand vous avez besoin de tri, filtre ou pagination.
+Le Markdown standard reste disponible pour les tableaux simples. Material Web ne livre pas de data
+table : le shortcode `material-table` conserve donc un vrai `<table>` HTML et ne l’active que
+quand vous avez besoin de tri, filtre ou pagination.
 
 ### Syntaxe
 
@@ -419,8 +553,8 @@ active un tableau Angular Material uniquement quand vous avez besoin de tri, fil
 
 | Composant  | Rôle                     | Interactif |
 | ---------- | ------------------------ | ---------- |
-| MatTable   | Données tabulaires       | Oui        |
-| MatTabs    | Contenu à onglets        | Oui        |
+| Table      | Données tabulaires       | Oui        |
+| Tabs       | Contenu à onglets        | Oui        |
 | Admonition | Information contextuelle | Non        |
 
 {{< /material-table >}}
@@ -432,8 +566,8 @@ active un tableau Angular Material uniquement quand vous avez besoin de tri, fil
 
 | Composant  | Rôle                     | Interactif |
 | ---------- | ------------------------ | ---------- |
-| MatTable   | Données tabulaires       | Oui        |
-| MatTabs    | Contenu à onglets        | Oui        |
+| Table      | Données tabulaires       | Oui        |
+| Tabs       | Contenu à onglets        | Oui        |
 | Admonition | Information contextuelle | Non        |
 | Shiki      | Bloc de code éditorial   | Non        |
 

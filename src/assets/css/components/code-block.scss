@@ -47,18 +47,6 @@ pre.astro-code {
   transform: translateY(-50%);
 }
 
-.code-copy-button.mat-mdc-icon-button {
-  pointer-events: auto;
-}
-
-.code-copy-button-copied {
-  color: var(--site-link);
-}
-
-.code-copy-button-error {
-  color: var(--m3-error);
-}
-
 .code-copy-fallback-input {
   position: fixed;
   inset: 0 auto auto 0;

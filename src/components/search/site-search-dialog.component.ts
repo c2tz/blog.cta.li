@@ -1,21 +1,31 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from "@angular/core";
-import { MatIconButton } from "@angular/material/button";
-import { MatDialogModule } from "@angular/material/dialog";
-import { MatIcon } from "@angular/material/icon";
+import {
+  CUSTOM_ELEMENTS_SCHEMA,
+  ChangeDetectionStrategy,
+  Component,
+  ViewEncapsulation,
+  inject,
+} from "@angular/core";
+import { MatDialogModule, MatDialogRef } from "@angular/material/dialog";
 import { SiteSearchPanelComponent } from "./site-search-panel.component";
 
 @Component({
   selector: "site-search-dialog",
   standalone: true,
-  imports: [MatDialogModule, MatIcon, MatIconButton, SiteSearchPanelComponent],
+  imports: [MatDialogModule, SiteSearchPanelComponent],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
     <div class="site-search-dialog-header">
       <h2 mat-dialog-title>Recherche</h2>
-      <button matIconButton type="button" mat-dialog-close aria-label="Fermer la recherche">
-        <mat-icon aria-hidden="true">{{ closeIcon }}</mat-icon>
-      </button>
+      <md-icon-button
+        type="button"
+        title="Fermer la recherche"
+        aria-label="Fermer la recherche"
+        (click)="close()"
+      >
+        <md-icon aria-hidden="true">{{ closeIcon }}</md-icon>
+      </md-icon-button>
     </div>
 
     <mat-dialog-content>
@@ -58,6 +68,17 @@ import { SiteSearchPanelComponent } from "./site-search-panel.component";
       font-family: var(--site-heading-font);
     }
 
+    .site-search-dialog-header md-icon-button {
+      --md-icon-button-icon-color: var(--site-muted);
+      --md-icon-button-hover-icon-color: var(--site-text);
+      --md-icon-button-focus-icon-color: var(--site-text);
+      --md-icon-button-pressed-icon-color: var(--site-text);
+      --md-icon-button-hover-state-layer-color: var(--site-muted);
+      --md-icon-button-focus-state-layer-color: var(--site-muted);
+      --md-icon-button-pressed-state-layer-color: var(--site-muted);
+      flex: 0 0 auto;
+    }
+
     @media (max-width: 720px), (pointer: coarse) {
       .site-search-dialog-panel.cdk-overlay-pane {
         position: fixed !important;
@@ -87,4 +108,10 @@ import { SiteSearchPanelComponent } from "./site-search-panel.component";
 })
 export class SiteSearchDialogComponent {
   readonly closeIcon = "\uE5CD";
+
+  private readonly dialogRef = inject(MatDialogRef<SiteSearchDialogComponent>);
+
+  close() {
+    this.dialogRef.close();
+  }
 }

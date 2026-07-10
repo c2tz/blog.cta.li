@@ -45,10 +45,29 @@ const SHORTCODE_ALIASES = Object.freeze({
   keys: "kbd",
 });
 
-const PAIRED_SHORTCODES = new Set(["admonition", "material-table", "shiki", "tab", "tabs"]);
-const INLINE_SHORTCODES = new Set(["icon", "inline-badge", "kbd"]);
-const KNOWN_SHORTCODES = Object.freeze([
+const PAIRED_SHORTCODES = new Set([
   "admonition",
+  "annotation",
+  "annotations",
+  "button",
+  "card",
+  "cards",
+  "material-table",
+  "shiki",
+  "tab",
+  "tabs",
+]);
+const INLINE_SHORTCODES = new Set(["abbr", "annotation-ref", "icon", "inline-badge", "kbd"]);
+const KNOWN_SHORTCODES = Object.freeze([
+  "abbr",
+  "admonition",
+  "annotation",
+  "annotation-ref",
+  "annotations",
+  "button",
+  "card",
+  "cards",
+  "figure",
   "icon",
   "inline-badge",
   "kbd",
@@ -79,6 +98,14 @@ const TONES = Object.freeze({
   warning: "warning",
 });
 const TONE_VALUES = Object.freeze(["neutral", "info", "success", "warning", "danger"]);
+const BUTTON_TAGS = Object.freeze({
+  elevated: "md-elevated-button",
+  filled: "md-filled-button",
+  outlined: "md-outlined-button",
+  text: "md-text-button",
+  tonal: "md-filled-tonal-button",
+});
+const BUTTON_VARIANTS = Object.freeze(Object.keys(BUTTON_TAGS));
 
 function optionList(values) {
   return Array.from(values, (value) => `\`${value}\``).join(", ");
@@ -112,7 +139,7 @@ function normalizeMaterialSymbolName(name) {
   );
 }
 
-function materialSymbolNode(name, file, { className = [], label } = {}) {
+function materialSymbolNode(name, file, { className = [], label, slot } = {}) {
   const normalized = normalizeMaterialSymbolName(name);
   const codepoint = MATERIAL_SYMBOL_CODEPOINTS[normalized];
   if (!codepoint) {
@@ -123,17 +150,19 @@ function materialSymbolNode(name, file, { className = [], label } = {}) {
     );
   }
 
-  return textNode(String.fromCodePoint(codepoint), {
-    hName: "span",
-    hProperties: {
+  return elementNode(
+    "md-icon",
+    {
       ...(label ? { ariaLabel: label, role: "img" } : { ariaHidden: "true" }),
-      className: ["material-symbols-rounded", "material-shortcode-icon", ...className],
+      className: ["material-shortcode-icon", ...className],
       dataMaterialSymbol: String(name)
         .trim()
         .toLowerCase()
         .replace(/[\s_]+/g, "-"),
+      ...(slot ? { slot } : {}),
     },
-  });
+    [textNode(String.fromCodePoint(codepoint))],
+  );
 }
 
 function materialExpansionIndicatorNode(file) {
@@ -144,8 +173,14 @@ function materialExpansionIndicatorNode(file) {
 
 function paragraphText(node) {
   if (node?.type !== "paragraph" || !Array.isArray(node.children)) return null;
-  if (!node.children.every((child) => child.type === "text")) return null;
-  return node.children.map((child) => child.value).join("");
+  const values = node.children.map((child) => {
+    if (child.type === "text") return child.value;
+    if (child.type === "link" && child.children?.every((nested) => nested.type === "text")) {
+      return child.children.map((nested) => nested.value).join("");
+    }
+    return null;
+  });
+  return values.every((value) => value !== null) ? values.join("") : null;
 }
 
 function tokenizeHugoShortcode(source) {
@@ -302,6 +337,33 @@ function parameter(shortcode, name, position, fallback) {
   return shortcode.named[name] ?? shortcode.positional[position] ?? fallback;
 }
 
+function safeUrl(value, shortcodeName, parameterName, file, { allowMail = false } = {}) {
+  const source = String(value ?? "").trim();
+  if (!source) {
+    file.fail(`Le paramètre ${parameterName} du shortcode ${shortcodeName} est obligatoire.`);
+  }
+
+  try {
+    const parsed = new URL(source, "https://shortcode.local/");
+    const allowedProtocols = allowMail ? ["http:", "https:", "mailto:"] : ["http:", "https:"];
+    if (!allowedProtocols.includes(parsed.protocol)) throw new Error("unsupported_protocol");
+  } catch {
+    file.fail(`URL invalide pour ${shortcodeName}.${parameterName} : \`${source}\`.`);
+  }
+
+  return source;
+}
+
+function safeId(value, shortcodeName, file) {
+  const id = String(value ?? "").trim();
+  if (!/^[A-Za-z][\w:.-]*$/.test(id)) {
+    file.fail(
+      `Identifiant invalide pour ${shortcodeName} : \`${id}\`. Utilisez une lettre puis lettres, chiffres, tirets ou underscores.`,
+    );
+  }
+  return id;
+}
+
 function canonicalTone(value, shortcodeName, file) {
   const requestedTone = String(value ?? "neutral").toLowerCase();
   const tone = TONES[requestedTone];
@@ -360,6 +422,190 @@ function createMaterialIcon(shortcode, file) {
     className: ["material-shortcode-inline-icon"],
     label: label ? String(label) : undefined,
   });
+}
+
+function createAbbreviation(shortcode, file) {
+  const text = parameter(shortcode, "text", 0, undefined);
+  const title = parameter(shortcode, "title", 1, undefined);
+  if (!text || !title) {
+    file.fail(
+      'Le shortcode abbr exige `text` et `title`, par exemple {{< abbr text="API" title="Interface de programmation" />}}.',
+    );
+  }
+
+  return elementNode(
+    "abbr",
+    {
+      className: ["material-abbreviation"],
+      dataTooltip: String(title),
+      title: String(title),
+    },
+    [textNode(String(text))],
+  );
+}
+
+function createAnnotationReference(shortcode, file) {
+  const id = safeId(parameter(shortcode, "id", 0, undefined), "annotation-ref", file);
+  const label = String(parameter(shortcode, "label", 1, id));
+  return elementNode("sup", { className: ["material-annotation-reference"] }, [
+    elementNode(
+      "a",
+      {
+        ariaLabel: `Voir l’annotation ${label}`,
+        href: `#${id}`,
+      },
+      [textNode(label)],
+    ),
+  ]);
+}
+
+function createAnnotations(shortcode, children) {
+  const label = String(parameter(shortcode, "label", 0, "Annotations"));
+  return elementNode(
+    "section",
+    {
+      ariaLabel: label,
+      className: ["material-annotations"],
+      dataMaterialAnnotations: "",
+    },
+    children,
+  );
+}
+
+function createAnnotation(shortcode, children, file) {
+  const id = safeId(parameter(shortcode, "id", 0, undefined), "annotation", file);
+  const label = String(parameter(shortcode, "label", 1, id));
+  const open = booleanParameter(shortcode.named.open, false);
+  return elementNode(
+    "details",
+    {
+      className: ["material-annotation"],
+      id,
+      ...(open ? { open: true } : {}),
+    },
+    [
+      elementNode("summary", { className: ["material-annotation-summary"] }, [textNode(label)]),
+      elementNode("div", { className: ["material-annotation-content"] }, children),
+    ],
+  );
+}
+
+function createButton(shortcode, children, file) {
+  const href = safeUrl(parameter(shortcode, "href", 0, undefined), "button", "href", file, {
+    allowMail: true,
+  });
+  const requestedVariant = String(shortcode.named.variant ?? "filled").toLowerCase();
+  if (!BUTTON_VARIANTS.includes(requestedVariant)) {
+    file.fail(
+      `Variante de bouton inconnue : \`${requestedVariant}\`. Valeurs possibles : ${optionList(BUTTON_VARIANTS)}.`,
+    );
+  }
+
+  const label = shortcode.named.label;
+  const icon = shortcode.named.icon;
+  const iconPosition = shortcode.named.iconPosition === "end" ? "end" : "start";
+  if (icon && iconPosition === "end") {
+    file.fail(
+      'Material Web ne prend pas en charge les icônes terminales sur les boutons-liens. Utilisez iconPosition="start".',
+    );
+  }
+  const content = children.length
+    ? children.length === 1 && children[0]?.type === "paragraph"
+      ? children[0].children
+      : children
+    : label
+      ? [textNode(String(label))]
+      : [];
+  if (!content.length) {
+    file.fail("Le shortcode button doit contenir un libellé Markdown ou recevoir `label`.");
+  }
+
+  const iconNode = icon
+    ? materialSymbolNode(icon, file, {
+        className: ["material-button-icon"],
+        slot: "icon",
+      })
+    : null;
+  const target = shortcode.named.target === "_blank" ? "_blank" : undefined;
+  return elementNode(
+    BUTTON_TAGS[requestedVariant],
+    {
+      className: ["material-button"],
+      ...(iconNode ? { hasIcon: true } : {}),
+      href,
+      ...(target ? { target } : {}),
+    },
+    [
+      ...(iconNode && iconPosition === "start" ? [iconNode] : []),
+      elementNode("span", { className: ["material-button-label"] }, content),
+    ],
+  );
+}
+
+function createCards(shortcode, children, file) {
+  const rawColumns = Number.parseInt(String(parameter(shortcode, "columns", 0, "3")), 10);
+  if (!Number.isInteger(rawColumns) || rawColumns < 1 || rawColumns > 4) {
+    file.fail("Le shortcode cards accepte entre 1 et 4 colonnes.");
+  }
+  return elementNode(
+    "div",
+    {
+      className: ["material-card-grid"],
+      dataColumns: rawColumns,
+      style: `--material-card-columns: ${rawColumns}`,
+    },
+    children,
+  );
+}
+
+function createCard(shortcode, children, file) {
+  const title = parameter(shortcode, "title", 0, undefined);
+  if (!title) file.fail("Le shortcode card exige un paramètre `title`.");
+  const hrefValue = shortcode.named.href;
+  const href = hrefValue
+    ? safeUrl(hrefValue, "card", "href", file, { allowMail: true })
+    : undefined;
+  const icon = shortcode.named.icon;
+  const headingChildren = [
+    ...(icon ? [materialSymbolNode(icon, file, { className: ["material-card-icon"] })] : []),
+    textNode(String(title)),
+  ];
+  const heading = href
+    ? elementNode("a", { className: ["material-card-link"], href }, headingChildren)
+    : elementNode("span", { className: ["material-card-title-text"] }, headingChildren);
+
+  return elementNode("article", { className: ["material-card"] }, [
+    elementNode("h3", { className: ["material-card-title"] }, [heading]),
+    ...(children.length
+      ? [elementNode("div", { className: ["material-card-content"] }, children)]
+      : []),
+  ]);
+}
+
+function createFigure(shortcode, file) {
+  const src = safeUrl(parameter(shortcode, "src", 0, undefined), "figure", "src", file);
+  const alt = String(parameter(shortcode, "alt", 1, ""));
+  const caption = shortcode.named.caption;
+  const width = Number.parseInt(String(shortcode.named.width ?? ""), 10);
+  const height = Number.parseInt(String(shortcode.named.height ?? ""), 10);
+  return elementNode("figure", { className: ["material-figure"] }, [
+    elementNode("img", {
+      alt,
+      className: ["material-figure-image"],
+      decoding: "async",
+      ...(Number.isFinite(height) && height > 0 ? { height } : {}),
+      loading: "lazy",
+      src,
+      ...(Number.isFinite(width) && width > 0 ? { width } : {}),
+    }),
+    ...(caption
+      ? [
+          elementNode("figcaption", { className: ["material-figure-caption"] }, [
+            textNode(String(caption)),
+          ]),
+        ]
+      : []),
+  ]);
 }
 
 function createInlineBadge(shortcode, file) {
@@ -438,25 +684,20 @@ function createProgress(shortcode, file) {
   return elementNode(
     "div",
     {
-      ariaLabel: label,
-      ariaValueMax: 100,
-      ariaValueMin: 0,
-      ariaValueNow: roundedValue,
       className: ["material-progress", `material-progress-${tone}`],
       dataTone: tone,
-      role: "progressbar",
     },
     [
       elementNode("div", { className: ["material-progress-header"] }, [
         elementNode("span", { className: ["material-progress-label"] }, [textNode(label)]),
         elementNode("span", { className: ["material-progress-value"] }, [textNode(valueLabel)]),
       ]),
-      elementNode("span", { ariaHidden: "true", className: ["material-progress-track"] }, [
-        elementNode("span", {
-          className: ["material-progress-fill"],
-          style: `width: ${roundedValue}%`,
-        }),
-      ]),
+      elementNode("md-linear-progress", {
+        ariaLabel: label,
+        className: ["material-progress-indicator", `material-progress-indicator-${tone}`],
+        max: 1,
+        value: roundedValue / 100,
+      }),
     ],
   );
 }
@@ -573,8 +814,24 @@ function createShiki(shortcode, children, file) {
 
 function renderShortcode(shortcode, children, file) {
   switch (shortcode.name) {
+    case "abbr":
+      return createAbbreviation(shortcode, file);
     case "admonition":
       return createAdmonition(shortcode, children, file);
+    case "annotation":
+      return createAnnotation(shortcode, children, file);
+    case "annotation-ref":
+      return createAnnotationReference(shortcode, file);
+    case "annotations":
+      return createAnnotations(shortcode, children);
+    case "button":
+      return createButton(shortcode, children, file);
+    case "card":
+      return createCard(shortcode, children, file);
+    case "cards":
+      return createCards(shortcode, children, file);
+    case "figure":
+      return createFigure(shortcode, file);
     case "icon":
       return createMaterialIcon(shortcode, file);
     case "inline-badge":

@@ -1,110 +1,31 @@
-@use "@angular/material" as mat;
-
 .site-scroll-progress {
+  --md-linear-progress-active-indicator-color: var(--md-sys-color-primary);
+  --md-linear-progress-active-indicator-height: 3px;
+  --md-linear-progress-track-color: transparent;
+  --md-linear-progress-track-height: 3px;
+  --md-linear-progress-track-shape: var(--md-sys-shape-corner-none);
+
   position: fixed;
   inset: 0 0 auto;
   z-index: 9500;
+  width: 100%;
+  min-width: 0;
   height: 3px;
   overflow: hidden;
   pointer-events: none;
   transform: translate3d(0, 0, 0);
 }
 
-.site-scroll-progress-bar {
-  display: block;
-  width: 100%;
-  height: 100%;
-  background: var(--site-link);
-  transform: translate3d(0, 0, 0) scaleX(0);
-  transform-origin: left center;
-  backface-visibility: hidden;
-  will-change: transform;
-}
-
-.site-scroll-top.mat-mdc-mini-fab.mat-mdc-button-base {
-  @include mat.fab-overrides(
-    (
-      small-container-color: var(--site-tonal-container),
-      small-foreground-color: var(--site-on-tonal-container),
-      small-ripple-color: color-mix(in srgb, var(--site-on-tonal-container) 12%, transparent),
-      small-state-layer-color: var(--site-on-tonal-container),
-    )
+.site-scroll-top-button {
+  --md-filled-tonal-icon-button-container-color: var(--md-sys-color-secondary-container);
+  --md-filled-tonal-icon-button-focus-icon-color: var(--md-sys-color-on-secondary-container);
+  --md-filled-tonal-icon-button-hover-icon-color: var(--md-sys-color-on-secondary-container);
+  --md-filled-tonal-icon-button-hover-state-layer-color: var(--md-sys-color-on-secondary-container);
+  --md-filled-tonal-icon-button-icon-color: var(--md-sys-color-on-secondary-container);
+  --md-filled-tonal-icon-button-pressed-icon-color: var(--md-sys-color-on-secondary-container);
+  --md-filled-tonal-icon-button-pressed-state-layer-color: var(
+    --md-sys-color-on-secondary-container
   );
-  position: fixed;
-  right: calc(2rem + env(safe-area-inset-right, 0px));
-  bottom: 1rem;
-  z-index: 9000;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  padding: 0;
-  overflow: visible;
-  border: 0;
-  background: var(--site-tonal-container);
-  color: var(--site-on-tonal-container);
-  box-shadow: var(--mat-sys-level3, 0 6px 14px rgb(0 0 0 / 18%));
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(1rem);
-  transition:
-    opacity 180ms ease,
-    transform 180ms ease;
-}
-
-.site-scroll-top .site-scroll-top-icon.mat-icon {
-  width: 1.35rem;
-  height: 1.35rem;
-  margin: 0;
-  font-size: 1.35rem;
-  line-height: 1.35rem;
-}
-
-.site-scroll-top.mat-mdc-mini-fab.mat-mdc-button-base .mdc-button__label {
-  position: static !important;
-}
-
-.site-scroll-top .site-scroll-top-badge {
-  position: absolute;
-  top: -0.45rem;
-  right: -1rem;
-  z-index: 3;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 2rem;
-  width: auto;
-  height: 1rem;
-  box-sizing: border-box;
-  padding-inline: 0.25rem;
-  border-radius: 9999px;
-  background: var(--site-link);
-  color: var(--m3-on-primary);
-  font-size: 0.6875rem;
-  font-weight: 500;
-  line-height: 1rem;
-  pointer-events: none;
-}
-
-.site-scroll-top.mat-mdc-mini-fab.mat-mdc-button-base.is-visible {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateY(0);
-}
-
-@media (max-width: 520px) {
-  .site-scroll-top.mat-mdc-mini-fab.mat-mdc-button-base {
-    right: calc(2rem + env(safe-area-inset-right, 0px));
-    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
-  }
-
-  .site-scroll-top .site-scroll-top-icon.mat-icon {
-    width: 1.25rem;
-    height: 1.25rem;
-    font-size: 1.25rem;
-    line-height: 1.25rem;
-  }
 }
 
 html.consent-visible .site-scroll-top {

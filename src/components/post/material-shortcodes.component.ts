@@ -1,23 +1,21 @@
 import {
   ApplicationRef,
+  CUSTOM_ELEMENTS_SCHEMA,
   ChangeDetectionStrategy,
   Component,
   EnvironmentInjector,
-  ViewChild,
   ViewEncapsulation,
+  computed,
   createComponent,
+  effect,
   inject,
   signal,
 } from "@angular/core";
 import type { AfterViewInit, ComponentRef, OnDestroy } from "@angular/core";
-import { MatFormField, MatLabel } from "@angular/material/form-field";
-import { MatInput } from "@angular/material/input";
-import { MatPaginator, MatPaginatorModule } from "@angular/material/paginator";
-import { MatSort, MatSortModule } from "@angular/material/sort";
-import { MatTableDataSource, MatTableModule } from "@angular/material/table";
-import { MatTabsModule } from "@angular/material/tabs";
 import { DomSanitizer } from "@angular/platform-browser";
 import type { SafeHtml } from "@angular/platform-browser";
+import { MaterialTextFieldValueDirective } from "@/components/material/material-text-field-value.directive";
+import { materialControlValue } from "@/lib/material-web-events";
 
 interface MaterialTabData {
   readonly html: SafeHtml;
@@ -35,11 +33,14 @@ interface MaterialHtmlValue {
 }
 
 type MaterialTableRow = Record<string, MaterialHtmlValue>;
+type SortDirection = "asc" | "desc";
 
 interface MountedShortcode {
   readonly componentRef: ComponentRef<unknown>;
   readonly host: HTMLElement;
 }
+
+let shortcodeInstanceId = 0;
 
 function textFromHtml(html: string) {
   const element = document.createElement("div");
@@ -50,114 +51,266 @@ function textFromHtml(html: string) {
 @Component({
   selector: "site-material-tabs-view",
   standalone: true,
-  imports: [MatTabsModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
-    <mat-tab-group
-      class="material-shortcode-tabs"
-      animationDuration="0ms"
-      [attr.aria-label]="label"
-      preserveContent
-    >
-      @for (tab of tabs; track tab.title) {
-        <mat-tab [label]="tab.title">
-          <div class="material-shortcode-tab-content" [innerHTML]="tab.html"></div>
-        </mat-tab>
+    <md-tabs class="material-shortcode-tabs" [attr.aria-label]="label" (change)="selectTab($event)">
+      @for (tab of tabs; track tab.title; let index = $index) {
+        <md-primary-tab
+          [active]="activeIndex() === index"
+          [attr.id]="tabId(index)"
+          [attr.aria-controls]="panelId(index)"
+        >
+          {{ tab.title }}
+        </md-primary-tab>
       }
-    </mat-tab-group>
+    </md-tabs>
+
+    @for (tab of tabs; track tab.title; let index = $index) {
+      <section
+        class="material-shortcode-tab-panel"
+        role="tabpanel"
+        tabindex="0"
+        [id]="panelId(index)"
+        [attr.aria-labelledby]="tabId(index)"
+        [hidden]="activeIndex() !== index"
+      >
+        <div class="material-shortcode-tab-content" [innerHTML]="tab.html"></div>
+      </section>
+    }
   `,
 })
 class MaterialTabsViewComponent {
+  private readonly instanceId = ++shortcodeInstanceId;
+
   label = "Contenu à onglets";
   tabs: readonly MaterialTabData[] = [];
+  readonly activeIndex = signal(0);
+
+  selectTab(event: Event) {
+    const index = (event.target as HTMLElement & { activeTabIndex?: number }).activeTabIndex;
+    if (typeof index === "number") this.activeIndex.set(index);
+  }
+
+  tabId(index: number) {
+    return `material-tabs-${this.instanceId}-tab-${index}`;
+  }
+
+  panelId(index: number) {
+    return `material-tabs-${this.instanceId}-panel-${index}`;
+  }
 }
 
 @Component({
   selector: "site-material-table-view",
   standalone: true,
-  imports: [MatFormField, MatInput, MatLabel, MatPaginatorModule, MatSortModule, MatTableModule],
+  imports: [MaterialTextFieldValueDirective],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
     @if (filterEnabled()) {
-      <mat-form-field
+      <md-outlined-text-field
         class="material-shortcode-table-filter"
-        appearance="outline"
-        subscriptSizing="dynamic"
-      >
-        <mat-label>Filtrer le tableau</mat-label>
-        <input matInput type="search" autocomplete="off" (input)="applyFilter($event)" />
-      </mat-form-field>
+        type="search"
+        label="Filtrer le tableau"
+        autocomplete="off"
+        [id]="filterId"
+        [value]="filterValue()"
+        [attr.aria-controls]="tableId"
+        siteMaterialValue
+        (siteMaterialValueChange)="setFilterValue($event)"
+        (input)="applyFilter($event)"
+        (keyup)="applyFilter($event)"
+      ></md-outlined-text-field>
     }
 
-    <div class="material-shortcode-table-scroll" tabindex="0">
-      <table
-        mat-table
-        matSort
-        [dataSource]="dataSource"
-        class="material-shortcode-table"
-        aria-label="Tableau de données"
-      >
-        @for (column of columns; track column.key) {
-          <ng-container [matColumnDef]="column.key">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              [mat-sort-header]="column.key"
-              [disabled]="!sortEnabled()"
-              scope="col"
-            >
-              {{ column.label }}
-            </th>
-            <td mat-cell *matCellDef="let row">
-              <span [innerHTML]="row[column.key].html"></span>
-            </td>
-          </ng-container>
-        }
+    <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+      {{ tableStatus() }}
+    </p>
+    <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+      {{ sortStatus() }}
+    </p>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-        <tr *matNoDataRow>
-          <td class="material-shortcode-table-empty" [attr.colspan]="displayedColumns.length">
-            Aucun résultat.
-          </td>
-        </tr>
+    <div class="material-shortcode-table-scroll" tabindex="0">
+      <table [id]="tableId" class="material-shortcode-table" aria-label="Tableau de données">
+        <thead>
+          <tr>
+            @for (column of columns(); track column.key) {
+              <th scope="col" [attr.aria-sort]="sortAria(column.key)">
+                @if (sortEnabled()) {
+                  <button
+                    type="button"
+                    class="material-shortcode-sort-button"
+                    [class.material-shortcode-sort-active]="sortColumn() === column.key"
+                    [attr.aria-label]="'Trier par ' + column.label"
+                    (click)="toggleSort(column.key, column.label)"
+                  >
+                    <span>{{ column.label }}</span>
+                    <md-icon aria-hidden="true">{{ sortIcon(column.key) }}</md-icon>
+                    <md-ripple></md-ripple>
+                  </button>
+                } @else {
+                  {{ column.label }}
+                }
+              </th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of visibleRows(); track $index) {
+            <tr>
+              @for (column of columns(); track column.key) {
+                <td><span [innerHTML]="row[column.key].html"></span></td>
+              }
+            </tr>
+          } @empty {
+            <tr>
+              <td class="material-shortcode-table-empty" [attr.colspan]="columns().length">
+                Aucun résultat.
+              </td>
+            </tr>
+          }
+        </tbody>
       </table>
     </div>
 
     @if (paginateEnabled()) {
-      <mat-paginator
-        class="material-shortcode-table-paginator"
-        aria-label="Pagination du tableau"
-        [pageSize]="pageSize()"
-        [pageSizeOptions]="pageSizeOptions()"
-        showFirstLastButtons
-      />
+      <nav class="material-shortcode-table-paginator" aria-label="Pagination du tableau">
+        <div class="material-shortcode-page-size">
+          <span>Lignes par page</span>
+          <md-outlined-select
+            label="Lignes par page"
+            [value]="pageSize().toString()"
+            [attr.aria-controls]="tableId"
+            (change)="changePageSize($event)"
+          >
+            @for (size of pageSizeOptions(); track size) {
+              <md-select-option [value]="size.toString()">
+                <span slot="headline">{{ size }}</span>
+              </md-select-option>
+            }
+          </md-outlined-select>
+        </div>
+
+        <span class="material-shortcode-range">{{ rangeLabel() }}</span>
+
+        <div class="material-shortcode-page-actions">
+          <md-icon-button
+            type="button"
+            aria-label="Première page"
+            [attr.aria-controls]="tableId"
+            [disabled]="!hasPreviousPage()"
+            (click)="goToPage(0)"
+          >
+            <md-icon aria-hidden="true">&#xE5DC;</md-icon>
+          </md-icon-button>
+          <md-icon-button
+            type="button"
+            aria-label="Page précédente"
+            [attr.aria-controls]="tableId"
+            [disabled]="!hasPreviousPage()"
+            (click)="goToPage(pageIndex() - 1)"
+          >
+            <md-icon aria-hidden="true">&#xE5CB;</md-icon>
+          </md-icon-button>
+          <md-icon-button
+            type="button"
+            aria-label="Page suivante"
+            [attr.aria-controls]="tableId"
+            [disabled]="!hasNextPage()"
+            (click)="goToPage(pageIndex() + 1)"
+          >
+            <md-icon aria-hidden="true">&#xE5CC;</md-icon>
+          </md-icon-button>
+          <md-icon-button
+            type="button"
+            aria-label="Dernière page"
+            [attr.aria-controls]="tableId"
+            [disabled]="!hasNextPage()"
+            (click)="goToPage(pageCount() - 1)"
+          >
+            <md-icon aria-hidden="true">&#xE5DD;</md-icon>
+          </md-icon-button>
+        </div>
+      </nav>
     }
   `,
 })
-class MaterialTableViewComponent implements AfterViewInit {
-  @ViewChild(MatSort) private sort?: MatSort;
-  @ViewChild(MatPaginator) private paginator?: MatPaginator;
+class MaterialTableViewComponent {
+  private readonly instanceId = ++shortcodeInstanceId;
 
-  readonly dataSource = new MatTableDataSource<MaterialTableRow>();
+  readonly tableId = `material-table-${this.instanceId}`;
+  readonly filterId = `material-table-${this.instanceId}-filter`;
+  readonly columns = signal<readonly MaterialTableColumn[]>([]);
+  readonly rows = signal<readonly MaterialTableRow[]>([]);
   readonly filterEnabled = signal(false);
   readonly paginateEnabled = signal(false);
   readonly sortEnabled = signal(true);
   readonly pageSize = signal(10);
   readonly pageSizeOptions = signal<readonly number[]>([5, 10, 25]);
-  columns: readonly MaterialTableColumn[] = [];
-  displayedColumns: readonly string[] = [];
+  readonly pageIndex = signal(0);
+  readonly filterValue = signal("");
+  readonly sortColumn = signal<string | null>(null);
+  readonly sortDirection = signal<SortDirection>("asc");
+  readonly sortStatus = signal("");
+  readonly normalizedFilter = computed(() => this.filterValue().trim().toLocaleLowerCase("fr"));
+  readonly filteredRows = computed(() => {
+    const filter = this.normalizedFilter();
+    if (!filter) return this.rows();
+
+    return this.rows().filter((row) =>
+      this.columns().some((column) => row[column.key]?.text.includes(filter)),
+    );
+  });
+  readonly sortedRows = computed(() => {
+    const column = this.sortColumn();
+    if (!column || !this.sortEnabled()) return this.filteredRows();
+
+    const direction = this.sortDirection() === "asc" ? 1 : -1;
+    return [...this.filteredRows()].sort(
+      (left, right) =>
+        (left[column]?.text ?? "").localeCompare(right[column]?.text ?? "", "fr", {
+          numeric: true,
+          sensitivity: "base",
+        }) * direction,
+    );
+  });
+  readonly pageCount = computed(() =>
+    Math.max(1, Math.ceil(this.filteredRows().length / this.pageSize())),
+  );
+  readonly visibleRows = computed(() => {
+    if (!this.paginateEnabled()) return this.sortedRows();
+
+    const start = this.pageIndex() * this.pageSize();
+    return this.sortedRows().slice(start, start + this.pageSize());
+  });
+  readonly hasPreviousPage = computed(() => this.pageIndex() > 0);
+  readonly hasNextPage = computed(() => this.pageIndex() + 1 < this.pageCount());
+  readonly rangeLabel = computed(() => {
+    const total = this.filteredRows().length;
+    if (total === 0) return "0 sur 0";
+
+    const start = this.pageIndex() * this.pageSize() + 1;
+    const end = Math.min(start + this.visibleRows().length - 1, total);
+    return `${start} - ${end} sur ${total}`;
+  });
+  readonly tableStatus = computed(() => {
+    const total = this.filteredRows().length;
+    if (total === 0) return "Aucun résultat.";
+    if (!this.paginateEnabled()) return `${total} ligne${total > 1 ? "s" : ""}.`;
+
+    const start = this.pageIndex() * this.pageSize() + 1;
+    const end = Math.min(start + this.visibleRows().length - 1, total);
+    return `Lignes ${start} à ${end} sur ${total}.`;
+  });
 
   constructor() {
-    this.dataSource.filterPredicate = (row, filter) =>
-      this.displayedColumns.some((key) => row[key]?.text.includes(filter));
-    this.dataSource.sortingDataAccessor = (row, key) => row[key]?.text ?? "";
-  }
-
-  ngAfterViewInit() {
-    this.connectControls();
+    effect(() => {
+      const lastPage = this.pageCount() - 1;
+      if (this.pageIndex() > lastPage) this.pageIndex.set(lastPage);
+    });
   }
 
   configure(
@@ -165,26 +318,69 @@ class MaterialTableViewComponent implements AfterViewInit {
     rows: readonly MaterialTableRow[],
     options: { filter: boolean; paginate: boolean; pageSize: number; sort: boolean },
   ) {
-    this.columns = columns;
-    this.displayedColumns = columns.map((column) => column.key);
-    this.dataSource.data = [...rows];
+    this.columns.set(columns);
+    this.rows.set(rows);
     this.filterEnabled.set(options.filter);
     this.paginateEnabled.set(options.paginate);
     this.sortEnabled.set(options.sort);
     this.pageSize.set(options.pageSize);
-    this.pageSizeOptions.set([...new Set([5, 10, 25, options.pageSize])].sort((a, b) => a - b));
-    queueMicrotask(() => this.connectControls());
+    this.pageSizeOptions.set(
+      [...new Set([5, 10, 25, options.pageSize])].sort((left, right) => left - right),
+    );
+    this.pageIndex.set(0);
+    this.filterValue.set("");
+    this.sortColumn.set(null);
   }
 
   applyFilter(event: Event) {
-    const value = (event.target as HTMLInputElement).value.trim().toLocaleLowerCase("fr");
-    this.dataSource.filter = value;
-    this.dataSource.paginator?.firstPage();
+    this.setFilterValue(materialControlValue(event));
   }
 
-  private connectControls() {
-    if (this.sortEnabled() && this.sort) this.dataSource.sort = this.sort;
-    if (this.paginateEnabled() && this.paginator) this.dataSource.paginator = this.paginator;
+  setFilterValue(value: string) {
+    this.filterValue.set(value);
+    this.pageIndex.set(0);
+  }
+
+  changePageSize(event: Event) {
+    const nextSize = Number.parseInt(materialControlValue(event), 10);
+    if (!Number.isFinite(nextSize) || nextSize <= 0) return;
+
+    this.pageSize.set(nextSize);
+    this.pageIndex.set(0);
+  }
+
+  goToPage(index: number) {
+    this.pageIndex.set(Math.min(Math.max(0, index), this.pageCount() - 1));
+  }
+
+  toggleSort(column: string, label: string) {
+    if (this.sortColumn() !== column) {
+      this.sortColumn.set(column);
+      this.sortDirection.set("asc");
+    } else if (this.sortDirection() === "asc") {
+      this.sortDirection.set("desc");
+    } else {
+      this.sortColumn.set(null);
+      this.sortDirection.set("asc");
+    }
+
+    if (!this.sortColumn()) {
+      this.sortStatus.set("Tri désactivé.");
+      return;
+    }
+
+    const direction = this.sortDirection() === "asc" ? "croissant" : "décroissant";
+    this.sortStatus.set(`Tableau trié par ${label}, ordre ${direction}.`);
+  }
+
+  sortAria(column: string) {
+    if (!this.sortEnabled() || this.sortColumn() !== column) return null;
+    return this.sortDirection() === "asc" ? "ascending" : "descending";
+  }
+
+  sortIcon(column: string) {
+    if (this.sortColumn() !== column) return "\uE5D7";
+    return this.sortDirection() === "asc" ? "\uE5D8" : "\uE5DB";
   }
 }
 

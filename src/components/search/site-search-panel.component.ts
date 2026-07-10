@@ -1,4 +1,5 @@
 import {
+  CUSTOM_ELEMENTS_SCHEMA,
   ChangeDetectionStrategy,
   Component,
   ElementRef,
@@ -7,16 +8,13 @@ import {
   computed,
   signal,
 } from "@angular/core";
-import type { AfterViewInit } from "@angular/core";
+import type { AfterViewInit, OnDestroy } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { FormControl, ReactiveFormsModule } from "@angular/forms";
-import { MatButton, MatIconButton } from "@angular/material/button";
-import { MatChipsModule } from "@angular/material/chips";
-import { MatIconModule } from "@angular/material/icon";
-import { MatProgressBarModule } from "@angular/material/progress-bar";
-import { MatSelectModule } from "@angular/material/select";
+import { FormControl } from "@angular/forms";
 import { MatTooltip } from "@angular/material/tooltip";
 import { debounceTime, distinctUntilChanged } from "rxjs";
+import { MaterialTextFieldValueDirective } from "@/components/material/material-text-field-value.directive";
+import { materialControlValue } from "@/lib/material-web-events";
 import { isSearchSortMode, SORT_OPTIONS } from "./site-search-model";
 import type { SearchResult, SearchSortMode, TagFilter } from "./site-search-model";
 import { loadPagefindModule } from "./site-search-pagefind";
@@ -32,90 +30,73 @@ const EXPANDED_RESULT_FETCH_LIMIT = 100;
 const TAG_FILTER_LIMIT = 18;
 const MAX_SELECTED_TAGS = 3;
 const SEARCH_TIMEOUT_MS = 12000;
+const LOADING_INDICATOR_DELAY_MS = 200;
 const MAX_PRIORITY = 100;
 const RELEVANCE_PRIORITY_WEIGHT = 0.01;
 
 @Component({
   selector: "site-search-panel",
   standalone: true,
-  imports: [
-    MatButton,
-    MatChipsModule,
-    MatIconButton,
-    MatIconModule,
-    MatProgressBarModule,
-    MatSelectModule,
-    MatTooltip,
-    ReactiveFormsModule,
-  ],
+  imports: [MatTooltip, MaterialTextFieldValueDirective],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
     <form class="site-search-panel-form" role="search" (submit)="submit($event)">
       <div class="site-search-panel-field">
-        <mat-icon class="site-search-panel-leading-icon" aria-hidden="true">{{
-          searchIcon
-        }}</mat-icon>
-        <input
-          #searchInput
-          class="site-search-panel-input"
-          type="search"
-          autocomplete="off"
-          spellcheck="false"
-          aria-label="Mot-clé, titre ou contenu"
-          aria-controls="site-search-panel-results site-search-panel-tags"
-          aria-describedby="site-search-panel-status site-search-panel-filter-limit"
-          placeholder="Mot-clé, titre ou contenu"
-          [formControl]="query"
-        />
-
-        @if (hasSearchText()) {
-          <button
-            matIconButton
-            class="site-search-panel-clear-search"
-            type="button"
-            matTooltip="Effacer la recherche"
-            matTooltipPosition="below"
-            aria-label="Effacer la recherche"
-            (click)="clearSearch()"
+        <div class="site-search-panel-query">
+          <md-outlined-text-field
+            #searchInput
+            class="site-search-panel-input"
+            type="search"
+            label="Mot-clé, titre ou contenu"
+            autocomplete="off"
+            spellcheck="false"
+            has-leading-icon
+            aria-controls="site-search-panel-results site-search-panel-tags"
+            aria-describedby="site-search-panel-status site-search-panel-filter-limit"
+            [value]="queryValue()"
+            siteMaterialValue
+            (siteMaterialValueChange)="setQueryValue($event)"
+            (input)="updateQuery($event)"
+            (keyup)="updateQuery($event)"
           >
-            <mat-icon aria-hidden="true">{{ closeIcon }}</mat-icon>
-          </button>
-        }
+            <md-icon slot="leading-icon" aria-hidden="true">{{ searchIcon }}</md-icon>
+          </md-outlined-text-field>
+
+          @if (hasSearchText()) {
+            <md-icon-button
+              class="site-search-panel-clear-search"
+              type="button"
+              matTooltip="Effacer la recherche"
+              matTooltipPosition="below"
+              aria-label="Effacer la recherche"
+              (click)="clearSearch()"
+            >
+              <md-icon aria-hidden="true">{{ closeIcon }}</md-icon>
+            </md-icon-button>
+          }
+        </div>
 
         <span class="site-search-panel-divider" aria-hidden="true"></span>
-        <div class="site-search-panel-sort">
-          <mat-select
-            class="site-search-panel-sort-select"
-            aria-label="Trier les résultats"
-            panelClass="site-search-panel-sort-menu"
-            panelWidth="14rem"
-            hideSingleSelectionIndicator
-            [value]="sortMode()"
-            (selectionChange)="setSortMode($event.value)"
-          >
-            <mat-select-trigger>
-              <span class="site-search-panel-sort-trigger">
-                <span class="site-search-panel-sort-label">Tri par</span>
-                <span class="site-search-panel-sort-value">{{ sortLabel() }}</span>
-              </span>
-            </mat-select-trigger>
-            @for (option of sortOptions; track option.value) {
-              <mat-option [value]="option.value">
-                <span class="site-search-panel-sort-option">
-                  <span>{{ option.label }}</span>
-                  @if (option.value === sortMode()) {
-                    <mat-icon aria-hidden="true">{{ doneIcon }}</mat-icon>
-                  }
-                </span>
-              </mat-option>
-            }
-          </mat-select>
-        </div>
+        <md-outlined-select
+          class="site-search-panel-sort-select"
+          label="Tri par"
+          aria-label="Trier les résultats"
+          menu-positioning="fixed"
+          [value]="sortMode()"
+          (change)="setSortModeFromEvent($event)"
+        >
+          @for (option of sortOptions; track option.value) {
+            <md-select-option [value]="option.value" [selected]="option.value === sortMode()">
+              <span slot="headline">{{ option.label }}</span>
+            </md-select-option>
+          }
+        </md-outlined-select>
       </div>
     </form>
 
-    @if (status() || loading() || hasFilterState()) {
+    @if (status() || loadingIndicatorVisible() || hasFilterState()) {
       <div class="site-search-panel-state">
         @if (status()) {
           <p
@@ -129,16 +110,16 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
         }
         @if (hasFilterState()) {
           <div class="site-search-panel-filter-actions">
-            <button
-              matButton="tonal"
+            <md-text-button
               class="site-search-panel-filter-button site-search-panel-clear-filters"
               type="button"
+              has-icon
               aria-label="Effacer les filtres sélectionnés"
               (click)="clearFilters()"
             >
-              <mat-icon aria-hidden="true">{{ closeIcon }}</mat-icon>
-              <span>Filtres</span>
-            </button>
+              <md-icon slot="icon" aria-hidden="true">{{ closeIcon }}</md-icon>
+              <span>Effacer filtres</span>
+            </md-text-button>
           </div>
         }
         @if (selectedTagLimitReached()) {
@@ -151,37 +132,34 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
             Limite atteinte : 3 tags maximum.
           </p>
         }
-        @if (loading()) {
-          <mat-progress-bar
+        @if (loadingIndicatorVisible()) {
+          <md-linear-progress
             class="site-search-panel-progress"
             aria-label="Recherche en cours"
-            mode="indeterminate"
-          />
+            indeterminate
+          ></md-linear-progress>
         }
       </div>
     }
 
     <div class="site-search-panel-filters">
       @if (tagFilters().length > 0) {
-        <mat-chip-listbox
+        <md-chip-set
           id="site-search-panel-tags"
           class="site-search-panel-tags"
-          multiple
           aria-label="Filtrer par tags"
-          [value]="selectedTags()"
-          (change)="setSelectedTags($event.value)"
         >
           @for (tag of tagFilters(); track tag.value) {
-            <mat-chip-option
+            <md-filter-chip
               [disabled]="isTagDisabled(tag.value)"
-              [value]="tag.value"
+              [selected]="selectedTags().includes(tag.value)"
               [attr.aria-label]="tagAriaLabel(tag.value)"
-              (click)="releaseTouchFocus($event)"
+              (click)="toggleTag(tag.value, $event)"
             >
               #{{ tag.value }}
-            </mat-chip-option>
+            </md-filter-chip>
           }
-        </mat-chip-listbox>
+        </md-chip-set>
       }
     </div>
 
@@ -197,13 +175,13 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
             <div class="site-search-panel-result-meta">
               @if (result.createdLabel) {
                 <span>
-                  <mat-icon
+                  <md-icon
                     [matTooltip]="createdTooltip"
                     matTooltipPosition="below"
                     [attr.aria-label]="createdTooltip"
                   >
                     {{ createdIcon }}
-                  </mat-icon>
+                  </md-icon>
                   <time [attr.datetime]="result.createdAt">{{ result.createdLabel }}</time>
                 </span>
               }
@@ -212,13 +190,13 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
               }
               @if (result.modifiedLabel) {
                 <span>
-                  <mat-icon
+                  <md-icon
                     [matTooltip]="modifiedTooltip"
                     matTooltipPosition="below"
                     [attr.aria-label]="modifiedTooltip"
                   >
                     {{ modifiedIcon }}
-                  </mat-icon>
+                  </md-icon>
                   <time [attr.datetime]="result.modifiedAt">{{ result.modifiedLabel }}</time>
                 </span>
               }
@@ -227,14 +205,6 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
               <p class="site-search-panel-result-excerpt" [innerHTML]="result.excerpt"></p>
             }
           </div>
-          <a
-            matIconButton
-            class="site-search-panel-result-arrow"
-            [href]="result.url"
-            [attr.aria-label]="'Ouvrir ' + result.title"
-          >
-            <mat-icon aria-hidden="true">{{ arrowIcon }}</mat-icon>
-          </a>
         </li>
       }
     </ol>
@@ -251,232 +221,102 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
     .site-search-panel-field {
       display: grid;
       position: relative;
-      grid-template-columns: auto minmax(0, 1fr) auto auto minmax(11rem, 11rem);
+      grid-template-columns: minmax(0, 1fr) auto minmax(11rem, 11rem);
       align-items: center;
       min-height: 3.5rem;
       width: 100%;
       box-sizing: border-box;
-      gap: 0.45rem;
-      overflow: hidden;
-      padding-inline: 1rem 0;
-      border: 0;
-      border-radius: 1.75rem;
-      background: var(--m3-surface-container-high);
+      gap: 0.75rem;
       color: var(--site-text);
-      transition:
-        background-color 160ms ease,
-        box-shadow 160ms ease;
     }
 
-    .site-search-panel-field:has(.site-search-panel-input:focus) {
-      background: var(--m3-surface-container-high);
-      box-shadow: 0 0 0 2px var(--site-link);
-    }
-
-    .site-search-panel-leading-icon {
+    .site-search-panel-query {
       grid-column: 1;
-      width: 1.5rem;
-      height: 1.5rem;
-      color: var(--site-muted);
-      font-size: 1.5rem;
+      position: relative;
+      min-width: 0;
     }
 
     .site-search-panel-input {
-      grid-column: 2;
+      display: flex;
       min-width: 0;
-      border: 0;
-      outline: 0;
-      background: transparent;
-      color: var(--site-text);
-      font: inherit;
-      font-size: 16px;
-      -moz-text-size-adjust: 100%;
-      -webkit-text-size-adjust: 100%;
+      width: 100%;
+      --md-outlined-text-field-container-shape: var(--md-sys-shape-corner-extra-large);
+      --md-outlined-text-field-focus-caret-color: var(--site-link);
+      --md-outlined-text-field-focus-label-text-color: var(--site-link);
+      --md-outlined-text-field-focus-leading-icon-color: var(--site-link);
+      --md-outlined-text-field-focus-outline-color: var(--site-link);
+      --md-outlined-text-field-input-text-color: var(--site-text);
+      --md-outlined-text-field-input-text-font: var(--site-font);
+      --md-outlined-text-field-input-text-size: 1rem;
+      --md-outlined-text-field-label-text-color: var(--site-muted);
+      --md-outlined-text-field-label-text-font: var(--site-font);
+      --md-outlined-text-field-leading-icon-color: var(--site-muted);
+      --md-outlined-text-field-outline-color: var(--site-border);
+      --md-outlined-text-field-trailing-space: 3.25rem;
     }
 
-    .site-search-panel-input::placeholder {
-      color: var(--site-muted);
-    }
-
-    .site-search-panel-input::-webkit-search-cancel-button,
-    .site-search-panel-input::-webkit-search-decoration {
-      display: none;
-      appearance: none;
-      -webkit-appearance: none;
-    }
-
-    .site-search-panel-clear-search.mat-mdc-icon-button {
-      --mat-icon-button-state-layer-size: 2rem;
-      --mat-icon-button-state-layer-color: var(--site-muted);
-      --mat-icon-button-hover-state-layer-opacity: 0.12;
-      --mat-icon-button-focus-state-layer-opacity: 0.12;
-      --mat-icon-button-pressed-state-layer-opacity: 0.18;
-      --mdc-icon-button-state-layer-size: 2rem;
-      grid-column: 3;
-      justify-self: end;
-      width: 2rem;
-      height: 2rem;
-      padding: 0;
-      border-radius: 9999px;
-      background: transparent;
-      color: var(--site-muted);
+    .site-search-panel-clear-search {
+      --md-icon-button-state-layer-width: 2rem;
+      --md-icon-button-state-layer-height: 2rem;
+      --md-icon-button-icon-size: 1.15rem;
+      --md-icon-button-icon-color: var(--site-muted);
+      --md-icon-button-hover-icon-color: var(--site-text);
+      --md-icon-button-focus-icon-color: var(--site-text);
+      --md-icon-button-pressed-icon-color: var(--site-text);
+      --md-icon-button-hover-state-layer-color: var(--site-muted);
+      --md-icon-button-focus-state-layer-color: var(--site-muted);
+      --md-icon-button-pressed-state-layer-color: var(--site-muted);
+      --md-icon-button-hover-state-layer-opacity: 0.12;
+      --md-icon-button-pressed-state-layer-opacity: 0.18;
+      position: absolute;
+      top: 50%;
+      right: 0.65rem;
+      z-index: 1;
+      transform: translateY(-50%);
       cursor: pointer;
-      transition: color 140ms ease;
     }
 
-    .site-search-panel-clear-search.mat-mdc-icon-button:is(:hover, :focus-visible) {
-      background: transparent;
-      color: var(--site-text);
-    }
-
-    .site-search-panel-clear-search.mat-mdc-icon-button:focus-visible {
-      outline: 2px solid color-mix(in srgb, var(--site-link) 45%, transparent);
-      outline-offset: 2px;
-    }
-
-    .site-search-panel-clear-search .mat-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 1.15rem;
-      height: 1.15rem;
-      font-size: 1.15rem;
-      line-height: 1;
+    .site-search-panel-clear-search md-icon {
+      --md-icon-size: 1.15rem;
       transform: translateY(1px);
     }
 
     .site-search-panel-divider {
-      grid-column: 4;
+      grid-column: 2;
       align-self: stretch;
       width: 1px;
       height: auto;
-      margin-block: 0.55rem;
+      margin-block: 0.45rem;
       background: var(--site-border);
     }
 
-    .site-search-panel-sort {
-      grid-column: 5;
-      display: grid;
-      position: relative;
-      align-self: stretch;
-      align-content: center;
-      justify-self: stretch;
-      min-width: 0;
-      min-height: 0;
-      overflow: hidden;
-      padding: 0 0.95rem;
-      border-radius: 0 1.75rem 1.75rem 0;
-      background: transparent;
-      cursor: pointer;
-      row-gap: 0.05rem;
-    }
-
-    .site-search-panel-sort::before {
-      position: absolute;
-      inset: 0.35rem 0.55rem 0.35rem 0.5rem;
-      display: block;
-      border-radius: var(--site-shape-small);
-      background: var(--m3-surface-container-highest);
-      content: "";
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 160ms ease;
-    }
-
-    .site-search-panel-sort:hover::before {
-      opacity: 1;
-    }
-
-    .site-search-panel-sort-label {
-      color: var(--site-muted);
-      line-height: 1.1;
-    }
-
     .site-search-panel-sort-select {
-      position: absolute;
-      inset: 0.35rem 0.55rem 0.35rem 0.5rem;
-      z-index: 2;
-      box-sizing: border-box;
-      width: auto !important;
-      color: var(--site-text);
-    }
-
-    .site-search-panel-sort-select .mat-mdc-select-trigger {
-      position: absolute;
-      inset: 0;
-      align-items: center;
-      box-sizing: border-box;
-      height: 100%;
-      min-height: 0;
-      padding-inline: 1.2rem 2.45rem;
-    }
-
-    .site-search-panel-sort-select .mat-mdc-select-value {
+      grid-column: 3;
       display: flex;
-      align-items: center;
-    }
-
-    .site-search-panel-sort-trigger {
-      display: grid;
-      align-content: center;
       min-width: 0;
-      gap: 0.05rem;
+      width: 100%;
+      --md-outlined-select-text-field-container-shape: var(--md-sys-shape-corner-extra-large);
+      --md-outlined-select-text-field-focus-input-text-color: var(--site-text);
+      --md-outlined-select-text-field-focus-label-text-color: var(--site-link);
+      --md-outlined-select-text-field-focus-outline-color: var(--site-link);
+      --md-outlined-select-text-field-input-text-color: var(--site-text);
+      --md-outlined-select-text-field-input-text-font: var(--site-font);
+      --md-outlined-select-text-field-label-text-color: var(--site-muted);
+      --md-outlined-select-text-field-label-text-font: var(--site-font);
+      --md-outlined-select-text-field-outline-color: var(--site-border);
     }
 
-    .site-search-panel-sort-value {
-      color: var(--site-text);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .site-search-panel-sort-select .mat-mdc-select-arrow-wrapper {
+    .site-search-panel-progress {
       position: absolute;
-      top: 50%;
-      right: 1.05rem;
-      transform: translateY(-50%);
-    }
-
-    .site-search-panel-sort-select .mat-mdc-select-arrow {
-      transform: rotate(0deg);
-      transform-origin: center;
-      transition: transform 80ms linear;
-    }
-
-    .site-search-panel-sort-select.mat-select-open .mat-mdc-select-arrow,
-    .site-search-panel-sort-select[aria-expanded="true"] .mat-mdc-select-arrow {
-      transform: rotate(180deg);
-    }
-
-    .site-search-panel-sort-menu.mat-mdc-select-panel {
-      min-width: 14rem;
-    }
-
-    .site-search-panel-sort-menu .mat-mdc-option {
-      min-height: 3.25rem;
-      cursor: pointer;
-    }
-
-    .site-search-panel-sort-option {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
+      inset: auto 0 0;
       width: 100%;
-      min-width: 0;
-    }
-
-    .site-search-panel-sort-option .mat-icon {
-      flex: 0 0 auto;
-    }
-
-    .site-search-panel-progress.mat-mdc-progress-bar {
-      width: 100%;
-      height: 0.18rem;
       overflow: hidden;
       border-radius: 9999px;
-      --mdc-linear-progress-active-indicator-color: var(--site-link);
-      --mdc-linear-progress-track-color: color-mix(in srgb, var(--site-link) 16%, transparent);
+      --md-linear-progress-active-indicator-color: var(--site-link);
+      --md-linear-progress-active-indicator-height: 0.18rem;
+      --md-linear-progress-track-color: color-mix(in srgb, var(--site-link) 16%, transparent);
+      --md-linear-progress-track-height: 0.18rem;
+      --md-linear-progress-track-shape: 9999px;
     }
 
     .site-search-panel-filters {
@@ -490,118 +330,69 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
     .site-search-panel-tags {
       min-width: 0;
       flex: 1 1 auto;
+      gap: 0.5rem;
     }
 
-    .site-search-panel-tags .mdc-evolution-chip-set__chips {
-      flex-wrap: wrap;
-      margin: 0;
-    }
-
-    .site-search-panel-tags .mat-mdc-chip-option {
+    .site-search-panel-tags md-filter-chip {
       --site-search-chip-selected-bg: var(--site-link-container);
       --site-search-chip-selected-fg: var(--site-on-link-container);
       --site-search-chip-label-fg: var(--site-muted);
       --site-search-chip-outline: color-mix(in srgb, var(--site-link) 78%, transparent);
-      --mdc-chip-container-color: transparent;
-      --mdc-chip-container-height: 2rem;
-      --mdc-chip-elevated-container-color: transparent;
-      --mdc-chip-flat-selected-container-color: var(--site-search-chip-selected-bg);
-      --mdc-chip-label-text-color: var(--site-search-chip-label-fg);
-      --mdc-chip-outline-color: var(--site-search-chip-outline);
-      --mdc-chip-selected-container-color: var(--site-search-chip-selected-bg);
-      --mdc-chip-selected-label-text-color: var(--site-search-chip-selected-fg);
-      --mdc-chip-with-icon-selected-icon-color: var(--site-search-chip-selected-fg);
-      --mat-chip-focus-outline-color: var(--site-search-chip-outline);
-      --mat-chip-focus-state-layer-opacity: 0;
-      --mat-chip-hover-state-layer-opacity: 0.08;
-      --mat-chip-label-text-color: var(--site-search-chip-label-fg);
-      --mat-chip-outline-color: var(--site-search-chip-outline);
-      --mat-chip-pressed-state-layer-opacity: 0.08;
-      --mat-chip-selected-container-color: var(--site-search-chip-selected-bg);
-      --mat-chip-selected-focus-state-layer-opacity: 0;
-      --mat-chip-selected-hover-state-layer-opacity: 0.08;
-      --mat-chip-selected-label-text-color: var(--site-search-chip-selected-fg);
-      --mat-chip-selected-pressed-state-layer-opacity: 0.08;
-      --mat-chip-selected-trailing-icon-color: var(--site-search-chip-selected-fg);
-      --mat-chip-with-icon-icon-color: var(--site-search-chip-label-fg);
-      --mat-chip-with-icon-selected-icon-color: var(--site-search-chip-selected-fg);
-      --mat-chip-with-selected-icon-selected-icon-color: var(--site-search-chip-selected-fg);
-      --mat-chip-hover-state-layer-color: var(--site-search-chip-label-fg);
-      --mat-chip-focus-state-layer-color: var(--site-search-chip-label-fg);
-      --mat-chip-selected-hover-state-layer-color: var(--site-search-chip-selected-fg);
-      --mat-chip-selected-focus-state-layer-color: var(--site-search-chip-selected-fg);
+      --md-filter-chip-container-height: 2rem;
+      --md-filter-chip-focus-label-text-color: var(--site-search-chip-label-fg);
+      --md-filter-chip-focus-outline-color: var(--site-search-chip-outline);
+      --md-filter-chip-hover-label-text-color: var(--site-search-chip-label-fg);
+      --md-filter-chip-hover-state-layer-color: var(--site-search-chip-label-fg);
+      --md-filter-chip-label-text-color: var(--site-search-chip-label-fg);
+      --md-filter-chip-label-text-font: var(--site-font);
+      --md-filter-chip-label-text-size: 0.88rem;
+      --md-filter-chip-outline-color: var(--site-search-chip-outline);
+      --md-filter-chip-pressed-label-text-color: var(--site-search-chip-label-fg);
+      --md-filter-chip-selected-container-color: var(--site-search-chip-selected-bg);
+      --md-filter-chip-selected-focus-label-text-color: var(--site-search-chip-selected-fg);
+      --md-filter-chip-selected-hover-label-text-color: var(--site-search-chip-selected-fg);
+      --md-filter-chip-selected-hover-state-layer-color: var(--site-search-chip-selected-fg);
+      --md-filter-chip-selected-label-text-color: var(--site-search-chip-selected-fg);
+      --md-filter-chip-selected-pressed-label-text-color: var(--site-search-chip-selected-fg);
       flex: 0 0 auto;
-      font-size: 0.88rem;
       touch-action: manipulation;
     }
 
-    .site-search-panel-tags .mat-mdc-chip-option.mdc-evolution-chip--disabled {
+    .site-search-panel-tags md-filter-chip[disabled] {
       opacity: 0.52;
     }
 
-    .site-search-panel-tags
-      .mat-mdc-chip-option:is(.mat-mdc-chip-selected, .mdc-evolution-chip--selected) {
-      --mdc-chip-container-color: var(--site-search-chip-selected-bg);
-      --mdc-chip-elevated-container-color: var(--site-search-chip-selected-bg);
-      --mdc-chip-outline-color: transparent;
-      --mat-chip-elevated-selected-container-color: var(--site-search-chip-selected-bg);
-      background-color: var(--site-search-chip-selected-bg);
-      color: var(--site-search-chip-selected-fg);
-    }
-
-    .site-search-panel-tags
-      .mat-mdc-chip-option:is(.mat-mdc-chip-selected, .mdc-evolution-chip--selected)
-      .mdc-evolution-chip__action {
-      background-color: transparent;
-    }
-
-    .site-search-panel-tags
-      .mat-mdc-chip-option:is(.mat-mdc-chip-selected, .mdc-evolution-chip--selected)
-      .mat-mdc-chip-focus-overlay {
-      opacity: 0;
-    }
-
-    .site-search-panel-tags
-      .mat-mdc-chip-option:not(.mat-mdc-chip-selected):not(.mdc-evolution-chip--selected)
-      .mat-mdc-chip-focus-overlay {
-      opacity: 0;
-    }
-
-    .site-search-panel-tags
-      .mat-mdc-chip-option:not(.mat-mdc-chip-selected):not(.mdc-evolution-chip--selected) {
-      --mdc-chip-container-color: transparent;
-      --mdc-chip-elevated-container-color: transparent;
-      --mdc-chip-outline-color: var(--site-search-chip-outline);
-      --mat-chip-focus-outline-color: var(--site-search-chip-outline);
-      background-color: transparent;
-      border-color: var(--site-search-chip-outline);
-      color: var(--site-search-chip-label-fg);
-      outline-color: var(--site-search-chip-outline);
-    }
-
-    .site-search-panel-filter-button.mat-mdc-button-base {
+    .site-search-panel-filter-button {
+      --md-text-button-container-height: 2.25rem;
+      --md-text-button-label-text-color: var(--site-link);
+      --md-text-button-icon-color: var(--site-link);
+      --md-text-button-hover-label-text-color: var(--site-link);
+      --md-text-button-hover-icon-color: var(--site-link);
+      --md-text-button-hover-state-layer-color: var(--site-link);
+      --md-text-button-focus-label-text-color: var(--site-link);
+      --md-text-button-focus-icon-color: var(--site-link);
+      --md-text-button-pressed-label-text-color: var(--site-link);
+      --md-text-button-pressed-icon-color: var(--site-link);
+      --md-text-button-pressed-state-layer-color: var(--site-link);
       flex: 0 0 auto;
       min-width: max-content;
-      height: 2.25rem;
-      padding-inline: 0.75rem;
-      border-radius: 9999px;
     }
 
-    .site-search-panel-filter-button .mat-icon {
-      width: 1.15rem;
-      height: 1.15rem;
-      font-size: 1.15rem;
+    .site-search-panel-filter-button md-icon {
+      --md-icon-size: 1.15rem;
     }
 
-    .site-search-panel-clear-filters.mat-mdc-button-base {
+    .site-search-panel-clear-filters {
       color: var(--site-link);
     }
 
     .site-search-panel-state {
+      position: relative;
       display: grid;
       justify-items: start;
       gap: 0.5rem;
       min-height: 2.5rem;
+      padding-block-end: 0.35rem;
       margin-block: 0.6rem 0.45rem;
     }
 
@@ -633,7 +424,7 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
 
     .site-search-panel-result {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr);
       align-items: center;
       gap: 0.85rem;
       padding: 0.75rem 0.85rem;
@@ -676,10 +467,8 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
       color: var(--site-muted);
     }
 
-    .site-search-panel-result-meta .mat-icon {
-      width: 1rem;
-      height: 1rem;
-      font-size: 1rem;
+    .site-search-panel-result-meta md-icon {
+      --md-icon-size: 1rem;
     }
 
     .site-search-panel-result-excerpt {
@@ -687,38 +476,6 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
       color: var(--site-text);
       font-size: 0.94rem;
       line-height: 1.55;
-    }
-
-    .site-search-panel-result-arrow.mat-mdc-icon-button {
-      --mat-icon-button-state-layer-size: 2.5rem;
-      --mat-icon-button-state-layer-color: var(--site-link);
-      --mat-icon-button-hover-state-layer-opacity: 0.1;
-      --mat-icon-button-focus-state-layer-opacity: 0.12;
-      --mat-icon-button-pressed-state-layer-opacity: 0.16;
-      --mdc-icon-button-state-layer-size: 2.5rem;
-      position: relative;
-      width: 2.5rem;
-      height: 2.5rem;
-      padding: 0;
-      color: var(--site-muted);
-    }
-
-    .site-search-panel-result-arrow.mat-mdc-icon-button:is(:hover, :focus-visible) {
-      color: var(--site-link);
-    }
-
-    .site-search-panel-result-arrow.mat-mdc-icon-button .mat-icon {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 1.45rem;
-      height: 1.45rem;
-      font-size: 1.45rem;
-      line-height: 1;
-      transform: translate(-50%, -50%);
     }
 
     .site-search-panel-result-excerpt mark {
@@ -735,19 +492,11 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
 
     @media (max-width: 720px) {
       .site-search-panel-field {
-        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-columns: minmax(0, 1fr);
       }
 
       .site-search-panel-divider,
-      .site-search-panel-sort {
-        display: none;
-      }
-
-      .site-search-panel-result {
-        grid-template-columns: 1fr;
-      }
-
-      .site-search-panel-result-arrow {
+      .site-search-panel-sort-select {
         display: none;
       }
     }
@@ -766,33 +515,21 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
         background: color-mix(in srgb, var(--site-muted) 42%, transparent);
       }
 
-      .site-search-panel-tags .mdc-evolution-chip-set__chips {
+      .site-search-panel-tags {
         flex-wrap: nowrap;
       }
 
-      .site-search-panel-tags .mat-mdc-chip-option {
-        --mat-chip-focus-state-layer-opacity: 0;
-        --mat-chip-hover-state-layer-opacity: 0;
-        --mat-chip-pressed-state-layer-opacity: 0;
-        --mat-chip-selected-focus-state-layer-opacity: 0;
-        --mat-chip-selected-hover-state-layer-opacity: 0;
-        --mat-chip-selected-pressed-state-layer-opacity: 0;
-      }
-
-      .site-search-panel-tags .mat-mdc-chip-focus-overlay {
-        opacity: 0 !important;
+      .site-search-panel-tags md-filter-chip {
+        --md-filter-chip-hover-state-layer-opacity: 0;
+        --md-filter-chip-pressed-state-layer-opacity: 0;
+        --md-filter-chip-selected-hover-state-layer-opacity: 0;
+        --md-filter-chip-selected-pressed-state-layer-opacity: 0;
       }
     }
 
     @media (max-width: 520px) {
       .site-search-panel-field {
-        min-height: 3rem;
-        padding-inline: 0.75rem 0.9rem;
-        border-radius: 1.5rem;
-      }
-
-      .site-search-panel-input {
-        font-size: 16px;
+        min-height: 3.5rem;
       }
 
       .site-search-panel-state {
@@ -801,10 +538,9 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
     }
   `,
 })
-export class SiteSearchPanelComponent implements AfterViewInit {
-  @ViewChild("searchInput") private searchInput?: ElementRef<HTMLInputElement>;
+export class SiteSearchPanelComponent implements AfterViewInit, OnDestroy {
+  @ViewChild("searchInput") private searchInput?: ElementRef<HTMLElement>;
 
-  readonly arrowIcon = "\uE5C8";
   readonly hasFilterState = computed(() => {
     return this.selectedTags().length > 0;
   });
@@ -813,6 +549,7 @@ export class SiteSearchPanelComponent implements AfterViewInit {
     return this.selectedTags().length >= MAX_SELECTED_TAGS;
   });
   readonly loading = signal(false);
+  readonly loadingIndicatorVisible = signal(false);
   readonly query = new FormControl("", { nonNullable: true });
   readonly queryValue = signal("");
   readonly results = signal<SearchResult[]>([]);
@@ -822,16 +559,10 @@ export class SiteSearchPanelComponent implements AfterViewInit {
   readonly closeIcon = "\uE5CD";
   readonly createdIcon = "\uE89C";
   readonly createdTooltip = "Création du post";
-  readonly doneIcon = "\uE876";
   readonly modifiedIcon = "\uF88C";
   readonly modifiedTooltip = "Dernière modification du post";
   readonly searchIcon = "\uE8B6";
   readonly sortOptions = SORT_OPTIONS;
-  readonly sortLabel = computed(() => {
-    return (
-      this.sortOptions.find((option) => option.value === this.sortMode())?.label ?? "Pertinence"
-    );
-  });
   readonly status = signal("Tapez au moins deux caractères ou choisissez un filtre.");
 
   private readonly dateFormatter = new Intl.DateTimeFormat("fr-FR", {
@@ -843,6 +574,9 @@ export class SiteSearchPanelComponent implements AfterViewInit {
   private allTagFilterCounts?: Record<string, number>;
   private pagefind?: Promise<PagefindModule>;
   private requestId = 0;
+  private readonly loadingOperations = new Set<string>();
+  private currentSearchOperation: string | null = null;
+  private loadingIndicatorTimer = 0;
 
   constructor() {
     this.query.valueChanges
@@ -873,6 +607,12 @@ export class SiteSearchPanelComponent implements AfterViewInit {
     }
   }
 
+  ngOnDestroy() {
+    this.loadingOperations.clear();
+    this.loading.set(false);
+    this.hideLoadingIndicator();
+  }
+
   submit(event: SubmitEvent) {
     event.preventDefault();
     this.queryValue.set(this.query.value);
@@ -888,6 +628,19 @@ export class SiteSearchPanelComponent implements AfterViewInit {
     this.query.setValue("", { emitEvent: false });
     this.queryValue.set("");
     void this.search("");
+  }
+
+  updateQuery(event: Event) {
+    this.setQueryValue(materialControlValue(event));
+  }
+
+  setQueryValue(value: string) {
+    this.queryValue.set(value);
+    this.query.setValue(value);
+  }
+
+  setSortModeFromEvent(event: Event) {
+    this.setSortMode(materialControlValue(event));
   }
 
   setSortMode(value: unknown) {
@@ -910,6 +663,16 @@ export class SiteSearchPanelComponent implements AfterViewInit {
 
     this.selectedTags.set(nextTags);
     void this.search(this.query.value.trim());
+  }
+
+  toggleTag(tag: string, event: Event) {
+    const selectedTags = this.selectedTags();
+    const nextTags = selectedTags.includes(tag)
+      ? selectedTags.filter((selectedTag) => selectedTag !== tag)
+      : [...selectedTags, tag];
+
+    this.setSelectedTags(nextTags);
+    this.releaseTouchFocus(event);
   }
 
   isTagDisabled(tag: string) {
@@ -942,6 +705,8 @@ export class SiteSearchPanelComponent implements AfterViewInit {
   private async loadTagFilters() {
     if (this.filtersLoaded) return;
     this.filtersLoaded = true;
+    const operation = "tag-filters";
+    this.beginLoadingOperation(operation);
 
     try {
       const pagefind = await this.loadPagefind();
@@ -950,6 +715,8 @@ export class SiteSearchPanelComponent implements AfterViewInit {
       this.setTagFilterCounts(filters["tag"]);
     } catch {
       this.tagFilters.set([]);
+    } finally {
+      this.endLoadingOperation(operation);
     }
   }
 
@@ -988,9 +755,9 @@ export class SiteSearchPanelComponent implements AfterViewInit {
     const currentRequest = ++this.requestId;
     const hasActiveFilters = this.hasActiveFilters();
     this.updateUrl(query);
+    this.cancelCurrentSearchOperation();
 
     if (query.length > 0 && query.length < MIN_QUERY_LENGTH) {
-      this.loading.set(false);
       this.results.set([]);
       this.setTagFilterCounts(this.allTagFilterCounts);
       this.status.set("Encore un caractère.");
@@ -998,15 +765,15 @@ export class SiteSearchPanelComponent implements AfterViewInit {
     }
 
     if (!query && !hasActiveFilters) {
-      this.loading.set(false);
       this.results.set([]);
       this.setTagFilterCounts(this.allTagFilterCounts);
       this.status.set("Tapez au moins deux caractères ou choisissez un filtre.");
       return;
     }
 
-    this.loading.set(true);
-    this.status.set("Recherche...");
+    const operation = `search:${currentRequest}`;
+    this.currentSearchOperation = operation;
+    this.beginLoadingOperation(operation);
 
     try {
       const pagefind = await this.withSearchTimeout(this.loadPagefind());
@@ -1068,8 +835,49 @@ export class SiteSearchPanelComponent implements AfterViewInit {
       this.results.set([]);
       this.status.set("Recherche indisponible. Lance pnpm build pour générer l’index.");
     } finally {
-      if (currentRequest === this.requestId) this.loading.set(false);
+      this.endLoadingOperation(operation);
+      if (this.currentSearchOperation === operation) this.currentSearchOperation = null;
     }
+  }
+
+  private beginLoadingOperation(operation: string) {
+    const wasIdle = this.loadingOperations.size === 0;
+    this.loadingOperations.add(operation);
+    this.loading.set(true);
+    if (wasIdle) this.scheduleLoadingIndicator();
+  }
+
+  private endLoadingOperation(operation: string) {
+    this.loadingOperations.delete(operation);
+    if (this.loadingOperations.size > 0) return;
+
+    this.loading.set(false);
+    this.hideLoadingIndicator();
+  }
+
+  private cancelCurrentSearchOperation() {
+    if (!this.currentSearchOperation) return;
+    this.endLoadingOperation(this.currentSearchOperation);
+    this.currentSearchOperation = null;
+  }
+
+  private scheduleLoadingIndicator() {
+    this.cancelLoadingIndicatorTimer();
+    this.loadingIndicatorTimer = window.setTimeout(() => {
+      this.loadingIndicatorTimer = 0;
+      if (this.loadingOperations.size > 0) this.loadingIndicatorVisible.set(true);
+    }, LOADING_INDICATOR_DELAY_MS);
+  }
+
+  private hideLoadingIndicator() {
+    this.cancelLoadingIndicatorTimer();
+    this.loadingIndicatorVisible.set(false);
+  }
+
+  private cancelLoadingIndicatorTimer() {
+    if (!this.loadingIndicatorTimer || typeof window === "undefined") return;
+    window.clearTimeout(this.loadingIndicatorTimer);
+    this.loadingIndicatorTimer = 0;
   }
 
   private syncsUrl() {

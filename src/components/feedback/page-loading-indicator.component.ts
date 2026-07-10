@@ -1,27 +1,27 @@
-import { ChangeDetectionStrategy, Component, signal } from "@angular/core";
+import { CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, Component, signal } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
-import { MatProgressSpinner } from "@angular/material/progress-spinner";
-import { SimulatedLoadingProgress } from "@/lib/simulated-loading-progress";
 import { SITE_EVENTS } from "@/lib/site-contracts";
 
 interface LoadingEventDetail {
   key?: string;
 }
 
+const LOADING_INDICATOR_DELAY_MS = 200;
+
 @Component({
   selector: "site-page-loading-indicator",
   standalone: true,
-  imports: [MatProgressSpinner],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (visible()) {
       <div class="site-page-loading" role="status" aria-live="polite" aria-label="Chargement">
-        <mat-progress-spinner
-          mode="indeterminate"
-          diameter="44"
-          strokeWidth="4"
+        <md-circular-progress
+          class="site-page-loading-progress"
+          indeterminate
+          four-color
           aria-label="Chargement de la page"
-        ></mat-progress-spinner>
+        ></md-circular-progress>
         <span class="sr-only">Chargement</span>
       </div>
     }
@@ -36,13 +36,19 @@ interface LoadingEventDetail {
       pointer-events: none;
       background: color-mix(in srgb, var(--site-bg) 72%, transparent);
     }
+
+    .site-page-loading-progress {
+      --md-circular-progress-color: var(--md-sys-color-primary);
+      --md-circular-progress-active-indicator-color: var(--site-link);
+      --md-circular-progress-active-indicator-width: 10;
+      --md-circular-progress-size: 44px;
+    }
   `,
 })
 export class PageLoadingIndicatorComponent implements OnInit, OnDestroy {
-  readonly visible = signal(true);
-  private readonly loadingProgress = new SimulatedLoadingProgress();
-  readonly progress = this.loadingProgress.value;
+  readonly visible = signal(false);
   private readonly active = new Set<string>();
+  private revealTimer = 0;
 
   private readonly handleLoad = () => this.end("page");
   private readonly handlePageShow = () => this.clear();
@@ -97,25 +103,41 @@ export class PageLoadingIndicatorComponent implements OnInit, OnDestroy {
     document.removeEventListener("click", this.handleDocumentClick);
     document.removeEventListener(SITE_EVENTS.loadingStart, this.handleStart);
     document.removeEventListener(SITE_EVENTS.loadingEnd, this.handleEnd);
-    this.loadingProgress.destroy();
+    this.hide();
   }
 
   private start(key: string) {
     const wasInactive = this.active.size === 0;
     this.active.add(key);
-    if (wasInactive) this.loadingProgress.start();
-    this.visible.set(true);
+    if (wasInactive) this.scheduleReveal();
   }
 
   private end(key: string) {
     this.active.delete(key);
-    if (this.active.size === 0) this.loadingProgress.complete();
-    this.visible.set(this.active.size > 0);
+    if (this.active.size === 0) this.hide();
   }
 
   private clear() {
     this.active.clear();
-    this.loadingProgress.complete();
+    this.hide();
+  }
+
+  private scheduleReveal() {
+    this.cancelReveal();
+    this.revealTimer = window.setTimeout(() => {
+      this.revealTimer = 0;
+      if (this.active.size > 0) this.visible.set(true);
+    }, LOADING_INDICATOR_DELAY_MS);
+  }
+
+  private hide() {
+    this.cancelReveal();
     this.visible.set(false);
+  }
+
+  private cancelReveal() {
+    if (!this.revealTimer || typeof window === "undefined") return;
+    window.clearTimeout(this.revealTimer);
+    this.revealTimer = 0;
   }
 }

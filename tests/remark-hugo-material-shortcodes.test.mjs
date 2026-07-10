@@ -133,9 +133,86 @@ Raccourci {{< kbd "Ctrl" "K" />}}.
   assert.match(html, /material-kbd-sequence/);
   assert.match(html, /<kbd class="material-kbd">Ctrl<\/kbd>/);
   assert.match(html, /<kbd class="material-kbd">K<\/kbd>/);
-  assert.match(html, /role="progressbar"/);
-  assert.match(html, /aria-valuenow="72"/);
+  assert.match(html, /<md-linear-progress/);
+  assert.match(html, /value="0\.72"/);
   assert.match(html, /material-progress-info/);
+});
+
+test("rend les cinq variantes avec les vrais boutons Material Web et des URLs sûres", async () => {
+  const html = await render(`{{< button href="/guide/" variant="filled" icon="arrow-forward" >}}
+
+Commencer **maintenant**
+
+{{< /button >}}
+
+{{< button href="https://example.com" variant="outlined" label="Documentation" target="_blank" />}}
+
+{{< button href="/preferences/" variant="tonal" label="Préférences" />}}
+{{< button href="/home/" variant="text" label="Accueil" />}}
+{{< button href="/material/" variant="elevated" label="Material" />}}`);
+  assert.match(html, /<md-filled-button[^>]*class="material-button"/);
+  assert.match(html, /href="\/guide\/"/);
+  assert.match(html, /Commencer <strong>maintenant<\/strong>/);
+  assert.match(html, /data-material-symbol="arrow-forward"/);
+  assert.match(html, /<md-outlined-button[^>]*class="material-button"/);
+  assert.match(html, /target="_blank"/);
+  assert.match(html, /<md-filled-tonal-button[^>]*class="material-button"/);
+  assert.match(html, /<md-text-button[^>]*class="material-button"/);
+  assert.match(html, /<md-elevated-button[^>]*class="material-button"/);
+});
+
+test("refuse les URL de shortcode exécutables", async () => {
+  const originalConsoleError = console.error;
+  console.error = () => {};
+  try {
+    await assert.rejects(
+      () => render('{{< button href="javascript:alert(1)" label="Dangereux" />}}'),
+      /URL invalide pour button\.href/,
+    );
+  } finally {
+    console.error = originalConsoleError;
+  }
+});
+
+test("rend les grilles de cartes, annotations, abréviations et figures", async () => {
+  const html =
+    await render(`Référence {{< annotation-ref id="note-1" label="1" />}} et {{< abbr text="API" title="Interface de programmation" />}}.
+
+{{< cards columns=2 >}}
+
+{{< card title="Installation" href="/install/" icon="download" >}}
+
+Guide **rapide**.
+
+{{< /card >}}
+
+{{< card title="Configuration" >}}
+
+Réglages avancés.
+
+{{< /card >}}
+
+{{< /cards >}}
+
+{{< annotations label="Notes" >}}
+
+{{< annotation id="note-1" label="1" open=true >}}
+
+Une annotation en **Markdown**.
+
+{{< /annotation >}}
+
+{{< /annotations >}}
+
+{{< figure src="/mask.webp" alt="Logo" caption="Logo du site" width=60 height=60 />}}`);
+  assert.match(html, /class="material-card-grid"[^>]*data-columns="2"/);
+  assert.match(html, /class="material-card"/);
+  assert.match(html, /Guide <strong>rapide<\/strong>/);
+  assert.match(html, /class="material-annotation" id="note-1" open/);
+  assert.match(html, /href="#note-1"/);
+  assert.match(html, /data-tooltip="Interface de programmation"/);
+  assert.match(html, /class="material-figure"/);
+  assert.match(html, /src="\/mask\.webp"/);
 });
 
 test("rend les onglets et tableaux uniquement via leurs shortcodes", async () => {

@@ -1,5 +1,6 @@
 import {
   ApplicationRef,
+  CUSTOM_ELEMENTS_SCHEMA,
   ChangeDetectionStrategy,
   Component,
   EnvironmentInjector,
@@ -8,10 +9,7 @@ import {
   signal,
 } from "@angular/core";
 import type { AfterViewInit, ComponentRef, OnDestroy } from "@angular/core";
-import { MatIconButton } from "@angular/material/button";
-import { MatIcon } from "@angular/material/icon";
 import { MatSnackBar } from "@angular/material/snack-bar";
-import { MatTooltip } from "@angular/material/tooltip";
 import { SITE_EVENTS } from "@/lib/site-contracts";
 
 const COPY_FEEDBACK_DURATION_MS = 2200;
@@ -81,27 +79,53 @@ interface MountedCopyButton {
 @Component({
   selector: "site-code-copy-button",
   standalone: true,
-  imports: [MatIconButton, MatIcon, MatTooltip],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <button
-      matIconButton
+    <md-icon-button
       type="button"
       class="code-copy-button"
       [class.code-copy-button-copied]="state() === 'copied'"
       [class.code-copy-button-error]="state() === 'error'"
       [attr.aria-label]="label()"
-      [matTooltip]="tooltip()"
-      matTooltipPosition="below"
+      [attr.title]="tooltip()"
       (click)="copyCode()"
     >
-      <mat-icon aria-hidden="true">{{ icon() }}</mat-icon>
-    </button>
+      <md-icon aria-hidden="true">{{ icon() }}</md-icon>
+    </md-icon-button>
     <span class="sr-only" role="status" aria-live="polite">{{ status() }}</span>
   `,
   styles: `
     :host {
       display: inline-flex;
+    }
+
+    .code-copy-button {
+      --md-icon-button-focus-icon-color: var(--site-text);
+      --md-icon-button-hover-icon-color: var(--site-text);
+      --md-icon-button-hover-state-layer-color: var(--site-text);
+      --md-icon-button-icon-color: var(--site-muted);
+      --md-icon-button-pressed-icon-color: var(--site-text);
+      --md-icon-button-pressed-state-layer-color: var(--site-text);
+      pointer-events: auto;
+    }
+
+    .code-copy-button-copied {
+      --md-icon-button-focus-icon-color: var(--md-sys-color-primary);
+      --md-icon-button-hover-icon-color: var(--md-sys-color-primary);
+      --md-icon-button-hover-state-layer-color: var(--md-sys-color-primary);
+      --md-icon-button-icon-color: var(--md-sys-color-primary);
+      --md-icon-button-pressed-icon-color: var(--md-sys-color-primary);
+      --md-icon-button-pressed-state-layer-color: var(--md-sys-color-primary);
+    }
+
+    .code-copy-button-error {
+      --md-icon-button-focus-icon-color: var(--md-sys-color-error);
+      --md-icon-button-hover-icon-color: var(--md-sys-color-error);
+      --md-icon-button-hover-state-layer-color: var(--md-sys-color-error);
+      --md-icon-button-icon-color: var(--md-sys-color-error);
+      --md-icon-button-pressed-icon-color: var(--md-sys-color-error);
+      --md-icon-button-pressed-state-layer-color: var(--md-sys-color-error);
     }
   `,
 })

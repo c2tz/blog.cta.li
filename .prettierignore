@@ -1,6 +1,7 @@
 dist/
 node_modules/
 public/pagefind/
+src/assets/css/base/material-theme.generated.scss
 .astro/
 .lighthouse/
 coverage/

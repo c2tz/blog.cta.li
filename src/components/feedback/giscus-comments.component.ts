@@ -1,4 +1,5 @@
 import {
+  CUSTOM_ELEMENTS_SCHEMA,
   ChangeDetectionStrategy,
   Component,
   ElementRef,
@@ -9,9 +10,6 @@ import {
   signal,
 } from "@angular/core";
 import type { AfterViewInit, OnDestroy } from "@angular/core";
-import { MatButton } from "@angular/material/button";
-import { MatIcon } from "@angular/material/icon";
-import { MatProgressBar } from "@angular/material/progress-bar";
 import { SITE_COOKIE_NAMES, SITE_EVENTS, SITE_STORAGE_KEYS } from "@/lib/site-contracts";
 
 type SiteTheme = "dark" | "light";
@@ -31,6 +29,7 @@ const CODE_OF_CONDUCT_URL =
   "https://raw.githubusercontent.com/c2tz/ct-blog-comments/refs/heads/main/CODE_OF_CONDUCT.md";
 const GISCUS_THEME_VERSION = "20260708-emoji-popover";
 const GISCUS_THEME_SYNC_DELAYS = [0, 150, 500, 1200] as const;
+const LOADING_INDICATOR_DELAY_MS = 200;
 const GISCUS_FALLBACK_THEMES = {
   dark: "dark_dimmed",
   light: "light",
@@ -96,7 +95,7 @@ function hasOptionalServicesConsent() {
 @Component({
   selector: "site-giscus-comments",
   standalone: true,
-  imports: [MatButton, MatIcon, MatProgressBar],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
@@ -107,25 +106,24 @@ function hasOptionalServicesConsent() {
           <p>Avant de participer, merci de respecter les règles de conduite du projet.</p>
         </div>
         <div class="giscus-comments-actions">
-          <a
-            matButton="text"
+          <md-text-button
             class="giscus-comments-conduct-link"
             [href]="codeOfConductUrl"
             target="_blank"
-            rel="noopener noreferrer"
+            aria-label="Code de conduite (nouvel onglet)"
+            has-icon
           >
+            <md-icon slot="icon" aria-hidden="true">&#xE89E;</md-icon>
             Code de conduite
-            <mat-icon iconPositionEnd aria-hidden="true">&#xE89E;</mat-icon>
-          </a>
-          <button
-            matButton="tonal"
+          </md-text-button>
+          <md-filled-tonal-button
             type="button"
             class="giscus-comments-accept-button"
             [disabled]="!configured() || accepted() || !optionalServicesAllowed()"
             (click)="acceptCodeOfConduct()"
           >
             J’accepte
-          </button>
+          </md-filled-tonal-button>
         </div>
       </header>
 
@@ -144,22 +142,13 @@ function hasOptionalServicesConsent() {
       }
 
       @if (accepted()) {
-        <div
-          class="giscus-comments-panel-content"
-          [class.is-loading]="loading()"
-          [attr.aria-busy]="loading()"
-        >
-          @if (loading()) {
-            <mat-progress-bar
+        <div class="giscus-comments-panel-content" [attr.aria-busy]="loading()">
+          @if (loadingIndicatorVisible()) {
+            <md-linear-progress
               class="giscus-comments-progress"
-              mode="indeterminate"
+              indeterminate
               aria-label="Chargement des commentaires"
-            />
-            <div class="giscus-comments-skeleton" aria-hidden="true">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
+            ></md-linear-progress>
           }
 
           @if (error()) {
@@ -235,8 +224,8 @@ function hasOptionalServicesConsent() {
       gap: 0.5rem;
     }
 
-    .giscus-comments-conduct-link.mat-mdc-button-base,
-    .giscus-comments-accept-button.mat-mdc-button-base {
+    .giscus-comments-conduct-link,
+    .giscus-comments-accept-button {
       flex: 0 0 auto;
       white-space: nowrap;
     }
@@ -247,44 +236,17 @@ function hasOptionalServicesConsent() {
       padding-block-start: 1rem;
     }
 
-    .giscus-comments-progress.mat-mdc-progress-bar {
-      height: 0.18rem;
+    .giscus-comments-progress {
+      position: absolute;
+      inset: 0 0 auto;
+      width: 100%;
       overflow: hidden;
       border-radius: 9999px;
-      --mdc-linear-progress-active-indicator-color: var(--site-link);
-      --mdc-linear-progress-track-color: color-mix(in srgb, var(--site-link) 16%, transparent);
-    }
-
-    .giscus-comments-skeleton {
-      display: grid;
-      gap: 0.65rem;
-      margin-block-start: 1rem;
-    }
-
-    .giscus-comments-skeleton span {
-      display: block;
-      height: 0.85rem;
-      border-radius: 9999px;
-      background: linear-gradient(
-        90deg,
-        color-mix(in srgb, var(--site-link-container) 45%, transparent),
-        color-mix(in srgb, var(--site-link-container) 80%, transparent),
-        color-mix(in srgb, var(--site-link-container) 45%, transparent)
-      );
-      background-size: 200% 100%;
-      animation: giscus-comments-skeleton 1.4s ease-in-out infinite;
-    }
-
-    .giscus-comments-skeleton span:nth-child(1) {
-      width: 68%;
-    }
-
-    .giscus-comments-skeleton span:nth-child(2) {
-      width: 92%;
-    }
-
-    .giscus-comments-skeleton span:nth-child(3) {
-      width: 52%;
+      --md-linear-progress-active-indicator-color: var(--site-link);
+      --md-linear-progress-active-indicator-height: 0.18rem;
+      --md-linear-progress-track-color: color-mix(in srgb, var(--site-link) 16%, transparent);
+      --md-linear-progress-track-height: 0.18rem;
+      --md-linear-progress-track-shape: 9999px;
     }
 
     .giscus-comments-frame {
@@ -312,19 +274,9 @@ function hasOptionalServicesConsent() {
         margin-block-start: 1.25rem;
       }
 
-      .giscus-comments-conduct-link.mat-mdc-button-base,
-      .giscus-comments-accept-button.mat-mdc-button-base {
+      .giscus-comments-conduct-link,
+      .giscus-comments-accept-button {
         align-self: center;
-      }
-    }
-
-    @keyframes giscus-comments-skeleton {
-      from {
-        background-position: 200% 0;
-      }
-
-      to {
-        background-position: -200% 0;
       }
     }
   `,
@@ -345,6 +297,7 @@ export class GiscusCommentsComponent implements AfterViewInit, OnDestroy {
   readonly accepted = signal(false);
   readonly optionalServicesAllowed = signal(false);
   readonly loading = signal(false);
+  readonly loadingIndicatorVisible = signal(false);
   readonly loaded = signal(false);
   readonly error = signal(false);
   readonly theme = signal<SiteTheme>("light");
@@ -361,6 +314,7 @@ export class GiscusCommentsComponent implements AfterViewInit, OnDestroy {
 
   private themeObserver?: MutationObserver;
   private themeSyncTimers = new Set<number>();
+  private loadingIndicatorTimer = 0;
   private readonly handleConsentChange = () => this.syncOptionalServicesConsent();
 
   ngAfterViewInit() {
@@ -391,6 +345,7 @@ export class GiscusCommentsComponent implements AfterViewInit, OnDestroy {
       window.clearTimeout(timer);
     }
     this.themeSyncTimers.clear();
+    this.endLoading();
   }
 
   acceptCodeOfConduct() {
@@ -412,7 +367,7 @@ export class GiscusCommentsComponent implements AfterViewInit, OnDestroy {
     if (!container || this.loaded() || this.loading()) return;
 
     this.error.set(false);
-    this.loading.set(true);
+    this.beginLoading();
     container.textContent = "";
 
     const script = document.createElement("script");
@@ -434,16 +389,37 @@ export class GiscusCommentsComponent implements AfterViewInit, OnDestroy {
 
     script.addEventListener("load", () => {
       this.loaded.set(true);
-      this.loading.set(false);
+      this.endLoading();
       this.scheduleThemeSync();
     });
     script.addEventListener("error", () => {
       this.error.set(true);
-      this.loading.set(false);
+      this.endLoading();
       this.loaded.set(false);
     });
 
     container.append(script);
+  }
+
+  private beginLoading() {
+    this.loading.set(true);
+    this.cancelLoadingIndicatorTimer();
+    this.loadingIndicatorTimer = window.setTimeout(() => {
+      this.loadingIndicatorTimer = 0;
+      if (this.loading()) this.loadingIndicatorVisible.set(true);
+    }, LOADING_INDICATOR_DELAY_MS);
+  }
+
+  private endLoading() {
+    this.loading.set(false);
+    this.cancelLoadingIndicatorTimer();
+    this.loadingIndicatorVisible.set(false);
+  }
+
+  private cancelLoadingIndicatorTimer() {
+    if (!this.loadingIndicatorTimer || typeof window === "undefined") return;
+    window.clearTimeout(this.loadingIndicatorTimer);
+    this.loadingIndicatorTimer = 0;
   }
 
   private syncTheme() {

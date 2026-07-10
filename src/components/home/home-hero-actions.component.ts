@@ -1,35 +1,33 @@
-import { ChangeDetectionStrategy, Component, input } from "@angular/core";
-import { MatButton } from "@angular/material/button";
-import { MatIcon } from "@angular/material/icon";
+import { CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, Component, input } from "@angular/core";
 
 @Component({
   selector: "site-home-hero-actions",
   standalone: true,
-  imports: [MatButton, MatIcon],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     "data-angular-component": "home-hero-actions",
   },
   template: `
     <nav class="home-hero-actions" aria-label="Navigation d'accueil">
-      <a
-        matButton="tonal"
+      <md-elevated-button
         class="home-hero-button"
         [href]="primaryActionHref()"
         [attr.aria-label]="primaryActionAriaLabel()"
+        has-icon
       >
-        <mat-icon iconPositionStart aria-hidden="true">&#xE5D3;</mat-icon>
+        <md-icon slot="icon" aria-hidden="true">&#xE5D3;</md-icon>
         {{ primaryActionLabel() }}
-      </a>
-      <a
-        matButton="text"
+      </md-elevated-button>
+      <md-text-button
         class="home-hero-button"
         [href]="secondaryActionHref()"
         [attr.aria-label]="secondaryActionAriaLabel()"
+        has-icon
       >
+        <md-icon slot="icon" aria-hidden="true">&#xE89E;</md-icon>
         {{ secondaryActionLabel() }}
-        <mat-icon iconPositionEnd aria-hidden="true">&#xE89E;</mat-icon>
-      </a>
+      </md-text-button>
     </nav>
   `,
 })

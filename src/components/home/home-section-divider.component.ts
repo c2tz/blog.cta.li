@@ -1,17 +1,16 @@
-import { ChangeDetectionStrategy, Component, input } from "@angular/core";
-import { MatDivider } from "@angular/material/divider";
+import { CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, Component, input } from "@angular/core";
 
 type HomeSectionDividerSpacing = "section" | "end";
 
 @Component({
   selector: "site-home-section-divider",
   standalone: true,
-  imports: [MatDivider],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     "[class.home-section-divider-host-end]": 'spacing() === "end"',
   },
-  template: `<mat-divider class="home-section-divider" />`,
+  template: `<md-divider class="home-section-divider"></md-divider>`,
   styles: `
     :host {
       display: block;
@@ -22,8 +21,8 @@ type HomeSectionDividerSpacing = "section" | "end";
       margin-block: 0;
     }
 
-    .home-section-divider.mat-divider {
-      --mat-divider-color: var(--site-border);
+    .home-section-divider {
+      --md-divider-color: var(--md-sys-color-outline-variant);
     }
   `,
 })

@@ -1,8 +1,5 @@
-import { ChangeDetectionStrategy, Component } from "@angular/core";
+import { CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, Component } from "@angular/core";
 import type { OnInit } from "@angular/core";
-import { MatIconButton } from "@angular/material/button";
-import { MatIcon } from "@angular/material/icon";
-import { MatTooltip } from "@angular/material/tooltip";
 
 import {
   SITE_COOKIE_NAMES,
@@ -15,24 +12,25 @@ import {
 @Component({
   selector: "site-home-detail-toggle",
   standalone: true,
-  imports: [MatIconButton, MatIcon, MatTooltip],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     "data-angular-component": "home-detail-toggle",
   },
   template: `
-    <button
-      matIconButton
+    <md-icon-button
       type="button"
       class="home-detail-trigger"
-      [matTooltip]="label"
-      matTooltipPosition="below"
+      [attr.title]="label"
       [attr.aria-label]="label"
-      [attr.aria-pressed]="detailed"
+      aria-label-selected="Mode détaillé"
+      toggle
+      [selected]="detailed"
       (click)="toggleDetailedView()"
     >
-      <mat-icon aria-hidden="true">{{ icon }}</mat-icon>
-    </button>
+      <md-icon aria-hidden="true">{{ simpleIcon }}</md-icon>
+      <md-icon slot="selected" aria-hidden="true">{{ detailedIcon }}</md-icon>
+    </md-icon-button>
   `,
   styles: `
     :host {
@@ -47,10 +45,6 @@ export class HomeDetailToggleComponent implements OnInit {
   readonly simpleIcon = "\uE261";
   readonly detailedIcon = "\uE8D2";
   detailed = false;
-
-  get icon() {
-    return this.detailed ? this.detailedIcon : this.simpleIcon;
-  }
 
   get label() {
     return this.detailed ? "Mode détaillé" : "Mode simple";

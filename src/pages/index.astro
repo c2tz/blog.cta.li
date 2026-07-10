@@ -4,7 +4,7 @@ import { getCollection, getEntry } from "astro:content";
 import { HomeLatestPostsTableComponent } from "@/components/home/home-latest-posts-table.component";
 import HomeKonachanBackground from "@/components/home/home-konachan-background.astro";
 import { HomeSectionDividerComponent } from "@/components/home/home-section-divider.component";
-import { HomeTagsTreeComponent } from "@/components/home/home-tags-tree.component";
+import HomeTagsTree from "@/components/home/home-tags-tree.astro";
 import Layout from "@/layouts/site-layout.astro";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/site-config";
 import { formatFrenchDate, formatFrenchDateTime, toDate } from "@/lib/date-format.mjs";
@@ -107,7 +107,7 @@ const homeStructuredData = {
           <a href="#tags" class="heading-link">{homeCopy.tagsTitle}</a>
         </h2>
 
-        <HomeTagsTreeComponent tags={uniqueTags} />
+        <HomeTagsTree tags={uniqueTags} />
       </div>
     </section>
   </Fragment>

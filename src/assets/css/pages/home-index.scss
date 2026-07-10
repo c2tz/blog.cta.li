@@ -1,7 +1,7 @@
 @use "@angular/material" as mat;
 
 body.home-page {
-  --site-bg: var(--m3-surface);
+  --site-bg: var(--md-sys-color-background);
   --site-text: var(--m3-on-surface);
   --site-border: var(--m3-outline-variant);
   --site-muted: var(--m3-on-surface-variant);
@@ -54,7 +54,7 @@ body.home-page {
       tertiary-fixed-dim: var(--m3-tertiary-fixed-dim),
       on-tertiary-fixed: var(--m3-on-tertiary-fixed),
       on-tertiary-fixed-variant: var(--m3-on-tertiary-fixed-variant),
-      surface: var(--site-bg),
+      surface: var(--m3-surface),
       surface-bright: var(--m3-surface-bright),
       surface-container: var(--m3-surface-container),
       surface-container-high: var(--m3-surface-container-high),
@@ -70,22 +70,6 @@ body.home-page {
       outline-variant: var(--site-border),
       scrim: var(--m3-scrim),
       shadow: var(--m3-shadow),
-    )
-  );
-
-  @include mat.button-overrides(
-    (
-      tonal-container-color: var(--site-link-container),
-      tonal-label-text-color: var(--site-on-link-container),
-      tonal-state-layer-color: var(--site-on-link-container),
-      tonal-ripple-color: color-mix(in srgb, var(--site-on-link-container) 12%, transparent),
-      text-label-text-color: var(--site-link),
-      text-state-layer-color: var(--site-link),
-      text-ripple-color: color-mix(in srgb, var(--site-link) 12%, transparent),
-      outlined-label-text-color: var(--site-link),
-      outlined-outline-color: var(--m3-outline),
-      outlined-state-layer-color: var(--site-link),
-      outlined-ripple-color: color-mix(in srgb, var(--site-link) 12%, transparent),
     )
   );
 

@@ -1,9 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from "@angular/core";
+import {
+  CUSTOM_ELEMENTS_SCHEMA,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  signal,
+} from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
-import { MatIconButton } from "@angular/material/button";
-import { MatIcon } from "@angular/material/icon";
-import { MatProgressSpinner } from "@angular/material/progress-spinner";
-import { MatTooltip } from "@angular/material/tooltip";
 import { SITE_EVENTS } from "@/lib/site-contracts";
 
 interface RefreshState {
@@ -15,52 +17,34 @@ interface RefreshState {
 @Component({
   selector: "site-konachan-refresh-button",
   standalone: true,
-  imports: [MatIconButton, MatIcon, MatProgressSpinner, MatTooltip],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <button
-      matIconButton
+    <md-icon-button
       type="button"
       class="home-anime-refresh"
       [disabled]="busy()"
       [attr.aria-busy]="busy()"
       [attr.aria-label]="buttonLabel()"
-      [matTooltip]="buttonLabel()"
-      matTooltipPosition="below"
+      [attr.title]="buttonLabel()"
       (click)="refresh()"
     >
-      @if (busy()) {
-        <mat-progress-spinner
-          class="home-anime-refresh-spinner"
-          mode="indeterminate"
-          diameter="24"
-          strokeWidth="3"
-          aria-hidden="true"
-        />
-      } @else {
-        <mat-icon aria-hidden="true">&#xE5D5;</mat-icon>
-      }
-    </button>
+      <md-icon aria-hidden="true">&#xE5D5;</md-icon>
+    </md-icon-button>
     <span class="sr-only" role="status" aria-live="polite" data-konachan-status>
       {{ status() }}
     </span>
   `,
   styles: `
-    .home-anime-refresh.mat-mdc-icon-button {
-      --mat-icon-button-disabled-icon-color: var(--home-hero-surface-label);
-      --mdc-icon-button-disabled-icon-color: var(--home-hero-surface-label);
-    }
-
-    .home-anime-refresh.mat-mdc-icon-button:disabled {
-      color: var(--home-hero-surface-label);
-      opacity: 0.92;
-    }
-
-    .home-anime-refresh-spinner {
-      display: inline-flex;
-      color: currentColor;
-      --mat-progress-spinner-active-indicator-color: currentColor;
-      --mdc-circular-progress-active-indicator-color: currentColor;
+    .home-anime-refresh {
+      --md-icon-button-disabled-icon-color: var(--home-hero-surface-label);
+      --md-icon-button-disabled-icon-opacity: 0.92;
+      --md-icon-button-focus-icon-color: var(--home-hero-surface-label);
+      --md-icon-button-hover-icon-color: var(--home-hero-surface-label);
+      --md-icon-button-hover-state-layer-color: var(--home-hero-surface-label);
+      --md-icon-button-icon-color: var(--home-hero-surface-label);
+      --md-icon-button-pressed-icon-color: var(--home-hero-surface-label);
+      --md-icon-button-pressed-state-layer-color: var(--home-hero-surface-label);
     }
   `,
 })
@@ -68,7 +52,9 @@ export class KonachanRefreshButtonComponent implements OnInit, OnDestroy {
   readonly busy = signal(false);
   readonly loaded = signal(false);
   readonly status = signal("");
-  readonly buttonLabel = computed(() => "Actualiser l'image");
+  readonly buttonLabel = computed(() =>
+    this.busy() ? "Actualisation de l'image en cours" : "Actualiser l'image",
+  );
 
   private readonly handleRefreshState = (event: Event) => {
     const detail = (event as CustomEvent<RefreshState>).detail ?? {};

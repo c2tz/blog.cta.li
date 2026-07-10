@@ -257,21 +257,9 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     if (!body?.classList.contains("home-page")) return null;
 
     const tokens = tokensFromTheme(theme, { dark: isDarkTheme() });
-    const lightTokens = tokensFromTheme(theme, { dark: false });
-    const darkTokens = tokensFromTheme(theme, { dark: true });
-    body.dataset.homeDynamicColor = "true";
-    document.documentElement.style.setProperty("--home-dynamic-page-bg", tokens.surface);
-    body.style.setProperty("--home-dynamic-light-primary", lightTokens.primary);
-    body.style.setProperty("--home-dynamic-light-surface", lightTokens.surface);
-    body.style.setProperty("--home-dynamic-dark-primary", darkTokens.primary);
-    body.style.setProperty("--home-dynamic-dark-surface", darkTokens.surface);
-
-    for (const name of HOME_DYNAMIC_TOKEN_NAMES) {
-      const value = tokens[name];
-      body.style.setProperty(`--m3-${name}`, value);
-      body.style.setProperty(`--mat-sys-${name}`, value);
-    }
-
+    // The illustration may influence the hero overlay, but never the global site palette.
+    // Global Material roles stay generated from the explicit #1565C0 brand source.
+    clearHomeDynamicTokens();
     return tokens;
   }
 

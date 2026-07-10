@@ -1,19 +1,15 @@
 import {
+  CUSTOM_ELEMENTS_SCHEMA,
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  ViewChild,
   computed,
   effect,
   inject,
   input,
   signal,
 } from "@angular/core";
-import { LiveAnnouncer } from "@angular/cdk/a11y";
 import type { AfterViewInit, OnDestroy, OnInit } from "@angular/core";
-import { MatProgressSpinner } from "@angular/material/progress-spinner";
-import { MatSort, MatSortModule, type Sort } from "@angular/material/sort";
-import { MatTableDataSource, MatTableModule } from "@angular/material/table";
 
 import { SITE_EVENTS } from "@/lib/site-contracts";
 
@@ -29,88 +25,106 @@ interface LatestPostsResponse {
   readonly posts?: readonly HomeLatestPost[];
 }
 
+const LOADING_INDICATOR_DELAY_MS = 200;
+
+type HomeSortColumn = "date" | "title";
+type SortDirection = "asc" | "desc";
+
 @Component({
   selector: "site-home-latest-posts-table",
   standalone: true,
-  imports: [MatProgressSpinner, MatSortModule, MatTableModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="home-posts-table-scroll" [class.home-posts-table-scroll-detailed]="detailed()">
+    <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+      {{ sortStatus() }}
+    </p>
+
+    <div
+      class="home-posts-table-scroll"
+      tabindex="0"
+      [class.home-posts-table-scroll-detailed]="detailed()"
+    >
+      @if (loadingIndicatorVisible()) {
+        <md-linear-progress
+          class="home-posts-table-progress"
+          indeterminate
+          aria-label="Chargement des articles"
+        ></md-linear-progress>
+      }
       <table
-        mat-table
-        [dataSource]="dataSource"
-        matSort
         id="home-latest-posts-table"
         class="home-posts-table"
         aria-label="Derniers articles"
-        [attr.aria-busy]="loading()"
-        (matSortChange)="announceSortChange($event)"
+        [attr.aria-busy]="loading() ? 'true' : null"
       >
-        <ng-container matColumnDef="date">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-            mat-sort-header
-            sortActionDescription="Trier par date"
-            scope="col"
-          >
-            Date
-          </th>
-          <td mat-cell *matCellDef="let post">
-            <time
-              class="post-date site-date-compact home-post-date-compact"
-              [attr.datetime]="post.datetime"
+        <thead>
+          <tr>
+            <th class="home-posts-date-column" scope="col" [attr.aria-sort]="sortAria('date')">
+              <button
+                type="button"
+                class="home-posts-sort-button"
+                [class.home-posts-sort-active]="sortColumn() === 'date'"
+                aria-label="Trier par date"
+                (click)="toggleSort('date')"
+              >
+                <span>Date</span>
+                <md-icon aria-hidden="true">{{ sortIcon("date") }}</md-icon>
+                <md-ripple></md-ripple>
+              </button>
+            </th>
+            <th
+              class="home-posts-title-column home-posts-title-header"
+              scope="col"
+              [attr.aria-sort]="sortAria('title')"
             >
-              {{ post.dateCompact }}
-            </time>
-            <time
-              class="post-date site-date-full home-post-date-full"
-              [attr.datetime]="post.datetime"
-            >
-              {{ post.dateFull }}
-            </time>
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="title">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-            mat-sort-header
-            sortActionDescription="Trier par titre"
-            class="home-posts-title-header"
-            scope="col"
-          >
-            Titre
-          </th>
-          <td mat-cell *matCellDef="let post">
-            <a class="home-post-title" [href]="post.href">{{ post.title }}</a>
-          </td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr
-          class="home-posts-table-row"
-          mat-row
-          *matRowDef="let row; columns: displayedColumns"
-        ></tr>
-        <tr class="home-posts-table-loading-row" *matNoDataRow>
-          <td [attr.colspan]="displayedColumns.length">
-            @if (loading()) {
-              <div class="home-posts-table-loading" role="status">
-                <mat-progress-spinner
-                  mode="indeterminate"
-                  diameter="64"
-                  strokeWidth="6"
-                  aria-hidden="true"
-                />
-                <span class="sr-only">Chargement des articles</span>
-              </div>
-            } @else {
-              <span class="home-posts-table-empty">Aucun article à afficher.</span>
-            }
-          </td>
-        </tr>
+              <button
+                type="button"
+                class="home-posts-sort-button"
+                [class.home-posts-sort-active]="sortColumn() === 'title'"
+                aria-label="Trier par titre"
+                (click)="toggleSort('title')"
+              >
+                <span>Titre</span>
+                <md-icon aria-hidden="true">{{ sortIcon("title") }}</md-icon>
+                <md-ripple></md-ripple>
+              </button>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (post of sortedPosts(); track post.href) {
+            <tr class="home-posts-table-row">
+              <td class="home-posts-date-column">
+                <time
+                  class="post-date site-date-compact home-post-date-compact"
+                  [attr.datetime]="post.datetime"
+                >
+                  {{ post.dateCompact }}
+                </time>
+                <time
+                  class="post-date site-date-full home-post-date-full"
+                  [attr.datetime]="post.datetime"
+                >
+                  {{ post.dateFull }}
+                </time>
+              </td>
+              <td class="home-posts-title-column">
+                <a class="home-post-title" [href]="post.href">{{ post.title }}</a>
+              </td>
+            </tr>
+          } @empty {
+            <tr class="home-posts-table-loading-row">
+              <td colspan="2">
+                @if (loading()) {
+                  <span class="sr-only">Chargement des articles</span>
+                } @else {
+                  <span class="home-posts-table-empty">Aucun article à afficher.</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
       </table>
     </div>
   `,
@@ -168,6 +182,8 @@ interface LatestPostsResponse {
 
     .home-posts-table th,
     .home-posts-table td {
+      height: 2.75rem;
+      padding: 0 2rem 0 1rem;
       border: 0;
       border-block-end: 1px solid var(--site-border);
       background: var(--site-bg);
@@ -182,14 +198,9 @@ interface LatestPostsResponse {
     }
 
     .home-posts-table th {
+      padding: 0;
       color: var(--site-muted);
       font-weight: 600;
-    }
-
-    .home-posts-table th,
-    .home-posts-table td {
-      height: 2.75rem;
-      padding: 0 2rem 0 1rem;
     }
 
     .home-posts-table .home-posts-table-row:last-child td {
@@ -203,12 +214,19 @@ interface LatestPostsResponse {
       text-align: center;
     }
 
-    .home-posts-table-loading {
-      --mat-progress-spinner-active-indicator-color: var(--site-link);
+    .home-posts-table-progress {
+      --md-linear-progress-active-indicator-color: var(--md-sys-color-primary);
+      --md-linear-progress-active-indicator-height: 0.2rem;
+      --md-linear-progress-track-color: var(--md-sys-color-surface-container-highest);
+      --md-linear-progress-track-height: 0.2rem;
+      --md-linear-progress-track-shape: var(--md-sys-shape-corner-none);
 
-      display: grid;
-      min-height: 9rem;
-      place-items: center;
+      position: sticky;
+      top: 0;
+      left: 0;
+      z-index: 3;
+      width: 100%;
+      min-width: 100%;
     }
 
     .home-posts-table-empty {
@@ -217,66 +235,60 @@ interface LatestPostsResponse {
       color: var(--site-muted);
     }
 
-    .home-posts-table .mat-column-date {
+    .home-posts-table .home-posts-date-column {
       width: var(--home-posts-date-column-content-width);
       min-width: var(--home-posts-date-column-content-width);
       border-inline-end: 1px solid var(--site-border);
     }
 
-    .home-posts-table .mat-column-title {
-      min-width: 24rem;
+    .home-posts-table .home-posts-title-column {
+      min-width: 20rem;
     }
 
     .home-posts-table .home-posts-title-header {
       overflow: visible;
     }
 
-    :host ::ng-deep .home-posts-table .home-posts-title-header .mat-sort-header-container {
-      position: sticky;
-      left: 0;
-      z-index: 2;
-      box-sizing: border-box;
-      width: var(--home-posts-date-column-width);
-      height: 100%;
+    .home-posts-sort-button {
+      --md-ripple-focus-color: var(--site-link);
+      --md-ripple-hover-color: var(--site-link);
+      --md-ripple-pressed-color: var(--site-link);
+
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      width: 100%;
       min-height: 2.75rem;
-      margin-inline-start: -1rem;
-      padding-inline: 1rem 0.65rem;
-      background: var(--site-bg);
+      box-sizing: border-box;
+      padding: 0 2rem 0 1rem;
+      overflow: hidden;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      font: inherit;
+      font-weight: inherit;
+      text-align: start;
     }
 
-    .home-posts-table .mat-sort-header {
-      --mat-sort-arrow-color: currentColor;
-    }
+    .home-posts-sort-button md-icon {
+      --md-icon-size: 1.25rem;
 
-    :host ::ng-deep .home-posts-table .mat-sort-header-arrow {
-      display: inline-grid;
-      place-items: center;
       width: 1.25rem;
       height: 1.25rem;
-      margin-inline-start: 0.25rem;
-      color: currentColor;
-      font-family: "Material Symbols Rounded";
+      flex-basis: 1.25rem;
       font-size: 1.25rem;
-      font-style: normal;
-      font-weight: 400;
-      font-variation-settings:
-        "FILL" 0,
-        "wght" 400,
-        "GRAD" 0,
-        "opsz" 20;
-      line-height: 1;
     }
 
-    :host ::ng-deep .home-posts-table .mat-sort-header-arrow svg {
-      display: none;
-    }
-
-    :host ::ng-deep .home-posts-table .mat-sort-header-arrow::before {
-      content: "\uE5D8";
-    }
-
-    .home-posts-table .mat-sort-header-sorted {
+    .home-posts-sort-active {
+      background: color-mix(in srgb, var(--site-link) 10%, transparent);
       color: var(--site-text);
+    }
+
+    .home-posts-sort-button:focus-visible {
+      outline: 0;
+      box-shadow: inset 0 0 0 2px var(--site-link);
     }
 
     .home-post-title {
@@ -287,36 +299,49 @@ interface LatestPostsResponse {
 })
 export class HomeLatestPostsTableComponent implements AfterViewInit, OnInit, OnDestroy {
   private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly liveAnnouncer = inject(LiveAnnouncer);
-
-  @ViewChild(MatSort) sort?: MatSort;
 
   readonly detailEndpoint = input("/latest-posts.json");
   readonly posts = input<readonly HomeLatestPost[]>([]);
-  readonly displayedColumns = ["date", "title"] as const;
-  readonly dataSource = new MatTableDataSource<HomeLatestPost>();
   readonly detailed = signal(false);
   readonly detailedPosts = signal<readonly HomeLatestPost[] | null>(null);
   readonly loading = signal(false);
+  readonly loadingIndicatorVisible = signal(false);
+  readonly sortColumn = signal<HomeSortColumn | null>(null);
+  readonly sortDirection = signal<SortDirection>("asc");
+  readonly sortStatus = signal("");
   readonly tablePosts = computed(() => {
     const posts = this.detailed() ? (this.detailedPosts() ?? this.posts()) : this.posts();
 
     return this.detailed() ? posts : posts.slice(0, 3);
   });
+  readonly sortedPosts = computed(() => {
+    const column = this.sortColumn();
+    if (!column) return this.tablePosts();
+
+    const direction = this.sortDirection() === "asc" ? 1 : -1;
+    return [...this.tablePosts()].sort((left, right) => {
+      if (column === "date") {
+        const leftDate = Date.parse(left.datetime);
+        const rightDate = Date.parse(right.datetime);
+        const result =
+          Number.isNaN(leftDate) || Number.isNaN(rightDate)
+            ? left.datetime.localeCompare(right.datetime, "fr")
+            : leftDate - rightDate;
+        return result * direction;
+      }
+
+      return left.title.localeCompare(right.title, "fr", { sensitivity: "base" }) * direction;
+    });
+  });
 
   private detailRequest: Promise<void> | null = null;
   private dateColumnResizeObserver: ResizeObserver | null = null;
   private dateColumnMeasureFrame = 0;
+  private loadingIndicatorTimer = 0;
 
   constructor() {
-    this.dataSource.sortingDataAccessor = (post, column) => {
-      if (column === "date") return new Date(post.datetime).valueOf();
-      if (column === "title") return post.title.toLocaleLowerCase("fr");
-
-      return "";
-    };
     effect(() => {
-      this.dataSource.data = [...this.tablePosts()];
+      this.tablePosts();
       this.queueDateColumnMeasure();
     });
   }
@@ -333,18 +358,49 @@ export class HomeLatestPostsTableComponent implements AfterViewInit, OnInit, OnD
   }
 
   ngAfterViewInit() {
-    if (this.sort) this.dataSource.sort = this.sort;
     this.watchDateColumnWidth();
     this.queueDateColumnMeasure();
   }
 
   ngOnDestroy() {
-    if (typeof document === "undefined") return;
-
-    document.removeEventListener(SITE_EVENTS.homeDetailViewChange, this.handleDetailViewChange);
+    if (typeof document !== "undefined") {
+      document.removeEventListener(SITE_EVENTS.homeDetailViewChange, this.handleDetailViewChange);
+    }
     this.dateColumnResizeObserver?.disconnect();
     this.dateColumnResizeObserver = null;
     this.cancelDateColumnMeasure();
+    this.endLoading();
+  }
+
+  toggleSort(column: HomeSortColumn) {
+    if (this.sortColumn() !== column) {
+      this.sortColumn.set(column);
+      this.sortDirection.set("asc");
+    } else if (this.sortDirection() === "asc") {
+      this.sortDirection.set("desc");
+    } else {
+      this.sortColumn.set(null);
+      this.sortDirection.set("asc");
+    }
+
+    if (!this.sortColumn()) {
+      this.sortStatus.set("Tri désactivé.");
+      return;
+    }
+
+    const direction = this.sortDirection() === "asc" ? "croissant" : "décroissant";
+    const label = column === "date" ? "date" : "titre";
+    this.sortStatus.set(`Articles triés par ${label}, ordre ${direction}.`);
+  }
+
+  sortAria(column: HomeSortColumn) {
+    if (this.sortColumn() !== column) return null;
+    return this.sortDirection() === "asc" ? "ascending" : "descending";
+  }
+
+  sortIcon(column: HomeSortColumn) {
+    if (this.sortColumn() !== column) return "\uE5D7";
+    return this.sortDirection() === "asc" ? "\uE5D8" : "\uE5DB";
   }
 
   private readonly handleDetailViewChange = (event: Event) => {
@@ -354,22 +410,11 @@ export class HomeLatestPostsTableComponent implements AfterViewInit, OnInit, OnD
     this.queueDateColumnMeasure();
   };
 
-  announceSortChange(sortState: Sort) {
-    if (!sortState.direction) {
-      this.liveAnnouncer.announce("Tri désactivé.");
-      return;
-    }
-
-    const direction = sortState.direction === "asc" ? "croissant" : "décroissant";
-    const column = sortState.active === "date" ? "date" : "titre";
-    this.liveAnnouncer.announce(`Articles triés par ${column}, ordre ${direction}.`);
-  }
-
   private watchDateColumnWidth() {
     if (typeof ResizeObserver === "undefined") return;
 
     const dateHeader = this.elementRef.nativeElement.querySelector<HTMLElement>(
-      ".home-posts-table .mat-column-date",
+      ".home-posts-table .home-posts-date-column",
     );
     if (!dateHeader) return;
 
@@ -401,7 +446,7 @@ export class HomeLatestPostsTableComponent implements AfterViewInit, OnInit, OnD
       ".home-posts-table-scroll",
     );
     const dateHeader = this.elementRef.nativeElement.querySelector<HTMLElement>(
-      ".home-posts-table .mat-column-date",
+      ".home-posts-table .home-posts-date-column",
     );
     if (!scroller || !dateHeader) return;
 
@@ -415,7 +460,7 @@ export class HomeLatestPostsTableComponent implements AfterViewInit, OnInit, OnD
     if (this.detailedPosts()) return Promise.resolve();
     if (this.detailRequest) return this.detailRequest;
 
-    this.loading.set(true);
+    this.beginLoading();
     this.detailRequest = fetch(this.detailEndpoint(), {
       credentials: "same-origin",
     })
@@ -429,10 +474,31 @@ export class HomeLatestPostsTableComponent implements AfterViewInit, OnInit, OnD
         this.detailedPosts.set(this.posts());
       })
       .finally(() => {
-        this.loading.set(false);
+        this.endLoading();
         this.detailRequest = null;
       });
 
     return this.detailRequest;
+  }
+
+  private beginLoading() {
+    this.loading.set(true);
+    this.cancelLoadingIndicatorTimer();
+    this.loadingIndicatorTimer = window.setTimeout(() => {
+      this.loadingIndicatorTimer = 0;
+      if (this.loading()) this.loadingIndicatorVisible.set(true);
+    }, LOADING_INDICATOR_DELAY_MS);
+  }
+
+  private endLoading() {
+    this.loading.set(false);
+    this.cancelLoadingIndicatorTimer();
+    this.loadingIndicatorVisible.set(false);
+  }
+
+  private cancelLoadingIndicatorTimer() {
+    if (!this.loadingIndicatorTimer || typeof window === "undefined") return;
+    window.clearTimeout(this.loadingIndicatorTimer);
+    this.loadingIndicatorTimer = 0;
   }
 }

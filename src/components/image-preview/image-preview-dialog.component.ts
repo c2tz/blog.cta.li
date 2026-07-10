@@ -3,6 +3,7 @@ import { Overlay, OverlayContainer } from "@angular/cdk/overlay";
 import type { OverlayRef } from "@angular/cdk/overlay";
 import { CdkPortal } from "@angular/cdk/portal";
 import {
+  CUSTOM_ELEMENTS_SCHEMA,
   ChangeDetectionStrategy,
   Component,
   ViewEncapsulation,
@@ -13,15 +14,12 @@ import {
   viewChildren,
 } from "@angular/core";
 import type { AfterViewInit, OnDestroy, OnInit } from "@angular/core";
-import { MatIconButton } from "@angular/material/button";
 import {
   MAT_DIALOG_DATA,
   MatDialog,
   MatDialogModule,
   MatDialogRef,
 } from "@angular/material/dialog";
-import { MatIcon } from "@angular/material/icon";
-import { MatMenu, MatMenuItem, MatMenuTrigger } from "@angular/material/menu";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { MatToolbar } from "@angular/material/toolbar";
 import { MatTooltip } from "@angular/material/tooltip";
@@ -65,6 +63,7 @@ interface WebkitFullscreenElement extends HTMLElement {
 }
 
 type ImageMotion = "next" | "previous";
+type ImageOperation = "download" | "share";
 
 interface ImageInformationDialogData {
   createdAt?: string;
@@ -86,6 +85,7 @@ const NEXT_ICON = "\uE5C8";
 const PREVIOUS_ICON = "\uE5C4";
 const SHARE_ICON = "\uE157";
 const SHARE_FEEDBACK_DURATION_MS = 2200;
+const LOADING_INDICATOR_DELAY_MS = 200;
 const DOUBLE_TAP_DISTANCE = 34;
 const DOUBLE_TAP_MS = 280;
 const TAP_DISTANCE = 10;
@@ -200,16 +200,22 @@ async function copyTextToClipboard(text: string) {
 @Component({
   selector: "site-image-information-dialog",
   standalone: true,
-  imports: [MatDialogModule, MatIcon, MatIconButton],
+  imports: [MatDialogModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
     <section class="site-image-information">
       <header class="site-image-information-header">
         <h2 mat-dialog-title>Informations sur l’image</h2>
-        <button matIconButton mat-dialog-close type="button" aria-label="Fermer les informations">
-          <mat-icon aria-hidden="true">{{ closeIcon }}</mat-icon>
-        </button>
+        <md-icon-button
+          type="button"
+          title="Fermer les informations"
+          aria-label="Fermer les informations"
+          (click)="close()"
+        >
+          <md-icon aria-hidden="true">{{ closeIcon }}</md-icon>
+        </md-icon-button>
       </header>
 
       <mat-dialog-content>
@@ -273,8 +279,14 @@ async function copyTextToClipboard(text: string) {
       color: var(--site-text);
     }
 
-    .site-image-information-header .mat-mdc-icon-button {
-      color: var(--site-muted);
+    .site-image-information-header md-icon-button {
+      --md-icon-button-icon-color: var(--site-muted);
+      --md-icon-button-hover-icon-color: var(--site-text);
+      --md-icon-button-focus-icon-color: var(--site-text);
+      --md-icon-button-pressed-icon-color: var(--site-text);
+      --md-icon-button-hover-state-layer-color: var(--site-muted);
+      --md-icon-button-focus-state-layer-color: var(--site-muted);
+      --md-icon-button-pressed-state-layer-color: var(--site-muted);
     }
 
     .site-image-information .mat-mdc-dialog-content {
@@ -331,8 +343,14 @@ class ImageInformationDialogComponent implements OnInit {
   readonly sizeLabel = signal("Calcul…");
   readonly typeLabel = signal(imageTypeLabel(this.data.src));
 
+  private readonly dialogRef = inject(MatDialogRef<ImageInformationDialogComponent>);
+
   ngOnInit() {
     void this.resolveFileInformation();
+  }
+
+  close() {
+    this.dialogRef.close();
   }
 
   private async resolveFileInformation() {
@@ -362,17 +380,8 @@ class ImageInformationDialogComponent implements OnInit {
 @Component({
   selector: "site-image-preview-dialog",
   standalone: true,
-  imports: [
-    MatDialogModule,
-    CdkPortal,
-    MatIcon,
-    MatIconButton,
-    MatMenu,
-    MatMenuItem,
-    MatMenuTrigger,
-    MatToolbar,
-    MatTooltip,
-  ],
+  imports: [MatDialogModule, CdkPortal, MatToolbar, MatTooltip],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
@@ -380,6 +389,7 @@ class ImageInformationDialogComponent implements OnInit {
       class="site-image-dialog-shell"
       [class.has-visible-controls]="controlsVisible()"
       [class.is-fullscreen-mode]="isFullscreen()"
+      [attr.aria-busy]="imageOperationInProgress() ? 'true' : null"
       tabindex="-1"
       (pointerdown)="handlePointerDown($event)"
       (pointermove)="handlePointerMove($event)"
@@ -387,6 +397,14 @@ class ImageInformationDialogComponent implements OnInit {
       (pointercancel)="handlePointerCancel($event)"
       (lostpointercapture)="handlePointerCancel($event)"
     >
+      @if (imageOperationIndicatorVisible()) {
+        <md-linear-progress
+          class="site-image-dialog-operation-progress"
+          indeterminate
+          [attr.aria-label]="imageOperationLabel()"
+        ></md-linear-progress>
+      }
+
       <mat-dialog-content class="site-image-dialog-content">
         <img
           class="site-image-dialog-image"
@@ -401,55 +419,47 @@ class ImageInformationDialogComponent implements OnInit {
         />
       </mat-dialog-content>
 
-      <mat-menu
-        #imageMenu="matMenu"
-        xPosition="before"
-        yPosition="below"
+      <md-menu
+        id="site-image-dialog-menu"
+        anchor="site-image-dialog-menu-trigger"
+        anchor-corner="end-end"
+        menu-corner="start-end"
+        positioning="popover"
         class="site-image-dialog-menu"
         aria-label="Options de l'image"
+        [open]="imageMenuOpen()"
+        (closed)="imageMenuOpen.set(false)"
       >
-        <button
-          mat-menu-item
-          type="button"
+        <md-menu-item
           class="site-image-dialog-menu-item"
+          [disabled]="imageOperationInProgress()"
           (click)="download()"
         >
-          <mat-icon matMenuItemIcon aria-hidden="true">{{ downloadIcon }}</mat-icon>
-          <span>Télécharger</span>
-        </button>
+          <md-icon slot="start" aria-hidden="true">{{ downloadIcon }}</md-icon>
+          <span slot="headline">Télécharger</span>
+        </md-menu-item>
 
-        <button
-          mat-menu-item
-          type="button"
+        <md-menu-item
           class="site-image-dialog-menu-item"
-          (click)="share($event)"
+          [disabled]="imageOperationInProgress()"
+          (click)="share()"
         >
-          <mat-icon matMenuItemIcon aria-hidden="true">{{ shareActionIcon() }}</mat-icon>
-          <span>{{ shareLabel() }}</span>
-        </button>
+          <md-icon slot="start" aria-hidden="true">{{ shareActionIcon() }}</md-icon>
+          <span slot="headline">{{ shareLabel() }}</span>
+        </md-menu-item>
 
         @if (fullscreenAvailable()) {
-          <button
-            mat-menu-item
-            type="button"
-            class="site-image-dialog-menu-item"
-            (click)="handleFullscreenClick()"
-          >
-            <mat-icon matMenuItemIcon aria-hidden="true">{{ fullscreenIcon() }}</mat-icon>
-            <span>{{ fullscreenLabel() }}</span>
-          </button>
+          <md-menu-item class="site-image-dialog-menu-item" (click)="handleFullscreenClick()">
+            <md-icon slot="start" aria-hidden="true">{{ fullscreenIcon() }}</md-icon>
+            <span slot="headline">{{ fullscreenLabel() }}</span>
+          </md-menu-item>
         }
 
-        <button
-          mat-menu-item
-          type="button"
-          class="site-image-dialog-menu-item"
-          (click)="openInformation()"
-        >
-          <mat-icon matMenuItemIcon aria-hidden="true">{{ infoIcon }}</mat-icon>
-          <span>Informations</span>
-        </button>
-      </mat-menu>
+        <md-menu-item class="site-image-dialog-menu-item" (click)="openInformation()">
+          <md-icon slot="start" aria-hidden="true">{{ infoIcon }}</md-icon>
+          <span slot="headline">Informations</span>
+        </md-menu-item>
+      </md-menu>
 
       <ng-template cdkPortal>
         <mat-toolbar
@@ -461,8 +471,7 @@ class ImageInformationDialogComponent implements OnInit {
           aria-label="Commandes de l'image"
         >
           @if (canNavigate()) {
-            <button
-              matIconButton
+            <md-icon-button
               type="button"
               class="site-image-dialog-button"
               aria-label="Image précédente"
@@ -470,11 +479,10 @@ class ImageInformationDialogComponent implements OnInit {
               matTooltipPosition="below"
               (click)="previous()"
             >
-              <mat-icon aria-hidden="true">{{ previousIcon }}</mat-icon>
-            </button>
+              <md-icon aria-hidden="true">{{ previousIcon }}</md-icon>
+            </md-icon-button>
 
-            <button
-              matIconButton
+            <md-icon-button
               type="button"
               class="site-image-dialog-button"
               aria-label="Image suivante"
@@ -482,29 +490,30 @@ class ImageInformationDialogComponent implements OnInit {
               matTooltipPosition="below"
               (click)="next()"
             >
-              <mat-icon aria-hidden="true">{{ nextIcon }}</mat-icon>
-            </button>
+              <md-icon aria-hidden="true">{{ nextIcon }}</md-icon>
+            </md-icon-button>
 
             <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
               Image {{ displayIndex() }} sur {{ total() }}
             </span>
           }
 
-          <button
-            matIconButton
+          <md-icon-button
+            id="site-image-dialog-menu-trigger"
             type="button"
             class="site-image-dialog-button"
-            [matMenuTriggerFor]="imageMenu"
             aria-label="Options de l'image"
             aria-haspopup="menu"
+            aria-controls="site-image-dialog-menu"
+            [attr.aria-expanded]="imageMenuOpen()"
             matTooltip="Options"
             matTooltipPosition="below"
+            (click)="toggleImageMenu()"
           >
-            <mat-icon aria-hidden="true">{{ moreIcon }}</mat-icon>
-          </button>
+            <md-icon aria-hidden="true">{{ moreIcon }}</md-icon>
+          </md-icon-button>
 
-          <button
-            matIconButton
+          <md-icon-button
             type="button"
             class="site-image-dialog-button site-image-dialog-fullscreen-exit-button"
             aria-label="Quitter le plein écran"
@@ -512,11 +521,10 @@ class ImageInformationDialogComponent implements OnInit {
             matTooltipPosition="below"
             (click)="handleFullscreenClick()"
           >
-            <mat-icon aria-hidden="true">{{ fullscreenExitIcon }}</mat-icon>
-          </button>
+            <md-icon aria-hidden="true">{{ fullscreenExitIcon }}</md-icon>
+          </md-icon-button>
 
-          <button
-            matIconButton
+          <md-icon-button
             type="button"
             class="site-image-dialog-button"
             aria-label="Fermer"
@@ -524,8 +532,8 @@ class ImageInformationDialogComponent implements OnInit {
             matTooltipPosition="below"
             (click)="close()"
           >
-            <mat-icon aria-hidden="true">{{ closeIcon }}</mat-icon>
-          </button>
+            <md-icon aria-hidden="true">{{ closeIcon }}</md-icon>
+          </md-icon-button>
         </mat-toolbar>
       </ng-template>
     </section>
@@ -654,6 +662,24 @@ class ImageInformationDialogComponent implements OnInit {
       user-select: none;
     }
 
+    .site-image-dialog-operation-progress {
+      --md-linear-progress-active-indicator-color: var(--md-sys-color-primary);
+      --md-linear-progress-active-indicator-height: 0.25rem;
+      --md-linear-progress-track-color: color-mix(
+        in srgb,
+        var(--md-sys-color-primary) 18%,
+        transparent
+      );
+      --md-linear-progress-track-height: 0.25rem;
+      --md-linear-progress-track-shape: var(--md-sys-shape-corner-none);
+
+      position: absolute;
+      inset: 0 0 auto;
+      z-index: 5;
+      width: 100%;
+      pointer-events: none;
+    }
+
     .site-image-dialog-shell.is-fullscreen-mode,
     .site-image-dialog-shell:fullscreen,
     :fullscreen .site-image-dialog-shell {
@@ -737,24 +763,26 @@ class ImageInformationDialogComponent implements OnInit {
       transition-timing-function: linear;
     }
 
-    .site-image-dialog-button.mat-mdc-icon-button {
-      --mat-icon-button-icon-color: var(--site-muted);
-      --mat-icon-button-state-layer-color: var(--site-muted);
-      color: var(--site-muted);
+    .site-image-dialog-button {
+      --md-icon-button-icon-color: var(--site-muted);
+      --md-icon-button-hover-icon-color: var(--site-text);
+      --md-icon-button-focus-icon-color: var(--site-text);
+      --md-icon-button-pressed-icon-color: var(--site-text);
+      --md-icon-button-hover-state-layer-color: var(--site-muted);
+      --md-icon-button-focus-state-layer-color: var(--site-muted);
+      --md-icon-button-pressed-state-layer-color: var(--site-muted);
       touch-action: manipulation;
     }
 
-    .site-image-dialog-fullscreen-exit-button.mat-mdc-icon-button {
+    .site-image-dialog-fullscreen-exit-button {
       display: none;
     }
 
-    .site-image-dialog-shell.is-fullscreen-mode
-      .site-image-dialog-fullscreen-exit-button.mat-mdc-icon-button,
-    .site-image-dialog-fullscreen-host:fullscreen
-      .site-image-dialog-fullscreen-exit-button.mat-mdc-icon-button,
+    .site-image-dialog-shell.is-fullscreen-mode .site-image-dialog-fullscreen-exit-button,
+    .site-image-dialog-fullscreen-host:fullscreen .site-image-dialog-fullscreen-exit-button,
     .site-image-dialog-fullscreen-host:-webkit-full-screen
-      .site-image-dialog-fullscreen-exit-button.mat-mdc-icon-button,
-    :fullscreen .site-image-dialog-fullscreen-exit-button.mat-mdc-icon-button {
+      .site-image-dialog-fullscreen-exit-button,
+    :fullscreen .site-image-dialog-fullscreen-exit-button {
       display: inline-flex;
     }
 
@@ -864,19 +892,23 @@ class ImageInformationDialogComponent implements OnInit {
       max-height: 100%;
     }
 
-    .site-image-dialog-menu.mat-mdc-menu-panel {
+    .site-image-dialog-menu {
+      --md-menu-container-color: var(--m3-surface-container);
+      --md-menu-container-shape: var(--site-shape-small);
       min-width: 14rem;
     }
 
-    .site-image-dialog-menu-item.mat-mdc-menu-item {
+    .site-image-dialog-menu-item {
+      --md-menu-item-label-text-color: var(--site-text);
+      --md-menu-item-leading-icon-color: var(--site-muted);
       position: relative;
       min-height: 3.25rem;
       cursor: pointer;
       pointer-events: auto;
     }
 
-    .site-image-dialog-menu-item.mat-mdc-menu-item .mat-icon {
-      color: var(--site-muted);
+    .site-image-dialog-menu-item md-icon {
+      --md-icon-size: 1.5rem;
     }
 
     @media (max-width: 720px), (pointer: coarse) {
@@ -950,6 +982,15 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
     typeof document !== "undefined" && this.isFullscreenSupported(),
   );
   readonly imageMotion = signal<ImageMotion | null>(null);
+  readonly imageOperation = signal<ImageOperation | null>(null);
+  readonly imageOperationInProgress = computed(() => this.imageOperation() !== null);
+  readonly imageOperationIndicatorVisible = signal(false);
+  readonly imageOperationLabel = computed(() =>
+    this.imageOperation() === "download"
+      ? "Téléchargement de l’image en cours"
+      : "Préparation du partage en cours",
+  );
+  readonly imageMenuOpen = signal(false);
   readonly isClosing = signal(false);
   readonly items = signal(this.normalizeItems(this.data.items));
   readonly currentIndex = signal(this.clampIndex(this.data.initialIndex ?? 0));
@@ -965,6 +1006,7 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
   private swipeStart?: SwipeStart;
   private fullscreenFallback = false;
   private imageMotionTimer?: number;
+  private imageOperationIndicatorTimer?: number;
   private lastTap?: PointerPosition & { time: number };
   private shareLabelTimer?: number;
   private tapTimer?: number;
@@ -1029,6 +1071,7 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
   }
 
   ngOnDestroy() {
+    this.clearImageOperation();
     if (typeof document === "undefined") return;
 
     this.document.removeEventListener("fullscreenchange", this.handleFullscreenChange);
@@ -1097,6 +1140,8 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
 
   async download() {
     this.hideTooltip();
+    if (!this.beginImageOperation("download")) return;
+
     const item = this.current();
     const filename = fileNameFromURL(item.src, this.document.baseURI);
 
@@ -1115,11 +1160,18 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
       URL.revokeObjectURL(blobUrl);
     } catch {
       window.open(item.src, "_blank", "noopener");
+    } finally {
+      this.endImageOperation("download");
     }
   }
 
   handleFullscreenClick() {
     void this.toggleFullscreen();
+  }
+
+  toggleImageMenu() {
+    this.hideTooltip();
+    this.imageMenuOpen.update((open) => !open);
   }
 
   openInformation() {
@@ -1149,33 +1201,39 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
   async share(event?: MouseEvent) {
     event?.stopPropagation();
     this.hideTooltip();
+    if (!this.beginImageOperation("share")) return;
+
     const item = this.current();
     const url = new URL(item.src, this.document.baseURI).href;
 
-    if (navigator.share) {
-      try {
-        const file = await this.getShareFile(url).catch(() => null);
-        const fileShareData = file ? { files: [file], title: document.title } : null;
-
-        if (fileShareData && navigator.canShare?.(fileShareData)) {
-          await navigator.share(fileShareData);
-        } else {
-          await navigator.share({ title: document.title, url });
-        }
-
-        this.setShareFeedback("Image partagée");
-        return;
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-      }
-    }
-
     try {
-      const copied = await copyTextToClipboard(url);
-      if (!copied) throw new Error("copy_failed");
-      this.setShareFeedback("Lien copié");
-    } catch {
-      this.setShareFeedback("Copie impossible");
+      if (navigator.share) {
+        try {
+          const file = await this.getShareFile(url).catch(() => null);
+          const fileShareData = file ? { files: [file], title: document.title } : null;
+
+          if (fileShareData && navigator.canShare?.(fileShareData)) {
+            await navigator.share(fileShareData);
+          } else {
+            await navigator.share({ title: document.title, url });
+          }
+
+          this.setShareFeedback("Image partagée");
+          return;
+        } catch (error) {
+          if (error instanceof DOMException && error.name === "AbortError") return;
+        }
+      }
+
+      try {
+        const copied = await copyTextToClipboard(url);
+        if (!copied) throw new Error("copy_failed");
+        this.setShareFeedback("Lien copié");
+      } catch {
+        this.setShareFeedback("Copie impossible");
+      }
+    } finally {
+      this.endImageOperation("share");
     }
   }
 
@@ -1373,6 +1431,37 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
     this.document.dispatchEvent(new CustomEvent(SITE_EVENTS.tooltipHide));
   }
 
+  private beginImageOperation(operation: ImageOperation) {
+    if (this.imageOperationInProgress()) return false;
+
+    this.imageOperation.set(operation);
+    this.cancelImageOperationIndicatorTimer();
+    this.imageOperationIndicatorVisible.set(false);
+    this.imageOperationIndicatorTimer = window.setTimeout(() => {
+      this.imageOperationIndicatorTimer = undefined;
+      if (this.imageOperation() === operation) this.imageOperationIndicatorVisible.set(true);
+    }, LOADING_INDICATOR_DELAY_MS);
+    return true;
+  }
+
+  private endImageOperation(operation: ImageOperation) {
+    if (this.imageOperation() !== operation) return;
+    this.clearImageOperation();
+  }
+
+  private clearImageOperation() {
+    this.cancelImageOperationIndicatorTimer();
+    this.imageOperationIndicatorVisible.set(false);
+    this.imageOperation.set(null);
+  }
+
+  private cancelImageOperationIndicatorTimer() {
+    if (this.imageOperationIndicatorTimer === undefined || typeof window === "undefined") return;
+
+    window.clearTimeout(this.imageOperationIndicatorTimer);
+    this.imageOperationIndicatorTimer = undefined;
+  }
+
   private setShareFeedback(message: string) {
     this.shareCopied.set(message === "Lien copié");
     this.shareLabel.set(message);
@@ -1437,7 +1526,11 @@ export class ImagePreviewDialogComponent implements OnInit, AfterViewInit, OnDes
   private isInteractiveTarget(target: EventTarget | null) {
     return (
       target instanceof Element &&
-      Boolean(target.closest("a[href], button, input, select, textarea, [role='button']"))
+      Boolean(
+        target.closest(
+          "a[href], button, input, select, textarea, md-icon-button, md-menu-item, [role='button']",
+        ),
+      )
     );
   }
 }

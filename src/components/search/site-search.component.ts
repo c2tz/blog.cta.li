@@ -1,24 +1,26 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from "@angular/core";
+import {
+  CUSTOM_ELEMENTS_SCHEMA,
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  signal,
+} from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
-import { MatIconButton } from "@angular/material/button";
 import { MatDialog } from "@angular/material/dialog";
-import { MatIcon } from "@angular/material/icon";
-import { MatTooltip } from "@angular/material/tooltip";
 
 type SearchDialogModule = typeof import("./site-search-dialog.component");
+const LOADING_INDICATOR_DELAY_MS = 200;
 
 @Component({
   selector: "site-search-trigger",
   standalone: true,
-  imports: [MatIcon, MatIconButton, MatTooltip],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <button
-      matIconButton
+    <md-icon-button
       type="button"
       class="site-search-trigger-button"
-      matTooltip="Rechercher"
-      matTooltipPosition="below"
+      title="Rechercher"
       aria-label="Rechercher"
       aria-haspopup="dialog"
       [disabled]="opening()"
@@ -27,8 +29,16 @@ type SearchDialogModule = typeof import("./site-search-dialog.component");
       (focusin)="preload()"
       (pointerenter)="preload()"
     >
-      <mat-icon aria-hidden="true">{{ searchIcon }}</mat-icon>
-    </button>
+      @if (openingIndicatorVisible()) {
+        <md-circular-progress
+          class="site-search-trigger-progress"
+          indeterminate
+          aria-hidden="true"
+        ></md-circular-progress>
+      } @else {
+        <md-icon aria-hidden="true">{{ searchIcon }}</md-icon>
+      }
+    </md-icon-button>
   `,
   styles: `
     :host {
@@ -37,16 +47,25 @@ type SearchDialogModule = typeof import("./site-search-dialog.component");
       height: 2.5rem;
       flex: 0 0 2.5rem;
     }
+
+    .site-search-trigger-progress {
+      --md-circular-progress-color: var(--md-sys-color-on-surface-variant);
+      --md-circular-progress-active-indicator-color: var(--md-sys-color-on-surface-variant);
+      --md-circular-progress-active-indicator-width: 12;
+      --md-circular-progress-size: 24px;
+    }
   `,
 })
 export class SiteSearchTriggerComponent implements OnInit, OnDestroy {
   readonly searchIcon = "\uE8B6";
   readonly opening = signal(false);
+  readonly openingIndicatorVisible = signal(false);
 
   private readonly dialog = inject(MatDialog);
   private preloadRequest?: number | ReturnType<typeof setTimeout>;
   private preloadRequestKind: "idle" | "timeout" = "timeout";
   private searchDialogModule?: Promise<SearchDialogModule>;
+  private openingIndicatorTimer = 0;
 
   ngOnInit() {
     if (typeof window === "undefined") return;
@@ -58,6 +77,7 @@ export class SiteSearchTriggerComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.endOpening();
     if (typeof window === "undefined" || this.preloadRequest === undefined) return;
 
     if (this.preloadRequestKind === "idle") {
@@ -80,7 +100,7 @@ export class SiteSearchTriggerComponent implements OnInit, OnDestroy {
     event.preventDefault();
     if (this.opening()) return;
 
-    this.opening.set(true);
+    this.beginOpening();
 
     try {
       const { SiteSearchDialogComponent } = await this.preload();
@@ -94,8 +114,29 @@ export class SiteSearchTriggerComponent implements OnInit, OnDestroy {
         width: "min(50rem, calc(100vw - 2rem))",
       });
     } finally {
-      this.opening.set(false);
+      this.endOpening();
     }
+  }
+
+  private beginOpening() {
+    this.opening.set(true);
+    this.cancelOpeningIndicatorTimer();
+    this.openingIndicatorTimer = window.setTimeout(() => {
+      this.openingIndicatorTimer = 0;
+      if (this.opening()) this.openingIndicatorVisible.set(true);
+    }, LOADING_INDICATOR_DELAY_MS);
+  }
+
+  private endOpening() {
+    this.opening.set(false);
+    this.cancelOpeningIndicatorTimer();
+    this.openingIndicatorVisible.set(false);
+  }
+
+  private cancelOpeningIndicatorTimer() {
+    if (!this.openingIndicatorTimer || typeof window === "undefined") return;
+    window.clearTimeout(this.openingIndicatorTimer);
+    this.openingIndicatorTimer = 0;
   }
 
   private scheduleIdlePreload(callback: () => void) {

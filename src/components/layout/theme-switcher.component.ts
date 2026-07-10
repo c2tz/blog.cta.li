@@ -1,12 +1,25 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from "@angular/core";
+import {
+  CUSTOM_ELEMENTS_SCHEMA,
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  ViewChild,
+  computed,
+  signal,
+} from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
-import { MatIconButton } from "@angular/material/button";
-import { MatIcon } from "@angular/material/icon";
-import { MatMenu, MatMenuItem, MatMenuTrigger } from "@angular/material/menu";
-import { MatTooltip } from "@angular/material/tooltip";
 import { SITE_LEGACY_STORAGE_KEYS, SITE_STORAGE_KEYS } from "@/lib/site-contracts";
 
 type ThemePreference = "system" | "light" | "dark";
+type MenuFocusTarget = "first-item" | "last-item";
+type MaterialMenuElement = HTMLElement & {
+  open: boolean;
+  defaultFocus: MenuFocusTarget;
+  close(): void;
+  show(): void;
+  activateNextItem(): HTMLElement;
+  activatePreviousItem(): HTMLElement;
+};
 
 const STORAGE_KEY = SITE_STORAGE_KEYS.themePreference;
 const LEGACY_STORAGE_KEY = SITE_LEGACY_STORAGE_KEYS.themePreference;
@@ -23,50 +36,59 @@ function isThemePreference(value: string | null | undefined): value is ThemePref
 @Component({
   selector: "site-theme-switcher",
   standalone: true,
-  imports: [MatIconButton, MatIcon, MatMenu, MatMenuItem, MatMenuTrigger, MatTooltip],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     "data-angular-component": "theme-switcher",
   },
   template: `
-    <button
-      matIconButton
+    <md-icon-button
+      id="site-theme-trigger"
       type="button"
       class="site-theme-trigger"
-      [matMenuTriggerFor]="themeMenu"
-      [matTooltip]="triggerLabel()"
-      matTooltipPosition="below"
+      [attr.title]="triggerLabel()"
       [attr.aria-label]="triggerLabel()"
+      [attr.aria-expanded]="menuOpen()"
+      aria-controls="site-theme-menu"
       aria-haspopup="menu"
+      (click)="toggleMenu()"
+      (keydown)="handleTriggerKeydown($event)"
     >
-      <mat-icon aria-hidden="true">{{ triggerIcon() }}</mat-icon>
-    </button>
+      <md-icon aria-hidden="true">{{ triggerIcon() }}</md-icon>
+    </md-icon-button>
 
-    <mat-menu
-      #themeMenu="matMenu"
-      xPosition="before"
+    <md-menu
+      #themeMenu
+      id="site-theme-menu"
       class="site-theme-menu"
+      anchor="site-theme-trigger"
+      anchor-corner="end-end"
+      menu-corner="start-end"
+      positioning="popover"
       aria-label="Choisir le thème"
+      (opened)="menuOpen.set(true)"
+      (closed)="handleMenuClosed()"
     >
       @for (option of options; track option.value) {
-        <button
-          mat-menu-item
+        <md-menu-item
           type="button"
           class="site-theme-menu-item"
-          role="menuitemradio"
-          [attr.aria-checked]="preference() === option.value"
+          [selected]="preference() === option.value"
+          [attr.aria-label]="
+            option.label + (preference() === option.value ? ', thème sélectionné' : '')
+          "
           (click)="selectPreference(option.value)"
         >
-          <mat-icon
-            matMenuItemIcon
+          <md-icon
+            slot="start"
             class="site-theme-radio-icon"
             [class.site-theme-radio-icon-checked]="preference() === option.value"
             aria-hidden="true"
           >
             {{ preference() === option.value ? checkedRadioIcon : uncheckedRadioIcon }}
-          </mat-icon>
+          </md-icon>
 
-          <span class="site-theme-menu-content">
+          <span slot="headline" class="site-theme-menu-content">
             <svg
               class="site-theme-example-icon"
               width="25"
@@ -148,10 +170,13 @@ function isThemePreference(value: string | null | undefined): value is ThemePref
               ></rect>
             </svg>
             <span>{{ option.label }}</span>
+            @if (preference() === option.value) {
+              <span class="sr-only">Thème sélectionné</span>
+            }
           </span>
-        </button>
+        </md-menu-item>
       }
-    </mat-menu>
+    </md-menu>
 
     <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
       {{ announcement() }}
@@ -159,6 +184,7 @@ function isThemePreference(value: string | null | undefined): value is ThemePref
   `,
   styles: `
     :host {
+      position: relative;
       display: block;
       width: 2.5rem;
       height: 2.5rem;
@@ -167,11 +193,15 @@ function isThemePreference(value: string | null | undefined): value is ThemePref
   `,
 })
 export class ThemeSwitcherComponent implements OnInit, OnDestroy {
+  @ViewChild("themeMenu", { read: ElementRef })
+  private themeMenu?: ElementRef<MaterialMenuElement>;
+
   readonly options = OPTIONS;
   readonly checkedRadioIcon = "\uE837";
   readonly uncheckedRadioIcon = "\uE836";
   readonly preference = signal<ThemePreference>("system");
   readonly announcement = signal("");
+  readonly menuOpen = signal(false);
   readonly triggerLabel = computed(() => {
     const label = this.options.find((option) => option.value === this.preference())?.label;
     return `Thème : ${label ?? "Système"}`;
@@ -212,11 +242,48 @@ export class ThemeSwitcherComponent implements OnInit, OnDestroy {
     window.removeEventListener("pageshow", this.handlePageShow);
   }
 
+  toggleMenu() {
+    const menu = this.themeMenu?.nativeElement;
+    if (!menu) return;
+
+    if (menu.open) menu.close();
+    else {
+      menu.defaultFocus = "first-item";
+      menu.show();
+    }
+  }
+
+  handleTriggerKeydown(event: KeyboardEvent) {
+    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+
+    event.preventDefault();
+    const menu = this.themeMenu?.nativeElement;
+    if (!menu) return;
+
+    const focusTarget: MenuFocusTarget = event.key === "ArrowUp" ? "last-item" : "first-item";
+    if (menu.open) {
+      if (focusTarget === "first-item") menu.activateNextItem();
+      else menu.activatePreviousItem();
+      return;
+    }
+
+    menu.defaultFocus = focusTarget;
+    menu.show();
+  }
+
+  handleMenuClosed() {
+    this.menuOpen.set(false);
+    const menu = this.themeMenu?.nativeElement;
+    if (menu) menu.defaultFocus = "first-item";
+  }
+
   selectPreference(preference: ThemePreference) {
     this.preference.set(preference);
     this.applyTheme(preference, true);
     const label = this.options.find((option) => option.value === preference)?.label;
     this.announcement.set(`Thème ${label ?? "Système"} activé`);
+    this.menuOpen.set(false);
+    void this.themeMenu?.nativeElement.close();
   }
 
   private applyTheme(preference: ThemePreference, persist: boolean) {

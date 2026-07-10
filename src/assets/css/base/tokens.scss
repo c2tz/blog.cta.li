@@ -1,4 +1,5 @@
 @use "@angular/material" as mat;
+@use "material-theme.generated";
 
 :root {
   color-scheme: light;
@@ -11,56 +12,66 @@
   --font-mono: var(--site-mono-font);
   --default-font-family: var(--site-font);
   --default-mono-font-family: var(--site-mono-font);
-  --m3-background: #fffbfe;
-  --m3-error: #ba1a1a;
-  --m3-error-container: #ffdad6;
-  --m3-inverse-on-surface: #f4eff4;
-  --m3-inverse-primary: #d0bcff;
-  --m3-inverse-surface: #313033;
-  --m3-on-background: #1d1b20;
-  --m3-on-error: #ffffff;
-  --m3-on-error-container: #93000a;
-  --m3-on-primary: #ffffff;
-  --m3-on-primary-container: #21005d;
-  --m3-on-primary-fixed: #21005d;
-  --m3-on-primary-fixed-variant: #4f378b;
-  --m3-on-secondary: #ffffff;
-  --m3-on-secondary-container: #1d192b;
-  --m3-on-secondary-fixed: #1d192b;
-  --m3-on-secondary-fixed-variant: #4a4458;
-  --m3-on-surface: #1d1b20;
-  --m3-on-surface-variant: #49454f;
-  --m3-on-tertiary: #ffffff;
-  --m3-on-tertiary-container: #31111d;
-  --m3-on-tertiary-fixed: #31111d;
-  --m3-on-tertiary-fixed-variant: #633b48;
-  --m3-outline: #79747e;
-  --m3-outline-variant: #cac4d0;
-  --m3-primary: #6750a4;
-  --m3-primary-container: #eaddff;
-  --m3-primary-fixed: #eaddff;
-  --m3-primary-fixed-dim: #d0bcff;
-  --m3-scrim: #000000;
-  --m3-secondary: #625b71;
-  --m3-secondary-container: #e8def8;
-  --m3-secondary-fixed: #e8def8;
-  --m3-secondary-fixed-dim: #ccc2dc;
-  --m3-shadow: #000000;
-  --m3-surface: #fffbfe;
-  --m3-surface-bright: #fffbfe;
-  --m3-surface-container: #f3edf7;
-  --m3-surface-container-high: #ece6f0;
-  --m3-surface-container-highest: #e6e0e9;
-  --m3-surface-container-low: #f7f2fa;
-  --m3-surface-container-lowest: #ffffff;
-  --m3-surface-dim: #ded8e1;
-  --m3-surface-tint: var(--m3-primary);
-  --m3-surface-variant: #e7e0ec;
-  --m3-tertiary: #7d5260;
-  --m3-tertiary-container: #ffd8e4;
-  --m3-tertiary-fixed: #ffd8e4;
-  --m3-tertiary-fixed-dim: #efb8c8;
-  --site-bg: var(--m3-surface);
+  --md-ref-typeface-brand: var(--site-heading-font);
+  --md-ref-typeface-plain: var(--site-font);
+  --md-icon-font: "Material Symbols Rounded";
+  --md-sys-shape-corner-extra-small: 4px;
+  --md-sys-shape-corner-small: 8px;
+  --md-sys-shape-corner-medium: 12px;
+  --md-sys-shape-corner-large: 16px;
+  --md-sys-shape-corner-extra-large: 28px;
+  --md-sys-shape-corner-full: 9999px;
+  /* Compatibility aliases while the existing Angular islands migrate to Material Web. */
+  --m3-background: var(--md-sys-color-background);
+  --m3-error: var(--md-sys-color-error);
+  --m3-error-container: var(--md-sys-color-error-container);
+  --m3-inverse-on-surface: var(--md-sys-color-inverse-on-surface);
+  --m3-inverse-primary: var(--md-sys-color-inverse-primary);
+  --m3-inverse-surface: var(--md-sys-color-inverse-surface);
+  --m3-on-background: var(--md-sys-color-on-background);
+  --m3-on-error: var(--md-sys-color-on-error);
+  --m3-on-error-container: var(--md-sys-color-on-error-container);
+  --m3-on-primary: var(--md-sys-color-on-primary);
+  --m3-on-primary-container: var(--md-sys-color-on-primary-container);
+  --m3-on-primary-fixed: var(--md-sys-color-on-primary-fixed);
+  --m3-on-primary-fixed-variant: var(--md-sys-color-on-primary-fixed-variant);
+  --m3-on-secondary: var(--md-sys-color-on-secondary);
+  --m3-on-secondary-container: var(--md-sys-color-on-secondary-container);
+  --m3-on-secondary-fixed: var(--md-sys-color-on-secondary-fixed);
+  --m3-on-secondary-fixed-variant: var(--md-sys-color-on-secondary-fixed-variant);
+  --m3-on-surface: var(--md-sys-color-on-surface);
+  --m3-on-surface-variant: var(--md-sys-color-on-surface-variant);
+  --m3-on-tertiary: var(--md-sys-color-on-tertiary);
+  --m3-on-tertiary-container: var(--md-sys-color-on-tertiary-container);
+  --m3-on-tertiary-fixed: var(--md-sys-color-on-tertiary-fixed);
+  --m3-on-tertiary-fixed-variant: var(--md-sys-color-on-tertiary-fixed-variant);
+  --m3-outline: var(--md-sys-color-outline);
+  --m3-outline-variant: var(--md-sys-color-outline-variant);
+  --m3-primary: var(--md-sys-color-primary);
+  --m3-primary-container: var(--md-sys-color-primary-container);
+  --m3-primary-fixed: var(--md-sys-color-primary-fixed);
+  --m3-primary-fixed-dim: var(--md-sys-color-primary-fixed-dim);
+  --m3-scrim: var(--md-sys-color-scrim);
+  --m3-secondary: var(--md-sys-color-secondary);
+  --m3-secondary-container: var(--md-sys-color-secondary-container);
+  --m3-secondary-fixed: var(--md-sys-color-secondary-fixed);
+  --m3-secondary-fixed-dim: var(--md-sys-color-secondary-fixed-dim);
+  --m3-shadow: var(--md-sys-color-shadow);
+  --m3-surface: var(--md-sys-color-surface);
+  --m3-surface-bright: var(--md-sys-color-surface-bright);
+  --m3-surface-container: var(--md-sys-color-surface-container);
+  --m3-surface-container-high: var(--md-sys-color-surface-container-high);
+  --m3-surface-container-highest: var(--md-sys-color-surface-container-highest);
+  --m3-surface-container-low: var(--md-sys-color-surface-container-low);
+  --m3-surface-container-lowest: var(--md-sys-color-surface-container-lowest);
+  --m3-surface-dim: var(--md-sys-color-surface-dim);
+  --m3-surface-tint: var(--md-sys-color-surface-tint);
+  --m3-surface-variant: var(--md-sys-color-surface-variant);
+  --m3-tertiary: var(--md-sys-color-tertiary);
+  --m3-tertiary-container: var(--md-sys-color-tertiary-container);
+  --m3-tertiary-fixed: var(--md-sys-color-tertiary-fixed);
+  --m3-tertiary-fixed-dim: var(--md-sys-color-tertiary-fixed-dim);
+  --site-bg: var(--md-sys-color-background);
   --site-text: var(--m3-on-surface);
   --site-border: var(--m3-outline-variant);
   --site-muted: var(--m3-on-surface-variant);
@@ -162,15 +173,6 @@
       title-large-font: var(--site-font),
       title-medium-font: var(--site-font),
       title-small-font: var(--site-font),
-    )
-  );
-
-  @include mat.button-overrides(
-    (
-      tonal-container-color: var(--site-link-container),
-      tonal-label-text-color: var(--site-on-link-container),
-      tonal-state-layer-color: var(--site-on-link-container),
-      tonal-ripple-color: color-mix(in srgb, var(--site-on-link-container) 12%, transparent),
     )
   );
 

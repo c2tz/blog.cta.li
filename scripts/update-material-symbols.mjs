@@ -8,6 +8,7 @@ import materialSymbolCodepoints from "../src/generated/material-symbol-codepoint
 const SOURCE_FONT_URL =
   "https://fonts.gstatic.com/s/materialsymbolsrounded/v355/syl0-zNym6YjUruM-QrEh7-nyTnjDwKNJ_190FjpZIvDmUSVOK7BDB_Qb9vUSzq3wzLK-P0J-V_Zs-QtQth3-jOcbTCVpeRL2w5rwZu2rIelXxeJKJBiCa8.woff2";
 const OUTPUT_PATH = "public/fonts/material-symbols-rounded-subset.woff2";
+const MANIFEST_PATH = "public/fonts/material-symbols-rounded-subset.codepoints.json";
 const FONT_STYLESHEET_PATH = "src/assets/css/base/fonts.scss";
 const SOURCE_GLOBS = ["src"];
 const TEXT_SOURCE_PATTERN = /\.(?:astro|css|html|js|json|md|mdx|mjs|scss|ts|tsx)$/;
@@ -84,6 +85,10 @@ function formatCodePoints(codePoints) {
 
 function fontCacheVersion(buffer) {
   return createHash("sha256").update(buffer).digest("hex").slice(0, 12);
+}
+
+function fontHash(buffer) {
+  return createHash("sha256").update(buffer).digest("hex");
 }
 
 function iconNameToCodePoint(name) {
@@ -187,9 +192,8 @@ async function collectRequiredCodePoints() {
 
 async function checkGeneratedSubset(codePoints) {
   const subset = await fs.readFile(OUTPUT_PATH);
-  const subsetCodePoints = [...codePointsFromFont(subset)]
-    .filter(isPrivateUseCodePoint)
-    .sort((a, b) => a - b);
+  const manifest = JSON.parse(await fs.readFile(MANIFEST_PATH, "utf8"));
+  const subsetCodePoints = Array.isArray(manifest.codePoints) ? manifest.codePoints : [];
   const required = new Set(codePoints);
   const present = new Set(subsetCodePoints);
   const missing = codePoints.filter((codePoint) => !present.has(codePoint));
@@ -200,6 +204,13 @@ async function checkGeneratedSubset(codePoints) {
       `Material Symbols subset is missing required codepoints ${formatCodePoints(missing)}.\n` +
         "Fix: run `pnpm update:material-symbols`, then `pnpm verify`, and commit the generated font. " +
         "A missing glyph often appears as a square/tofu icon in the browser.",
+    );
+  }
+
+  if (manifest.fontSha256 !== fontHash(subset)) {
+    throw new Error(
+      `Material Symbols subset hash does not match ${MANIFEST_PATH}.\n` +
+        "Fix: run `pnpm update:material-symbols` and commit both generated files.",
     );
   }
 
@@ -241,12 +252,12 @@ async function main() {
     throw new Error("No Material Symbols private-use codepoints found.");
   }
 
-  await fontEditor.woff2.init();
-
   if (checkOnly) {
     await checkGeneratedSubset(codePoints);
     return;
   }
+
+  await fontEditor.woff2.init();
 
   const sourceFont = await fetchSourceFont();
   assertFontContainsCodePoints("Source font", codePointsFromFont(sourceFont), codePoints);
@@ -263,6 +274,10 @@ async function main() {
 
   await fs.mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
   await fs.writeFile(OUTPUT_PATH, subsetFont);
+  await fs.writeFile(
+    MANIFEST_PATH,
+    `${JSON.stringify({ codePoints, fontSha256: fontHash(subsetFont), version: 1 }, null, 2)}\n`,
+  );
   await syncFontCacheVersion(subsetFont, { write: true });
 
   assertFontContainsCodePoints("Generated subset font", codePointsFromFont(subsetFont), codePoints);

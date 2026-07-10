@@ -1,6 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from "@angular/core";
+import {
+  CUSTOM_ELEMENTS_SCHEMA,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  signal,
+} from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
-import { MatButton } from "@angular/material/button";
 import {
   SITE_COOKIE_NAMES,
   SITE_EVENTS,
@@ -19,11 +24,23 @@ const BACKGROUND_INTERACTION_SELECTORS = [".site-header", ".site-main", ".site-f
 const DIALOG_FOCUSABLE_SELECTOR = [
   "a[href]",
   "button:not([disabled])",
+  "md-elevated-button:not([disabled])",
+  "md-filled-button:not([disabled])",
+  "md-filled-tonal-button:not([disabled])",
+  "md-outlined-button:not([disabled])",
+  "md-text-button:not([disabled])",
   "input:not([disabled])",
   "select:not([disabled])",
   "textarea:not([disabled])",
   '[tabindex]:not([tabindex="-1"])',
 ].join(",");
+const MATERIAL_BUTTON_TAG_NAMES = new Set([
+  "md-elevated-button",
+  "md-filled-button",
+  "md-filled-tonal-button",
+  "md-outlined-button",
+  "md-text-button",
+]);
 
 interface ConsentState {
   functionality: boolean;
@@ -152,7 +169,7 @@ function isFocusableElement(element: HTMLElement) {
   const style = getComputedStyle(element);
 
   return (
-    element.tabIndex >= 0 &&
+    (element.tabIndex >= 0 || MATERIAL_BUTTON_TAG_NAMES.has(element.localName)) &&
     !element.hasAttribute("disabled") &&
     element.getAttribute("aria-hidden") !== "true" &&
     style.display !== "none" &&
@@ -163,7 +180,7 @@ function isFocusableElement(element: HTMLElement) {
 @Component({
   selector: "site-cookie-consent-banner",
   standalone: true,
-  imports: [MatButton],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (activeNotice()) {
@@ -213,24 +230,22 @@ function isFocusableElement(element: HTMLElement) {
           </div>
 
           <div class="cookie-consent-actions">
-            <button
+            <md-text-button
               class="cookie-consent-return-action"
-              matButton="text"
               type="button"
               aria-label="Quitter le site"
               (click)="leaveExplicitContent()"
             >
-              QUITTER
-            </button>
-            <button
+              Quitter
+            </md-text-button>
+            <md-filled-button
               class="cookie-consent-confirm-action"
-              matButton="text"
               type="button"
-              aria-label="J’ACCEPTE ET J’ENTRE en confirmant avoir au moins 18 ans"
+              aria-label="J’accepte et j’entre en confirmant avoir au moins 18 ans"
               (click)="acknowledgeExplicitContent()"
             >
-              J’ACCEPTE ET J’ENTRE
-            </button>
+              J’accepte et j’entre
+            </md-filled-button>
           </div>
         } @else {
           <div class="cookie-consent-content">
@@ -240,14 +255,14 @@ function isFocusableElement(element: HTMLElement) {
           </div>
 
           <div class="cookie-consent-actions">
-            <a href="/cookies/" matButton="text"> PLUS DE DÉTAILS </a>
+            <md-text-button href="/cookies/">Plus de détails</md-text-button>
             <div class="cookie-consent-choice-actions">
-              <button matButton="text" type="button" (click)="rejectOptionalServices()">
-                REFUSER
-              </button>
-              <button matButton="text" type="button" (click)="acceptOptionalServices()">
-                ACCEPTER
-              </button>
+              <md-text-button type="button" (click)="rejectOptionalServices()">
+                Refuser
+              </md-text-button>
+              <md-text-button type="button" (click)="acceptOptionalServices()">
+                Accepter
+              </md-text-button>
             </div>
           </div>
         }

@@ -1,0 +1,36 @@
+---
+interface Props {
+  tags: string[];
+}
+
+const { tags } = Astro.props;
+---
+
+<md-chip-set id="home-tags-list" class="home-tags-tree-links" aria-label="Tous les tags">
+  {
+    tags.map((tag) => (
+      <md-assist-chip
+        class="home-tags-tree-link"
+        href={`/tags/${encodeURIComponent(tag)}/`}
+        aria-label={`Voir les articles du tag ${tag}`}
+      >
+        #{tag}
+      </md-assist-chip>
+    ))
+  }
+</md-chip-set>
+
+<style>
+  .home-tags-tree-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-block: 0 1em;
+    padding: 0;
+  }
+
+  .home-tags-tree-link {
+    --md-assist-chip-label-text-color: var(--md-sys-color-on-surface);
+    --md-assist-chip-outline-color: var(--md-sys-color-outline);
+  }
+</style>

@@ -1,7 +1,12 @@
-import { ChangeDetectionStrategy, Component, signal } from "@angular/core";
-import type { OnDestroy, OnInit } from "@angular/core";
-import { MatButtonToggleModule } from "@angular/material/button-toggle";
-import type { MatButtonToggleChange } from "@angular/material/button-toggle";
+import {
+  CUSTOM_ELEMENTS_SCHEMA,
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  inject,
+  signal,
+} from "@angular/core";
+import type { AfterViewInit, OnDestroy, OnInit } from "@angular/core";
 
 import {
   SITE_COOKIE_NAMES,
@@ -24,7 +29,7 @@ type ConsentChoice = keyof typeof STATUS_LABELS;
 @Component({
   selector: "site-cookie-preferences",
   standalone: true,
-  imports: [MatButtonToggleModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: "not-prose",
@@ -37,44 +42,60 @@ type ConsentChoice = keyof typeof STATUS_LABELS;
         <strong>{{ statusLabel() }}</strong>
       </p>
       <div class="cookie-preferences-actions" aria-label="Choix des services optionnels">
-        <mat-button-toggle-group
+        <md-chip-set
           class="cookie-preferences-toggle-group"
-          appearance="standard"
-          name="cookie-optional-services"
           aria-label="Choix des services optionnels"
-          [value]="selectedChoice()"
-          (change)="handleChoiceChange($event)"
         >
-          <mat-button-toggle
+          <md-filter-chip
             class="cookie-preferences-toggle"
-            value="accepted"
             aria-label="Autoriser les services optionnels"
+            [selected]="selectedChoice() === 'accepted'"
+            (click)="handleChoiceChange('accepted', $event)"
           >
             Autoriser
-          </mat-button-toggle>
-          <mat-button-toggle
+          </md-filter-chip>
+          <md-filter-chip
             class="cookie-preferences-toggle"
-            value="rejected"
             aria-label="Refuser les services optionnels"
+            [selected]="selectedChoice() === 'rejected'"
+            (click)="handleChoiceChange('rejected', $event)"
           >
             Refuser
-          </mat-button-toggle>
-          <mat-button-toggle
+          </md-filter-chip>
+          <md-filter-chip
             class="cookie-preferences-toggle"
-            value="unset"
             aria-label="Réinitialiser le choix des services optionnels"
+            [selected]="selectedChoice() === 'unset'"
+            (click)="handleChoiceChange('unset', $event)"
           >
             Réinitialiser
-          </mat-button-toggle>
-        </mat-button-toggle-group>
+          </md-filter-chip>
+        </md-chip-set>
       </div>
       <p class="cookie-preferences-feedback" role="status" aria-live="polite">
         {{ feedback() }}
       </p>
     </section>
   `,
+  styles: `
+    .cookie-preferences-toggle-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .cookie-preferences-toggle {
+      min-width: 7.5rem;
+      --md-filter-chip-label-text-font: var(--site-font);
+      --md-filter-chip-label-text-line-height: 1.5rem;
+      --md-filter-chip-label-text-size: 1rem;
+      --md-filter-chip-label-text-weight: 700;
+    }
+  `,
 })
-export class CookiePreferencesComponent implements OnDestroy, OnInit {
+export class CookiePreferencesComponent implements AfterViewInit, OnDestroy, OnInit {
+  private readonly host = inject(ElementRef<HTMLElement>);
+
   readonly choice = signal<ConsentChoice>("unset");
   readonly feedback = signal("");
   readonly selectedToggle = signal<ConsentChoice | null>(null);
@@ -89,17 +110,29 @@ export class CookiePreferencesComponent implements OnDestroy, OnInit {
     this.selectedToggle.set(storedChoice === "unset" ? null : storedChoice);
   }
 
+  ngAfterViewInit() {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+
+    this.host.nativeElement.dataset.cookiePreferencesReady = "true";
+    document.dispatchEvent(new Event("site:cookie-preferences-ready"));
+  }
+
   ngOnDestroy() {
     this.clearResetFeedbackTimer();
   }
 
-  handleChoiceChange(event: MatButtonToggleChange) {
-    if (event.value === "accepted" || event.value === "rejected") {
-      this.writeConsent(event.value);
+  handleChoiceChange(choice: ConsentChoice, event: Event) {
+    const chip = event.currentTarget;
+    if (chip instanceof HTMLElement && "selected" in chip) {
+      (chip as HTMLElement & { selected: boolean }).selected = true;
+    }
+
+    if (choice === "accepted" || choice === "rejected") {
+      this.writeConsent(choice);
       return;
     }
 
-    if (event.value === "unset") {
+    if (choice === "unset") {
       this.resetConsent();
     }
   }

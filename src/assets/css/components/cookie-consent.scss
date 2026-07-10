@@ -1,5 +1,3 @@
-@use "@angular/material" as mat;
-
 html.interaction-disabled.consent-visible,
 html.interaction-disabled.consent-visible body {
   overflow: hidden !important;
@@ -66,23 +64,6 @@ html.consent-visible body {
   transform-origin: bottom left;
   animation: cookie-bottom-sheet-in 220ms cubic-bezier(0.2, 0, 0, 1) both;
   will-change: transform, opacity;
-  @include mat.theme-overrides(
-    (
-      primary: var(--site-link),
-      on-primary: var(--site-link-contrast),
-      outline: var(--site-link),
-      on-surface: var(--site-text),
-      on-surface-variant: var(--site-muted),
-    )
-  );
-  @include mat.button-overrides(
-    (
-      text-label-text-font: var(--site-font),
-      text-label-text-size: 1rem,
-      text-label-text-weight: 700,
-      text-label-text-tracking: 0,
-    )
-  );
 }
 
 .cookie-consent--privacy {
@@ -95,12 +76,10 @@ html.consent-visible body {
   border: 0;
   border-radius: var(--site-shape-small);
   background: var(--m3-surface-container-low);
-  box-shadow: var(
-    --mat-sys-level2,
+  box-shadow:
     0 3px 3px -2px rgb(0 0 0 / 20%),
     0 3px 4px 0 rgb(0 0 0 / 14%),
-    0 1px 8px 0 rgb(0 0 0 / 12%)
-  );
+    0 1px 8px 0 rgb(0 0 0 / 12%);
 }
 
 .cookie-consent--modal {
@@ -121,64 +100,34 @@ html.consent-visible body {
 }
 
 .cookie-consent--explicit-content {
-  border-color: color-mix(
-    in srgb,
-    var(--mat-sys-on-error-container, var(--m3-on-error-container)) 22%,
-    transparent
-  );
-  background: var(--mat-sys-error-container, var(--m3-error-container));
-  box-shadow: var(--mat-sys-level4, 0 16px 40px rgb(0 0 0 / 34%));
-  color: var(--mat-sys-on-error-container, var(--m3-on-error-container));
-  font: var(--mat-sys-body-large, 400 1rem / 1.5rem var(--site-font));
-  @include mat.theme-overrides(
-    (
-      primary: var(--mat-sys-error, var(--m3-error)),
-      on-primary: var(--mat-sys-on-error, var(--m3-on-error)),
-      error: var(--mat-sys-error, var(--m3-error)),
-      on-error: var(--mat-sys-on-error, var(--m3-on-error)),
-      error-container: var(--mat-sys-error-container, var(--m3-error-container)),
-      on-error-container: var(--mat-sys-on-error-container, var(--m3-on-error-container)),
-      outline: var(--mat-sys-outline, var(--m3-outline)),
-      outline-variant: color-mix(
-          in srgb,
-          var(--mat-sys-on-error-container, var(--m3-on-error-container)) 22%,
-          transparent
-        ),
-      on-surface: var(--mat-sys-on-error-container, var(--m3-on-error-container)),
-      on-surface-variant: var(--mat-sys-on-error-container, var(--m3-on-error-container)),
-    )
-  );
-}
-
-.cookie-consent--explicit-content .cookie-consent-actions button {
-  border: 0;
-  background: transparent;
+  border-color: color-mix(in srgb, var(--md-sys-color-on-error-container) 22%, transparent);
+  background: var(--md-sys-color-error-container);
+  box-shadow: 0 16px 40px rgb(0 0 0 / 34%);
+  color: var(--md-sys-color-on-error-container);
+  font: 400 1rem / 1.5rem var(--site-font);
 }
 
 .cookie-consent--explicit-content .cookie-consent-return-action {
-  color: var(--mat-sys-error, var(--m3-error));
-  @include mat.button-overrides(
-    (
-      text-label-text-color: var(--mat-sys-error, var(--m3-error)),
-      text-state-layer-color: var(--mat-sys-error, var(--m3-error)),
-      text-ripple-color: color-mix(in srgb, var(--mat-sys-error, var(--m3-error)) 12%, transparent),
-    )
-  );
+  --md-text-button-focus-label-text-color: var(--md-sys-color-error);
+  --md-text-button-hover-label-text-color: var(--md-sys-color-error);
+  --md-text-button-hover-state-layer-color: var(--md-sys-color-error);
+  --md-text-button-label-text-color: var(--md-sys-color-error);
+  --md-text-button-pressed-label-text-color: var(--md-sys-color-error);
+  --md-text-button-pressed-state-layer-color: var(--md-sys-color-error);
 }
 
 .cookie-consent--explicit-content .cookie-consent-confirm-action {
-  color: var(--mat-sys-error, var(--m3-error));
-  @include mat.button-overrides(
-    (
-      text-label-text-color: var(--mat-sys-error, var(--m3-error)),
-      text-state-layer-color: var(--mat-sys-error, var(--m3-error)),
-      text-ripple-color: color-mix(in srgb, var(--mat-sys-error, var(--m3-error)) 12%, transparent),
-    )
-  );
+  --md-filled-button-container-color: var(--md-sys-color-error);
+  --md-filled-button-focus-label-text-color: var(--md-sys-color-on-error);
+  --md-filled-button-hover-label-text-color: var(--md-sys-color-on-error);
+  --md-filled-button-hover-state-layer-color: var(--md-sys-color-on-error);
+  --md-filled-button-label-text-color: var(--md-sys-color-on-error);
+  --md-filled-button-pressed-label-text-color: var(--md-sys-color-on-error);
+  --md-filled-button-pressed-state-layer-color: var(--md-sys-color-on-error);
 }
 
 .cookie-consent--explicit-content h4 {
-  color: var(--mat-sys-error, var(--m3-error));
+  color: var(--md-sys-color-error);
   font-family: inherit;
   font-style: inherit;
 }
@@ -197,13 +146,13 @@ html.consent-visible body {
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: var(--mat-sys-on-error-container, var(--m3-on-error-container));
+  color: var(--md-sys-color-on-error-container);
 }
 
 .cookie-consent-boot-warning-icon {
   width: 3rem;
   height: 3rem;
-  color: var(--mat-sys-error, var(--m3-error));
+  color: var(--md-sys-color-error);
   fill: currentColor;
 }
 
@@ -259,32 +208,36 @@ html.consent-visible body {
   margin-inline-start: auto;
 }
 
-.cookie-consent:is(.cookie-consent--privacy, .cookie-consent--explicit-content)
-  .cookie-consent-actions
-  .mat-mdc-button-base {
-  text-transform: uppercase;
-}
+.cookie-consent-actions :is(md-text-button, md-filled-button, md-filled-tonal-button) {
+  --md-filled-button-label-text-font: var(--site-font);
+  --md-filled-button-label-text-line-height: 1.5rem;
+  --md-filled-button-label-text-size: 1rem;
+  --md-filled-button-label-text-weight: 700;
+  --md-filled-tonal-button-label-text-font: var(--site-font);
+  --md-filled-tonal-button-label-text-line-height: 1.5rem;
+  --md-filled-tonal-button-label-text-size: 1rem;
+  --md-filled-tonal-button-label-text-weight: 700;
+  --md-text-button-label-text-font: var(--site-font);
+  --md-text-button-label-text-line-height: 1.5rem;
+  --md-text-button-label-text-size: 1rem;
+  --md-text-button-label-text-weight: 700;
 
-.cookie-consent-actions button,
-.cookie-consent-actions .mdc-button__label {
   font-family: var(--site-font);
   font-size: 1rem;
-  font-weight: 400;
+  font-weight: 700;
   letter-spacing: 0;
   line-height: 1.5;
 }
 
 .cookie-consent:is(.cookie-consent--privacy, .cookie-consent--explicit-content)
   .cookie-consent-actions
-  .mat-mdc-button-base {
-  min-width: 4rem;
-  padding-inline: 0.5rem;
-}
+  :is(md-text-button, md-filled-button, md-filled-tonal-button) {
+  --md-filled-button-leading-space: 0.5rem;
+  --md-filled-button-trailing-space: 0.5rem;
+  --md-filled-tonal-button-leading-space: 0.5rem;
+  --md-filled-tonal-button-trailing-space: 0.5rem;
+  --md-text-button-leading-space: 0.5rem;
+  --md-text-button-trailing-space: 0.5rem;
 
-.cookie-consent:is(.cookie-consent--privacy, .cookie-consent--explicit-content)
-  .cookie-consent-actions
-  .mdc-button__label {
-  font-size: 1rem;
-  font-weight: 700;
-  line-height: 1.5rem;
+  min-width: 4rem;
 }

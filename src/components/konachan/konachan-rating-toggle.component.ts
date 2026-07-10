@@ -1,4 +1,5 @@
 import {
+  CUSTOM_ELEMENTS_SCHEMA,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -8,9 +9,6 @@ import {
   signal,
 } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
-import { MatIconButton } from "@angular/material/button";
-import { MatIcon } from "@angular/material/icon";
-import { MatTooltip } from "@angular/material/tooltip";
 import {
   SITE_COOKIE_NAMES,
   SITE_EVENTS,
@@ -60,7 +58,7 @@ function normalizeRatingPreference(
 @Component({
   selector: "site-konachan-rating-toggle",
   standalone: true,
-  imports: [MatIconButton, MatIcon, MatTooltip],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     "data-angular-component": "konachan-rating-toggle",
@@ -72,23 +70,21 @@ function normalizeRatingPreference(
       role="group"
       aria-label="Niveau Konachan"
     >
-      <button
-        matIconButton
+      <md-filled-tonal-icon-button
         type="button"
         class="home-anime-rating-trigger"
         [class.is-safe]="ratingPreference() === 'safe'"
         [class.is-questionable]="ratingPreference() === 'questionable'"
         [class.is-explicit]="ratingPreference() === 'explicit'"
-        [matTooltip]="triggerLabel()"
-        matTooltipPosition="below"
+        [attr.title]="triggerLabel()"
         [attr.aria-expanded]="optionsOpen()"
         aria-controls="home-anime-rating-options"
         [attr.aria-label]="triggerLabel()"
         aria-haspopup="true"
         (click)="toggleOptions()"
       >
-        <mat-icon aria-hidden="true">{{ triggerIcon() }}</mat-icon>
-      </button>
+        <md-icon aria-hidden="true">{{ triggerIcon() }}</md-icon>
+      </md-filled-tonal-icon-button>
 
       <div
         id="home-anime-rating-options"
@@ -97,20 +93,18 @@ function normalizeRatingPreference(
       >
         @for (option of ratingOptions; track option.value) {
           @if (option.value !== ratingPreference() && optionVisible(option.value)) {
-            <button
-              matIconButton
+            <md-icon-button
               type="button"
               class="home-anime-rating-option"
               [class.is-safe]="option.value === 'safe'"
               [class.is-questionable]="option.value === 'questionable'"
               [class.is-explicit]="option.value === 'explicit'"
               [attr.aria-label]="'Choisir le niveau Konachan ' + option.label"
-              [matTooltip]="option.label"
-              matTooltipPosition="below"
+              [attr.title]="option.label"
               (click)="selectRating(option.value)"
             >
-              <mat-icon aria-hidden="true">{{ option.icon }}</mat-icon>
-            </button>
+              <md-icon aria-hidden="true">{{ option.icon }}</md-icon>
+            </md-icon-button>
           }
         }
       </div>
@@ -148,24 +142,24 @@ function normalizeRatingPreference(
       pointer-events: auto;
     }
 
-    .home-anime-rating-trigger.mat-mdc-icon-button,
-    .home-anime-rating-option.mat-mdc-icon-button {
-      --mat-icon-button-icon-color: #fff;
-      --mat-icon-button-state-layer-color: #fff;
-      --mat-icon-button-ripple-color: rgb(255 255 255 / 12%);
+    .home-anime-rating-trigger,
+    .home-anime-rating-option {
       display: inline-flex;
-      align-items: center;
-      justify-content: center;
       width: 2.5rem;
       height: 2.5rem;
-      padding: 0;
-      background: rgb(0 0 0 / 52%);
-      color: #fff;
       -webkit-backdrop-filter: blur(6px);
       backdrop-filter: blur(6px);
     }
 
-    .home-anime-rating-option.mat-mdc-icon-button {
+    .home-anime-rating-option {
+      --md-icon-button-focus-icon-color: #fff;
+      --md-icon-button-hover-icon-color: #fff;
+      --md-icon-button-hover-state-layer-color: #fff;
+      --md-icon-button-icon-color: #fff;
+      --md-icon-button-pressed-icon-color: #fff;
+      --md-icon-button-pressed-state-layer-color: #fff;
+      border-radius: var(--md-sys-shape-corner-full);
+      background: rgb(0 0 0 / 52%);
       opacity: 0;
       transform: translateX(-0.5rem) scale(0.82);
       transition:
@@ -173,65 +167,57 @@ function normalizeRatingPreference(
         transform 180ms cubic-bezier(0.2, 0, 0, 1);
     }
 
-    .home-anime-rating-option.mat-mdc-icon-button:nth-child(2) {
+    .home-anime-rating-option:nth-child(2) {
       transition-delay: 25ms;
     }
 
-    .home-anime-rating-option.mat-mdc-icon-button:nth-child(3) {
+    .home-anime-rating-option:nth-child(3) {
       transition-delay: 50ms;
     }
 
-    .home-anime-rating-picker.is-open .home-anime-rating-option.mat-mdc-icon-button {
+    .home-anime-rating-picker.is-open .home-anime-rating-option {
       opacity: 1;
       transform: translateX(0) scale(1);
     }
 
-    .home-anime-rating-trigger.is-safe.mat-mdc-icon-button {
-      --mat-icon-button-icon-color: var(--mat-sys-on-primary-container);
-      --mat-icon-button-state-layer-color: var(--mat-sys-on-primary-container);
-      --mat-icon-button-ripple-color: color-mix(
-        in srgb,
-        var(--mat-sys-on-primary-container) 12%,
-        transparent
+    .home-anime-rating-trigger.is-safe {
+      --md-filled-tonal-icon-button-container-color: var(--md-sys-color-primary-container);
+      --md-filled-tonal-icon-button-focus-icon-color: var(--md-sys-color-on-primary-container);
+      --md-filled-tonal-icon-button-hover-icon-color: var(--md-sys-color-on-primary-container);
+      --md-filled-tonal-icon-button-hover-state-layer-color: var(
+        --md-sys-color-on-primary-container
       );
-      background: var(--mat-sys-primary-container);
-      color: var(--mat-sys-on-primary-container);
+      --md-filled-tonal-icon-button-icon-color: var(--md-sys-color-on-primary-container);
+      --md-filled-tonal-icon-button-pressed-icon-color: var(--md-sys-color-on-primary-container);
+      --md-filled-tonal-icon-button-pressed-state-layer-color: var(
+        --md-sys-color-on-primary-container
+      );
     }
 
-    .home-anime-rating-trigger.is-questionable.mat-mdc-icon-button {
-      --mat-icon-button-icon-color: var(--mat-sys-on-tertiary-container);
-      --mat-icon-button-state-layer-color: var(--mat-sys-on-tertiary-container);
-      --mat-icon-button-ripple-color: color-mix(
-        in srgb,
-        var(--mat-sys-on-tertiary-container) 12%,
-        transparent
+    .home-anime-rating-trigger.is-questionable {
+      --md-filled-tonal-icon-button-container-color: var(--md-sys-color-tertiary-container);
+      --md-filled-tonal-icon-button-focus-icon-color: var(--md-sys-color-on-tertiary-container);
+      --md-filled-tonal-icon-button-hover-icon-color: var(--md-sys-color-on-tertiary-container);
+      --md-filled-tonal-icon-button-hover-state-layer-color: var(
+        --md-sys-color-on-tertiary-container
       );
-      background: var(--mat-sys-tertiary-container);
-      color: var(--mat-sys-on-tertiary-container);
+      --md-filled-tonal-icon-button-icon-color: var(--md-sys-color-on-tertiary-container);
+      --md-filled-tonal-icon-button-pressed-icon-color: var(--md-sys-color-on-tertiary-container);
+      --md-filled-tonal-icon-button-pressed-state-layer-color: var(
+        --md-sys-color-on-tertiary-container
+      );
     }
 
-    .home-anime-rating-trigger.is-explicit.mat-mdc-icon-button {
-      --mat-icon-button-icon-color: var(--mat-sys-on-error-container);
-      --mat-icon-button-state-layer-color: var(--mat-sys-on-error-container);
-      --mat-icon-button-ripple-color: color-mix(
-        in srgb,
-        var(--mat-sys-on-error-container) 12%,
-        transparent
+    .home-anime-rating-trigger.is-explicit {
+      --md-filled-tonal-icon-button-container-color: var(--md-sys-color-error-container);
+      --md-filled-tonal-icon-button-focus-icon-color: var(--md-sys-color-on-error-container);
+      --md-filled-tonal-icon-button-hover-icon-color: var(--md-sys-color-on-error-container);
+      --md-filled-tonal-icon-button-hover-state-layer-color: var(--md-sys-color-on-error-container);
+      --md-filled-tonal-icon-button-icon-color: var(--md-sys-color-on-error-container);
+      --md-filled-tonal-icon-button-pressed-icon-color: var(--md-sys-color-on-error-container);
+      --md-filled-tonal-icon-button-pressed-state-layer-color: var(
+        --md-sys-color-on-error-container
       );
-      background: var(--mat-sys-error-container);
-      color: var(--mat-sys-on-error-container);
-    }
-
-    .home-anime-rating-trigger .mat-icon,
-    .home-anime-rating-option .mat-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 24px;
-      height: 24px;
-      font-size: 24px;
-      line-height: 1;
-      margin: 0;
     }
 
     @media (max-width: 360px) {
@@ -241,7 +227,7 @@ function normalizeRatingPreference(
         flex-direction: column;
       }
 
-      .home-anime-rating-option.mat-mdc-icon-button {
+      .home-anime-rating-option {
         transform: translateY(-0.5rem) scale(0.82);
       }
     }

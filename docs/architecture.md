@@ -4,9 +4,31 @@
 
 - Astro owns page structure, routing, layouts, content collections, and static rendering.
 - MD/MDX owns editorial content.
-- Angular owns interactive UI components that need state, Material components, or lifecycle hooks.
+- New interface code stays framework-independent. Existing Angular islands are temporary state and
+  lifecycle controllers while their visible controls migrate to `@material/web`; do not introduce
+  new Angular Material UI or make new features depend on Angular.
 - Browser scripts in `src/assets/js/app` own progressive enhancement shared across pages.
 - Shared public names live in `src/lib/site-contracts.ts`.
+
+## Material Web boundary
+
+- `src/assets/js/material-web.js` is the explicit registry of imported Material Web components.
+- `scripts/generate-material-theme.ts` generates the Material 3 color roles from `#1565C0` with
+  Material Color Utilities. Dark mode only overrides the page background role to pure black;
+  component surfaces keep their generated Material roles.
+- Markdown shortcodes are parsed at build time by
+  `src/lib/remark-hugo-material-shortcodes.mjs`. Buttons, icons, progress and tabs emit genuine
+  `md-*` elements.
+- Material Web does not ship every Material 3 pattern. Cards, data tables, disclosures, tooltips and
+  snackbars therefore remain semantic HTML or existing infrastructure; the site must not invent
+  unsupported `md-*` element names.
+- Progress follows the Material 3 timing and placement rules: no indicator below 200 ms; one
+  indeterminate loading indicator for an unknown short wait; a determinate indicator only when a
+  real value is available; one indicator per group. Linear indicators sit on a container edge and
+  circular indicators are centered in the element being loaded.
+- Button variants express hierarchy rather than decoration: use a single filled primary action,
+  elevated buttons only when separation from a prominent background is needed, and sentence-case
+  labels of one to three words when possible.
 
 ## Naming
 
@@ -65,10 +87,8 @@ Home background refresh is event-driven so the Astro shell, Angular buttons, and
 
 ## Checks
 
-Use `pnpm verify` before pushing. It runs:
-
-1. `astro sync`
-2. Angular template/type checking with `ngc`
-3. `astro build`
+Use `pnpm verify` before pushing. It covers unit tests, generated theme parity, Angular island type
+checking, Material Symbol coverage, unused-code checks, formatting, the production build, security
+headers, and browser smoke tests.
 
 `astro check` is not part of `verify` because the current Astro checker reports false positives on Analog Angular islands even when the production build succeeds.

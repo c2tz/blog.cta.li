@@ -112,6 +112,8 @@ summary.material-admonition-title::-webkit-details-marker {
 }
 
 .material-admonition-icon {
+  --md-icon-size: 1.25rem;
+
   flex: 0 0 auto;
   width: 1.25rem;
   height: 1.25rem;
@@ -119,6 +121,8 @@ summary.material-admonition-title::-webkit-details-marker {
 }
 
 .material-admonition-toggle-icon {
+  --md-icon-size: 1.5rem;
+
   width: 1.5rem;
   height: 1.5rem;
   font-size: 1.5rem;
@@ -127,6 +131,8 @@ summary.material-admonition-title::-webkit-details-marker {
 }
 
 .material-shortcode-inline-icon {
+  --md-icon-size: 1.2em;
+
   margin-inline: 0.12em;
   font-size: 1.2em;
   vertical-align: -0.18em;
@@ -183,7 +189,7 @@ summary.material-admonition-title::-webkit-details-marker {
 }
 
 .material-progress {
-  --material-progress-color: var(--admonition-info);
+  --material-progress-color: var(--md-sys-color-primary);
 
   display: grid;
   gap: 0.55rem;
@@ -192,23 +198,23 @@ summary.material-admonition-title::-webkit-details-marker {
 }
 
 .material-progress-neutral {
-  --material-progress-color: var(--site-muted);
+  --material-progress-color: var(--md-sys-color-on-surface-variant);
 }
 
 .material-progress-info {
-  --material-progress-color: var(--admonition-info);
+  --material-progress-color: var(--md-sys-color-primary);
 }
 
 .material-progress-success {
-  --material-progress-color: var(--admonition-success);
+  --material-progress-color: var(--md-sys-color-tertiary);
 }
 
 .material-progress-warning {
-  --material-progress-color: var(--admonition-warning);
+  --material-progress-color: var(--md-sys-color-secondary);
 }
 
 .material-progress-danger {
-  --material-progress-color: var(--admonition-danger);
+  --material-progress-color: var(--md-sys-color-error);
 }
 
 .material-progress-header {
@@ -226,19 +232,198 @@ summary.material-admonition-title::-webkit-details-marker {
   font-size: 0.9rem;
 }
 
-.material-progress-track {
-  display: block;
-  height: 0.55rem;
-  overflow: hidden;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--material-progress-color) 18%, transparent);
+.material-progress-indicator {
+  width: 100%;
+  --md-linear-progress-active-indicator-color: var(--material-progress-color);
+  --md-linear-progress-active-indicator-height: 0.5rem;
+  --md-linear-progress-track-color: color-mix(
+    in srgb,
+    var(--material-progress-color) 18%,
+    transparent
+  );
+  --md-linear-progress-track-height: 0.5rem;
+  --md-linear-progress-track-shape: var(--md-sys-shape-corner-full);
 }
 
-.material-progress-fill {
+.material-abbreviation {
+  text-decoration: underline dotted;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  cursor: help;
+}
+
+.material-button {
+  margin: 0.25rem 0.25rem 0.25rem 0;
+  vertical-align: middle;
+}
+
+.material-button-label {
+  display: inline-flex;
+  align-items: center;
+}
+
+.material-button-icon {
+  --md-icon-size: 1.125rem;
+}
+
+.material-card-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--material-card-columns, 3), minmax(0, 1fr));
+  gap: 1rem;
+  margin-block: 1.25rem;
+}
+
+.material-card {
+  min-width: 0;
+  padding: 1.25rem;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-low);
+  color: var(--md-sys-color-on-surface);
+}
+
+.material-card:has(.material-card-link):hover {
+  border-color: var(--md-sys-color-outline);
+}
+
+.material-card-title {
+  margin: 0;
+  font-size: 1.125rem;
+  line-height: 1.5rem;
+}
+
+.material-card-link,
+.material-card-title-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.material-card-icon {
+  --md-icon-size: 1.25rem;
+
+  color: var(--md-sys-color-primary);
+}
+
+.material-card-content {
+  margin-block-start: 0.75rem;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.material-card-content > :first-child {
+  margin-block-start: 0;
+}
+
+.material-card-content > :last-child {
+  margin-block-end: 0;
+}
+
+.material-annotation-reference {
+  margin-inline: 0.08em;
+  font-size: 0.72em;
+  line-height: 1;
+  vertical-align: super;
+}
+
+.material-annotation-reference a {
+  display: inline-grid;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  place-items: center;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.material-annotations {
+  display: grid;
+  gap: 0.75rem;
+  margin-block: 1.25rem;
+}
+
+.material-annotation {
+  scroll-margin-block-start: 1rem;
+  overflow: hidden;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-low);
+}
+
+.material-annotation:target {
+  border-color: var(--md-sys-color-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--md-sys-color-primary) 22%, transparent);
+}
+
+.material-annotation-summary {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  padding-inline: 1rem;
+  color: var(--md-sys-color-primary);
+  cursor: pointer;
+  font-weight: 700;
+  list-style: none;
+}
+
+.material-annotation-summary::-webkit-details-marker {
+  display: none;
+}
+
+.material-annotation-summary::before {
+  display: inline-grid;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  margin-inline-end: 0.625rem;
+  place-items: center;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  content: "+";
+}
+
+.material-annotation[open] > .material-annotation-summary::before {
+  content: "−";
+}
+
+.material-annotation-content {
+  padding: 0 1rem 1rem;
+}
+
+.material-annotation-content > :first-child {
+  margin-block-start: 0;
+}
+
+.material-annotation-content > :last-child {
+  margin-block-end: 0;
+}
+
+.material-figure {
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+  margin: 1.5rem auto;
+}
+
+.material-figure-image {
   display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--material-progress-color);
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--image-radius);
+}
+
+.material-figure-caption {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  text-align: center;
+}
+
+@media (max-width: 720px) {
+  .material-card-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .material-admonition-content {
@@ -278,18 +463,20 @@ summary.material-admonition-title::-webkit-details-marker {
 }
 
 .material-shortcode-tabs {
-  --mat-tab-header-active-label-text-color: var(--m3-primary);
-  --mat-tab-header-active-focus-label-text-color: var(--m3-primary);
-  --mat-tab-header-active-hover-label-text-color: var(--m3-primary);
-  --mat-tab-header-divider-color: var(--site-border);
-  --mat-tab-header-inactive-label-text-color: var(--m3-on-surface-variant);
-  --mat-tab-header-inactive-focus-label-text-color: var(--m3-on-surface);
-  --mat-tab-header-inactive-hover-label-text-color: var(--m3-on-surface);
-  --mat-tab-header-active-ripple-color: color-mix(in srgb, var(--m3-primary) 12%, transparent);
-  --mat-tab-header-inactive-ripple-color: color-mix(in srgb, var(--m3-on-surface) 12%, transparent);
-  --mat-tab-header-active-focus-indicator-color: var(--m3-primary);
-  --mat-tab-header-active-hover-indicator-color: var(--m3-primary);
-  --mdc-tab-indicator-active-indicator-color: var(--m3-primary);
+  display: block;
+  border-block-end: 1px solid var(--md-sys-color-outline-variant);
+  --md-primary-tab-container-color: transparent;
+  --md-primary-tab-active-indicator-color: var(--md-sys-color-primary);
+  --md-primary-tab-active-label-text-color: var(--md-sys-color-primary);
+  --md-primary-tab-label-text-color: var(--md-sys-color-on-surface-variant);
+  --md-primary-tab-hover-label-text-color: var(--md-sys-color-on-surface);
+  --md-primary-tab-focus-label-text-color: var(--md-sys-color-on-surface);
+}
+
+.material-shortcode-tab-panel:focus-visible {
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
 }
 
 .material-shortcode-tab-content {
@@ -358,39 +545,50 @@ summary.material-admonition-title::-webkit-details-marker {
   font-weight: 600;
 }
 
-.material-shortcode-table .mat-sort-header {
-  --mat-sort-arrow-color: currentColor;
+.material-shortcode-table th:has(.material-shortcode-sort-button) {
+  padding: 0;
 }
 
-.material-shortcode-table .mat-sort-header-arrow {
-  display: inline-grid;
-  place-items: center;
+.material-shortcode-sort-button {
+  --md-ripple-focus-color: var(--site-link);
+  --md-ripple-hover-color: var(--site-link);
+  --md-ripple-pressed-color: var(--site-link);
+
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  width: 100%;
+  min-height: 3rem;
+  box-sizing: border-box;
+  padding: 0 2rem 0 1rem;
+  overflow: hidden;
+  border: 0;
+  background: var(--site-bg);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: inherit;
+  text-align: start;
+}
+
+.material-shortcode-sort-button md-icon {
+  --md-icon-size: 1.25rem;
+
   width: 1.25rem;
   height: 1.25rem;
-  margin-inline-start: 0.25rem;
-  color: currentColor;
-  font-family: "Material Symbols Rounded";
+  flex-basis: 1.25rem;
   font-size: 1.25rem;
-  font-style: normal;
-  font-weight: 400;
-  font-variation-settings:
-    "FILL" 0,
-    "wght" 400,
-    "GRAD" 0,
-    "opsz" 20;
-  line-height: 1;
 }
 
-.material-shortcode-table .mat-sort-header-arrow svg {
-  display: none;
-}
-
-.material-shortcode-table .mat-sort-header-arrow::before {
-  content: "\e5d8";
-}
-
-.material-shortcode-table .mat-sort-header-sorted {
+.material-shortcode-sort-active {
+  background: color-mix(in srgb, var(--site-link) 10%, var(--site-bg));
   color: var(--site-text);
+}
+
+.material-shortcode-sort-button:focus-visible {
+  outline: 0;
+  box-shadow: inset 0 0 0 2px var(--site-link);
 }
 
 .material-shortcode-table tr:last-child td,
@@ -405,8 +603,67 @@ summary.material-admonition-title::-webkit-details-marker {
 }
 
 .material-shortcode-table-paginator {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
   background: transparent;
   color: var(--site-text);
+}
+
+.material-shortcode-page-size {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--site-muted);
+  font-size: 0.875rem;
+}
+
+.material-shortcode-page-size md-outlined-select {
+  width: auto;
+  min-width: 5rem;
+}
+
+.material-shortcode-range {
+  min-width: 7.5rem;
+  color: var(--site-muted);
+  font-size: 0.875rem;
+  text-align: end;
+}
+
+.material-shortcode-page-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.material-shortcode-page-actions md-icon-button {
+  --md-icon-button-icon-color: var(--site-muted);
+  --md-icon-button-hover-icon-color: var(--site-text);
+  --md-icon-button-focus-icon-color: var(--site-text);
+  --md-icon-button-pressed-icon-color: var(--site-text);
+}
+
+@media (max-width: 720px) {
+  .material-shortcode-table-paginator {
+    flex-wrap: wrap;
+  }
+
+  .material-shortcode-page-size {
+    margin-inline-end: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .material-shortcode-table-paginator {
+    justify-content: space-between;
+  }
+
+  .material-shortcode-range {
+    order: 3;
+    width: 100%;
+    text-align: center;
+  }
 }
 
 .material-data-table > table {

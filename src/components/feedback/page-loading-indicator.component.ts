@@ -1,8 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  signal,
-} from "@angular/core";
+import { ChangeDetectionStrategy, Component, signal } from "@angular/core";
 import type { OnDestroy, OnInit } from "@angular/core";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { SimulatedLoadingProgress } from "@/lib/simulated-loading-progress";
@@ -69,13 +65,11 @@ export class PageLoadingIndicatorComponent implements OnInit, OnDestroy {
       event.ctrlKey ||
       event.shiftKey ||
       event.altKey
-    ) return;
-    const target = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[href]") : null;
-    if (
-      !target ||
-      target.target ||
-      target.hasAttribute("download")
-    ) return;
+    )
+      return;
+    const target =
+      event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[href]") : null;
+    if (!target || target.target || target.hasAttribute("download")) return;
 
     const url = new URL(target.href, window.location.href);
     if (url.origin !== window.location.origin) return;

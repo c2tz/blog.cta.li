@@ -1,6 +1,6 @@
 ---
-title: 'Shortcodes Hugo Material'
-description: 'Guide des shortcodes Hugo optionnels du blog : admonitions, icônes Material Symbols, onglets, tableaux Angular Material et blocs Shiki.'
+title: "Shortcodes Hugo Material"
+description: "Guide des shortcodes Hugo optionnels du blog : admonitions, icônes Material Symbols, onglets, tableaux Angular Material et blocs Shiki."
 tags:
   - documentation
   - shortcodes
@@ -51,13 +51,13 @@ autre admonition.
 
 ### Paramètres
 
-| Paramètre | Exemple | Rôle |
-| --- | --- | --- |
-| `type` | `warning` | Famille visuelle. Si le type est inconnu, le rendu revient à `note`. |
-| `title` | `Attention` | Titre affiché dans l’en-tête. |
-| `icon` | `children-face` | Icône Material Symbol en kebab-case. |
-| `collapsible` | `true` | Transforme l’encart en bloc pliable. |
-| `open` | `true` | Ouvre par défaut un bloc pliable. |
+| Paramètre     | Exemple         | Rôle                                                                                  |
+| ------------- | --------------- | ------------------------------------------------------------------------------------- |
+| `type`        | `warning`       | Famille visuelle. Si le type est inconnu, le build échoue avec les valeurs possibles. |
+| `title`       | `Attention`     | Titre affiché dans l’en-tête.                                                         |
+| `icon`        | `children-face` | Icône Material Symbol en kebab-case.                                                  |
+| `collapsible` | `true`          | Transforme l’encart en bloc pliable.                                                  |
+| `open`        | `true`          | Ouvre par défaut un bloc pliable.                                                     |
 
 ### Types disponibles
 
@@ -68,7 +68,7 @@ Les alias pratiques sont également acceptés : `summary`, `tldr`, `todo`, `hint
 `check`, `done`, `help`, `faq`, `attention`, `caution`, `fail`, `missing`, `error` et `cite`.
 
 Les icônes par défaut suivent le type : `info` utilise `info`, `warning` utilise `warning`,
-`danger` utilise `dangerous`, `bug` utilise `bug-report`, etc. Vous pouvez toujours forcer une
+`failure` utilise `dangerous`, `danger` utilise `report`, `bug` utilise `bug-report`, etc. Vous pouvez toujours forcer une
 autre icône avec le paramètre `icon`.
 
 {{< admonition type="note" >}}
@@ -145,6 +145,8 @@ Une citation ou une note de référence.
 
 ### Bloc pliable
 
+#### Code
+
 ```markdown
 {{< admonition type="info" title="Détails" collapsible=true open=true >}}
 
@@ -153,9 +155,27 @@ Ce bloc est ouvert par défaut, mais peut être replié.
 {{< /admonition >}}
 ```
 
+#### Rendu
+
 {{< admonition type="info" title="Détails" collapsible=true open=true >}}
 
 Ce bloc est ouvert par défaut, mais peut être replié.
+
+{{< /admonition >}}
+
+#### Variante fermée
+
+```markdown
+{{< admonition type="tip" title="Astuce pliable" collapsible=true >}}
+
+Le contenu reste dans le HTML, mais il est fermé au premier affichage.
+
+{{< /admonition >}}
+```
+
+{{< admonition type="tip" title="Astuce pliable" collapsible=true >}}
+
+Le contenu reste dans le HTML, mais il est fermé au premier affichage.
 
 {{< /admonition >}}
 
@@ -163,21 +183,97 @@ Ce bloc est ouvert par défaut, mais peut être replié.
 
 Le shortcode `icon` insère une icône Material Symbol inline :
 
+### Code
+
 ```markdown
 Voici une icône {{< icon "children-face" />}} dans une phrase.
 ```
 
+### Rendu
+
 Voici une icône {{< icon "children-face" />}} dans une phrase.
 
-Avec un libellé accessible :
+### Variante accessible
 
 ```markdown
-{{< icon name="children-face" label="Enfants" />}}
+Statut {{< icon name="check-circle" label="Validé" />}} validé.
 ```
+
+Statut {{< icon name="check-circle" label="Validé" />}} validé.
 
 Les noms s’écrivent en kebab-case dans les articles. Le moteur convertit ensuite vers le nom de
 glyph Material Symbols en snake_case. Exemple : `children-face` devient `children_face`, puis
 l’alias actuel le redirige vers `child_care`.
+
+## Badges inline
+
+Le shortcode `inline-badge` ajoute un petit état au milieu d’une phrase. Les alias `badge`,
+`counter` et `indicator` pointent vers le même rendu.
+
+### Code
+
+```markdown
+API {{< inline-badge label="stable" value="v2" tone="success" />}}
+Cache {{< badge label="beta" tone="warning" />}}
+Incident {{< indicator value="bloquant" tone="danger" />}}
+```
+
+### Rendu
+
+API {{< inline-badge label="stable" value="v2" tone="success" />}}
+Cache {{< badge label="beta" tone="warning" />}}
+Incident {{< indicator value="bloquant" tone="danger" />}}
+
+### Paramètres
+
+| Paramètre | Exemple   | Rôle                                                            |
+| --------- | --------- | --------------------------------------------------------------- |
+| `label`   | `stable`  | Texte principal du badge.                                       |
+| `value`   | `v2`      | Valeur courte, souvent une version ou un état.                  |
+| `tone`    | `success` | Ton visuel : `neutral`, `info`, `success`, `warning`, `danger`. |
+
+## Raccourcis clavier
+
+Le shortcode `kbd` évite d’écrire du HTML dans un paragraphe. Les alias `key` et `keys` sont
+acceptés.
+
+### Code
+
+```markdown
+Ouvrez la recherche avec {{< kbd "Ctrl" "K" />}}.
+Fermez le panneau avec {{< key "Esc" />}}.
+```
+
+### Rendu
+
+Ouvrez la recherche avec {{< kbd "Ctrl" "K" />}}.
+Fermez le panneau avec {{< key "Esc" />}}.
+
+## Progression
+
+Le shortcode `progress` affiche une progression statique dans un article : migration, couverture,
+checklist ou avancement d’une documentation.
+
+### Code
+
+```markdown
+{{< progress label="Migration Angular Material" value=72 tone="info" />}}
+{{< progress label="Couverture des exemples" value=100 tone="success" />}}
+```
+
+### Rendu
+
+{{< progress label="Migration Angular Material" value=72 tone="info" />}}
+
+{{< progress label="Couverture des exemples" value=100 tone="success" />}}
+
+### Paramètres
+
+| Paramètre | Exemple     | Rôle                                                            |
+| --------- | ----------- | --------------------------------------------------------------- |
+| `label`   | `Migration` | Libellé accessible et visible.                                  |
+| `value`   | `72`        | Nombre entre `0` et `100`.                                      |
+| `tone`    | `info`      | Ton visuel : `neutral`, `info`, `success`, `warning`, `danger`. |
 
 ### Ajouter un symbole qui n’est pas enregistré
 
@@ -275,6 +371,42 @@ npm install
 
 {{< /tabs >}}
 
+### Variante avec contenu éditorial
+
+```markdown
+{{< tabs label="États de livraison" >}}
+
+{{< tab title="Stable" >}}
+
+Version {{< badge label="stable" value="v2" tone="success" />}} prête à publier.
+
+{{< /tab >}}
+
+{{< tab title="À vérifier" >}}
+
+Version {{< badge label="audit" tone="warning" />}} à relire avant publication.
+
+{{< /tab >}}
+
+{{< /tabs >}}
+```
+
+{{< tabs label="États de livraison" >}}
+
+{{< tab title="Stable" >}}
+
+Version {{< badge label="stable" value="v2" tone="success" />}} prête à publier.
+
+{{< /tab >}}
+
+{{< tab title="À vérifier" >}}
+
+Version {{< badge label="audit" tone="warning" />}} à relire avant publication.
+
+{{< /tab >}}
+
+{{< /tabs >}}
+
 ## Tableaux Angular Material
 
 Le Markdown standard reste disponible pour les tableaux simples. Le shortcode `material-table`
@@ -285,11 +417,11 @@ active un tableau Angular Material uniquement quand vous avez besoin de tri, fil
 ```markdown
 {{< material-table filter=true sort=true paginate=true pageSize=5 >}}
 
-| Composant | Rôle | Interactif |
-| --- | --- | --- |
-| MatTable | Données tabulaires | Oui |
-| MatTabs | Contenu à onglets | Oui |
-| Admonition | Information contextuelle | Non |
+| Composant  | Rôle                     | Interactif |
+| ---------- | ------------------------ | ---------- |
+| MatTable   | Données tabulaires       | Oui        |
+| MatTabs    | Contenu à onglets        | Oui        |
+| Admonition | Information contextuelle | Non        |
 
 {{< /material-table >}}
 ```
@@ -298,23 +430,47 @@ active un tableau Angular Material uniquement quand vous avez besoin de tri, fil
 
 {{< material-table filter=true sort=true paginate=true pageSize=5 >}}
 
-| Composant | Rôle | Interactif |
-| --- | --- | --- |
-| MatTable | Données tabulaires | Oui |
-| MatTabs | Contenu à onglets | Oui |
-| Admonition | Information contextuelle | Non |
-| Shiki | Bloc de code éditorial | Non |
+| Composant  | Rôle                     | Interactif |
+| ---------- | ------------------------ | ---------- |
+| MatTable   | Données tabulaires       | Oui        |
+| MatTabs    | Contenu à onglets        | Oui        |
+| Admonition | Information contextuelle | Non        |
+| Shiki      | Bloc de code éditorial   | Non        |
 
 {{< /material-table >}}
 
 ### Paramètres
 
-| Paramètre | Défaut | Rôle |
-| --- | --- | --- |
-| `filter` | `false` | Ajoute un champ de recherche. |
-| `sort` | `true` | Active le tri sur les colonnes. |
-| `paginate` | `false` | Ajoute une pagination. |
-| `pageSize` | `10` | Taille de page si la pagination est active. |
+| Paramètre  | Défaut  | Rôle                                        |
+| ---------- | ------- | ------------------------------------------- |
+| `filter`   | `false` | Ajoute un champ de recherche.               |
+| `sort`     | `true`  | Active le tri sur les colonnes.             |
+| `paginate` | `false` | Ajoute une pagination.                      |
+| `pageSize` | `10`    | Taille de page si la pagination est active. |
+
+### Variante sans pagination
+
+```markdown
+{{< material-table sort=true >}}
+
+| Shortcode      | Catégorie | Usage  |
+| -------------- | --------- | ------ |
+| `admonition`   | Contenu   | Bloc   |
+| `inline-badge` | Inline    | Inline |
+| `kbd`          | Inline    | Inline |
+
+{{< /material-table >}}
+```
+
+{{< material-table sort=true >}}
+
+| Shortcode      | Catégorie | Usage  |
+| -------------- | --------- | ------ |
+| `admonition`   | Contenu   | Bloc   |
+| `inline-badge` | Inline    | Inline |
+| `kbd`          | Inline    | Inline |
+
+{{< /material-table >}}
 
 ## Blocs Shiki
 
@@ -349,16 +505,40 @@ count.update((value) => value + 1)
 
 {{< /shiki >}}
 
+### Variante annotée
+
+````markdown
+{{< shiki title="Diff annoté" filename="theme.ts" lang="ts" >}}
+
+```ts
+const oldAccent = "#6750a4"; // [!code --]
+const newAccent = "#0ea5e9"; // [!code ++]
+console.warn("Contraste à vérifier"); // [!code warning]
+```
+
+{{< /shiki >}}
+````
+
+{{< shiki title="Diff annoté" filename="theme.ts" lang="ts" >}}
+
+```ts
+const oldAccent = "#6750a4"; // [!code --]
+const newAccent = "#0ea5e9"; // [!code ++]
+console.warn("Contraste à vérifier"); // [!code warning]
+```
+
+{{< /shiki >}}
+
 ### Paramètres
 
-| Paramètre | Exemple | Rôle |
-| --- | --- | --- |
-| `lang` | `ts` | Langage Shiki si le bloc fenced n’en déclare pas. |
-| `meta` | `{2}` | Meta Shiki ajoutée au bloc, par exemple pour surligner des lignes. |
-| `title` | `Signal Angular` | Titre visible au-dessus du bloc. |
-| `filename` ou `file` | `counter.component.ts` | Nom de fichier affiché à droite. |
-| `caption` | `Exemple minimal` | Légende sous le bloc. |
-| `icon` | `terminal` | Icône Material Symbol de l’en-tête. |
+| Paramètre            | Exemple                | Rôle                                                               |
+| -------------------- | ---------------------- | ------------------------------------------------------------------ |
+| `lang`               | `ts`                   | Langage Shiki si le bloc fenced n’en déclare pas.                  |
+| `meta`               | `{2}`                  | Meta Shiki ajoutée au bloc, par exemple pour surligner des lignes. |
+| `title`              | `Signal Angular`       | Titre visible au-dessus du bloc.                                   |
+| `filename` ou `file` | `counter.component.ts` | Nom de fichier affiché à droite.                                   |
+| `caption`            | `Exemple minimal`      | Légende sous le bloc.                                              |
+| `icon`               | `terminal`             | Icône Material Symbol de l’en-tête.                                |
 
 ### Options Shiki activées
 
@@ -367,34 +547,34 @@ notations :
 
 ````markdown
 ```ts {1,3-4} /signal/
-const count = signal(0)
-count.set(1)
-count.update((value) => value + 1)
+const count = signal(0);
+count.set(1);
+count.update((value) => value + 1);
 ```
 ````
 
 ```ts {1,3-4} /signal/
-const count = signal(0)
-count.set(1)
-count.update((value) => value + 1)
+const count = signal(0);
+count.set(1);
+count.update((value) => value + 1);
 ```
 
 Vous pouvez aussi annoter directement le code :
 
 ````markdown
 ```ts
-const oldValue = 0 // [!code --]
-const newValue = 1 // [!code ++]
-console.warn("Attention") // [!code warning]
-console.error("Erreur") // [!code error]
+const oldValue = 0; // [!code --]
+const newValue = 1; // [!code ++]
+console.warn("Attention"); // [!code warning]
+console.error("Erreur"); // [!code error]
 ```
 ````
 
 ```ts
-const oldValue = 0 // [!code --]
-const newValue = 1 // [!code ++]
-console.warn("Attention") // [!code warning]
-console.error("Erreur") // [!code error]
+const oldValue = 0; // [!code --]
+const newValue = 1; // [!code ++]
+console.warn("Attention"); // [!code warning]
+console.error("Erreur"); // [!code error]
 ```
 
 Stress test avec un bloc volontairement long :
@@ -697,15 +877,15 @@ exit_success:
 
 Les notations utiles sont :
 
-| Notation | Effet |
-| --- | --- |
-| `{1,3-4}` dans la meta | Surligne des lignes. |
-| `/signal/` dans la meta | Surligne un mot. |
-| `[!code ++]` / `[!code --]` | Marque une ligne ajoutée ou supprimée. |
-| `[!code highlight]` | Surligne une ligne. |
-| `[!code focus]` | Met une ligne au focus et atténue les autres. |
-| `[!code warning]`, `[!code error]`, `[!code info]` | Marque une ligne par niveau. |
-| `[!code word:signal]` | Surligne un mot dans les lignes suivantes. |
+| Notation                                           | Effet                                         |
+| -------------------------------------------------- | --------------------------------------------- |
+| `{1,3-4}` dans la meta                             | Surligne des lignes.                          |
+| `/signal/` dans la meta                            | Surligne un mot.                              |
+| `[!code ++]` / `[!code --]`                        | Marque une ligne ajoutée ou supprimée.        |
+| `[!code highlight]`                                | Surligne une ligne.                           |
+| `[!code focus]`                                    | Met une ligne au focus et atténue les autres. |
+| `[!code warning]`, `[!code error]`, `[!code info]` | Marque une ligne par niveau.                  |
+| `[!code word:signal]`                              | Surligne un mot dans les lignes suivantes.    |
 
 ### Code inline
 

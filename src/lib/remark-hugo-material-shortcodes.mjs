@@ -21,10 +21,10 @@ const ADMONITIONS = Object.freeze({
   warning: { icon: "warning", label: "Attention" },
   attention: { canonical: "warning", icon: "warning", label: "Attention" },
   caution: { canonical: "warning", icon: "warning", label: "Prudence" },
-  failure: { icon: "cancel", label: "Échec" },
-  fail: { canonical: "failure", icon: "cancel", label: "Échec" },
+  failure: { icon: "dangerous", label: "Échec" },
+  fail: { canonical: "failure", icon: "dangerous", label: "Échec" },
   missing: { canonical: "failure", icon: "unknown-document", label: "Manquant" },
-  danger: { icon: "dangerous", label: "Danger" },
+  danger: { icon: "report", label: "Danger" },
   error: { canonical: "danger", icon: "error", label: "Erreur" },
   bug: { icon: "bug-report", label: "Bug" },
   example: { icon: "science", label: "Exemple" },
@@ -36,7 +36,58 @@ const MATERIAL_SYMBOL_ALIASES = Object.freeze({
   "children-face": "child-care",
 });
 
+const SHORTCODE_ALIASES = Object.freeze({
+  badge: "inline-badge",
+  callout: "admonition",
+  counter: "inline-badge",
+  indicator: "inline-badge",
+  key: "kbd",
+  keys: "kbd",
+});
+
 const PAIRED_SHORTCODES = new Set(["admonition", "material-table", "shiki", "tab", "tabs"]);
+const INLINE_SHORTCODES = new Set(["icon", "inline-badge", "kbd"]);
+const KNOWN_SHORTCODES = Object.freeze([
+  "admonition",
+  "icon",
+  "inline-badge",
+  "kbd",
+  "material-table",
+  "progress",
+  "shiki",
+  "tab",
+  "tabs",
+]);
+
+const ADMONITION_TYPES = Object.freeze(
+  Object.entries(ADMONITIONS)
+    .filter(([, definition]) => !definition.canonical)
+    .map(([type]) => type),
+);
+const ADMONITION_ALIASES = Object.freeze(
+  Object.entries(ADMONITIONS)
+    .filter(([, definition]) => definition.canonical)
+    .map(([type]) => type),
+);
+
+const TONES = Object.freeze({
+  danger: "danger",
+  error: "danger",
+  info: "info",
+  neutral: "neutral",
+  success: "success",
+  warning: "warning",
+});
+const TONE_VALUES = Object.freeze(["neutral", "info", "success", "warning", "danger"]);
+
+function optionList(values) {
+  return Array.from(values, (value) => `\`${value}\``).join(", ");
+}
+
+function normalizeShortcodeName(name) {
+  const normalized = String(name).toLowerCase();
+  return SHORTCODE_ALIASES[normalized] ?? normalized;
+}
 
 function textNode(value, data) {
   return data ? { type: "text", value, data } : { type: "text", value };
@@ -82,6 +133,12 @@ function materialSymbolNode(name, file, { className = [], label } = {}) {
         .toLowerCase()
         .replace(/[\s_]+/g, "-"),
     },
+  });
+}
+
+function materialExpansionIndicatorNode(file) {
+  return materialSymbolNode("expand-more", file, {
+    className: ["material-admonition-toggle-indicator", "material-admonition-toggle-icon"],
   });
 }
 
@@ -151,7 +208,7 @@ export function parseHugoShortcode(source) {
   if (explicitSelfClosing) body = body.slice(0, -1).trim();
 
   const [rawName, ...tokens] = tokenizeHugoShortcode(body);
-  const name = rawName?.toLowerCase();
+  const name = rawName ? normalizeShortcodeName(rawName) : undefined;
   if (!name) return null;
   if (closing && tokens.length) {
     throw new Error(`Le shortcode fermant ${name} ne peut pas recevoir de paramètres.`);
@@ -205,13 +262,13 @@ function transformInlineShortcodes(node, file) {
       const shortcode = parseHugoShortcode(match[0]);
       if (!shortcode) {
         transformed.push(textNode(match[0]));
-      } else if (!shortcode.selfClosing || shortcode.name !== "icon") {
+      } else if (!shortcode.selfClosing || !INLINE_SHORTCODES.has(shortcode.name)) {
         file.fail(
-          `Le shortcode ${shortcode.name} doit être isolé par une ligne vide. Seul icon peut être utilisé dans une phrase.`,
+          `Le shortcode ${shortcode.name} doit être isolé par une ligne vide. Shortcodes inline autorisés : ${optionList(INLINE_SHORTCODES)}.`,
           node,
         );
       } else {
-        transformed.push(createMaterialIcon(shortcode, file));
+        transformed.push(renderShortcode(shortcode, [], file));
       }
       cursor = match.index + match[0].length;
     }
@@ -245,10 +302,28 @@ function parameter(shortcode, name, position, fallback) {
   return shortcode.named[name] ?? shortcode.positional[position] ?? fallback;
 }
 
+function canonicalTone(value, shortcodeName, file) {
+  const requestedTone = String(value ?? "neutral").toLowerCase();
+  const tone = TONES[requestedTone];
+  if (!tone) {
+    file.fail(
+      `Ton inconnu pour ${shortcodeName} : \`${requestedTone}\`. Valeurs possibles : ${optionList(TONE_VALUES)}.`,
+    );
+  }
+
+  return tone;
+}
+
 function createAdmonition(shortcode, children, file) {
   const requestedType = String(parameter(shortcode, "type", 0, "note")).toLowerCase();
-  const definition = ADMONITIONS[requestedType] ?? ADMONITIONS.note;
-  const type = definition.canonical ?? (ADMONITIONS[requestedType] ? requestedType : "note");
+  const definition = ADMONITIONS[requestedType];
+  if (!definition) {
+    file.fail(
+      `Type d’admonition inconnu : \`${requestedType}\`. Valeurs possibles : ${optionList(ADMONITION_TYPES)}. Alias acceptés : ${optionList(ADMONITION_ALIASES)}.`,
+    );
+  }
+
+  const type = definition.canonical ?? requestedType;
   const title = parameter(shortcode, "title", 1, definition.label);
   const icon = shortcode.named.icon ?? definition.icon;
   const collapsible = booleanParameter(shortcode.named.collapsible, false);
@@ -258,6 +333,9 @@ function createAdmonition(shortcode, children, file) {
     materialSymbolNode(icon, file, { className: ["material-admonition-icon"] }),
     textNode(String(title)),
   ];
+  if (collapsible) {
+    titleChildren.push(materialExpansionIndicatorNode(file));
+  }
   const titleNode = elementNode(
     collapsible ? "summary" : "div",
     { className: ["material-admonition-title"] },
@@ -282,6 +360,105 @@ function createMaterialIcon(shortcode, file) {
     className: ["material-shortcode-inline-icon"],
     label: label ? String(label) : undefined,
   });
+}
+
+function createInlineBadge(shortcode, file) {
+  const label = parameter(shortcode, "label", 0, undefined);
+  const value = parameter(shortcode, "value", 1, undefined);
+  const tone = canonicalTone(shortcode.named.tone, "inline-badge", file);
+  if (!label && !value) {
+    file.fail(
+      'Le shortcode inline-badge doit recevoir au moins `label` ou `value`, par exemple {{< inline-badge label="API" value="v2" />}}.',
+    );
+  }
+
+  return elementNode(
+    "span",
+    {
+      className: ["material-inline-badge", `material-inline-badge-${tone}`],
+      dataTone: tone,
+    },
+    [
+      ...(label
+        ? [
+            elementNode("span", { className: ["material-inline-badge-label"] }, [
+              textNode(String(label)),
+            ]),
+          ]
+        : []),
+      ...(value
+        ? [
+            elementNode("span", { className: ["material-inline-badge-value"] }, [
+              textNode(String(value)),
+            ]),
+          ]
+        : []),
+    ],
+  );
+}
+
+function createKbd(shortcode, file) {
+  const keys = [
+    ...shortcode.positional,
+    ...(shortcode.named.key ? [shortcode.named.key] : []),
+    ...(shortcode.named.value ? [shortcode.named.value] : []),
+  ]
+    .map((key) => String(key).trim())
+    .filter(Boolean);
+  if (!keys.length) {
+    file.fail('Le shortcode kbd doit recevoir une touche, par exemple {{< kbd "Ctrl" />}}.');
+  }
+
+  if (keys.length === 1) {
+    return elementNode("kbd", { className: ["material-kbd"] }, [textNode(keys[0])]);
+  }
+
+  return elementNode(
+    "span",
+    { className: ["material-kbd-sequence"], role: "group", ariaLabel: keys.join(" + ") },
+    keys.flatMap((key, index) => [
+      ...(index ? [textNode(" + ")] : []),
+      elementNode("kbd", { className: ["material-kbd"] }, [textNode(key)]),
+    ]),
+  );
+}
+
+function createProgress(shortcode, file) {
+  const label = String(parameter(shortcode, "label", 0, "Progression"));
+  const rawValue = parameter(shortcode, "value", 1, shortcode.named.percent ?? "0");
+  const value = Number.parseFloat(String(rawValue));
+  if (!Number.isFinite(value) || value < 0 || value > 100) {
+    file.fail(`Valeur progress invalide : \`${rawValue}\`. Utilisez un nombre entre 0 et 100.`);
+  }
+
+  const tone = canonicalTone(shortcode.named.tone, "progress", file);
+  const roundedValue = Math.round(value * 10) / 10;
+  const valueLabel = `${Number.isInteger(roundedValue) ? roundedValue.toFixed(0) : roundedValue}%`;
+
+  return elementNode(
+    "div",
+    {
+      ariaLabel: label,
+      ariaValueMax: 100,
+      ariaValueMin: 0,
+      ariaValueNow: roundedValue,
+      className: ["material-progress", `material-progress-${tone}`],
+      dataTone: tone,
+      role: "progressbar",
+    },
+    [
+      elementNode("div", { className: ["material-progress-header"] }, [
+        elementNode("span", { className: ["material-progress-label"] }, [textNode(label)]),
+        elementNode("span", { className: ["material-progress-value"] }, [textNode(valueLabel)]),
+      ]),
+      elementNode("span", { ariaHidden: "true", className: ["material-progress-track"] }, [
+        elementNode("span", {
+          className: ["material-progress-fill"],
+          style: `width: ${roundedValue}%`,
+        }),
+      ]),
+    ],
+  );
 }
 
 function createTab(shortcode, children) {
@@ -400,8 +577,14 @@ function renderShortcode(shortcode, children, file) {
       return createAdmonition(shortcode, children, file);
     case "icon":
       return createMaterialIcon(shortcode, file);
+    case "inline-badge":
+      return createInlineBadge(shortcode, file);
+    case "kbd":
+      return createKbd(shortcode, file);
     case "material-table":
       return createMaterialTable(shortcode, children);
+    case "progress":
+      return createProgress(shortcode, file);
     case "shiki":
       return createShiki(shortcode, children, file);
     case "tab":
@@ -409,7 +592,9 @@ function renderShortcode(shortcode, children, file) {
     case "tabs":
       return createTabs(shortcode, children);
     default:
-      file.fail(`Shortcode Hugo inconnu : ${shortcode.name}`);
+      file.fail(
+        `Shortcode Hugo inconnu : ${shortcode.name}. Shortcodes disponibles : ${optionList(KNOWN_SHORTCODES)}.`,
+      );
   }
 }
 

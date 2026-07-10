@@ -1,15 +1,6 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  ViewChild,
-  signal,
-} from "@angular/core";
+import { ChangeDetectionStrategy, Component, ElementRef, ViewChild, signal } from "@angular/core";
 import type { AfterViewInit, OnDestroy } from "@angular/core";
-import {
-  MatTooltip,
-  type TooltipPosition,
-} from "@angular/material/tooltip";
+import { MatTooltip, type TooltipPosition } from "@angular/material/tooltip";
 import { SITE_EVENTS } from "@/lib/site-contracts";
 
 const TOOLTIP_SELECTOR = "[data-tooltip]";

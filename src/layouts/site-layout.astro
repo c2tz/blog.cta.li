@@ -254,7 +254,7 @@ const speedInsightsVersion = speedInsightsPackage.version;
     <Footer />
     <CookieConsentBannerComponent client:load />
     {shouldEnhanceContent && <MaterialShortcodeControllerComponent client:load />}
-    {shouldEnhanceContent && <CodeBlockEnhancerComponent client:idle />}
+    {shouldEnhanceContent && <CodeBlockEnhancerComponent client:load />}
     {shouldEnhanceContent && <GlobalTooltipComponent client:idle />}
     <PageLoadingIndicatorComponent client:idle />
     {shouldEnhanceContent && <ImageDialogControllerComponent client:load />}

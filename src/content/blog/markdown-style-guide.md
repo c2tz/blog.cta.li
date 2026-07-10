@@ -1,6 +1,6 @@
 ---
-title: 'Markdown Style Guide'
-description: 'Here is a sample of some basic Markdown syntax that can be used when writing Markdown content in Astro.'
+title: "Markdown Style Guide"
+description: "Here is a sample of some basic Markdown syntax that can be used when writing Markdown content in Astro."
 tags:
   - styleguide
 ---
@@ -257,14 +257,18 @@ L’icône peut être remplacée par son nom Material Symbol en kebab-case, par 
 ````markdown
 {{< tabs label="Exemples de commandes" >}}
 {{< tab title="pnpm" >}}
+
 ```bash
 pnpm install
 ```
+
 {{< /tab >}}
 {{< tab title="npm" >}}
+
 ```bash
 npm install
 ```
+
 {{< /tab >}}
 {{< /tabs >}}
 ````
@@ -273,14 +277,18 @@ npm install
 
 {{< tabs label="Exemples de commandes" >}}
 {{< tab title="pnpm" >}}
+
 ```bash
 pnpm install
 ```
+
 {{< /tab >}}
 {{< tab title="npm" >}}
+
 ```bash
 npm install
 ```
+
 {{< /tab >}}
 {{< /tabs >}}
 
@@ -290,11 +298,12 @@ npm install
 
 ```markdown
 {{< material-table filter=true sort=true paginate=true pageSize=5 >}}
-| Composant | Rôle | Interactif |
-| --- | --- | --- |
-| MatTable | Données tabulaires | Oui |
-| MatTabs | Contenu à onglets | Oui |
-| Admonition | Information contextuelle | Non |
+
+| Composant  | Rôle                     | Interactif |
+| ---------- | ------------------------ | ---------- |
+| MatTable   | Données tabulaires       | Oui        |
+| MatTabs    | Contenu à onglets        | Oui        |
+| Admonition | Information contextuelle | Non        |
 
 {{< /material-table >}}
 ```
@@ -302,10 +311,11 @@ npm install
 #### Output
 
 {{< material-table filter=true sort=true paginate=true pageSize=5 >}}
-| Composant | Rôle | Interactif |
-| --- | --- | --- |
-| MatTable | Données tabulaires | Oui |
-| MatTabs | Contenu à onglets | Oui |
-| Admonition | Information contextuelle | Non |
+
+| Composant  | Rôle                     | Interactif |
+| ---------- | ------------------------ | ---------- |
+| MatTable   | Données tabulaires       | Oui        |
+| MatTabs    | Contenu à onglets        | Oui        |
+| Admonition | Information contextuelle | Non        |
 
 {{< /material-table >}}

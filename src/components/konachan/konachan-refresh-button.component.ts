@@ -47,12 +47,12 @@ interface RefreshState {
   `,
   styles: `
     .home-anime-refresh.mat-mdc-icon-button {
-      --mat-icon-button-disabled-icon-color: #fff;
-      --mdc-icon-button-disabled-icon-color: #fff;
+      --mat-icon-button-disabled-icon-color: var(--home-hero-surface-label);
+      --mdc-icon-button-disabled-icon-color: var(--home-hero-surface-label);
     }
 
     .home-anime-refresh.mat-mdc-icon-button:disabled {
-      color: #fff;
+      color: var(--home-hero-surface-label);
       opacity: 0.92;
     }
 

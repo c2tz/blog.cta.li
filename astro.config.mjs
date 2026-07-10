@@ -118,9 +118,11 @@ function isCompiledAngularMetadataImportWarning(warning) {
 function isKnownAngularSourcemapWarning(message) {
   return (
     typeof message === "string" &&
-    message.includes("@angular+platform-server") &&
+    (message.includes("@angular+platform-server") ||
+      message.includes("@angular/platform-server")) &&
     message.includes("_server-chunk.mjs") &&
-    message.includes("points to missing source files")
+    (message.includes("points to missing source files") ||
+      message.includes("points to a source file outside its package"))
   );
 }
 

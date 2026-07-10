@@ -1,8 +1,4 @@
-import {
-  SITE_EVENTS,
-  SITE_LEGACY_STORAGE_KEYS,
-  SITE_STORAGE_KEYS,
-} from "@/lib/site-contracts";
+import { SITE_EVENTS, SITE_LEGACY_STORAGE_KEYS, SITE_STORAGE_KEYS } from "@/lib/site-contracts";
 
 const CACHE_KEY = SITE_STORAGE_KEYS.ipGeolocation;
 const LEGACY_CACHE_KEY = SITE_LEGACY_STORAGE_KEYS.ipGeolocation;
@@ -85,10 +81,7 @@ function writeCache(data) {
   if (!data?.ip) return;
 
   try {
-    localStorage.setItem(
-      CACHE_KEY,
-      JSON.stringify({ ...data, updatedAt: Date.now() }),
-    );
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ ...data, updatedAt: Date.now() }));
     localStorage.removeItem(LEGACY_CACHE_KEY);
   } catch {}
 }
@@ -115,10 +108,7 @@ async function fetchLocation() {
 }
 
 async function refreshLocation() {
-  if (
-    isRequestPending ||
-    Date.now() - lastRequestAt < MIN_REQUEST_INTERVAL_MS
-  ) {
+  if (isRequestPending || Date.now() - lastRequestAt < MIN_REQUEST_INTERVAL_MS) {
     return;
   }
 

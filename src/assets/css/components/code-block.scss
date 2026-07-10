@@ -15,15 +15,12 @@ pre.astro-code {
   --code-line-info: #2196f3;
   --code-line-info-text: #1565c0;
   --code-line-info-bg: color-mix(in srgb, var(--code-line-info) 18%, transparent);
-  --code-line-add: #4caf50;
-  --code-line-add-text: #1b5e20;
+  --code-line-add: #00c853;
+  --code-line-add-text: #0b5d1e;
   --code-line-add-bg: color-mix(in srgb, var(--code-line-add) 18%, transparent);
   --code-line-remove: #f44336;
   --code-line-remove-text: #b71c1c;
   --code-line-remove-bg: color-mix(in srgb, var(--code-line-remove) 17%, transparent);
-  --code-line-warning: #ffca28;
-  --code-line-warning-text: #bf360c;
-  --code-line-warning-bg: color-mix(in srgb, var(--code-line-warning) 24%, transparent);
   --code-line-number: color-mix(in srgb, var(--site-muted) 82%, transparent);
 }
 
@@ -202,13 +199,6 @@ pre.astro-code code * {
   --code-line-background: var(--code-line-info-bg);
   --code-line-marker-color: var(--code-line-info);
   --code-line-number-color: var(--code-line-info-text);
-  --code-line-separator-color: var(--code-block-surface);
-}
-
-:where(.code-shell pre, pre.astro-code) code > .line.highlighted.warning {
-  --code-line-background: var(--code-line-warning-bg);
-  --code-line-marker-color: var(--code-line-warning);
-  --code-line-number-color: var(--code-line-warning-text);
   --code-line-separator-color: var(--code-block-surface);
 }
 

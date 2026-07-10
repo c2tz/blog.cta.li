@@ -14,10 +14,7 @@ export function PostOgTemplate({ title }: { title: string }) {
       <div
         style="display: flex; flex-direction: row; gap: 40px; align-items: center; position: absolute; top: 60px; left: 60px;"
       >
-        <img
-          style="width: 128px; height: 128px; border-radius: 12px;"
-          src="${imageDataUrl}"
-        />
+        <img style="width: 128px; height: 128px; border-radius: 12px;" src="${imageDataUrl}" />
         <div>${SITE_TITLE}</div>
       </div>
       <div style="padding: 150px; margin-top: 150px; font-size: 48px; font-weight: 700;">

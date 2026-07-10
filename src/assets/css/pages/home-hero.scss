@@ -6,29 +6,26 @@
   --home-hero-on-image: #e6e0e9;
   --home-hero-on-image-muted: #e6e0e9;
   --home-hero-accent: var(--home-hero-on-image);
-  --home-hero-tonal-container: rgb(255 255 255 / 18%);
-  --home-hero-tonal-label: var(--home-hero-on-image);
-  --home-hero-tonal-hover: rgb(255 255 255 / 24%);
+  --home-hero-surface-label: var(--home-dynamic-light-surface, var(--m3-surface-bright));
+  --home-hero-tonal-container: var(--admonition-warning);
+  --home-hero-tonal-label: #241500;
+  --home-hero-tonal-hover: color-mix(in srgb, var(--admonition-warning) 88%, white);
   @include mat.button-overrides(
     (
       tonal-container-color: var(--home-hero-tonal-container),
       tonal-label-text-color: var(--home-hero-tonal-label),
       tonal-state-layer-color: var(--home-hero-tonal-label),
       tonal-ripple-color: color-mix(in srgb, var(--home-hero-tonal-label) 14%, transparent),
-      outlined-label-text-color: #fff,
-      outlined-outline-color: #fff,
-      outlined-state-layer-color: #fff,
-      outlined-ripple-color: rgb(255 255 255 / 12%),
-      text-label-text-color: var(--home-hero-accent),
-      text-state-layer-color: var(--home-hero-accent),
-      text-ripple-color: color-mix(in srgb, var(--home-hero-accent) 12%, transparent),
+      text-label-text-color: var(--home-hero-surface-label),
+      text-state-layer-color: var(--home-hero-surface-label),
+      text-ripple-color: color-mix(in srgb, var(--home-hero-surface-label) 12%, transparent),
     )
   );
   @include mat.icon-button-overrides(
     (
-      icon-color: #fff,
-      state-layer-color: #000,
-      ripple-color: rgb(0 0 0 / 10%),
+      icon-color: var(--home-hero-surface-label),
+      state-layer-color: var(--home-hero-surface-label),
+      ripple-color: color-mix(in srgb, var(--home-hero-surface-label) 12%, transparent),
     )
   );
   position: relative;
@@ -38,7 +35,7 @@
   overflow: hidden;
   border-radius: var(--image-radius);
   background: var(--home-media-surface);
-  color: var(--home-hero-on-image);
+  color: var(--home-hero-surface-label);
   isolation: isolate;
 }
 
@@ -110,7 +107,7 @@
 .home-hero-lede {
   max-width: 30rem;
   margin: 0.9rem 0 0;
-  color: var(--home-hero-on-image-muted);
+  color: var(--home-hero-surface-label);
   font-size: 1.1rem;
   line-height: 1.5;
 }
@@ -128,7 +125,11 @@
 }
 
 .home-hero-button.mat-mdc-button {
-  color: var(--home-hero-accent);
+  color: var(--home-hero-surface-label);
+}
+
+.home-hero-button.mat-mdc-button :where(.mdc-button__label, .mat-icon) {
+  color: inherit;
 }
 
 .home-hero-button .mat-icon {
@@ -156,7 +157,7 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: #fff;
+  color: var(--home-hero-surface-label);
   font-size: 0.8125rem;
   line-height: 1.25;
   text-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
@@ -173,7 +174,7 @@ body.home-page:not([data-home-detail-view="true"]) .home-anime-credit-link:not([
 
 .home-anime-credit-link,
 .home-anime-credit-link:visited {
-  color: #fff;
+  color: var(--home-hero-surface-label);
   font-weight: 400;
   overflow: hidden;
   text-overflow: ellipsis;

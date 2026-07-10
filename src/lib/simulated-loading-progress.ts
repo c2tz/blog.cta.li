@@ -16,10 +16,7 @@ export class SimulatedLoadingProgress {
 
     this.#timer = window.setInterval(() => {
       const current = this.value();
-      const increment = Math.max(
-        1,
-        Math.round((MAX_LOADING_PROGRESS - current) * 0.12),
-      );
+      const increment = Math.max(1, Math.round((MAX_LOADING_PROGRESS - current) * 0.12));
       this.value.set(Math.min(MAX_LOADING_PROGRESS, current + increment));
     }, PROGRESS_INTERVAL_MS);
   }

@@ -20,7 +20,7 @@ export default defineConfig({
   webServer: {
     command: "pnpm build && pnpm preview:local",
     url: BASE_URL,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: process.env.PLAYWRIGHT_REUSE_SERVER === "1",
     timeout: 120_000,
   },
   projects: [

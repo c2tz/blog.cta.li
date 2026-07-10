@@ -437,6 +437,17 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
       transform: translateY(-50%);
     }
 
+    .site-search-panel-sort-select .mat-mdc-select-arrow {
+      transform: rotate(0deg);
+      transform-origin: center;
+      transition: transform 80ms linear;
+    }
+
+    .site-search-panel-sort-select.mat-select-open .mat-mdc-select-arrow,
+    .site-search-panel-sort-select[aria-expanded="true"] .mat-mdc-select-arrow {
+      transform: rotate(180deg);
+    }
+
     .site-search-panel-sort-menu.mat-mdc-select-panel {
       min-width: 14rem;
     }

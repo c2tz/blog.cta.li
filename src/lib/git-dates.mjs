@@ -71,37 +71,23 @@ export function getFileGitDates(filePath) {
       filePath,
       { skipPullRequestSummaries: true },
     ) ||
-    gitLogEntry(
-      ["log", "--follow", "--reverse", `--format=${GIT_LOG_FORMAT}`],
-      filePath,
-      { skipPullRequestSummaries: true },
-    ) ||
-    gitLogEntry(
-      ["log", "--follow", "--reverse", `--format=${GIT_LOG_FORMAT}`],
-      filePath,
-    );
+    gitLogEntry(["log", "--follow", "--reverse", `--format=${GIT_LOG_FORMAT}`], filePath, {
+      skipPullRequestSummaries: true,
+    }) ||
+    gitLogEntry(["log", "--follow", "--reverse", `--format=${GIT_LOG_FORMAT}`], filePath);
   const modified =
-    gitLogEntry(
-      ["log", "--follow", "--no-merges", `--format=${GIT_LOG_FORMAT}`],
-      filePath,
-      { skipPullRequestSummaries: true },
-    ) ||
-    gitLogEntry(
-      ["log", "--follow", `--format=${GIT_LOG_FORMAT}`],
-      filePath,
-      { skipPullRequestSummaries: true },
-    ) ||
-    gitLogEntry(
-      ["log", "--follow", "-1", `--format=${GIT_LOG_FORMAT}`],
-      filePath,
-    );
+    gitLogEntry(["log", "--follow", "--no-merges", `--format=${GIT_LOG_FORMAT}`], filePath, {
+      skipPullRequestSummaries: true,
+    }) ||
+    gitLogEntry(["log", "--follow", `--format=${GIT_LOG_FORMAT}`], filePath, {
+      skipPullRequestSummaries: true,
+    }) ||
+    gitLogEntry(["log", "--follow", "-1", `--format=${GIT_LOG_FORMAT}`], filePath);
   const fileSystemDates = getFileSystemDates(filePath);
 
   return {
     createdAt:
-      normalizeDate(created?.date) ||
-      fileSystemDates.createdAt ||
-      fileSystemDates.lastModified,
+      normalizeDate(created?.date) || fileSystemDates.createdAt || fileSystemDates.lastModified,
     createdCommit: created?.commit,
     lastModified:
       normalizeDate(modified?.date) ||

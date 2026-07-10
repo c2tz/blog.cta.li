@@ -19,9 +19,7 @@ export const GET: APIRoute = async (context) => {
     gitDates: getContentEntryGitDates("blog", post),
   }));
   posts.sort(
-    (a, b) =>
-      new Date(b.gitDates.createdAt).valueOf() -
-      new Date(a.gitDates.createdAt).valueOf(),
+    (a, b) => new Date(b.gitDates.createdAt).valueOf() - new Date(a.gitDates.createdAt).valueOf(),
   );
 
   return rss({

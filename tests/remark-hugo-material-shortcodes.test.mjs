@@ -13,11 +13,11 @@ async function render(markdown) {
 }
 
 test("parse les paramètres Hugo nommés et positionnels", () => {
-  assert.deepEqual(parseHugoShortcode('{{< icon name="child-care" label="Enfants" />}}'), {
+  assert.deepEqual(parseHugoShortcode('{{< icon name="child-care" />}}'), {
     closing: false,
     delimiter: "<",
     name: "icon",
-    named: { label: "Enfants", name: "child-care" },
+    named: { name: "child-care" },
     positional: [],
     selfClosing: true,
   });
@@ -64,11 +64,78 @@ Attention.
   assert.match(html, /data-material-symbol="warning"/);
 });
 
+test("refuse un type d’admonition inconnu avec les valeurs possibles", async () => {
+  const originalConsoleError = console.error;
+  console.error = () => {};
+  try {
+    await assert.rejects(
+      () =>
+        render(`{{< admonition type="warnng" >}}
+
+Attention.
+
+{{< /admonition >}}`),
+      /Type d’admonition inconnu : `warnng`\. Valeurs possibles : .*`warning`.*Alias acceptés : .*`attention`/,
+    );
+  } finally {
+    console.error = originalConsoleError;
+  }
+});
+
+test("distingue l’icône d’échec de l’icône danger", async () => {
+  const html = await render(`{{< admonition type="failure" >}}
+
+Échec.
+
+{{< /admonition >}}
+
+{{< admonition type="danger" >}}
+
+Danger.
+
+{{< /admonition >}}`);
+  assert.match(html, /material-admonition-failure/);
+  assert.match(html, /material-admonition-danger/);
+  assert.match(html, /material-admonition-failure[\s\S]*data-material-symbol="dangerous"/);
+  assert.match(html, /material-admonition-danger[\s\S]*data-material-symbol="report"/);
+});
+
+test("indique visuellement les admonitions pliables avec une icône Material Symbol", async () => {
+  const html =
+    await render(`{{< admonition type="info" title="Détails" collapsible=true open=true >}}
+
+Ce bloc est ouvert par défaut, mais peut être replié.
+
+{{< /admonition >}}`);
+  assert.match(html, /<details[^>]*open/);
+  assert.match(html, /<summary[^>]*material-admonition-title/);
+  assert.match(html, /material-admonition-toggle-indicator/);
+  assert.match(html, /material-admonition-toggle-icon/);
+  assert.match(html, /data-material-symbol="expand-more"/);
+});
+
 test("accepte une icône Material Symbol nommée au milieu d’une phrase", async () => {
-  const html = await render('Enfants {{< icon name="children-face" label="Enfants" />}} présents.');
+  const html = await render('Voici une icône {{< icon "children-face" />}} dans une phrase.');
   assert.match(html, /data-material-symbol="children-face"/);
-  assert.match(html, /aria-label="Enfants"/);
-  assert.match(html, /Enfants .* présents\./);
+  assert.match(html, /aria-hidden="true"/);
+  assert.match(html, /Voici une icône .* dans une phrase\./);
+});
+
+test("rend les badges inline, raccourcis clavier et progressions", async () => {
+  const html = await render(`Statut {{< inline-badge label="API" value="v2" tone="success" />}}.
+
+Raccourci {{< kbd "Ctrl" "K" />}}.
+
+{{< progress label="Migration" value=72 tone="info" />}}`);
+  assert.match(html, /material-inline-badge-success/);
+  assert.match(html, /material-inline-badge-label[\s\S]*API/);
+  assert.match(html, /material-inline-badge-value[\s\S]*v2/);
+  assert.match(html, /material-kbd-sequence/);
+  assert.match(html, /<kbd class="material-kbd">Ctrl<\/kbd>/);
+  assert.match(html, /<kbd class="material-kbd">K<\/kbd>/);
+  assert.match(html, /role="progressbar"/);
+  assert.match(html, /aria-valuenow="72"/);
+  assert.match(html, /material-progress-info/);
 });
 
 test("rend les onglets et tableaux uniquement via leurs shortcodes", async () => {

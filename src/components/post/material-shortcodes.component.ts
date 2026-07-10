@@ -16,9 +16,11 @@ import { MatPaginator, MatPaginatorModule } from "@angular/material/paginator";
 import { MatSort, MatSortModule } from "@angular/material/sort";
 import { MatTableDataSource, MatTableModule } from "@angular/material/table";
 import { MatTabsModule } from "@angular/material/tabs";
+import { DomSanitizer } from "@angular/platform-browser";
+import type { SafeHtml } from "@angular/platform-browser";
 
 interface MaterialTabData {
-  readonly html: string;
+  readonly html: SafeHtml;
   readonly title: string;
 }
 
@@ -27,7 +29,12 @@ interface MaterialTableColumn {
   readonly label: string;
 }
 
-type MaterialTableRow = Record<string, string>;
+interface MaterialHtmlValue {
+  readonly html: SafeHtml;
+  readonly text: string;
+}
+
+type MaterialTableRow = Record<string, MaterialHtmlValue>;
 
 interface MountedShortcode {
   readonly componentRef: ComponentRef<unknown>;
@@ -51,7 +58,6 @@ function textFromHtml(html: string) {
       class="material-shortcode-tabs"
       animationDuration="0ms"
       [attr.aria-label]="label"
-      disableRipple
       preserveContent
     >
       @for (tab of tabs; track tab.title) {
@@ -105,7 +111,7 @@ class MaterialTabsViewComponent {
               {{ column.label }}
             </th>
             <td mat-cell *matCellDef="let row">
-              <span [innerHTML]="row[column.key]"></span>
+              <span [innerHTML]="row[column.key].html"></span>
             </td>
           </ng-container>
         }
@@ -146,8 +152,8 @@ class MaterialTableViewComponent implements AfterViewInit {
 
   constructor() {
     this.dataSource.filterPredicate = (row, filter) =>
-      this.displayedColumns.some((key) => textFromHtml(row[key] ?? "").includes(filter));
-    this.dataSource.sortingDataAccessor = (row, key) => textFromHtml(row[key] ?? "");
+      this.displayedColumns.some((key) => row[key]?.text.includes(filter));
+    this.dataSource.sortingDataAccessor = (row, key) => row[key]?.text ?? "";
   }
 
   ngAfterViewInit() {
@@ -196,6 +202,7 @@ class MaterialTableViewComponent implements AfterViewInit {
 export class MaterialShortcodeControllerComponent implements AfterViewInit, OnDestroy {
   private readonly applicationRef = inject(ApplicationRef);
   private readonly environmentInjector = inject(EnvironmentInjector);
+  private readonly sanitizer = inject(DomSanitizer);
   private readonly mounted: MountedShortcode[] = [];
   private readonly handlePageLoad = () => this.enhance();
 
@@ -222,11 +229,16 @@ export class MaterialShortcodeControllerComponent implements AfterViewInit, OnDe
     document.querySelectorAll<HTMLElement>("[data-material-tabs]").forEach((host) => {
       if (host.dataset["angularMounted"] === "true") return;
       const tabs = Array.from(host.querySelectorAll<HTMLElement>(":scope > [data-material-tab]"))
-        .map((panel) => ({
-          title: panel.dataset["title"]?.trim() || "Onglet",
-          html: panel.innerHTML,
-        }))
-        .filter((tab) => tab.html.trim());
+        .map((panel) => {
+          const html = panel.innerHTML;
+          return {
+            title: panel.dataset["title"]?.trim() || "Onglet",
+            html,
+            safeHtml: this.trustStaticHtml(html),
+          };
+        })
+        .filter((tab) => tab.html.trim())
+        .map(({ title, safeHtml }) => ({ title, html: safeHtml }));
       if (!tabs.length) return;
 
       const componentRef = createComponent(MaterialTabsViewComponent, {
@@ -252,10 +264,16 @@ export class MaterialShortcodeControllerComponent implements AfterViewInit, OnDe
       }));
       const rows = Array.from(source.querySelectorAll<HTMLTableRowElement>("tbody tr")).map((row) =>
         Object.fromEntries(
-          columns.map((column, index) => [
-            column.key,
-            row.cells.item(index)?.innerHTML.trim() ?? "",
-          ]),
+          columns.map((column, index) => {
+            const html = row.cells.item(index)?.innerHTML.trim() ?? "";
+            return [
+              column.key,
+              {
+                html: this.trustStaticHtml(html),
+                text: textFromHtml(html),
+              },
+            ];
+          }),
         ),
       );
       if (!columns.length) return;
@@ -279,6 +297,10 @@ export class MaterialShortcodeControllerComponent implements AfterViewInit, OnDe
     this.applicationRef.attachView(componentRef.hostView);
     componentRef.changeDetectorRef.detectChanges();
     this.mounted.push({ host, componentRef });
+  }
+
+  private trustStaticHtml(html: string) {
+    return this.sanitizer.bypassSecurityTrustHtml(html);
   }
 
   private removeDisconnected() {

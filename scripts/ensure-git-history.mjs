@@ -27,9 +27,7 @@ function hasGitRepository() {
 }
 
 function hasRemote(remoteName) {
-  return tryGit(["remote"])
-    .split(/\s+/)
-    .includes(remoteName);
+  return tryGit(["remote"]).split(/\s+/).includes(remoteName);
 }
 
 function inferRemoteUrl() {
@@ -76,14 +74,7 @@ function ensureRemote(remoteName) {
 }
 
 function fetchCompleteHistory() {
-  const args = [
-    "fetch",
-    "--force",
-    "--prune",
-    "--tags",
-    REMOTE_NAME,
-    BRANCH_REFSPEC,
-  ];
+  const args = ["fetch", "--force", "--prune", "--tags", REMOTE_NAME, BRANCH_REFSPEC];
 
   if (isShallowRepository()) {
     args.splice(1, 0, "--unshallow");
@@ -94,9 +85,7 @@ function fetchCompleteHistory() {
 }
 
 if (!hasGitRepository()) {
-  console.warn(
-    "Dépôt Git absent ; build poursuivi avec les dates du système de fichiers.",
-  );
+  console.warn("Dépôt Git absent ; build poursuivi avec les dates du système de fichiers.");
   process.exit(0);
 }
 

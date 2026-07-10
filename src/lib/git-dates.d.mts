@@ -6,7 +6,4 @@ export interface GitDates {
 }
 
 export function getFileGitDates(filePath: string): GitDates;
-export function getContentEntryGitDates(
-  collection: string,
-  entry: unknown,
-): GitDates;
+export function getContentEntryGitDates(collection: string, entry: unknown): GitDates;

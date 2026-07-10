@@ -80,6 +80,25 @@
   color: var(--material-admonition-title-icon-color);
 }
 
+.material-admonition-title .material-admonition-toggle-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-inline-start: auto;
+  color: var(--material-admonition-title-icon-color);
+  line-height: 1;
+  transform: rotate(0deg);
+  transform-origin: center;
+  transition: transform 180ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.material-admonition[open] > .material-admonition-title .material-admonition-toggle-icon {
+  transform: rotate(180deg);
+}
+
 summary.material-admonition-title {
   cursor: pointer;
 }
@@ -99,10 +118,127 @@ summary.material-admonition-title::-webkit-details-marker {
   font-size: 1.25rem;
 }
 
+.material-admonition-toggle-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: 1.5rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
 .material-shortcode-inline-icon {
   margin-inline: 0.12em;
   font-size: 1.2em;
   vertical-align: -0.18em;
+}
+
+.material-inline-badge {
+  --material-inline-badge-color: var(--site-muted);
+
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35em;
+  max-width: 100%;
+  padding: 0.08rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--material-inline-badge-color) 72%, var(--site-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--material-inline-badge-color) 14%, transparent);
+  color: var(--site-text);
+  font-size: 0.86em;
+  font-weight: 600;
+  line-height: 1.45;
+  vertical-align: 0.08em;
+}
+
+.material-inline-badge-info {
+  --material-inline-badge-color: var(--admonition-info);
+}
+
+.material-inline-badge-success {
+  --material-inline-badge-color: var(--admonition-success);
+}
+
+.material-inline-badge-warning {
+  --material-inline-badge-color: var(--admonition-warning);
+}
+
+.material-inline-badge-danger {
+  --material-inline-badge-color: var(--admonition-danger);
+}
+
+.material-inline-badge-value {
+  color: var(--site-text);
+  font-family: var(--site-mono-font);
+}
+
+.material-kbd-sequence {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  color: var(--site-muted);
+}
+
+.material-kbd-sequence > kbd {
+  color: var(--m3-on-surface);
+}
+
+.material-progress {
+  --material-progress-color: var(--admonition-info);
+
+  display: grid;
+  gap: 0.55rem;
+  margin-block: 1.25rem;
+  color: var(--site-text);
+}
+
+.material-progress-neutral {
+  --material-progress-color: var(--site-muted);
+}
+
+.material-progress-info {
+  --material-progress-color: var(--admonition-info);
+}
+
+.material-progress-success {
+  --material-progress-color: var(--admonition-success);
+}
+
+.material-progress-warning {
+  --material-progress-color: var(--admonition-warning);
+}
+
+.material-progress-danger {
+  --material-progress-color: var(--admonition-danger);
+}
+
+.material-progress-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.material-progress-value {
+  color: var(--site-text);
+  font-family: var(--site-mono-font);
+  font-size: 0.9rem;
+}
+
+.material-progress-track {
+  display: block;
+  height: 0.55rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--material-progress-color) 18%, transparent);
+}
+
+.material-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--material-progress-color);
 }
 
 .material-admonition-content {

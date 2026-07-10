@@ -41,6 +41,10 @@ async function expectNoPageOverflow(page: Page) {
   expect(overflow).toBeLessThanOrEqual(2);
 }
 
+async function gotoRoute(page: Page, route: string) {
+  await page.goto(route, { waitUntil: "domcontentloaded" });
+}
+
 test.beforeEach(async ({ page }) => {
   const runtimeErrors: string[] = [];
   pageRuntimeErrors.set(page, runtimeErrors);
@@ -58,7 +62,7 @@ test.afterEach(async ({ page }) => {
 
 for (const route of ROUTES) {
   test(`renders ${route} without document overflow`, async ({ page }) => {
-    await page.goto(route);
+    await gotoRoute(page, route);
 
     await expectResolvedTheme(page);
     await expect(page.locator("main")).toBeVisible();
@@ -68,7 +72,7 @@ for (const route of ROUTES) {
 }
 
 test("keeps latest posts visible on the home page", async ({ page }) => {
-  await page.goto("/");
+  await gotoRoute(page, "/");
 
   await expect(page.getByRole("heading", { name: "Derniers articles" })).toBeVisible();
   await expect(page.locator(".home-post-title").first()).toBeVisible();
@@ -77,7 +81,7 @@ test("keeps latest posts visible on the home page", async ({ page }) => {
 });
 
 test("renders the cookie preferences controls", async ({ page }) => {
-  await page.goto("/cookies/#modifier-vos-choix-cookies");
+  await gotoRoute(page, "/cookies/#modifier-vos-choix-cookies");
 
   await expect(page.getByRole("heading", { name: "Modifier vos choix cookies" })).toBeVisible();
   await expect(page.locator(".cookie-preferences-toggle-group")).toBeVisible();
@@ -87,7 +91,7 @@ test("renders the cookie preferences controls", async ({ page }) => {
 });
 
 test("renders shortcode code blocks with highlighted lines and copy controls", async ({ page }) => {
-  await page.goto("/posts/hugo-material-shortcodes/");
+  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
 
   await expect(page.locator(".code-shell").first()).toBeVisible();
   await expect(page.locator(".code-copy-button").first()).toBeVisible();
@@ -99,7 +103,7 @@ test("renders shortcode code blocks with highlighted lines and copy controls", a
 });
 
 test("keeps Giscus disabled behind the privacy choice", async ({ page }) => {
-  await page.goto("/posts/hugo-material-shortcodes/");
+  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
 
   await expect(page.getByRole("heading", { name: "Commentaires" })).toBeVisible();
   await expect(page.getByText("Les commentaires externes sont désactivés par")).toBeVisible();

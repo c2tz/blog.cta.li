@@ -5,8 +5,9 @@ import remarkHugoMaterialShortcodes, {
   parseHugoShortcode,
 } from "../src/lib/remark-hugo-material-shortcodes.mjs";
 
-async function render(markdown) {
+async function render(markdown, options = {}) {
   const processor = await createMarkdownProcessor({
+    ...options,
     remarkPlugins: [remarkHugoMaterialShortcodes],
   });
   return (await processor.render(markdown)).code;
@@ -24,6 +25,15 @@ test("parse les paramètres Hugo nommés et positionnels", () => {
   assert.deepEqual(parseHugoShortcode('{{< icon "children-face" />}}')?.positional, [
     "children-face",
   ]);
+  assert.equal(parseHugoShortcode("{{< button href=”/” label=”Accueil” />}}")?.named.href, "/");
+});
+
+test("préserve les URL de boutons quand Smartypants transforme les guillemets", async () => {
+  const html = await render('{{< button href="/" variant="text" label="Accueil" />}}', {
+    smartypants: true,
+  });
+  assert.match(html, /<md-text-button[^>]*href="\/"/);
+  assert.doesNotMatch(html, /[“”]/);
 });
 
 test("préserve le Markdown standard sans activation implicite", async () => {
@@ -168,6 +178,26 @@ test("refuse les URL de shortcode exécutables", async () => {
     await assert.rejects(
       () => render('{{< button href="javascript:alert(1)" label="Dangereux" />}}'),
       /URL invalide pour button\.href/,
+    );
+  } finally {
+    console.error = originalConsoleError;
+  }
+});
+
+test("refuse les libellés de bouton composés de plusieurs blocs Markdown", async () => {
+  const originalConsoleError = console.error;
+  console.error = () => {};
+  try {
+    await assert.rejects(
+      () =>
+        render(`{{< button href="/" >}}
+
+Premier paragraphe.
+
+Second paragraphe.
+
+{{< /button >}}`),
+      /libellé d’un bouton doit tenir sur une seule ligne Markdown/,
     );
   } finally {
     console.error = originalConsoleError;

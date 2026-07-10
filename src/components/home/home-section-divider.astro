@@ -1,0 +1,28 @@
+---
+interface Props {
+  spacing?: "section" | "end";
+}
+
+const { spacing = "section" } = Astro.props;
+---
+
+<div
+  class:list={["home-section-divider-host", { "home-section-divider-host-end": spacing === "end" }]}
+>
+  <md-divider class="home-section-divider"></md-divider>
+</div>
+
+<style>
+  .home-section-divider-host {
+    display: block;
+    margin-block: 0 1rem;
+  }
+
+  .home-section-divider-host-end {
+    margin-block: 0;
+  }
+
+  .home-section-divider {
+    --md-divider-color: var(--md-sys-color-outline-variant);
+  }
+</style>

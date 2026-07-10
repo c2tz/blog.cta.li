@@ -1,8 +1,4 @@
 ---
-import { HomeHeroActionsComponent } from "./home-hero-actions.component";
-import { KonachanLoadingIndicatorComponent } from "@/components/konachan/konachan-loading-indicator.component";
-import { KonachanRatingToggleComponent } from "@/components/konachan/konachan-rating-toggle.component";
-import { KonachanRefreshButtonComponent } from "@/components/konachan/konachan-refresh-button.component";
 import {
   SITE_COOKIE_NAMES,
   SITE_CACHE_NAMES,
@@ -38,6 +34,7 @@ const konachanClientConfig = {
     ratingChange: SITE_EVENTS.konachanRatingChange,
     refreshRequest: SITE_EVENTS.konachanRefreshRequest,
     refreshState: SITE_EVENTS.konachanRefreshState,
+    tooltipHide: SITE_EVENTS.tooltipHide,
   },
   explicitContentCookieName: SITE_COOKIE_NAMES.explicitContentAcknowledgement,
   explicitContentStorageKey: SITE_STORAGE_KEYS.explicitContentAcknowledgement,
@@ -63,20 +60,102 @@ const konachanClientConfigJson = JSON.stringify({
     aria-hidden="true"
   >
   </div>
-  <KonachanLoadingIndicatorComponent client:idle />
-  <KonachanRatingToggleComponent client:idle />
+  <div class="home-anime-loading-host" data-konachan-loading hidden>
+    <span class="home-anime-loading">
+      <md-circular-progress
+        class="home-anime-loading-progress"
+        indeterminate
+        four-color
+        aria-label="Chargement de l'image Konachan"></md-circular-progress>
+    </span>
+  </div>
+
+  <div
+    class="home-anime-rating-picker"
+    data-konachan-rating-picker
+    role="group"
+    aria-label="Niveau Konachan"
+  >
+    <md-filled-tonal-icon-button
+      type="button"
+      class="home-anime-rating-trigger is-safe"
+      data-konachan-rating-trigger
+      title="Safe"
+      aria-expanded="false"
+      aria-controls="home-anime-rating-options"
+      aria-label="Safe"
+    >
+      <md-icon aria-hidden="true">&#xEF80;</md-icon>
+    </md-filled-tonal-icon-button>
+
+    <div
+      id="home-anime-rating-options"
+      class="home-anime-rating-options"
+      role="group"
+      aria-label="Choisir le niveau Konachan"
+      hidden
+    >
+      <md-icon-button
+        type="button"
+        class="home-anime-rating-option is-safe"
+        data-konachan-rating-option="safe"
+        aria-label="Choisir le niveau Konachan Safe"
+        title="Safe"
+        hidden
+      >
+        <md-icon aria-hidden="true">&#xEF80;</md-icon>
+      </md-icon-button>
+      <md-icon-button
+        type="button"
+        class="home-anime-rating-option is-questionable"
+        data-konachan-rating-option="questionable"
+        aria-label="Choisir le niveau Konachan Questionnable"
+        title="Questionnable"
+      >
+        <md-icon aria-hidden="true">&#xF8EA;</md-icon>
+      </md-icon-button>
+      <md-icon-button
+        type="button"
+        class="home-anime-rating-option is-explicit"
+        data-konachan-rating-option="explicit"
+        aria-label="Choisir le niveau Konachan Explicit"
+        title="Explicit"
+        hidden
+      >
+        <md-icon aria-hidden="true">&#xF8FD;</md-icon>
+      </md-icon-button>
+    </div>
+  </div>
 
   <div class="home-hero-content">
     <h1 id="home-hero-title">{title}</h1>
     <p class="home-hero-lede">
       {lede}
     </p>
-    <HomeHeroActionsComponent
-      primaryActionHref={primaryActionHref}
-      primaryActionLabel={primaryActionLabel}
-      secondaryActionHref={secondaryActionHref}
-      secondaryActionLabel={secondaryActionLabel}
-    />
+    <nav class="home-hero-actions" aria-label="Navigation d'accueil">
+      <md-elevated-button
+        class="home-hero-button"
+        href={primaryActionHref}
+        aria-label={primaryActionLabel.toLocaleLowerCase("fr") === "voir plus"
+          ? "Voir plus d’articles"
+          : primaryActionLabel}
+        has-icon
+      >
+        <md-icon slot="icon" aria-hidden="true">&#xE5D3;</md-icon>
+        {primaryActionLabel}
+      </md-elevated-button>
+      <md-text-button
+        class="home-hero-button"
+        href={secondaryActionHref}
+        aria-label={secondaryActionLabel.toLocaleLowerCase("fr") === "à propos"
+          ? "À propos de ce site"
+          : secondaryActionLabel}
+        has-icon
+      >
+        <md-icon slot="icon" aria-hidden="true">&#xE89E;</md-icon>
+        {secondaryActionLabel}
+      </md-text-button>
+    </nav>
   </div>
 
   <aside class="home-anime-credit" data-konachan-credit>
@@ -90,7 +169,17 @@ const konachanClientConfigJson = JSON.stringify({
     >
       Voir la source
     </a>
-    <KonachanRefreshButtonComponent client:idle />
+    <md-icon-button
+      type="button"
+      class="home-anime-refresh"
+      data-konachan-refresh
+      aria-busy="false"
+      aria-label="Actualiser l'image"
+      title="Actualiser l'image"
+    >
+      <md-icon aria-hidden="true">&#xE5D5;</md-icon>
+    </md-icon-button>
+    <span class="sr-only" role="status" aria-live="polite" data-konachan-status></span>
   </aside>
 </section>
 
@@ -98,6 +187,13 @@ const konachanClientConfigJson = JSON.stringify({
 
 <script>
   import { initHomeKonachanBackgroundFromDocument } from "@/assets/js/app/home-konachan-background.js";
+  import { initHomeKonachanControlsFromDocument } from "@/assets/js/app/home-konachan-controls.js";
 
-  initHomeKonachanBackgroundFromDocument();
+  const init = () => {
+    initHomeKonachanControlsFromDocument();
+    initHomeKonachanBackgroundFromDocument();
+  };
+
+  init();
+  document.addEventListener("astro:page-load", init);
 </script>

@@ -1,4 +1,4 @@
-name: Verify Astro and Angular project
+name: Verify Astro and Material Web project
 
 on:
   pull_request:
@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   check-build-and-headers:
-    name: Check Astro, Angular, and security headers
+    name: Check Astro, Material Web, and security headers
     runs-on: ubuntu-latest
     timeout-minutes: 15
 

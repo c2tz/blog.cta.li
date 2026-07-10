@@ -1,0 +1,425 @@
+---
+interface Props {
+  repo?: string;
+  repoId?: string;
+  category?: string;
+  categoryId?: string;
+  mapping?: string;
+  strict?: string;
+  reactionsEnabled?: string;
+  emitMetadata?: string;
+  inputPosition?: string;
+  lang?: string;
+}
+
+const {
+  repo = "",
+  repoId = "",
+  category = "",
+  categoryId = "",
+  mapping = "pathname",
+  strict = "0",
+  reactionsEnabled = "1",
+  emitMetadata = "0",
+  inputPosition = "bottom",
+  lang = "fr",
+} = Astro.props;
+const configured = Boolean(repo.trim() && repoId.trim() && category.trim() && categoryId.trim());
+---
+
+<section
+  class="giscus-comments"
+  aria-label="Commentaires"
+  data-pagefind-ignore
+  data-giscus-comments
+  data-repo={repo}
+  data-repo-id={repoId}
+  data-category={category}
+  data-category-id={categoryId}
+  data-mapping={mapping}
+  data-strict={strict}
+  data-reactions-enabled={reactionsEnabled}
+  data-emit-metadata={emitMetadata}
+  data-input-position={inputPosition}
+  data-lang={lang}
+  data-configured={String(configured)}
+>
+  <header class="giscus-comments-header">
+    <div class="giscus-comments-intro">
+      <h2>Commentaires</h2>
+      <p>Avant de participer, merci de respecter les règles de conduite du projet.</p>
+    </div>
+    <div class="giscus-comments-actions">
+      <md-text-button
+        class="giscus-comments-conduct-link"
+        href="https://raw.githubusercontent.com/c2tz/ct-blog-comments/refs/heads/main/CODE_OF_CONDUCT.md"
+        target="_blank"
+        aria-label="Code de conduite (nouvel onglet)"
+        has-icon
+      >
+        <md-icon slot="icon" aria-hidden="true">&#xE89E;</md-icon>
+        Code de conduite
+      </md-text-button>
+      <md-filled-tonal-button
+        type="button"
+        class="giscus-comments-accept-button"
+        data-giscus-accept
+        disabled
+      >
+        J’accepte
+      </md-filled-tonal-button>
+    </div>
+  </header>
+
+  {
+    !configured && (
+      <p id="giscus-comments-config" class="giscus-comments-config">
+        Configuration Giscus en attente : ajoutez le repo public, le repo ID, la catégorie et le
+        category ID.
+      </p>
+    )
+  }
+
+  <p class="giscus-comments-config giscus-comments-privacy" data-giscus-privacy>
+    Les commentaires externes sont désactivés par
+    <a href="/cookies/#modifier-vos-choix-cookies">votre choix de confidentialité</a>.
+  </p>
+
+  <div class="giscus-comments-panel-content" data-giscus-panel aria-busy="false" hidden>
+    <md-linear-progress
+      class="giscus-comments-progress"
+      data-giscus-progress
+      indeterminate
+      aria-label="Chargement des commentaires"
+      hidden></md-linear-progress>
+    <p class="giscus-comments-error" data-giscus-error hidden>
+      Les commentaires ne sont pas disponibles pour le moment.
+    </p>
+    <div class="giscus-comments-frame" data-giscus-frame></div>
+  </div>
+</section>
+
+<script>
+  import { SITE_COOKIE_NAMES, SITE_EVENTS, SITE_STORAGE_KEYS } from "@/lib/site-contracts";
+
+  type SiteTheme = "dark" | "light";
+  type MaterialButton = HTMLElement & { disabled: boolean };
+  type CookieConsentWindow = Window & {
+    cookieConsent?: {
+      acceptedService(service: string, category: string): boolean;
+      isCategoryAccepted(category: string): boolean;
+    };
+  };
+  const GISCUS_ORIGIN = "https://giscus.app";
+  const GISCUS_LOAD_TIMEOUT_MS = 30_000;
+  const THEME_VERSION = "20260708-emoji-popover";
+  const THEME_DELAYS = [0, 150, 500, 1200];
+
+  const readCookie = (name: string) => {
+    const prefix = `${encodeURIComponent(name)}=`;
+    const cookie = document.cookie
+      .split(";")
+      .map((part) => part.trim())
+      .find((part) => part.startsWith(prefix));
+    if (!cookie) return null;
+    try {
+      return decodeURIComponent(cookie.slice(prefix.length));
+    } catch {
+      return null;
+    }
+  };
+  const acceptedPreviously = () => {
+    try {
+      const value = localStorage.getItem(SITE_STORAGE_KEYS.giscusCommentsEnabled);
+      const parsed = JSON.parse(value || "null");
+      if (parsed?.version === 1 && parsed.accepted === true) return true;
+      if (value === "true" || value === "accepted") return true;
+    } catch {}
+    return readCookie(SITE_COOKIE_NAMES.giscusCommentsEnabled) === "accepted";
+  };
+  const rememberAcceptance = () => {
+    const state = { accepted: true, updatedAt: new Date().toISOString(), version: 1 };
+    try {
+      localStorage.setItem(SITE_STORAGE_KEYS.giscusCommentsEnabled, JSON.stringify(state));
+    } catch {}
+    document.cookie = `${SITE_COOKIE_NAMES.giscusCommentsEnabled}=accepted; Max-Age=31536000; Path=/; SameSite=Lax`;
+  };
+  const optionalServicesAllowed = () => {
+    try {
+      const cookieConsent = (window as CookieConsentWindow).cookieConsent;
+      return Boolean(
+        cookieConsent?.acceptedService("giscus", "functionality") ||
+        cookieConsent?.isCategoryAccepted("functionality"),
+      );
+    } catch {
+      return false;
+    }
+  };
+  const currentTheme = (): SiteTheme =>
+    document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+  const themeUrl = (theme: SiteTheme) => {
+    if (location.protocol !== "https:") return theme === "dark" ? "dark_dimmed" : "light";
+    const url = new URL(`/giscus/ct-${theme}.css`, location.origin);
+    url.searchParams.set("v", THEME_VERSION);
+    return url.toString();
+  };
+
+  function enhanceGiscus(root: HTMLElement) {
+    if (root.dataset.enhanced === "true") return;
+    root.dataset.enhanced = "true";
+    const accept = root.querySelector<MaterialButton>("[data-giscus-accept]");
+    const privacy = root.querySelector<HTMLElement>("[data-giscus-privacy]");
+    const panel = root.querySelector<HTMLElement>("[data-giscus-panel]");
+    const progress = root.querySelector<HTMLElement>("[data-giscus-progress]");
+    const error = root.querySelector<HTMLElement>("[data-giscus-error]");
+    const frame = root.querySelector<HTMLElement>("[data-giscus-frame]");
+    if (!accept || !privacy || !panel || !progress || !error || !frame) return;
+
+    const configured = root.dataset.configured === "true";
+    let accepted = acceptedPreviously();
+    let allowed = false;
+    let loaded = false;
+    let loading = false;
+    let revealTimer = 0;
+    let frameLoadTimer = 0;
+    let frameObserver: MutationObserver | null = null;
+    let observedIframe: HTMLIFrameElement | null = null;
+
+    const stopFrameWatch = () => {
+      frameObserver?.disconnect();
+      frameObserver = null;
+      if (frameLoadTimer) window.clearTimeout(frameLoadTimer);
+      frameLoadTimer = 0;
+      observedIframe?.removeEventListener("load", handleFrameLoaded);
+      observedIframe = null;
+    };
+    const endLoading = () => {
+      loading = false;
+      panel.setAttribute("aria-busy", "false");
+      if (revealTimer) clearTimeout(revealTimer);
+      revealTimer = 0;
+      progress.hidden = true;
+    };
+    const postTheme = () => {
+      const iframe = frame.querySelector<HTMLIFrameElement>("iframe.giscus-frame");
+      if (!iframe?.src) return;
+      try {
+        if (new URL(iframe.src).origin !== GISCUS_ORIGIN) return;
+      } catch {
+        return;
+      }
+      iframe.contentWindow?.postMessage(
+        { giscus: { setConfig: { theme: themeUrl(currentTheme()) } } },
+        GISCUS_ORIGIN,
+      );
+    };
+    function handleFrameLoaded() {
+      if (!loading) return;
+      loaded = true;
+      stopFrameWatch();
+      endLoading();
+      THEME_DELAYS.forEach((delay) => setTimeout(postTheme, delay));
+    }
+    const observeGiscusFrame = () => {
+      const iframe = frame.querySelector<HTMLIFrameElement>("iframe.giscus-frame");
+      if (!iframe || iframe === observedIframe) return;
+
+      observedIframe?.removeEventListener("load", handleFrameLoaded);
+      observedIframe = iframe;
+      iframe.addEventListener("load", handleFrameLoaded, { once: true });
+    };
+    const beginFrameWatch = () => {
+      stopFrameWatch();
+      frameObserver = new MutationObserver(observeGiscusFrame);
+      frameObserver.observe(frame, { childList: true, subtree: true });
+      observeGiscusFrame();
+      frameLoadTimer = window.setTimeout(() => {
+        if (!loading) return;
+        loaded = false;
+        error.hidden = false;
+        stopFrameWatch();
+        endLoading();
+      }, GISCUS_LOAD_TIMEOUT_MS);
+    };
+    const load = () => {
+      if (!configured || !accepted || !allowed || loaded || loading) return;
+      panel.hidden = false;
+      error.hidden = true;
+      loading = true;
+      panel.setAttribute("aria-busy", "true");
+      frame.replaceChildren();
+      beginFrameWatch();
+      revealTimer = window.setTimeout(() => {
+        revealTimer = 0;
+        if (loading) progress.hidden = false;
+      }, 200);
+
+      const script = document.createElement("script");
+      script.src = `${GISCUS_ORIGIN}/client.js`;
+      script.async = true;
+      script.crossOrigin = "anonymous";
+      for (const [name, value] of [
+        ["repo", root.dataset.repo],
+        ["repo-id", root.dataset.repoId],
+        ["category", root.dataset.category],
+        ["category-id", root.dataset.categoryId],
+        ["mapping", root.dataset.mapping],
+        ["strict", root.dataset.strict],
+        ["reactions-enabled", root.dataset.reactionsEnabled],
+        ["emit-metadata", root.dataset.emitMetadata],
+        ["input-position", root.dataset.inputPosition],
+        ["lang", root.dataset.lang],
+      ]) {
+        script.setAttribute(`data-${name}`, value ?? "");
+      }
+      script.setAttribute("data-theme", themeUrl(currentTheme()));
+      script.setAttribute("data-loading", "lazy");
+      script.addEventListener("error", () => {
+        loaded = false;
+        error.hidden = false;
+        stopFrameWatch();
+        endLoading();
+      });
+      frame.append(script);
+    };
+    const syncConsent = () => {
+      allowed = optionalServicesAllowed();
+      privacy.hidden = allowed;
+      accept.disabled = !configured || accepted || !allowed;
+      if (accepted && allowed) setTimeout(load);
+    };
+
+    accept.addEventListener("click", () => {
+      if (!configured || accepted || !allowed) return;
+      rememberAcceptance();
+      accepted = true;
+      accept.disabled = true;
+      setTimeout(load);
+    });
+    document.addEventListener(SITE_EVENTS.consentChange, syncConsent);
+    new MutationObserver(postTheme).observe(document.documentElement, {
+      attributeFilter: ["data-theme"],
+      attributes: true,
+    });
+    syncConsent();
+  }
+
+  const init = () =>
+    document.querySelectorAll<HTMLElement>("[data-giscus-comments]").forEach(enhanceGiscus);
+  init();
+  document.addEventListener("astro:page-load", init);
+</script>
+
+<style>
+  .giscus-comments {
+    display: block;
+    padding-block-start: 1rem;
+  }
+
+  .giscus-comments-config,
+  .giscus-comments-error {
+    margin-block: 0;
+    color: var(--site-muted);
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .giscus-comments-config {
+    margin-block-start: 1rem;
+    margin-block-end: 0.5rem;
+    color: var(--site-link);
+  }
+
+  .giscus-comments-privacy {
+    color: var(--site-text);
+  }
+
+  .giscus-comments-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .giscus-comments-intro {
+    min-width: 0;
+  }
+
+  .giscus-comments-intro h2 {
+    margin-block: 0 0.25rem;
+    color: var(--site-text);
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .giscus-comments-intro p {
+    margin: 0;
+    color: var(--site-muted);
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .giscus-comments-actions {
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+
+  .giscus-comments-conduct-link,
+  .giscus-comments-accept-button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .giscus-comments-panel-content {
+    position: relative;
+    min-height: 7rem;
+    padding-block-start: 1rem;
+  }
+
+  .giscus-comments-progress {
+    position: absolute;
+    inset: 0 0 auto;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 9999px;
+    --md-linear-progress-active-indicator-color: var(--site-link);
+    --md-linear-progress-active-indicator-height: 0.18rem;
+    --md-linear-progress-track-color: color-mix(in srgb, var(--site-link) 16%, transparent);
+    --md-linear-progress-track-height: 0.18rem;
+    --md-linear-progress-track-shape: 9999px;
+  }
+
+  .giscus-comments-progress[hidden] {
+    display: none;
+  }
+
+  .giscus-comments-frame {
+    min-width: 0;
+  }
+
+  .giscus-comments-error {
+    margin-block-start: 1rem;
+  }
+
+  @media (max-width: 520px) {
+    .giscus-comments-header {
+      align-items: center;
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .giscus-comments-actions {
+      justify-content: center;
+      width: 100%;
+    }
+
+    .giscus-comments-conduct-link,
+    .giscus-comments-accept-button {
+      align-self: center;
+    }
+  }
+</style>

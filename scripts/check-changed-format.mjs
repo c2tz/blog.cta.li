@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
 
 const SUPPORTED_EXTENSIONS = new Set([
   ".astro",
@@ -64,7 +65,7 @@ const files = [
     ...changedFilesFrom(["--cached"]),
     ...untrackedFiles(),
   ]),
-].filter((file) => SUPPORTED_EXTENSIONS.has(extensionOf(file)));
+].filter((file) => existsSync(file) && SUPPORTED_EXTENSIONS.has(extensionOf(file)));
 
 if (files.length === 0) {
   console.info(`No changed files need Prettier checks against ${baseRef}.`);

@@ -45,10 +45,8 @@ async function gotoRoute(page: Page, route: string) {
   await page.goto(route, { waitUntil: "domcontentloaded" });
 }
 
-async function waitForIslandHydration(page: Page, componentName: string) {
-  const island = page.locator(`astro-island[component-url*="${componentName}"]`);
-  await expect(island).toHaveCount(1);
-  await expect.poll(() => island.getAttribute("ssr")).toBeNull();
+async function waitForNativeEnhancement(page: Page, selector: string) {
+  await expect.poll(() => page.locator(selector).getAttribute("data-enhanced")).toBe("true");
 }
 
 test.beforeEach(async ({ page }) => {
@@ -72,6 +70,7 @@ for (const route of ROUTES) {
 
     await expectResolvedTheme(page);
     await expect(page.locator("main")).toBeVisible();
+    await expect(page.locator("astro-island")).toHaveCount(0);
     await expect(page.locator(".cookie-consent")).toHaveCount(0);
     await expectNoPageOverflow(page);
   });
@@ -105,9 +104,8 @@ test("keeps latest posts visible on the home page", async ({ page }) => {
 test("uses upgraded Material Web buttons and the generated color roles", async ({ page }) => {
   await gotoRoute(page, "/");
 
-  await waitForIslandHydration(page, "theme-switcher.component");
-  await waitForIslandHydration(page, "site-search.component");
-  await waitForIslandHydration(page, "home-detail-toggle.component");
+  await waitForNativeEnhancement(page, "[data-theme-switcher]");
+  await waitForNativeEnhancement(page, "[data-home-detail-toggle]");
   await expect(page.locator("md-icon-button.site-theme-trigger")).toHaveCount(1);
   await expect(page.locator("md-icon-button.site-search-trigger-button")).toHaveCount(1);
   await expect(page.locator("md-icon-button.home-detail-trigger")).toHaveCount(1);
@@ -156,7 +154,7 @@ test("uses upgraded Material Web buttons and the generated color roles", async (
 test("opens the Material Web theme menu from its icon button", async ({ page }) => {
   await gotoRoute(page, "/");
 
-  await waitForIslandHydration(page, "theme-switcher.component");
+  await waitForNativeEnhancement(page, "[data-theme-switcher]");
   await page.getByRole("button", { name: "Thème : Système" }).click();
   await expect(page.getByRole("menuitem", { name: "Sombre" })).toBeVisible();
   await page.getByRole("menuitem", { name: "Sombre" }).click();
@@ -170,21 +168,67 @@ test("opens the Material Web theme menu from its icon button", async ({ page }) 
 test("searches through the Material Web text field", async ({ page }) => {
   await gotoRoute(page, "/");
 
-  await waitForIslandHydration(page, "site-search.component");
+  await expect
+    .poll(() => page.locator("[data-site-search-trigger]").getAttribute("data-search-enhanced"))
+    .toBe("true");
   await page.getByRole("button", { name: "Rechercher" }).click();
-  await page.getByRole("searchbox", { name: "Mot-clé, titre ou contenu" }).fill("Material");
+  await expect(page.getByRole("dialog", { name: "Recherche" })).toBeVisible();
+  const searchDialog = page.locator("md-dialog.site-search-dialog[open]");
+  await expect
+    .poll(() => searchDialog.evaluate((element) => Boolean(element.shadowRoot)))
+    .toBe(true);
+  await searchDialog.getByRole("searchbox", { name: "Mot-clé, titre ou contenu" }).fill("Material");
 
-  await expect(page.getByText("2 résultats.")).toBeVisible();
+  await expect(searchDialog.getByText("2 résultats.")).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "Shortcodes Astro et Material Web", exact: true }),
+    searchDialog.getByRole("link", { name: "Shortcodes Astro et Material Web", exact: true }),
   ).toBeVisible();
+});
+
+test("delays and aggregates the linear search progress indicator", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__pagefindModule = {
+      filters: async () => ({ tag: { material: 1 } }),
+      search: async () => {
+        await new Promise((resolve) => window.setTimeout(resolve, 700));
+        return {
+          results: [
+            {
+              score: 1,
+              data: async () => ({
+                excerpt: "Material test extrait",
+                meta: { tags: "material" },
+                title: "Material test",
+                url: "/test/",
+              }),
+            },
+          ],
+        };
+      },
+    };
+  });
+  await gotoRoute(page, "/search/");
+
+  const searchPanel = page.locator(".site-search-page-panel");
+  const progress = searchPanel.locator("md-linear-progress.site-search-panel-progress");
+  await searchPanel.locator("md-filter-chip").first().waitFor();
+  await searchPanel.getByRole("searchbox", { name: "Mot-clé, titre ou contenu" }).fill("Material");
+
+  await page.waitForTimeout(300);
+  await expect(progress).toBeHidden();
+  await expect(progress).toBeVisible();
+  await expect(searchPanel.locator("md-linear-progress:visible")).toHaveCount(1);
+  await expect(searchPanel.getByText("1 résultat.")).toBeVisible();
+  await expect(progress).toBeHidden();
 });
 
 test("delays and aggregates short indeterminate loading indicators", async ({ page }) => {
   await gotoRoute(page, "/");
 
-  await waitForIslandHydration(page, "page-loading-indicator.component");
-  await waitForIslandHydration(page, "konachan-loading-indicator.component");
+  await waitForNativeEnhancement(page, "[data-page-loading-root]");
+  await expect
+    .poll(() => page.locator(".home-anime-landing").getAttribute("data-controls-ready"))
+    .toBe("true");
 
   const pageProgress = page.locator("md-circular-progress.site-page-loading-progress");
   await page.evaluate(() => {
@@ -204,29 +248,31 @@ test("delays and aggregates short indeterminate loading indicators", async ({ pa
 
   const konachanProgress = page.locator("md-circular-progress.home-anime-loading-progress");
   await page.evaluate(() => {
+    document.querySelector(".home-anime-landing")?.setAttribute("aria-busy", "true");
     document.dispatchEvent(
       new CustomEvent("konachan:refresh-state", { detail: { busy: true, status: "Test" } }),
     );
   });
   await page.waitForTimeout(120);
-  await expect(konachanProgress).toHaveCount(0);
-  await expect(konachanProgress).toHaveCount(1);
+  await expect(konachanProgress).toBeHidden();
+  await expect(konachanProgress).toBeVisible();
   await expect(page.locator("md-icon-button.home-anime-refresh md-circular-progress")).toHaveCount(
     0,
   );
   await page.evaluate(() => {
+    document.querySelector(".home-anime-landing")?.setAttribute("aria-busy", "false");
     document.dispatchEvent(
       new CustomEvent("konachan:refresh-state", {
         detail: { busy: false, status: "Test terminé" },
       }),
     );
   });
-  await expect(konachanProgress).toHaveCount(0);
+  await expect(konachanProgress).toBeHidden();
 });
 
 test("uses full-cell semantic sort controls with Material ripple", async ({ page }) => {
   await gotoRoute(page, "/");
-  await waitForIslandHydration(page, "home-latest-posts-table.component");
+  await waitForNativeEnhancement(page, "site-home-latest-posts-table");
 
   const sortButtons = page.locator(".home-posts-sort-button");
   await expect(sortButtons).toHaveCount(2);
@@ -290,7 +336,7 @@ test("renders every shortcode button variant as a real Material Web component", 
     await expect(page.locator(`article ${tag}`).first()).toBeVisible();
   }
 
-  await expect(page.locator("article md-linear-progress")).toHaveCount(2);
+  await expect(page.locator("article .material-progress md-linear-progress")).toHaveCount(2);
   await expect(page.locator("article md-tabs")).toHaveCount(2);
 
   const shortcodeState = await page.evaluate(() => ({
@@ -345,4 +391,67 @@ test("keeps Giscus disabled behind the privacy choice", async ({ page }) => {
     "href",
     "/cookies/#modifier-vos-choix-cookies",
   );
+});
+
+test("keeps one Giscus progress bar until its iframe has loaded", async ({ page }) => {
+  let releaseFrameResponse!: () => void;
+  const frameResponseGate = new Promise<void>((resolve) => {
+    releaseFrameResponse = resolve;
+  });
+
+  await page.route("https://giscus.app/client.js", async (route) => {
+    await route.fulfill({
+      body: `
+        const host = document.currentScript?.parentElement;
+        const iframe = document.createElement("iframe");
+        iframe.className = "giscus-frame";
+        iframe.src = "/__giscus-frame";
+        host?.append(iframe);
+      `,
+      contentType: "application/javascript",
+      status: 200,
+    });
+  });
+  await page.route("**/__giscus-frame", async (route) => {
+    await frameResponseGate;
+    await route.fulfill({ body: "<!doctype html><title>Giscus prêt</title>", status: 200 });
+  });
+  await page.addInitScript(() => {
+    const updatedAt = new Date().toISOString();
+    localStorage.setItem(
+      "ct-cookie-consent-v1",
+      JSON.stringify({ functionality: true, updatedAt, version: 1 }),
+    );
+    localStorage.setItem(
+      "site-giscus-comments-enabled-v1",
+      JSON.stringify({ accepted: true, updatedAt, version: 1 }),
+    );
+    (
+      window as typeof window & {
+        cookieConsent: {
+          acceptedService(): boolean;
+          isCategoryAccepted(): boolean;
+        };
+      }
+    ).cookieConsent = {
+      acceptedService: () => true,
+      isCategoryAccepted: () => true,
+    };
+  });
+
+  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
+  const panel = page.locator("[data-giscus-panel]");
+  const progress = panel.locator("md-linear-progress[data-giscus-progress]");
+  await expect(panel).toBeVisible();
+  await expect(panel).toHaveAttribute("aria-busy", "true");
+  await expect(progress).toBeVisible();
+  await expect(panel.locator("iframe.giscus-frame")).toHaveCount(1);
+
+  await page.waitForTimeout(250);
+  await expect(panel).toHaveAttribute("aria-busy", "true");
+  await expect(progress).toBeVisible();
+
+  releaseFrameResponse();
+  await expect(panel).toHaveAttribute("aria-busy", "false");
+  await expect(progress).toBeHidden();
 });

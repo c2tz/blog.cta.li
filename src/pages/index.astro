@@ -1,9 +1,9 @@
 ---
 import { getCollection, getEntry } from "astro:content";
 
-import { HomeLatestPostsTableComponent } from "@/components/home/home-latest-posts-table.component";
+import HomeLatestPostsTable from "@/components/home/home-latest-posts-table.astro";
 import HomeKonachanBackground from "@/components/home/home-konachan-background.astro";
-import { HomeSectionDividerComponent } from "@/components/home/home-section-divider.component";
+import HomeSectionDivider from "@/components/home/home-section-divider.astro";
 import HomeTagsTree from "@/components/home/home-tags-tree.astro";
 import Layout from "@/layouts/site-layout.astro";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/site-config";
@@ -92,13 +92,13 @@ const homeStructuredData = {
     />
 
     <section class="home-section" aria-labelledby="blog-posts">
-      <HomeSectionDividerComponent />
+      <HomeSectionDivider />
 
       <h2 id="blog-posts">
         <a href="#blog-posts" class="heading-link">{homeCopy.latestPostsTitle}</a>
       </h2>
 
-      <HomeLatestPostsTableComponent client:load posts={latestPostSummaries} />
+      <HomeLatestPostsTable posts={latestPostSummaries} />
     </section>
 
     <section class="home-section home-tags-section" aria-label={homeCopy.tagsTitle}>

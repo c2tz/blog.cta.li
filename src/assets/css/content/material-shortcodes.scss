@@ -458,7 +458,7 @@ summary.material-admonition-title::-webkit-details-marker {
   font-weight: 600;
 }
 
-.material-tabs[data-angular-mounted="true"] .material-tab-panel::before {
+.material-tabs[data-material-enhanced="true"] .material-tab-panel::before {
   content: none;
 }
 
@@ -550,7 +550,6 @@ summary.material-admonition-title::-webkit-details-marker {
 }
 
 .material-shortcode-sort-button {
-  --md-ripple-focus-color: var(--site-link);
   --md-ripple-hover-color: var(--site-link);
   --md-ripple-pressed-color: var(--site-link);
 

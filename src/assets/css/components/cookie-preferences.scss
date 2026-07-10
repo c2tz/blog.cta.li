@@ -46,6 +46,14 @@ site-cookie-preferences {
   min-width: 7.5rem;
 }
 
+.cookie-preferences-reset {
+  --md-text-button-label-text-color: var(--site-link);
+  --md-text-button-label-text-font: var(--site-font);
+  --md-text-button-label-text-weight: 700;
+  --md-text-button-hover-state-layer-color: var(--site-link);
+  --md-text-button-pressed-state-layer-color: var(--site-link);
+}
+
 .cookie-preferences-feedback {
   min-height: 1.5rem;
   color: var(--site-muted);

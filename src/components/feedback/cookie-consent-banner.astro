@@ -1,0 +1,85 @@
+<site-cookie-consent-banner>
+  <template data-cookie-template="explicit-content">
+    <div data-cookie-active-notice>
+      <div class="cookie-consent-backdrop cookie-consent-backdrop--modal" aria-hidden="true"></div>
+      <section
+        class="cookie-consent cookie-consent--modal cookie-consent--explicit-content"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="explicit-content-consent-title"
+        aria-describedby="explicit-content-consent-desc"
+      >
+        <div class="cookie-consent-alert">
+          <svg
+            class="cookie-consent-boot-warning-icon"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 -960 960 960"
+            aria-hidden="true"
+          >
+            <path
+              d="m40-120 440-760 440 760H40Zm468.5-131.5Q520-263 520-280t-11.5-28.5Q497-320 480-320t-28.5 11.5Q440-297 440-280t11.5 28.5Q463-240 480-240t28.5-11.5ZM440-360h80v-200h-80v200Z"
+            ></path>
+          </svg>
+          <div class="cookie-consent-content">
+            <h4 id="explicit-content-consent-title">Avertissement relatif aux images</h4>
+            <p id="explicit-content-consent-desc">
+              Ce site peut contenir des images d’anime à caractère explicite, réservées à un public
+              adulte. En continuant, vous confirmez avoir au moins 18 ans, ou avoir atteint l’âge
+              légal de la majorité dans votre pays ou région.
+            </p>
+          </div>
+        </div>
+
+        <div class="cookie-consent-actions">
+          <md-text-button
+            class="cookie-consent-return-action"
+            type="button"
+            aria-label="Quitter le site"
+            data-cookie-action="leave"
+          >
+            Quitter
+          </md-text-button>
+          <md-filled-button
+            class="cookie-consent-confirm-action"
+            type="button"
+            aria-label="J’accepte et j’entre en confirmant avoir au moins 18 ans"
+            data-cookie-action="acknowledge"
+          >
+            J’accepte et j’entre
+          </md-filled-button>
+        </div>
+      </section>
+    </div>
+  </template>
+
+  <template data-cookie-template="privacy">
+    <div data-cookie-active-notice>
+      <section
+        class="cookie-consent cookie-consent--privacy"
+        role="region"
+        aria-label="Avis de confidentialité"
+        aria-describedby="cookie-consent-desc"
+      >
+        <div class="cookie-consent-content">
+          <p id="cookie-consent-desc">
+            Ce site utilise des cookies pour fournir ses services et analyser le trafic.
+          </p>
+        </div>
+
+        <div class="cookie-consent-actions">
+          <md-text-button href="/cookies/">Plus de détails</md-text-button>
+          <div class="cookie-consent-choice-actions">
+            <md-text-button type="button" data-cookie-action="reject">Refuser</md-text-button>
+            <md-text-button type="button" data-cookie-action="accept">Accepter</md-text-button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </template>
+</site-cookie-consent-banner>
+
+<script>
+  import { defineCookieConsentControls } from "@/assets/js/app/cookie-consent-controls.js";
+
+  defineCookieConsentControls();
+</script>

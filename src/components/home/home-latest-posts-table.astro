@@ -1,0 +1,662 @@
+---
+interface HomeLatestPost {
+  readonly dateCompact: string;
+  readonly dateFull: string;
+  readonly datetime: string;
+  readonly href: string;
+  readonly title: string;
+}
+
+interface Props {
+  detailEndpoint?: string;
+  posts: readonly HomeLatestPost[];
+}
+
+const { detailEndpoint = "/latest-posts.json", posts } = Astro.props;
+const initialPosts = posts.slice(0, 3);
+---
+
+<site-home-latest-posts-table
+  data-detail-endpoint={detailEndpoint}
+  data-posts={JSON.stringify(initialPosts)}
+>
+  <p class="sr-only" role="status" aria-live="polite" aria-atomic="true" data-sort-status></p>
+
+  <div class="home-posts-table-scroll" tabindex="0" data-table-scroll>
+    <md-linear-progress
+      class="home-posts-table-progress"
+      indeterminate
+      aria-label="Chargement des articles"
+      data-loading-progress
+      hidden></md-linear-progress>
+
+    <table
+      id="home-latest-posts-table"
+      class="home-posts-table"
+      aria-label="Derniers articles"
+      data-posts-table
+    >
+      <thead>
+        <tr>
+          <th class="home-posts-date-column" scope="col">
+            <button
+              type="button"
+              class="home-posts-sort-button"
+              aria-label="Trier par date"
+              data-sort-column="date"
+            >
+              <span>Date</span>
+              <md-icon aria-hidden="true" data-sort-icon>&#xE5D7;</md-icon>
+              <md-ripple></md-ripple>
+            </button>
+          </th>
+          <th class="home-posts-title-column home-posts-title-header" scope="col">
+            <button
+              type="button"
+              class="home-posts-sort-button"
+              aria-label="Trier par titre"
+              data-sort-column="title"
+            >
+              <span>Titre</span>
+              <md-icon aria-hidden="true" data-sort-icon>&#xE5D7;</md-icon>
+              <md-ripple></md-ripple>
+            </button>
+          </th>
+        </tr>
+      </thead>
+      <tbody data-posts-body>
+        {
+          initialPosts.length > 0 ? (
+            initialPosts.map((post) => (
+              <tr class="home-posts-table-row">
+                <td class="home-posts-date-column">
+                  <time
+                    class="post-date site-date-compact home-post-date-compact"
+                    datetime={post.datetime}
+                  >
+                    {post.dateCompact}
+                  </time>
+                  <time
+                    class="post-date site-date-full home-post-date-full"
+                    datetime={post.datetime}
+                  >
+                    {post.dateFull}
+                  </time>
+                </td>
+                <td class="home-posts-title-column">
+                  <a class="home-post-title" href={post.href}>
+                    {post.title}
+                  </a>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr class="home-posts-table-loading-row">
+              <td colspan="2">
+                <span class="home-posts-table-empty">Aucun article à afficher.</span>
+              </td>
+            </tr>
+          )
+        }
+      </tbody>
+    </table>
+  </div>
+</site-home-latest-posts-table>
+
+<script>
+  import { SITE_EVENTS } from "@/lib/site-contracts";
+
+  interface HomeLatestPost {
+    readonly dateCompact: string;
+    readonly dateFull: string;
+    readonly datetime: string;
+    readonly href: string;
+    readonly title: string;
+  }
+
+  interface LatestPostsResponse {
+    readonly posts?: readonly unknown[];
+  }
+
+  type HomeSortColumn = "date" | "title";
+  type SortDirection = "asc" | "desc";
+
+  const LOADING_INDICATOR_DELAY_MS = 200;
+  const UNSORTED_ICON = "\uE5D7";
+  const ASCENDING_ICON = "\uE5D8";
+  const DESCENDING_ICON = "\uE5DB";
+
+  function isHomeLatestPost(value: unknown): value is HomeLatestPost {
+    if (!value || typeof value !== "object") return false;
+
+    const post = value as Record<string, unknown>;
+    return (
+      typeof post.dateCompact === "string" &&
+      typeof post.dateFull === "string" &&
+      typeof post.datetime === "string" &&
+      typeof post.href === "string" &&
+      typeof post.title === "string"
+    );
+  }
+
+  class HomeLatestPostsTableElement extends HTMLElement {
+    private initialized = false;
+    private initialPosts: HomeLatestPost[] = [];
+    private detailedPosts: HomeLatestPost[] | null = null;
+    private detailed = false;
+    private loading = false;
+    private sortColumn: HomeSortColumn | null = null;
+    private sortDirection: SortDirection = "asc";
+    private detailRequest: Promise<void> | null = null;
+    private dateColumnResizeObserver: ResizeObserver | null = null;
+    private dateColumnMeasureFrame = 0;
+    private loadingIndicatorTimer = 0;
+
+    connectedCallback() {
+      if (this.initialized) return;
+      this.initialized = true;
+      this.dataset.enhanced = "true";
+      this.initialPosts = this.readInitialPosts();
+
+      for (const button of this.sortButtons) {
+        button.addEventListener("click", this.handleSortClick);
+      }
+      document.addEventListener(SITE_EVENTS.homeDetailViewChange, this.handleDetailViewChange);
+
+      this.detailed =
+        document.documentElement.dataset.homeDetailView === "true" ||
+        document.body.dataset.homeDetailView === "true";
+      this.syncDetailedPresentation();
+      this.updateSortPresentation();
+      this.renderRows();
+      this.watchDateColumnWidth();
+      this.queueDateColumnMeasure();
+
+      if (this.detailed) void this.loadDetailedPosts();
+    }
+
+    disconnectedCallback() {
+      if (!this.initialized) return;
+      this.initialized = false;
+
+      for (const button of this.sortButtons) {
+        button.removeEventListener("click", this.handleSortClick);
+      }
+      document.removeEventListener(SITE_EVENTS.homeDetailViewChange, this.handleDetailViewChange);
+      this.dateColumnResizeObserver?.disconnect();
+      this.dateColumnResizeObserver = null;
+      this.cancelDateColumnMeasure();
+      this.endLoading();
+    }
+
+    private get sortButtons() {
+      return this.querySelectorAll<HTMLButtonElement>("[data-sort-column]");
+    }
+
+    private get table() {
+      return this.querySelector<HTMLTableElement>("[data-posts-table]");
+    }
+
+    private get tableBody() {
+      return this.querySelector<HTMLTableSectionElement>("[data-posts-body]");
+    }
+
+    private get scroller() {
+      return this.querySelector<HTMLElement>("[data-table-scroll]");
+    }
+
+    private get loadingProgress() {
+      return this.querySelector<HTMLElement>("[data-loading-progress]");
+    }
+
+    private get sortStatus() {
+      return this.querySelector<HTMLElement>("[data-sort-status]");
+    }
+
+    private readonly handleSortClick = (event: Event) => {
+      const button = event.currentTarget;
+      if (!(button instanceof HTMLButtonElement)) return;
+
+      const column = button.dataset.sortColumn;
+      if (column !== "date" && column !== "title") return;
+      this.toggleSort(column);
+    };
+
+    private readonly handleDetailViewChange = (event: Event) => {
+      const detailed = Boolean((event as CustomEvent<{ detailed?: boolean }>).detail?.detailed);
+      this.setDetailed(detailed);
+    };
+
+    private readInitialPosts() {
+      try {
+        const value = JSON.parse(this.dataset.posts ?? "[]");
+        return Array.isArray(value) ? value.filter(isHomeLatestPost).slice(0, 3) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    private setDetailed(detailed: boolean) {
+      this.detailed = detailed;
+      this.syncDetailedPresentation();
+      this.renderRows();
+      this.queueDateColumnMeasure();
+
+      if (detailed) void this.loadDetailedPosts();
+    }
+
+    private syncDetailedPresentation() {
+      this.scroller?.classList.toggle("home-posts-table-scroll-detailed", this.detailed);
+    }
+
+    private toggleSort(column: HomeSortColumn) {
+      if (this.sortColumn !== column) {
+        this.sortColumn = column;
+        this.sortDirection = "asc";
+      } else if (this.sortDirection === "asc") {
+        this.sortDirection = "desc";
+      } else {
+        this.sortColumn = null;
+        this.sortDirection = "asc";
+      }
+
+      const status = this.sortStatus;
+      if (!this.sortColumn) {
+        if (status) status.textContent = "Tri désactivé.";
+      } else {
+        const direction = this.sortDirection === "asc" ? "croissant" : "décroissant";
+        const label = column === "date" ? "date" : "titre";
+        if (status) {
+          status.textContent = "Articles triés par " + label + ", ordre " + direction + ".";
+        }
+      }
+
+      this.updateSortPresentation();
+      this.renderRows();
+    }
+
+    private updateSortPresentation() {
+      for (const button of this.sortButtons) {
+        const column = button.dataset.sortColumn as HomeSortColumn;
+        const active = this.sortColumn === column;
+        button.classList.toggle("home-posts-sort-active", active);
+
+        const header = button.closest("th");
+        if (active) {
+          header?.setAttribute(
+            "aria-sort",
+            this.sortDirection === "asc" ? "ascending" : "descending",
+          );
+        } else {
+          header?.removeAttribute("aria-sort");
+        }
+
+        const icon = button.querySelector<HTMLElement>("[data-sort-icon]");
+        if (icon) icon.textContent = this.sortIcon(column);
+      }
+    }
+
+    private sortIcon(column: HomeSortColumn) {
+      if (this.sortColumn !== column) return UNSORTED_ICON;
+      return this.sortDirection === "asc" ? ASCENDING_ICON : DESCENDING_ICON;
+    }
+
+    private visiblePosts() {
+      const source = this.detailed
+        ? (this.detailedPosts ?? this.initialPosts)
+        : this.initialPosts.slice(0, 3);
+      if (!this.sortColumn) return [...source];
+
+      const direction = this.sortDirection === "asc" ? 1 : -1;
+      return [...source].sort((left, right) => {
+        if (this.sortColumn === "date") {
+          const leftDate = Date.parse(left.datetime);
+          const rightDate = Date.parse(right.datetime);
+          const result =
+            Number.isNaN(leftDate) || Number.isNaN(rightDate)
+              ? left.datetime.localeCompare(right.datetime, "fr")
+              : leftDate - rightDate;
+          return result * direction;
+        }
+
+        return left.title.localeCompare(right.title, "fr", { sensitivity: "base" }) * direction;
+      });
+    }
+
+    private renderRows() {
+      const body = this.tableBody;
+      if (!body) return;
+
+      const posts = this.visiblePosts();
+      const fragment = document.createDocumentFragment();
+      for (const post of posts) fragment.append(this.createPostRow(post));
+
+      if (posts.length === 0) {
+        const row = document.createElement("tr");
+        row.className = "home-posts-table-loading-row";
+
+        const cell = document.createElement("td");
+        cell.colSpan = 2;
+
+        const empty = document.createElement("span");
+        empty.className = "home-posts-table-empty";
+        empty.textContent = "Aucun article à afficher.";
+
+        cell.append(empty);
+        row.append(cell);
+        fragment.append(row);
+      }
+
+      body.replaceChildren(fragment);
+      this.queueDateColumnMeasure();
+    }
+
+    private createPostRow(post: HomeLatestPost) {
+      const row = document.createElement("tr");
+      row.className = "home-posts-table-row";
+
+      const dateCell = document.createElement("td");
+      dateCell.className = "home-posts-date-column";
+      dateCell.append(
+        this.createTime(
+          post.datetime,
+          post.dateCompact,
+          "site-date-compact home-post-date-compact",
+        ),
+        this.createTime(post.datetime, post.dateFull, "site-date-full home-post-date-full"),
+      );
+
+      const titleCell = document.createElement("td");
+      titleCell.className = "home-posts-title-column";
+
+      const link = document.createElement("a");
+      link.className = "home-post-title";
+      link.setAttribute("href", post.href);
+      link.textContent = post.title;
+
+      titleCell.append(link);
+      row.append(dateCell, titleCell);
+      return row;
+    }
+
+    private createTime(datetime: string, label: string, variantClasses: string) {
+      const time = document.createElement("time");
+      time.className = "post-date " + variantClasses;
+      time.dateTime = datetime;
+      time.textContent = label;
+      return time;
+    }
+
+    private loadDetailedPosts() {
+      if (this.detailedPosts) {
+        this.renderRows();
+        return Promise.resolve();
+      }
+      if (this.detailRequest) return this.detailRequest;
+
+      this.beginLoading();
+      this.detailRequest = fetch(this.dataset.detailEndpoint || "/latest-posts.json", {
+        credentials: "same-origin",
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error("Impossible de charger les derniers articles.");
+          return response.json() as Promise<LatestPostsResponse>;
+        })
+        .then((payload) => {
+          const posts = Array.isArray(payload.posts)
+            ? payload.posts.filter(isHomeLatestPost).slice(0, 8)
+            : [];
+          this.detailedPosts = posts.length > 0 ? posts : [...this.initialPosts];
+          if (this.detailed && this.isConnected) this.renderRows();
+        })
+        .catch(() => {
+          this.detailedPosts = [...this.initialPosts];
+          if (this.detailed && this.isConnected) this.renderRows();
+        })
+        .finally(() => {
+          this.endLoading();
+          this.detailRequest = null;
+        });
+
+      return this.detailRequest;
+    }
+
+    private beginLoading() {
+      this.loading = true;
+      this.table?.setAttribute("aria-busy", "true");
+      this.cancelLoadingIndicatorTimer();
+      this.loadingIndicatorTimer = window.setTimeout(() => {
+        this.loadingIndicatorTimer = 0;
+        if (this.loading && this.loadingProgress) this.loadingProgress.hidden = false;
+      }, LOADING_INDICATOR_DELAY_MS);
+    }
+
+    private endLoading() {
+      this.loading = false;
+      this.table?.removeAttribute("aria-busy");
+      this.cancelLoadingIndicatorTimer();
+      if (this.loadingProgress) this.loadingProgress.hidden = true;
+    }
+
+    private cancelLoadingIndicatorTimer() {
+      if (!this.loadingIndicatorTimer) return;
+      window.clearTimeout(this.loadingIndicatorTimer);
+      this.loadingIndicatorTimer = 0;
+    }
+
+    private watchDateColumnWidth() {
+      if (typeof ResizeObserver === "undefined") return;
+
+      const dateHeader = this.querySelector<HTMLElement>(
+        ".home-posts-table .home-posts-date-column",
+      );
+      if (!dateHeader) return;
+
+      this.dateColumnResizeObserver = new ResizeObserver(() => this.queueDateColumnMeasure());
+      this.dateColumnResizeObserver.observe(dateHeader);
+    }
+
+    private queueDateColumnMeasure() {
+      this.cancelDateColumnMeasure();
+      this.dateColumnMeasureFrame = window.requestAnimationFrame(() => {
+        this.dateColumnMeasureFrame = 0;
+        this.measureDateColumn();
+      });
+    }
+
+    private cancelDateColumnMeasure() {
+      if (!this.dateColumnMeasureFrame) return;
+      window.cancelAnimationFrame(this.dateColumnMeasureFrame);
+      this.dateColumnMeasureFrame = 0;
+    }
+
+    private measureDateColumn() {
+      const scroller = this.scroller;
+      const dateHeader = this.querySelector<HTMLElement>(
+        ".home-posts-table .home-posts-date-column",
+      );
+      if (!scroller || !dateHeader) return;
+
+      const width = dateHeader.getBoundingClientRect().width;
+      if (width > 0) {
+        scroller.style.setProperty("--home-posts-date-column-measured-width", width + "px");
+      }
+    }
+  }
+
+  if (!customElements.get("site-home-latest-posts-table")) {
+    customElements.define("site-home-latest-posts-table", HomeLatestPostsTableElement);
+  }
+</script>
+
+<style is:global>
+  site-home-latest-posts-table {
+    display: block;
+  }
+
+  site-home-latest-posts-table .home-posts-table-scroll {
+    --home-posts-date-column-content-width: 8rem;
+    --home-posts-date-column-fallback-width: calc(
+      var(--home-posts-date-column-content-width) + 3rem
+    );
+    --home-posts-date-column-width: var(
+      --home-posts-date-column-measured-width,
+      var(--home-posts-date-column-fallback-width)
+    );
+
+    position: relative;
+    max-width: 100%;
+    margin-block: 0 1em;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  site-home-latest-posts-table .home-posts-table-scroll::-webkit-scrollbar {
+    height: 0.5rem;
+  }
+
+  site-home-latest-posts-table .home-posts-table-scroll::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--site-muted) 42%, transparent);
+  }
+
+  site-home-latest-posts-table .home-posts-table-scroll-detailed {
+    --home-posts-date-column-content-width: 14rem;
+  }
+
+  site-home-latest-posts-table .home-posts-table-scroll:focus-visible {
+    border-radius: var(--site-shape-extra-small);
+    outline: 2px solid var(--site-link);
+    outline-offset: 2px;
+  }
+
+  site-home-latest-posts-table .home-posts-table {
+    min-width: 42rem;
+    width: max-content;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: transparent;
+    color: var(--site-text);
+    font-family: var(--site-font);
+  }
+
+  site-home-latest-posts-table .home-posts-table th,
+  site-home-latest-posts-table .home-posts-table td {
+    height: 2.75rem;
+    padding: 0 2rem 0 1rem;
+    border: 0;
+    border-block-end: 1px solid var(--site-border);
+    background: var(--site-bg);
+    color: var(--site-text);
+    font-family: var(--site-font);
+    font-size: 1rem;
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 1.5;
+    text-align: start;
+    white-space: nowrap;
+  }
+
+  site-home-latest-posts-table .home-posts-table th {
+    padding: 0;
+    color: var(--site-muted);
+    font-weight: 600;
+  }
+
+  site-home-latest-posts-table .home-posts-table .home-posts-table-row:last-child td {
+    border-block-end: 0;
+  }
+
+  site-home-latest-posts-table .home-posts-table-loading-row td {
+    height: 9rem;
+    padding: 0;
+    background: var(--m3-surface-container-low);
+    text-align: center;
+  }
+
+  site-home-latest-posts-table .home-posts-table-progress {
+    --md-linear-progress-active-indicator-color: var(--md-sys-color-primary);
+    --md-linear-progress-active-indicator-height: 0.2rem;
+    --md-linear-progress-track-color: var(--md-sys-color-surface-container-highest);
+    --md-linear-progress-track-height: 0.2rem;
+    --md-linear-progress-track-shape: var(--md-sys-shape-corner-none);
+
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 3;
+    width: 100%;
+    min-width: 100%;
+  }
+
+  site-home-latest-posts-table .home-posts-table-progress[hidden] {
+    display: none;
+  }
+
+  site-home-latest-posts-table .home-posts-table-empty {
+    display: inline-block;
+    padding: 1rem;
+    color: var(--site-muted);
+  }
+
+  site-home-latest-posts-table .home-posts-table .home-posts-date-column {
+    width: var(--home-posts-date-column-content-width);
+    min-width: var(--home-posts-date-column-content-width);
+    border-inline-end: 1px solid var(--site-border);
+  }
+
+  site-home-latest-posts-table .home-posts-table .home-posts-title-column {
+    min-width: 20rem;
+  }
+
+  site-home-latest-posts-table .home-posts-table .home-posts-title-header {
+    overflow: visible;
+  }
+
+  site-home-latest-posts-table .home-posts-sort-button {
+    --md-ripple-hover-color: var(--site-link);
+    --md-ripple-pressed-color: var(--site-link);
+
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    width: 100%;
+    min-height: 2.75rem;
+    box-sizing: border-box;
+    padding: 0 2rem 0 1rem;
+    overflow: hidden;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    font-weight: inherit;
+    text-align: start;
+  }
+
+  site-home-latest-posts-table .home-posts-sort-button md-icon {
+    --md-icon-size: 1.25rem;
+
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-basis: 1.25rem;
+    font-size: 1.25rem;
+  }
+
+  site-home-latest-posts-table .home-posts-sort-active {
+    background: color-mix(in srgb, var(--site-link) 10%, transparent);
+    color: var(--site-text);
+  }
+
+  site-home-latest-posts-table .home-posts-sort-button:focus-visible {
+    outline: 0;
+    box-shadow: inset 0 0 0 2px var(--site-link);
+  }
+
+  site-home-latest-posts-table .home-post-title {
+    display: inline;
+    white-space: nowrap;
+  }
+</style>

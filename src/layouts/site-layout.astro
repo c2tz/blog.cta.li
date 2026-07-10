@@ -4,13 +4,10 @@ import { SITE_ARTICLE_TITLE_PREFIX, SITE_DESCRIPTION, SITE_DEFAULT_TITLE } from 
 import Seo, { type OpenGraphData } from "@/components/layout/seo.astro";
 import Footer from "@/components/layout/site-footer.astro";
 import Header from "@/components/layout/site-header.astro";
-import { CodeBlockEnhancerComponent } from "@/components/post/code-block-enhancer.component";
-import { MaterialShortcodeControllerComponent } from "@/components/post/material-shortcodes.component";
-import { CookieConsentBannerComponent } from "@/components/feedback/cookie-consent-banner.component";
-import { GlobalTooltipComponent } from "@/components/feedback/global-tooltip.component";
-import { PageLoadingIndicatorComponent } from "@/components/feedback/page-loading-indicator.component";
-import { ImageDialogControllerComponent } from "@/components/image-preview/image-dialog-controller.component";
-import { ScrollTopButtonComponent } from "@/components/navigation/scroll-top-button.component";
+import CookieConsentBanner from "@/components/feedback/cookie-consent-banner.astro";
+import PageLoadingIndicator from "@/components/feedback/page-loading-indicator.astro";
+import ImagePreview from "@/components/image-preview/image-preview.astro";
+import ScrollTopButton from "@/components/navigation/scroll-top-button.astro";
 import {
   SITE_COOKIE_NAMES,
   SITE_LEGACY_COOKIE_NAMES,
@@ -60,7 +57,10 @@ const isPost = Astro.url.pathname.startsWith("/posts/");
 const shouldEnhanceContent = contentEnhancements ?? isPost;
 const shouldLoadSpeedInsights =
   import.meta.env.PROD && process.env.VERCEL === "1" && process.env.VERCEL_ENV === "production";
-const speedInsightsRoute = computeRoute(Astro.url.pathname, Astro.params);
+const speedInsightsParams = Object.fromEntries(
+  Object.entries(Astro.params).filter((entry): entry is [string, string] => entry[1] !== undefined),
+);
+const speedInsightsRoute = computeRoute(Astro.url.pathname, speedInsightsParams);
 const speedInsightsVersion = speedInsightsPackage.version;
 ---
 
@@ -252,16 +252,15 @@ const speedInsightsVersion = speedInsightsPackage.version;
       </div>
     </main>
     <Footer />
-    <CookieConsentBannerComponent client:load />
-    {shouldEnhanceContent && <MaterialShortcodeControllerComponent client:load />}
-    {shouldEnhanceContent && <CodeBlockEnhancerComponent client:load />}
-    {shouldEnhanceContent && <GlobalTooltipComponent client:idle />}
-    <PageLoadingIndicatorComponent client:idle />
-    {shouldEnhanceContent && <ImageDialogControllerComponent client:load />}
-    {readingProgress && <ScrollTopButtonComponent client:idle />}
+    <CookieConsentBanner />
+    <PageLoadingIndicator />
+    {shouldEnhanceContent && <ImagePreview />}
+    {readingProgress && <ScrollTopButton />}
     <script>
       import "@/assets/js/material-web.js";
       import "@/assets/js/app-init.js";
+      import "@/assets/js/app/material-shortcodes.js";
+      import "@/assets/js/app/code-block-enhancer.js";
       import "@/assets/js/optional-services.js";
     </script>
   </body>

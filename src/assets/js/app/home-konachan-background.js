@@ -297,7 +297,6 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     body.style.removeProperty("--home-dynamic-dark-surface");
     for (const name of HOME_DYNAMIC_TOKEN_NAMES) {
       body.style.removeProperty(`--m3-${name}`);
-      body.style.removeProperty(`--mat-sys-${name}`);
     }
   }
 

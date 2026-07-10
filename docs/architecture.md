@@ -4,9 +4,8 @@
 
 - Astro owns page structure, routing, layouts, content collections, and static rendering.
 - MD/MDX owns editorial content.
-- New interface code stays framework-independent. Existing Angular islands are temporary state and
-  lifecycle controllers while their visible controls migrate to `@material/web`; do not introduce
-  new Angular Material UI or make new features depend on Angular.
+- Interactive interface code stays framework-independent: Astro renders the structure, Material Web
+  supplies the supported controls, and native browser modules own lifecycle and state.
 - Browser scripts in `src/assets/js/app` own progressive enhancement shared across pages.
 - Shared public names live in `src/lib/site-contracts.ts`.
 
@@ -35,7 +34,7 @@
 - Files and folders use kebab-case.
 - CSS classes, custom events, storage keys, cookies, and cache names use kebab-case.
 - TypeScript variables and functions use camelCase.
-- TypeScript classes, interfaces, and Angular components use PascalCase.
+- TypeScript classes and interfaces use PascalCase.
 - Legacy storage or cookie names may keep their original shape only inside `SITE_LEGACY_*`.
 
 ## Persisted Browser Data
@@ -53,42 +52,23 @@ Examples:
 
 When renaming a persisted key, keep a legacy key and migrate on read before deleting the old value.
 
-## PhotoSwipe Contract
+## Image preview
 
-PhotoSwipe itself is controlled from `src/assets/js/app/photo-swipe`.
-The Angular toolbar does not import PhotoSwipe directly. It communicates through document events.
-
-Toolbar to PhotoSwipe:
-
-- `site:photo-swipe-action`
-- detail: `{ action }`
-- actions: `close`, `download`, `fullscreen`, `next`, `previous`, `share`, `zoom`
-
-PhotoSwipe to toolbar:
-
-- `site:photo-swipe-state`
-- detail includes: `open`, `src`, `fileName`, `index`, `total`, `isFullscreen`, `fullscreenAvailable`, `zoomed`, `loading`, `closing`
-
-Share feedback:
-
-- `site:photo-swipe-share-result`
-- detail: `{ message }`
-
-Tooltips are hidden globally through:
-
-- `site:tooltip-hide`
+`src/components/image-preview/image-preview.astro` renders the genuine Material Web dialogs, menu,
+icon buttons, and progress element. `src/assets/js/app/image-preview.js` owns image discovery,
+history, zoom, fullscreen, sharing, downloads, and focus/scroll restoration. Native `title`
+attributes provide tooltips because Material Web does not ship a stable tooltip component.
 
 ## Konachan Contract
 
-Home background refresh is event-driven so the Astro shell, Angular buttons, and browser script stay decoupled.
+Home background refresh is event-driven so the Astro shell, Material Web icon buttons, and browser
+script stay decoupled.
 
 - `konachan:refresh-request`: emitted by the refresh button.
 - `konachan:refresh-state`: emitted by the home background script with `{ busy, status }`.
 
 ## Checks
 
-Use `pnpm verify` before pushing. It covers unit tests, generated theme parity, Angular island type
-checking, Material Symbol coverage, unused-code checks, formatting, the production build, security
-headers, and browser smoke tests.
-
-`astro check` is not part of `verify` because the current Astro checker reports false positives on Analog Angular islands even when the production build succeeds.
+Use `pnpm verify` before pushing. It covers unit tests, generated theme parity, Astro type checking,
+Material Symbol coverage, unused-code checks, formatting, the production build, security headers,
+and browser smoke tests.

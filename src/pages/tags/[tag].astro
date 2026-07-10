@@ -1,6 +1,5 @@
 ---
-import { TagPostsPaginatorComponent } from "@/components/tags/tag-posts-paginator.component";
-import { TagPostsTableComponent } from "@/components/tags/tag-posts-table.component";
+import TagPosts from "@/components/tags/tag-posts.astro";
 import Layout from "@/layouts/site-layout.astro";
 import { formatFrenchDate, formatFrenchDateTime, toDate } from "@/lib/date-format.mjs";
 import { getContentEntryGitDates } from "@/lib/git-dates.mjs";
@@ -53,13 +52,7 @@ const tagPosts = posts.map((post) => ({
   <Fragment slot="content">
     <section aria-labelledby="tag-posts-title">
       <h1 id="tag-posts-title">Articles avec le tag « {tag} »</h1>
-      {
-        tag === "all" ? (
-          <TagPostsTableComponent client:load posts={tagPosts} tag={tag} />
-        ) : (
-          <TagPostsPaginatorComponent client:load posts={tagPosts} tag={tag} />
-        )
-      }
+      <TagPosts posts={tagPosts} tag={tag} view={tag === "all" ? "table" : "list"} />
     </section>
   </Fragment>
 </Layout>

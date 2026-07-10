@@ -17,9 +17,9 @@ interface PagefindResultRef {
 }
 
 type PagefindFilterCounts = Record<string, Record<string, number>>;
-export type PagefindSortDirection = "asc" | "desc";
+type PagefindSortDirection = "asc" | "desc";
 
-export interface PagefindSearchOptions {
+interface PagefindSearchOptions {
   filters?: Record<string, string | string[] | { all: string[] } | { any: string[] }>;
   sort?: Record<string, PagefindSortDirection>;
 }
@@ -31,7 +31,7 @@ interface PagefindResponse {
   unfilteredResultCount?: number;
 }
 
-export interface PagefindModule {
+interface PagefindModule {
   filters: () => Promise<PagefindFilterCounts>;
   search: (query: string | null, options?: PagefindSearchOptions) => Promise<PagefindResponse>;
 }

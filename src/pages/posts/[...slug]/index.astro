@@ -1,7 +1,7 @@
 ---
 import { type CollectionEntry, getCollection, render } from "astro:content";
 
-import { GiscusCommentsComponent } from "@/components/feedback/giscus-comments.component";
+import GiscusComments from "@/components/feedback/giscus-comments.astro";
 import PostGitDates from "@/components/post/post-git-dates.astro";
 import Prose from "@/components/post/prose.astro";
 import Layout from "@/layouts/site-layout.astro";
@@ -116,8 +116,7 @@ const postStructuredData = {
           </ul>
         </nav>
       </div>
-      <GiscusCommentsComponent
-        client:load
+      <GiscusComments
         repo={SITE_GISCUS_CONFIG.repo}
         repoId={SITE_GISCUS_CONFIG.repoId}
         category={SITE_GISCUS_CONFIG.category}

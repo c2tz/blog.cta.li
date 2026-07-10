@@ -40,6 +40,7 @@ const modifiedDateFull = formatFrenchDateTime(lastModified);
       class="post-icon-tooltip"
       role="img"
       aria-label={createdLabel}
+      title={createdLabel}
       data-tooltip={createdLabel}
     >
       <span class="material-symbols-rounded post-git-date-icon" aria-hidden="true">&#xE89C;</span>
@@ -55,6 +56,7 @@ const modifiedDateFull = formatFrenchDateTime(lastModified);
           class="post-icon-tooltip post-git-commit-link"
           href={createdCommitUrl}
           aria-label={createdCommitLabel}
+          title={createdCommitLabel}
           data-tooltip={createdCommitLabel}
         >
           <span class="material-symbols-rounded post-git-commit-icon" aria-hidden="true">
@@ -70,6 +72,7 @@ const modifiedDateFull = formatFrenchDateTime(lastModified);
       class="post-icon-tooltip"
       role="img"
       aria-label={modifiedLabel}
+      title={modifiedLabel}
       data-tooltip={modifiedLabel}
     >
       <span class="material-symbols-rounded post-git-date-icon" aria-hidden="true">&#xF88C;</span>
@@ -85,6 +88,7 @@ const modifiedDateFull = formatFrenchDateTime(lastModified);
           class="post-icon-tooltip post-git-commit-link"
           href={modifiedCommitUrl}
           aria-label={modifiedCommitLabel}
+          title={modifiedCommitLabel}
           data-tooltip={modifiedCommitLabel}
         >
           <span class="material-symbols-rounded post-git-commit-icon" aria-hidden="true">
@@ -99,7 +103,7 @@ const modifiedDateFull = formatFrenchDateTime(lastModified);
 <script>
   const observedPostGitDates = new WeakMap();
 
-  function syncPostGitDateLayout(container) {
+  function syncPostGitDateLayout(container: HTMLElement) {
     const created = container.querySelector('[data-post-git-date="created"]');
     const modified = container.querySelector('[data-post-git-date="modified"]');
     if (!(created instanceof HTMLElement) || !(modified instanceof HTMLElement)) return;

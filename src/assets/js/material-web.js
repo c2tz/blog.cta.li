@@ -8,6 +8,7 @@ import "@material/web/chips/assist-chip.js";
 import "@material/web/chips/chip-set.js";
 import "@material/web/chips/filter-chip.js";
 import "@material/web/divider/divider.js";
+import "@material/web/dialog/dialog.js";
 import "@material/web/elevation/elevation.js";
 import "@material/web/icon/icon.js";
 import "@material/web/iconbutton/filled-tonal-icon-button.js";

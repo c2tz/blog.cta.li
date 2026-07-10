@@ -41,7 +41,7 @@
             "context": "Build and sync security header hashes"
           },
           {
-            "context": "Check Astro, Angular, and security headers"
+            "context": "Check Astro, Material Web, and security headers"
           },
           {
             "context": "Validate pull request title"

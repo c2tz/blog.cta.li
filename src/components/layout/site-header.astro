@@ -1,8 +1,8 @@
 ---
 import { SITE_TITLE } from "@/site-config";
-import { HomeDetailToggleComponent } from "@/components/home/home-detail-toggle.component";
-import { SiteSearchTriggerComponent } from "@/components/search/site-search.component";
-import { ThemeSwitcherComponent } from "./theme-switcher.component";
+import HomeDetailToggle from "@/components/home/home-detail-toggle.astro";
+import SiteSearch from "@/components/search/site-search.astro";
+import ThemeSwitcher from "./theme-switcher.astro";
 ---
 
 <header class="site-header">
@@ -13,8 +13,8 @@ import { ThemeSwitcherComponent } from "./theme-switcher.component";
   </div>
 
   <div class="site-header-actions">
-    <SiteSearchTriggerComponent client:load />
-    <HomeDetailToggleComponent client:load />
-    <ThemeSwitcherComponent client:load />
+    <SiteSearch />
+    <HomeDetailToggle />
+    <ThemeSwitcher />
   </div>
 </header>

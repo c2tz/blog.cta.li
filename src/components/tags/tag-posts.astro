@@ -1,0 +1,720 @@
+---
+interface TagPostItem {
+  createdIso: string;
+  createdLabelCompact: string;
+  createdLabelFull: string;
+  title: string;
+  url: string;
+}
+
+interface Props {
+  posts: TagPostItem[];
+  tag: string;
+  view?: "list" | "table";
+}
+
+const PAGE_SIZE_OPTIONS = [10, 20, 50] as const;
+const { posts, tag, view = "list" } = Astro.props;
+const isTable = view === "table";
+const contentId = isTable ? "tag-posts-table" : "tag-posts-list";
+const initialEnd = Math.min(PAGE_SIZE_OPTIONS[0], posts.length);
+const initialRange = posts.length === 0 ? "0 sur 0" : `1 - ${initialEnd} sur ${posts.length}`;
+const initialStatus =
+  posts.length === 0
+    ? `Aucun article pour le tag ${tag}.`
+    : `Articles 1 à ${initialEnd} sur ${posts.length} pour le tag ${tag}.`;
+---
+
+<site-tag-posts data-view={view} data-tag={tag}>
+  {
+    isTable && (
+      <div class="tag-posts-table-tools">
+        <md-outlined-text-field
+          id="tag-posts-filter"
+          class="tag-posts-table-filter"
+          type="search"
+          label="Filtrer les articles"
+          autocomplete="off"
+          aria-controls={contentId}
+          data-tag-posts-filter
+        />
+      </div>
+    )
+  }
+
+  <p class="sr-only" role="status" aria-live="polite" aria-atomic="true" data-page-status>
+    {initialStatus}
+  </p>
+  {
+    isTable && (
+      <p class="sr-only" role="status" aria-live="polite" aria-atomic="true" data-sort-status />
+    )
+  }
+
+  {
+    isTable ? (
+      <div class="tag-posts-table-scroll" tabindex="0">
+        <table id={contentId} class="tag-posts-table" aria-label={`Articles du tag ${tag}`}>
+          <thead>
+            <tr>
+              <th class="tag-posts-created-column" scope="col" data-sort-header="created">
+                <button
+                  type="button"
+                  class="tag-posts-sort-button"
+                  aria-label="Trier par date"
+                  data-sort-column="created"
+                >
+                  <span>Date</span>
+                  <md-icon aria-hidden="true" data-sort-icon>
+                    &#xE5D7;
+                  </md-icon>
+                  <md-ripple />
+                </button>
+              </th>
+              <th
+                class="tag-posts-title-column tag-posts-title-header"
+                scope="col"
+                data-sort-header="title"
+              >
+                <button
+                  type="button"
+                  class="tag-posts-sort-button"
+                  aria-label="Trier par titre"
+                  data-sort-column="title"
+                >
+                  <span>Titre</span>
+                  <md-icon aria-hidden="true" data-sort-icon>
+                    &#xE5D7;
+                  </md-icon>
+                  <md-ripple />
+                </button>
+              </th>
+            </tr>
+          </thead>
+          <tbody data-tag-posts-items>
+            {posts.map((post, index) => (
+              <tr
+                class="tag-posts-table-row"
+                data-tag-post-item
+                data-index={index}
+                data-created={post.createdIso}
+                data-title={post.title}
+                data-search={`${post.createdLabelCompact} ${post.createdLabelFull} ${post.createdIso} ${post.title}`}
+              >
+                <td class="tag-posts-created-column">
+                  <time class="post-date site-date-compact" datetime={post.createdIso}>
+                    {post.createdLabelCompact}
+                  </time>
+                  <time class="post-date site-date-full" datetime={post.createdIso}>
+                    {post.createdLabelFull}
+                  </time>
+                </td>
+                <td class="tag-posts-title-column">
+                  <a class="tag-post-title" href={post.url}>
+                    {post.title}
+                  </a>
+                </td>
+              </tr>
+            ))}
+            <tr class="tag-posts-table-empty" data-empty-row hidden={posts.length > 0}>
+              <td colspan="2">Aucun article ne correspond au filtre.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    ) : (
+      <ul id={contentId} class="tag-posts" data-tag-posts-items>
+        {posts.map((post, index) => (
+          <li class="tag-post" data-tag-post-item data-index={index}>
+            <span class="tag-post-date">
+              <time class="post-date site-date-compact" datetime={post.createdIso}>
+                {post.createdLabelCompact}
+              </time>
+              <time class="post-date site-date-full" datetime={post.createdIso}>
+                {post.createdLabelFull}
+              </time>
+            </span>
+            <span class="tag-separator" aria-hidden="true">
+              ·
+            </span>
+            <a class="tag-post-title" href={post.url}>
+              {post.title}
+            </a>
+          </li>
+        ))}
+        <li class="tag-posts-list-empty" data-empty-row hidden={posts.length > 0}>
+          Aucun article à afficher.
+        </li>
+      </ul>
+    )
+  }
+
+  {
+    posts.length > PAGE_SIZE_OPTIONS[0] && (
+      <nav class="tag-posts-pagination" aria-label={`Pagination des articles du tag ${tag}`}>
+        <div class="tag-posts-page-size">
+          <span>Articles par page</span>
+          <md-outlined-select
+            label="Articles par page"
+            value={PAGE_SIZE_OPTIONS[0].toString()}
+            aria-controls={contentId}
+            data-page-size
+          >
+            {PAGE_SIZE_OPTIONS.map((size, index) => (
+              <md-select-option value={size.toString()} selected={index === 0 ? true : undefined}>
+                <span slot="headline">{size}</span>
+              </md-select-option>
+            ))}
+          </md-outlined-select>
+        </div>
+
+        <span class="tag-posts-range" data-page-range>
+          {initialRange}
+        </span>
+
+        <div class="tag-posts-page-actions">
+          <md-icon-button
+            type="button"
+            aria-label="Première page"
+            aria-controls={contentId}
+            data-page-action="first"
+            disabled
+          >
+            <md-icon aria-hidden="true">&#xE5DC;</md-icon>
+          </md-icon-button>
+          <md-icon-button
+            type="button"
+            aria-label="Page précédente"
+            aria-controls={contentId}
+            data-page-action="previous"
+            disabled
+          >
+            <md-icon aria-hidden="true">&#xE5CB;</md-icon>
+          </md-icon-button>
+          <md-icon-button
+            type="button"
+            aria-label="Page suivante"
+            aria-controls={contentId}
+            data-page-action="next"
+            disabled={posts.length <= PAGE_SIZE_OPTIONS[0] ? true : undefined}
+          >
+            <md-icon aria-hidden="true">&#xE5CC;</md-icon>
+          </md-icon-button>
+          <md-icon-button
+            type="button"
+            aria-label="Dernière page"
+            aria-controls={contentId}
+            data-page-action="last"
+            disabled={posts.length <= PAGE_SIZE_OPTIONS[0] ? true : undefined}
+          >
+            <md-icon aria-hidden="true">&#xE5DD;</md-icon>
+          </md-icon-button>
+        </div>
+      </nav>
+    )
+  }
+</site-tag-posts>
+
+<script>
+  type TagPostsView = "list" | "table";
+  type SortColumn = "created" | "title";
+  type SortDirection = "asc" | "desc";
+
+  interface MaterialValueElement extends HTMLElement {
+    value?: string;
+  }
+
+  interface TagPostDomItem {
+    created: string;
+    element: HTMLElement;
+    index: number;
+    search: string;
+    title: string;
+  }
+
+  const UNSORTED_ICON = "\uE5D7";
+  const SORT_ASC_ICON = "\uE5D8";
+  const SORT_DESC_ICON = "\uE5DB";
+
+  function materialValue(element: MaterialValueElement) {
+    return typeof element.value === "string"
+      ? element.value
+      : (element.getAttribute("value") ?? "");
+  }
+
+  class SiteTagPostsElement extends HTMLElement {
+    private items: TagPostDomItem[] = [];
+    private itemsContainer: HTMLElement | null = null;
+    private emptyRow: HTMLElement | null = null;
+    private pageIndex = 0;
+    private pageSize = 10;
+    private filterValue = "";
+    private sortColumn: SortColumn | null = null;
+    private sortDirection: SortDirection = "asc";
+    private tag = "all";
+    private view: TagPostsView = "list";
+
+    connectedCallback() {
+      if (this.hasAttribute("data-enhanced")) return;
+      this.setAttribute("data-enhanced", "true");
+
+      this.tag = this.getAttribute("data-tag") || "all";
+      this.view = this.getAttribute("data-view") === "table" ? "table" : "list";
+      this.itemsContainer = this.querySelector<HTMLElement>("[data-tag-posts-items]");
+      this.emptyRow = this.querySelector<HTMLElement>("[data-empty-row]");
+      this.items = Array.from(this.querySelectorAll<HTMLElement>("[data-tag-post-item]")).map(
+        (element, index) => ({
+          created: element.getAttribute("data-created") ?? "",
+          element,
+          index: Number.parseInt(element.getAttribute("data-index") ?? `${index}`, 10),
+          search: (element.getAttribute("data-search") ?? "").toLocaleLowerCase("fr"),
+          title: element.getAttribute("data-title") ?? "",
+        }),
+      );
+
+      this.bindFilter();
+      this.bindSort();
+      this.bindPagination();
+      this.render();
+    }
+
+    private bindFilter() {
+      const field = this.querySelector<MaterialValueElement>("[data-tag-posts-filter]");
+      if (!field) return;
+
+      const updateFilter = () => {
+        const nextValue = materialValue(field);
+        if (nextValue === this.filterValue) return;
+
+        this.filterValue = nextValue;
+        this.pageIndex = 0;
+        this.render();
+      };
+
+      field.addEventListener("input", updateFilter);
+      field.addEventListener("change", updateFilter);
+    }
+
+    private bindSort() {
+      this.querySelectorAll<HTMLButtonElement>("[data-sort-column]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const column = button.getAttribute("data-sort-column");
+          if (column !== "created" && column !== "title") return;
+          this.toggleSort(column);
+        });
+      });
+    }
+
+    private bindPagination() {
+      const pageSize = this.querySelector<MaterialValueElement>("[data-page-size]");
+      pageSize?.addEventListener("change", () => {
+        const nextSize = Number.parseInt(materialValue(pageSize), 10);
+        if (!Number.isFinite(nextSize) || nextSize <= 0) return;
+
+        this.pageSize = nextSize;
+        this.pageIndex = 0;
+        this.render();
+      });
+
+      this.querySelectorAll<HTMLElement>("[data-page-action]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const action = button.getAttribute("data-page-action");
+          const pageCount = this.pageCount(this.filteredItems().length);
+
+          if (action === "first") this.pageIndex = 0;
+          else if (action === "previous") this.pageIndex -= 1;
+          else if (action === "next") this.pageIndex += 1;
+          else if (action === "last") this.pageIndex = pageCount - 1;
+          else return;
+
+          this.pageIndex = Math.min(Math.max(0, this.pageIndex), pageCount - 1);
+          this.render();
+        });
+      });
+    }
+
+    private toggleSort(column: SortColumn) {
+      if (this.sortColumn !== column) {
+        this.sortColumn = column;
+        this.sortDirection = "asc";
+      } else if (this.sortDirection === "asc") {
+        this.sortDirection = "desc";
+      } else {
+        this.sortColumn = null;
+        this.sortDirection = "asc";
+      }
+
+      this.pageIndex = 0;
+      const status = this.querySelector<HTMLElement>("[data-sort-status]");
+      if (status) {
+        if (!this.sortColumn) {
+          status.textContent = "Tri désactivé.";
+        } else {
+          const direction = this.sortDirection === "asc" ? "croissant" : "décroissant";
+          const label = column === "created" ? "date" : "titre";
+          status.textContent = `Articles triés par ${label}, ordre ${direction}.`;
+        }
+      }
+
+      this.render();
+    }
+
+    private filteredItems() {
+      const filter = this.filterValue.trim().toLocaleLowerCase("fr");
+      const filtered = filter
+        ? this.items.filter((item) => item.search.includes(filter))
+        : this.items;
+      return this.sortItems(filtered);
+    }
+
+    private sortItems(items: TagPostDomItem[]) {
+      if (this.view !== "table" || !this.sortColumn) {
+        return [...items].sort((left, right) => left.index - right.index);
+      }
+
+      const direction = this.sortDirection === "asc" ? 1 : -1;
+      return [...items].sort((left, right) => {
+        if (this.sortColumn === "created") {
+          const leftDate = Date.parse(left.created);
+          const rightDate = Date.parse(right.created);
+          const result =
+            Number.isNaN(leftDate) || Number.isNaN(rightDate)
+              ? left.created.localeCompare(right.created, "fr")
+              : leftDate - rightDate;
+          return result * direction;
+        }
+
+        return left.title.localeCompare(right.title, "fr", { sensitivity: "base" }) * direction;
+      });
+    }
+
+    private render() {
+      const filtered = this.filteredItems();
+      const pageCount = this.pageCount(filtered.length);
+      this.pageIndex = Math.min(this.pageIndex, pageCount - 1);
+
+      const orderedItems = this.sortItems(this.items);
+      if (this.itemsContainer) {
+        this.itemsContainer.append(...orderedItems.map((item) => item.element));
+        if (this.emptyRow) this.itemsContainer.append(this.emptyRow);
+      }
+
+      const start = this.pageIndex * this.pageSize;
+      const visiblePage = filtered.slice(start, start + this.pageSize);
+      const visibleItems = new Set(visiblePage);
+      const lastVisibleItem = visiblePage.at(-1);
+      this.items.forEach((item) => {
+        item.element.hidden = !visibleItems.has(item);
+        item.element.classList.toggle("is-last-visible", item === lastVisibleItem);
+      });
+      if (this.emptyRow) this.emptyRow.hidden = filtered.length > 0;
+
+      this.updateSortState();
+      this.updatePagination(filtered.length, pageCount);
+    }
+
+    private updateSortState() {
+      this.querySelectorAll<HTMLElement>("[data-sort-header]").forEach((header) => {
+        const column = header.getAttribute("data-sort-header");
+        const active = column === this.sortColumn;
+        const button = header.querySelector<HTMLElement>("[data-sort-column]");
+        const icon = header.querySelector<HTMLElement>("[data-sort-icon]");
+
+        if (active) {
+          header.setAttribute(
+            "aria-sort",
+            this.sortDirection === "asc" ? "ascending" : "descending",
+          );
+        } else {
+          header.removeAttribute("aria-sort");
+        }
+        button?.classList.toggle("tag-posts-sort-active", active);
+        if (icon) {
+          icon.textContent = active
+            ? this.sortDirection === "asc"
+              ? SORT_ASC_ICON
+              : SORT_DESC_ICON
+            : UNSORTED_ICON;
+        }
+      });
+    }
+
+    private updatePagination(total: number, pageCount: number) {
+      const hasPreviousPage = this.pageIndex > 0;
+      const hasNextPage = this.pageIndex + 1 < pageCount;
+      this.setActionDisabled("first", !hasPreviousPage);
+      this.setActionDisabled("previous", !hasPreviousPage);
+      this.setActionDisabled("next", !hasNextPage);
+      this.setActionDisabled("last", !hasNextPage);
+
+      const start = total === 0 ? 0 : this.pageIndex * this.pageSize + 1;
+      const end = total === 0 ? 0 : Math.min(start + this.pageSize - 1, total);
+      const range = this.querySelector<HTMLElement>("[data-page-range]");
+      if (range) range.textContent = total === 0 ? "0 sur 0" : `${start} - ${end} sur ${total}`;
+
+      const status = this.querySelector<HTMLElement>("[data-page-status]");
+      if (status) {
+        status.textContent =
+          total === 0
+            ? `Aucun article pour le tag ${this.tag}.`
+            : `Articles ${start} à ${end} sur ${total} pour le tag ${this.tag}.`;
+      }
+    }
+
+    private setActionDisabled(action: string, disabled: boolean) {
+      this.querySelector<HTMLElement>(`[data-page-action="${action}"]`)?.toggleAttribute(
+        "disabled",
+        disabled,
+      );
+    }
+
+    private pageCount(total: number) {
+      return Math.max(1, Math.ceil(total / this.pageSize));
+    }
+  }
+
+  if (!customElements.get("site-tag-posts")) {
+    customElements.define("site-tag-posts", SiteTagPostsElement);
+  }
+</script>
+
+<style>
+  site-tag-posts {
+    display: block;
+  }
+
+  site-tag-posts [data-tag-post-item][hidden],
+  site-tag-posts [data-empty-row][hidden] {
+    display: none;
+  }
+
+  .tag-posts-table-tools {
+    margin-block: 0 0.75rem;
+  }
+
+  .tag-posts-table-filter {
+    width: min(100%, 24rem);
+    --md-outlined-text-field-container-shape: var(--md-sys-shape-corner-extra-large);
+    --md-outlined-text-field-focus-caret-color: var(--site-link);
+    --md-outlined-text-field-focus-label-text-color: var(--site-link);
+    --md-outlined-text-field-focus-outline-color: var(--site-link);
+    --md-outlined-text-field-input-text-color: var(--site-text);
+    --md-outlined-text-field-input-text-font: var(--site-font);
+    --md-outlined-text-field-label-text-color: var(--site-muted);
+    --md-outlined-text-field-label-text-font: var(--site-font);
+    --md-outlined-text-field-outline-color: var(--site-border);
+  }
+
+  .tag-posts-table-scroll {
+    --tag-posts-date-column-content-width: 16rem;
+
+    position: relative;
+    max-width: 100%;
+    margin-block: 0 1rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tag-posts-table-scroll::-webkit-scrollbar {
+    height: 0.5rem;
+  }
+
+  .tag-posts-table-scroll::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--site-muted) 42%, transparent);
+  }
+
+  .tag-posts-table-scroll:focus-visible {
+    border-radius: var(--site-shape-extra-small);
+    outline: 2px solid var(--site-link);
+    outline-offset: 2px;
+  }
+
+  .tag-posts-table {
+    min-width: 42rem;
+    width: max-content;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: transparent;
+    color: var(--site-text);
+    font-family: var(--site-font);
+  }
+
+  .tag-posts-table th,
+  .tag-posts-table td {
+    height: 3rem;
+    padding: 0 2rem 0 1rem;
+    border: 0;
+    border-block-end: 1px solid var(--site-border);
+    background: var(--site-bg);
+    color: var(--site-text);
+    font-family: var(--site-font);
+    font-size: 1rem;
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 1.5;
+    text-align: start;
+    white-space: nowrap;
+  }
+
+  .tag-posts-table th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: 0;
+    color: var(--site-muted);
+    font-weight: 600;
+  }
+
+  .tag-posts-table .tag-posts-created-column {
+    width: var(--tag-posts-date-column-content-width);
+    min-width: var(--tag-posts-date-column-content-width);
+    border-inline-end: 1px solid var(--site-border);
+  }
+
+  .tag-posts-table .tag-posts-title-column {
+    min-width: 20rem;
+  }
+
+  .tag-posts-table .tag-posts-title-header {
+    overflow: visible;
+  }
+
+  .tag-posts-sort-button {
+    --md-ripple-hover-color: var(--site-link);
+    --md-ripple-pressed-color: var(--site-link);
+
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    width: 100%;
+    min-height: 3rem;
+    box-sizing: border-box;
+    padding: 0 2rem 0 1rem;
+    overflow: hidden;
+    border: 0;
+    background: var(--site-bg);
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    font-weight: inherit;
+    text-align: start;
+  }
+
+  .tag-posts-sort-button md-icon {
+    --md-icon-size: 1.25rem;
+
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-basis: 1.25rem;
+    font-size: 1.25rem;
+  }
+
+  .tag-posts-sort-active {
+    background: color-mix(in srgb, var(--site-link) 10%, var(--site-bg));
+    color: var(--site-text);
+  }
+
+  .tag-posts-sort-button:focus-visible {
+    outline: 0;
+    box-shadow: inset 0 0 0 2px var(--site-link);
+  }
+
+  .tag-posts-table .tag-posts-table-row.is-last-visible td,
+  .tag-posts-table .tag-posts-table-empty td {
+    border-block-end: 0;
+  }
+
+  .tag-posts-table-empty td {
+    height: 5rem;
+    color: var(--site-muted);
+    text-align: center;
+  }
+
+  .tag-posts-list-empty {
+    color: var(--site-muted);
+  }
+
+  .tag-post-title {
+    display: inline;
+    white-space: nowrap;
+  }
+
+  .tag-posts-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-block-start: 1rem;
+    color: var(--site-text);
+  }
+
+  .tag-posts-page-size {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--site-muted);
+    font-size: 0.875rem;
+  }
+
+  .tag-posts-page-size md-outlined-select {
+    width: auto;
+    min-width: 5rem;
+  }
+
+  .tag-posts-range {
+    min-width: 7.5rem;
+    color: var(--site-muted);
+    font-size: 0.875rem;
+    text-align: end;
+  }
+
+  .tag-posts-page-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.125rem;
+  }
+
+  .tag-posts-page-actions md-icon-button {
+    --md-icon-button-icon-color: var(--site-muted);
+    --md-icon-button-hover-icon-color: var(--site-text);
+    --md-icon-button-focus-icon-color: var(--site-text);
+    --md-icon-button-pressed-icon-color: var(--site-text);
+  }
+
+  @media (max-width: 720px) {
+    .tag-posts-pagination {
+      flex-wrap: wrap;
+    }
+
+    .tag-posts-page-size {
+      margin-inline-end: auto;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .tag-posts-table-scroll {
+      --tag-posts-date-column-content-width: 13rem;
+    }
+
+    .tag-posts-table {
+      min-width: 36rem;
+    }
+
+    .tag-posts-table .tag-posts-title-column {
+      min-width: 20rem;
+    }
+
+    .tag-posts-pagination {
+      justify-content: space-between;
+    }
+
+    .tag-posts-range {
+      order: 3;
+      width: 100%;
+      text-align: center;
+    }
+  }
+</style>

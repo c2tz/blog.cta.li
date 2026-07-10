@@ -1,0 +1,198 @@
+---
+const CLOSE_ICON = "\uE5CD";
+const DOWNLOAD_ICON = "\uE2C4";
+const FULLSCREEN_EXIT_ICON = "\uE5D1";
+const FULLSCREEN_ICON = "\uE5D0";
+const INFO_ICON = "\uE88E";
+const MORE_ICON = "\uE5D4";
+const NEXT_ICON = "\uE5C8";
+const PREVIOUS_ICON = "\uE5C4";
+const SHARE_ICON = "\uE157";
+const ZOOM_ICON = "\uE8FF";
+---
+
+<md-dialog
+  id="site-image-preview-dialog"
+  class="site-image-dialog"
+  aria-label="Aperçu de l’image"
+  data-site-image-dialog
+>
+  <section
+    slot="content"
+    class="site-image-dialog-shell has-visible-controls"
+    data-image-dialog-shell
+    role="document"
+    aria-label="Visionneuse d’image"
+    tabindex="-1"
+  >
+    <md-linear-progress
+      class="site-image-dialog-operation-progress"
+      data-image-operation-progress
+      aria-label="Opération en cours"
+      indeterminate
+      hidden></md-linear-progress>
+
+    <div class="site-image-dialog-content" data-image-dialog-content>
+      <img
+        class="site-image-dialog-image"
+        data-image-dialog-image
+        alt=""
+        decoding="async"
+        draggable="false"
+      />
+    </div>
+
+    <md-menu
+      id="site-image-dialog-menu"
+      anchor="site-image-dialog-menu-trigger"
+      anchor-corner="end-end"
+      menu-corner="start-end"
+      positioning="popover"
+      class="site-image-dialog-menu"
+      aria-label="Options de l’image"
+      data-image-dialog-menu
+    >
+      <md-menu-item class="site-image-dialog-menu-item" data-image-download>
+        <md-icon slot="start" aria-hidden="true">{DOWNLOAD_ICON}</md-icon>
+        <span slot="headline">Télécharger</span>
+      </md-menu-item>
+
+      <md-menu-item class="site-image-dialog-menu-item" data-image-share>
+        <md-icon slot="start" aria-hidden="true">{SHARE_ICON}</md-icon>
+        <span slot="headline" data-image-share-label>Partager</span>
+      </md-menu-item>
+
+      <md-menu-item class="site-image-dialog-menu-item" data-image-zoom>
+        <md-icon slot="start" aria-hidden="true" data-image-zoom-icon>{ZOOM_ICON}</md-icon>
+        <span slot="headline" data-image-zoom-label>Taille réelle</span>
+      </md-menu-item>
+
+      <md-menu-item class="site-image-dialog-menu-item" data-image-fullscreen>
+        <md-icon slot="start" aria-hidden="true" data-image-fullscreen-icon
+          >{FULLSCREEN_ICON}</md-icon
+        >
+        <span slot="headline" data-image-fullscreen-label>Plein écran</span>
+      </md-menu-item>
+
+      <md-menu-item class="site-image-dialog-menu-item" data-image-information>
+        <md-icon slot="start" aria-hidden="true">{INFO_ICON}</md-icon>
+        <span slot="headline">Informations</span>
+      </md-menu-item>
+    </md-menu>
+
+    <div
+      class="site-image-dialog-toolbar"
+      data-image-dialog-toolbar
+      role="group"
+      aria-label="Commandes de l’image"
+    >
+      <nav
+        class="site-image-dialog-navigation"
+        data-image-navigation
+        aria-label="Navigation entre les images"
+      >
+        <md-icon-button
+          type="button"
+          class="site-image-dialog-button"
+          aria-label="Image précédente"
+          title="Image précédente"
+          data-image-previous
+        >
+          <md-icon aria-hidden="true">{PREVIOUS_ICON}</md-icon>
+        </md-icon-button>
+
+        <md-icon-button
+          type="button"
+          class="site-image-dialog-button"
+          aria-label="Image suivante"
+          title="Image suivante"
+          data-image-next
+        >
+          <md-icon aria-hidden="true">{NEXT_ICON}</md-icon>
+        </md-icon-button>
+      </nav>
+
+      <span class="sr-only" role="status" aria-live="polite" aria-atomic="true" data-image-status
+      ></span>
+
+      <div class="site-image-dialog-toolbar-actions" role="group" aria-label="Actions de l’image">
+        <md-icon-button
+          id="site-image-dialog-menu-trigger"
+          type="button"
+          class="site-image-dialog-button"
+          aria-label="Options de l’image"
+          aria-haspopup="menu"
+          aria-controls="site-image-dialog-menu"
+          aria-expanded="false"
+          title="Options"
+          data-image-menu-trigger
+        >
+          <md-icon aria-hidden="true">{MORE_ICON}</md-icon>
+        </md-icon-button>
+
+        <md-filled-tonal-icon-button
+          type="button"
+          class="site-image-dialog-button site-image-dialog-fullscreen-exit-button"
+          aria-label="Quitter le plein écran"
+          title="Quitter le plein écran"
+          data-image-fullscreen-exit
+        >
+          <md-icon aria-hidden="true">{FULLSCREEN_EXIT_ICON}</md-icon>
+        </md-filled-tonal-icon-button>
+
+        <md-filled-tonal-icon-button
+          type="button"
+          class="site-image-dialog-button site-image-dialog-close-button"
+          aria-label="Fermer"
+          title="Fermer"
+          data-image-close
+        >
+          <md-icon aria-hidden="true">{CLOSE_ICON}</md-icon>
+        </md-filled-tonal-icon-button>
+      </div>
+    </div>
+
+    <md-dialog
+      id="site-image-information-dialog"
+      class="site-image-information-dialog"
+      data-image-information-dialog
+    >
+      <span slot="headline" class="site-image-information-header">
+        <span id="site-image-information-title">Informations sur l’image</span>
+        <md-icon-button
+          type="button"
+          aria-label="Fermer les informations"
+          title="Fermer les informations"
+          data-image-information-close
+        >
+          <md-icon aria-hidden="true">{CLOSE_ICON}</md-icon>
+        </md-icon-button>
+      </span>
+
+      <dl slot="content" class="site-image-information-list">
+        <div><dt>Nom</dt><dd data-image-info-name></dd></div>
+        <div><dt>Format affiché</dt><dd data-image-info-type></dd></div>
+        <div><dt>Taille chargée</dt><dd data-image-info-size></dd></div>
+        <div><dt>Dimensions</dt><dd data-image-info-dimensions></dd></div>
+        <div><dt>Ajoutée le</dt><dd data-image-info-created></dd></div>
+        <div><dt>Modifiée le</dt><dd data-image-info-modified></dd></div>
+      </dl>
+    </md-dialog>
+
+    <div
+      class="site-image-dialog-snackbar"
+      data-image-dialog-snackbar
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      hidden
+    >
+    </div>
+  </section>
+</md-dialog>
+
+<script>
+  import { installImagePreviewDialog } from "@/assets/js/app/image-preview.js";
+
+  installImagePreviewDialog();
+</script>

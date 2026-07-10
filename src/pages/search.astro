@@ -1,6 +1,6 @@
 ---
 import searchHeroImage from "@/content/blog/images/konachan-396319.jpg";
-import { SiteSearchPanelComponent } from "@/components/search/site-search-panel.component";
+import SiteSearchPanel from "@/components/search/site-search-panel.astro";
 import Layout from "@/layouts/site-layout.astro";
 ---
 
@@ -29,7 +29,7 @@ import Layout from "@/layouts/site-layout.astro";
       </header>
 
       <div class="site-search-page-panel">
-        <SiteSearchPanelComponent client:load />
+        <SiteSearchPanel autofocus syncUrl />
       </div>
     </section>
   </Fragment>

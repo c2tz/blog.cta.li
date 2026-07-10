@@ -216,7 +216,11 @@ function tokenizeHugoShortcode(source) {
       continue;
     }
 
-    if (['"', "'", "`", "“", "‘"].includes(character)) {
+    const isClosingCurvedQuote = ["”", "’"].includes(character);
+    if (
+      ['"', "'", "`", "“", "‘"].includes(character) ||
+      (isClosingCurvedQuote && (!value || value.endsWith("=")))
+    ) {
       quote = character;
       quoteEnd = character === "“" ? "”" : character === "‘" ? "’" : character;
       continue;
@@ -509,13 +513,17 @@ function createButton(shortcode, children, file) {
       'Material Web ne prend pas en charge les icônes terminales sur les boutons-liens. Utilisez iconPosition="start".',
     );
   }
-  const content = children.length
-    ? children.length === 1 && children[0]?.type === "paragraph"
-      ? children[0].children
-      : children
-    : label
-      ? [textNode(String(label))]
-      : [];
+  if (
+    children.length > 0 &&
+    (children.length !== 1 ||
+      children[0]?.type !== "paragraph" ||
+      children[0].children.some((child) => child.type === "break"))
+  ) {
+    file.fail(
+      "Le libellé d’un bouton doit tenir sur une seule ligne Markdown. Utilisez un paragraphe court ou le paramètre `label`.",
+    );
+  }
+  const content = children.length ? children[0].children : label ? [textNode(String(label))] : [];
   if (!content.length) {
     file.fail("Le shortcode button doit contenir un libellé Markdown ou recevoir `label`.");
   }

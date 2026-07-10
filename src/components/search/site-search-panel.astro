@@ -1,0 +1,143 @@
+---
+import "@/assets/css/components/site-search.scss";
+import { SORT_OPTIONS } from "./site-search-model";
+
+interface Props {
+  autofocus?: boolean;
+  deferred?: boolean;
+  idPrefix?: string;
+  syncUrl?: boolean;
+}
+
+const {
+  autofocus = false,
+  deferred = false,
+  idPrefix = "site-search-panel",
+  syncUrl = false,
+} = Astro.props;
+const resultsId = `${idPrefix}-results`;
+const tagsId = `${idPrefix}-tags`;
+const statusId = `${idPrefix}-status`;
+const limitId = `${idPrefix}-filter-limit`;
+---
+
+<section
+  class="site-search-panel"
+  data-site-search-panel
+  data-autofocus={autofocus ? "true" : "false"}
+  data-deferred={deferred ? "true" : "false"}
+  data-sync-url={syncUrl ? "true" : "false"}
+>
+  <form class="site-search-panel-form" role="search" data-search-form>
+    <div class="site-search-panel-field">
+      <div class="site-search-panel-query">
+        <md-outlined-text-field
+          class="site-search-panel-input"
+          type="search"
+          label="Mot-clé, titre ou contenu"
+          autocomplete="off"
+          spellcheck="false"
+          has-leading-icon
+          aria-controls={`${resultsId} ${tagsId}`}
+          aria-describedby={`${statusId} ${limitId}`}
+          data-search-input
+        >
+          <md-icon slot="leading-icon" aria-hidden="true">&#xE8B6;</md-icon>
+        </md-outlined-text-field>
+
+        <md-icon-button
+          class="site-search-panel-clear-search"
+          type="button"
+          title="Effacer la recherche"
+          aria-label="Effacer la recherche"
+          data-clear-search
+          hidden
+        >
+          <md-icon aria-hidden="true">&#xE5CD;</md-icon>
+        </md-icon-button>
+      </div>
+
+      <span class="site-search-panel-divider" aria-hidden="true"></span>
+      <md-outlined-select
+        class="site-search-panel-sort-select"
+        label="Tri par"
+        aria-label="Trier les résultats"
+        menu-positioning="fixed"
+        value={deferred ? undefined : "relevance"}
+        data-sort-select
+      >
+        {
+          SORT_OPTIONS.map((option) => (
+            <md-select-option
+              value={option.value}
+              selected={!deferred && option.value === "relevance" ? true : undefined}
+            >
+              <span slot="headline">{option.label}</span>
+            </md-select-option>
+          ))
+        }
+      </md-outlined-select>
+    </div>
+  </form>
+
+  <div class="site-search-panel-state" data-search-state>
+    <p
+      id={statusId}
+      class="site-search-panel-status"
+      role="status"
+      aria-live="polite"
+      data-search-status
+    >
+      Tapez au moins deux caractères ou choisissez un filtre.
+    </p>
+
+    <div class="site-search-panel-filter-actions" data-filter-actions hidden>
+      <md-text-button
+        class="site-search-panel-filter-button site-search-panel-clear-filters"
+        type="button"
+        has-icon
+        aria-label="Effacer les filtres sélectionnés"
+        data-clear-filters
+      >
+        <md-icon slot="icon" aria-hidden="true">&#xE5CD;</md-icon>
+        <span>Effacer filtres</span>
+      </md-text-button>
+    </div>
+
+    <p
+      id={limitId}
+      class="site-search-panel-filter-limit"
+      role="status"
+      aria-live="polite"
+      data-filter-limit
+      hidden
+    >
+      Limite atteinte : 3 tags maximum.
+    </p>
+
+    <md-linear-progress
+      class="site-search-panel-progress"
+      aria-label="Recherche en cours"
+      indeterminate
+      data-search-progress
+      hidden></md-linear-progress>
+  </div>
+
+  <div class="site-search-panel-filters">
+    <md-chip-set
+      id={tagsId}
+      class="site-search-panel-tags"
+      aria-label="Filtrer par tags"
+      data-search-tags
+      hidden></md-chip-set>
+  </div>
+
+  <ol id={resultsId} class="site-search-panel-results" aria-live="polite" data-search-results></ol>
+</section>
+
+<script>
+  import { initSiteSearchPanels } from "@/assets/js/app/site-search.js";
+
+  initSiteSearchPanels();
+  document.addEventListener("astro:page-load", initSiteSearchPanels);
+</script>

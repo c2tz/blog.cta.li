@@ -1,0 +1,71 @@
+<div class="site-scroll-top" data-scroll-top hidden>
+  <md-filled-tonal-icon-button
+    class="site-scroll-top-button"
+    title="Retour en haut"
+    aria-label="Retour en haut"
+  >
+    <md-icon class="site-scroll-top-icon" aria-hidden="true">&#xE25A;</md-icon>
+  </md-filled-tonal-icon-button>
+</div>
+
+<script>
+  import { SITE_EVENTS } from "@/lib/site-contracts";
+
+  function enhanceScrollTop(root: HTMLElement) {
+    if (root.dataset.enhanced === "true") return;
+    root.dataset.enhanced = "true";
+    const button = root.querySelector<HTMLElement>("md-filled-tonal-icon-button");
+    if (!button) return;
+    let frame = 0;
+
+    const sync = () => {
+      frame = 0;
+      const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+      const scrollable = Math.max(1, document.documentElement.scrollHeight - innerHeight);
+      const progress = Math.min(100, Math.max(0, Math.round((scrollTop / scrollable) * 100)));
+      const disabledPage = document.body.classList.contains("home-page");
+      root.hidden = disabledPage || window.scrollY <= 100;
+      root.classList.toggle("is-visible", !root.hidden);
+      root.dataset.scrollProgress = String(progress);
+    };
+    const requestSync = () => {
+      if (!frame) frame = requestAnimationFrame(sync);
+    };
+    button.addEventListener("click", () => {
+      if (document.body.classList.contains("home-page")) return;
+      document.dispatchEvent(new CustomEvent(SITE_EVENTS.tooltipHide));
+      scrollTo({ top: 0, behavior: "smooth" });
+    });
+    addEventListener("scroll", requestSync, { passive: true });
+    addEventListener("resize", requestSync, { passive: true });
+    sync();
+  }
+
+  const init = () =>
+    document.querySelectorAll<HTMLElement>("[data-scroll-top]").forEach(enhanceScrollTop);
+  init();
+  document.addEventListener("astro:page-load", init);
+</script>
+
+<style>
+  .site-scroll-top {
+    position: fixed;
+    right: calc(2rem + env(safe-area-inset-right, 0px));
+    bottom: 1rem;
+    z-index: 9000;
+    width: 2.5rem;
+    height: 2.5rem;
+    overflow: visible;
+  }
+
+  .site-scroll-top-button {
+    display: inline-flex;
+  }
+
+  @media (max-width: 520px) {
+    .site-scroll-top {
+      right: calc(2rem + env(safe-area-inset-right, 0px));
+      bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    }
+  }
+</style>

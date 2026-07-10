@@ -7,6 +7,7 @@
     "src/layouts/**/*.astro",
     "src/pages/**/*.{astro,js,ts}",
     "src/assets/js/app/home-konachan-background.js",
+    "src/assets/js/app/home-konachan-controls.js",
     "scripts/**/*.mjs",
     "tests/**/*.test.mjs",
     "tests/e2e/**/*.spec.ts"
@@ -22,18 +23,11 @@
   "ignore": [".astro/**", "dist/**", "public/pagefind/**"],
   "ignoreBinaries": ["codex"],
   "ignoreDependencies": [
-    "@angular/animations",
-    "@angular/build",
-    "@angular/compiler",
-    "@angular/compiler-cli",
-    "@angular/language-service",
-    "@angular/platform-server",
     "@types/node",
     "material-symbols",
     "prettier-plugin-astro",
     "sass",
-    "typescript",
-    "zone.js"
+    "typescript"
   ],
   "ignoreIssues": {
     "src/lib/konachan-backgrounds.mjs": ["duplicates"]

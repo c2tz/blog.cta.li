@@ -1,0 +1,49 @@
+---
+import SiteSearchPanel from "./site-search-panel.astro";
+
+const dialogId = "site-search-dialog";
+---
+
+<div class="site-search-trigger" data-site-search-trigger>
+  <md-icon-button
+    type="button"
+    class="site-search-trigger-button"
+    title="Rechercher"
+    aria-label="Rechercher"
+    aria-haspopup="dialog"
+    aria-controls={dialogId}
+    data-search-open
+  >
+    <md-icon aria-hidden="true" data-search-open-icon>&#xE8B6;</md-icon>
+    <md-circular-progress
+      class="site-search-trigger-progress"
+      indeterminate
+      aria-hidden="true"
+      data-search-open-progress
+      hidden></md-circular-progress>
+  </md-icon-button>
+
+  <md-dialog id={dialogId} class="site-search-dialog" aria-label="Recherche" data-search-dialog>
+    <div slot="content" class="site-search-dialog-content">
+      <div class="site-search-dialog-header">
+        <h2>Recherche</h2>
+        <md-icon-button
+          type="button"
+          title="Fermer la recherche"
+          aria-label="Fermer la recherche"
+          data-search-close
+        >
+          <md-icon aria-hidden="true">&#xE5CD;</md-icon>
+        </md-icon-button>
+      </div>
+      <SiteSearchPanel idPrefix="site-search-dialog-panel" deferred />
+    </div>
+  </md-dialog>
+</div>
+
+<script>
+  import { initSiteSearchTriggers } from "@/assets/js/app/site-search.js";
+
+  initSiteSearchTriggers();
+  document.addEventListener("astro:page-load", initSiteSearchTriggers);
+</script>

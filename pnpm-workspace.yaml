@@ -5,13 +5,9 @@ publicHoistPattern:
   - tslib
 
 overrides:
-  "@angular/forms": 22.0.6
   "@babel/core": 7.29.7
   esbuild: 0.28.1
   piscina: 5.2.0
-
-allowedDeprecatedVersions:
-  "@angular/animations": "22.0.6"
 
 allowBuilds:
   "@parcel/watcher": true
@@ -21,7 +17,4 @@ allowBuilds:
   sharp: true
 
 minimumReleaseAgeExclude:
-  - "@angular-devkit/architect@0.2200.6"
-  - "@angular-devkit/core@22.0.6"
-  - "@angular/build@22.0.6"
   - prettier@3.9.5

@@ -1,0 +1,286 @@
+---
+const options = [
+  { value: "system", label: "Système" },
+  { value: "light", label: "Clair" },
+  { value: "dark", label: "Sombre" },
+] as const;
+---
+
+<div class="site-header-control" data-theme-switcher>
+  <md-icon-button
+    id="site-theme-trigger"
+    type="button"
+    class="site-theme-trigger"
+    title="Thème : Système"
+    aria-label="Thème : Système"
+    aria-expanded="false"
+    aria-controls="site-theme-menu"
+    aria-haspopup="menu"
+  >
+    <md-icon aria-hidden="true" data-theme-trigger-icon>&#xE1AB;</md-icon>
+  </md-icon-button>
+
+  <md-menu
+    id="site-theme-menu"
+    class="site-theme-menu"
+    anchor="site-theme-trigger"
+    anchor-corner="end-end"
+    menu-corner="start-end"
+    positioning="popover"
+    aria-label="Choisir le thème"
+  >
+    {
+      options.map((option) => (
+        <md-menu-item
+          type="button"
+          class="site-theme-menu-item"
+          data-theme-option={option.value}
+          aria-label={option.label}
+        >
+          <md-icon slot="start" class="site-theme-radio-icon" aria-hidden="true">
+            &#xE836;
+          </md-icon>
+          <span slot="headline" class="site-theme-menu-content">
+            <svg
+              class="site-theme-example-icon"
+              width="25"
+              height="24"
+              viewBox="0 0 80 80"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <defs>
+                <clipPath id={`theme-swatch-${option.value}`}>
+                  <rect width="80" height="80" rx="2.13" />
+                </clipPath>
+                <clipPath id={`theme-pill-${option.value}`}>
+                  <rect x="20" y="40" width="40" height="12" rx="6" />
+                </clipPath>
+              </defs>
+              <g clip-path={`url(#theme-swatch-${option.value})`}>
+                <rect
+                  width="80"
+                  height="80"
+                  class={
+                    option.value === "dark"
+                      ? "site-theme-swatch-surface-dark"
+                      : "site-theme-swatch-surface-light"
+                  }
+                />
+                {option.value === "system" && (
+                  <rect x="40" width="40" height="80" class="site-theme-swatch-surface-dark" />
+                )}
+                <rect
+                  width="80"
+                  height="17.24"
+                  class={
+                    option.value === "dark"
+                      ? "site-theme-swatch-primary-dark"
+                      : "site-theme-swatch-primary-light"
+                  }
+                />
+                {option.value === "system" && (
+                  <rect x="40" width="40" height="17.24" class="site-theme-swatch-primary-dark" />
+                )}
+                <g clip-path={`url(#theme-pill-${option.value})`}>
+                  <rect
+                    x="20"
+                    y="40"
+                    width="40"
+                    height="12"
+                    class={
+                      option.value === "dark"
+                        ? "site-theme-swatch-primary-dark"
+                        : "site-theme-swatch-primary-light"
+                    }
+                  />
+                  {option.value === "system" && (
+                    <rect
+                      x="40"
+                      y="40"
+                      width="20"
+                      height="12"
+                      class="site-theme-swatch-primary-dark"
+                    />
+                  )}
+                </g>
+              </g>
+              <rect
+                x="0.5"
+                y="0.5"
+                width="79"
+                height="79"
+                rx="2.13"
+                fill="none"
+                stroke="currentColor"
+                stroke-opacity="0.24"
+              />
+            </svg>
+            <span>{option.label}</span>
+            <span class="sr-only" data-theme-selected-label hidden>
+              Thème sélectionné
+            </span>
+          </span>
+        </md-menu-item>
+      ))
+    }
+  </md-menu>
+
+  <span class="sr-only" role="status" aria-live="polite" aria-atomic="true" data-theme-status
+  ></span>
+</div>
+
+<script>
+  import { SITE_LEGACY_STORAGE_KEYS, SITE_STORAGE_KEYS } from "@/lib/site-contracts";
+
+  type ThemePreference = "system" | "light" | "dark";
+  type MaterialMenu = HTMLElement & {
+    open: boolean;
+    defaultFocus: "first-item" | "last-item";
+    close(): void;
+    show(): void;
+    activateNextItem(): HTMLElement;
+    activatePreviousItem(): HTMLElement;
+  };
+
+  const labels: Record<ThemePreference, string> = {
+    system: "Système",
+    light: "Clair",
+    dark: "Sombre",
+  };
+  const icons: Record<ThemePreference, string> = {
+    system: "\uE1AB",
+    light: "\uE3AA",
+    dark: "\uE3A6",
+  };
+
+  const isPreference = (value: string | null): value is ThemePreference =>
+    value === "system" || value === "light" || value === "dark";
+
+  function enhanceThemeSwitcher(root: HTMLElement) {
+    if (root.dataset.enhanced === "true") return;
+    root.dataset.enhanced = "true";
+
+    const trigger = root.querySelector<HTMLElement>(".site-theme-trigger");
+    const triggerIcon = root.querySelector<HTMLElement>("[data-theme-trigger-icon]");
+    const menu = root.querySelector<MaterialMenu>(".site-theme-menu");
+    const status = root.querySelector<HTMLElement>("[data-theme-status]");
+    const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
+    if (!trigger || !triggerIcon || !menu) return;
+
+    let preference: ThemePreference = "system";
+
+    const render = () => {
+      const label = labels[preference];
+      trigger.title = `Thème : ${label}`;
+      trigger.setAttribute("aria-label", `Thème : ${label}`);
+      triggerIcon.textContent = icons[preference];
+
+      root.querySelectorAll<HTMLElement>("[data-theme-option]").forEach((item) => {
+        const selected = item.dataset.themeOption === preference;
+        (item as HTMLElement & { selected: boolean }).selected = selected;
+        const optionLabel = labels[item.dataset.themeOption as ThemePreference];
+        item.setAttribute("aria-label", `${optionLabel}${selected ? ", thème sélectionné" : ""}`);
+        const radio = item.querySelector<HTMLElement>(".site-theme-radio-icon");
+        if (radio) radio.textContent = selected ? "\uE837" : "\uE836";
+        const selectedLabel = item.querySelector<HTMLElement>("[data-theme-selected-label]");
+        if (selectedLabel) selectedLabel.hidden = !selected;
+      });
+    };
+
+    const apply = (persist: boolean) => {
+      const resolved =
+        preference === "system" ? (systemTheme.matches ? "dark" : "light") : preference;
+      document.documentElement.dataset.theme = resolved;
+      document.documentElement.dataset.themePreference = preference;
+      document.documentElement.style.colorScheme = resolved;
+      if (persist) {
+        try {
+          localStorage.setItem(SITE_STORAGE_KEYS.themePreference, preference);
+        } catch {}
+      }
+      render();
+    };
+
+    const sync = () => {
+      let stored: string | null = null;
+      try {
+        const current = localStorage.getItem(SITE_STORAGE_KEYS.themePreference);
+        const legacy = localStorage.getItem(SITE_LEGACY_STORAGE_KEYS.themePreference);
+        stored = isPreference(current) ? current : legacy;
+        if (!isPreference(current) && isPreference(legacy)) {
+          localStorage.setItem(SITE_STORAGE_KEYS.themePreference, legacy);
+        }
+        if (legacy !== null) localStorage.removeItem(SITE_LEGACY_STORAGE_KEYS.themePreference);
+      } catch {}
+      preference = isPreference(stored) ? stored : "system";
+      apply(false);
+    };
+
+    trigger.addEventListener("click", async () => {
+      await customElements.whenDefined("md-menu");
+      if (menu.open) menu.close();
+      else {
+        menu.defaultFocus = "first-item";
+        menu.show();
+      }
+    });
+    trigger.addEventListener("keydown", async (event) => {
+      if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+      event.preventDefault();
+      await customElements.whenDefined("md-menu");
+      const target = event.key === "ArrowUp" ? "last-item" : "first-item";
+      if (menu.open) {
+        if (target === "first-item") menu.activateNextItem();
+        else menu.activatePreviousItem();
+      } else {
+        menu.defaultFocus = target;
+        menu.show();
+      }
+    });
+    menu.addEventListener("opening", () => {
+      trigger.setAttribute("aria-expanded", "true");
+    });
+    menu.addEventListener("opened", () => {
+      trigger.setAttribute("aria-expanded", "true");
+    });
+    menu.addEventListener("closing", () => {
+      trigger.setAttribute("aria-expanded", "false");
+    });
+    menu.addEventListener("closed", () => {
+      trigger.setAttribute("aria-expanded", "false");
+      menu.defaultFocus = "first-item";
+    });
+    root.querySelectorAll<HTMLElement>("[data-theme-option]").forEach((item) => {
+      item.addEventListener("click", () => {
+        const next = item.dataset.themeOption ?? null;
+        if (!isPreference(next)) return;
+        preference = next;
+        apply(true);
+        if (status) status.textContent = `Thème ${labels[preference]} activé`;
+        menu.close();
+      });
+    });
+    systemTheme.addEventListener("change", () => {
+      if (preference === "system") apply(false);
+    });
+    window.addEventListener("pageshow", sync);
+    sync();
+  }
+
+  const init = () =>
+    document.querySelectorAll<HTMLElement>("[data-theme-switcher]").forEach(enhanceThemeSwitcher);
+
+  init();
+  document.addEventListener("astro:page-load", init);
+</script>
+
+<style>
+  .site-header-control {
+    position: relative;
+    display: block;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex: 0 0 2.5rem;
+  }
+</style>

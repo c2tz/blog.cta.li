@@ -1,23 +1,4 @@
-export type SearchSortMode = "relevance" | "created-desc" | "title-asc";
-
-export interface SearchResult {
-  createdAt?: string;
-  createdLabel?: string;
-  excerpt: string;
-  modifiedAt?: string;
-  modifiedLabel?: string;
-  priority: number;
-  score: number;
-  tags: string[];
-  title: string;
-  titleHtml: string;
-  url: string;
-}
-
-export interface TagFilter {
-  count: number;
-  value: string;
-}
+type SearchSortMode = "relevance" | "created-desc" | "title-asc";
 
 export const SORT_OPTIONS: Array<{ label: string; value: SearchSortMode }> = [
   { label: "Pertinence", value: "relevance" },

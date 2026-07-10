@@ -1,4 +1,3 @@
-@use "vendor/angular-material";
 @use "base/fonts";
 @use "base/tokens";
 @use "base/elements";
@@ -16,6 +15,7 @@
 @use "components/code-block";
 @use "components/cookie-consent";
 @use "components/cookie-preferences";
+@use "components/image-dialog";
 @use "components/scroll-controls";
 @use "motion/keyframes";
 @use "responsive/mobile";

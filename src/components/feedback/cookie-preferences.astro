@@ -1,0 +1,50 @@
+<site-cookie-preferences class="not-prose">
+  <section class="cookie-preferences-panel" aria-labelledby="modifier-vos-choix-cookies">
+    <p>
+      Services optionnels :
+      <strong data-cookie-preferences-status>aucun choix enregistré</strong>
+    </p>
+    <div class="cookie-preferences-actions" aria-label="Choix des services optionnels">
+      <md-chip-set
+        class="cookie-preferences-toggle-group"
+        aria-label="Choix des services optionnels"
+      >
+        <md-filter-chip
+          class="cookie-preferences-toggle"
+          aria-label="Autoriser les services optionnels"
+          data-cookie-preference-choice="accepted"
+        >
+          Autoriser
+        </md-filter-chip>
+        <md-filter-chip
+          class="cookie-preferences-toggle"
+          aria-label="Refuser les services optionnels"
+          data-cookie-preference-choice="rejected"
+        >
+          Refuser
+        </md-filter-chip>
+      </md-chip-set>
+      <md-text-button
+        class="cookie-preferences-reset"
+        type="button"
+        aria-label="Réinitialiser le choix des services optionnels"
+        data-cookie-preference-choice="unset"
+      >
+        Réinitialiser
+      </md-text-button>
+    </div>
+    <p
+      class="cookie-preferences-feedback"
+      data-cookie-preferences-feedback
+      role="status"
+      aria-live="polite"
+    >
+    </p>
+  </section>
+</site-cookie-preferences>
+
+<script>
+  import { defineCookieConsentControls } from "@/assets/js/app/cookie-consent-controls.js";
+
+  defineCookieConsentControls();
+</script>

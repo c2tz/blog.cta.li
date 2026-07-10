@@ -16,6 +16,10 @@
   transform: translate3d(0, 0, 0);
 }
 
+.site-scroll-progress[hidden] {
+  display: none;
+}
+
 .site-scroll-top-button {
   --md-filled-tonal-icon-button-container-color: var(--md-sys-color-secondary-container);
   --md-filled-tonal-icon-button-focus-icon-color: var(--md-sys-color-on-secondary-container);

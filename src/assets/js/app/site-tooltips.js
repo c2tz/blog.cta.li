@@ -10,7 +10,6 @@ export function initSiteTooltips() {
     if (!title) return;
 
     element.setAttribute("data-tooltip", title);
-    element.removeAttribute("title");
     element.classList.add("site-tooltip");
 
     if (!element.hasAttribute("aria-label")) {
@@ -25,9 +24,15 @@ export function initSiteTooltips() {
     }
   });
 
+  document.querySelectorAll("[data-tooltip]").forEach((element) => {
+    const tooltip = element.getAttribute("data-tooltip");
+    if (tooltip && !element.hasAttribute("title")) element.setAttribute("title", tooltip);
+  });
+
   document.querySelectorAll("[data-footnote-backref]").forEach((backref) => {
     backref.setAttribute("aria-label", "Retour au contenu");
     backref.setAttribute("data-tooltip", "Retour au contenu");
+    backref.setAttribute("title", "Retour au contenu");
     backref.classList.add("site-tooltip");
 
     if (!backref.dataset.footnoteEnhanced) {
@@ -52,6 +57,7 @@ export function initSiteTooltips() {
 
     ref.setAttribute("aria-label", "Voir l'explication");
     ref.setAttribute("data-tooltip", "Voir l'explication");
+    ref.setAttribute("title", "Voir l'explication");
     ref.classList.add("site-tooltip", "footnote-ref-tooltip");
   });
 }

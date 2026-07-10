@@ -42,6 +42,35 @@ pre.astro-code {
   pointer-events: none;
 }
 
+.code-copy-button {
+  --md-icon-button-focus-icon-color: var(--site-text);
+  --md-icon-button-hover-icon-color: var(--site-text);
+  --md-icon-button-hover-state-layer-color: var(--site-text);
+  --md-icon-button-icon-color: var(--site-muted);
+  --md-icon-button-pressed-icon-color: var(--site-text);
+  --md-icon-button-pressed-state-layer-color: var(--site-text);
+
+  pointer-events: auto;
+}
+
+.code-copy-button-copied {
+  --md-icon-button-focus-icon-color: var(--md-sys-color-primary);
+  --md-icon-button-hover-icon-color: var(--md-sys-color-primary);
+  --md-icon-button-hover-state-layer-color: var(--md-sys-color-primary);
+  --md-icon-button-icon-color: var(--md-sys-color-primary);
+  --md-icon-button-pressed-icon-color: var(--md-sys-color-primary);
+  --md-icon-button-pressed-state-layer-color: var(--md-sys-color-primary);
+}
+
+.code-copy-button-error {
+  --md-icon-button-focus-icon-color: var(--md-sys-color-error);
+  --md-icon-button-hover-icon-color: var(--md-sys-color-error);
+  --md-icon-button-hover-state-layer-color: var(--md-sys-color-error);
+  --md-icon-button-icon-color: var(--md-sys-color-error);
+  --md-icon-button-pressed-icon-color: var(--md-sys-color-error);
+  --md-icon-button-pressed-state-layer-color: var(--md-sys-color-error);
+}
+
 .code-shell[data-single-line="true"] .code-actions {
   top: 50%;
   transform: translateY(-50%);

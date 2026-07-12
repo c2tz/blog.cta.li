@@ -573,7 +573,7 @@ test("keeps gallery gestures at 100% and pans a browser-zoomed image with the mo
   await expect(status).toHaveText("Image 1 sur 2 : konachan-382339.jpg");
   await expect
     .poll(() => image.evaluate((element) => (element as HTMLElement).style.transform))
-    .not.toBe(beforeWheelTransform);
+    .toBe(beforeWheelTransform);
 
   await cdp.send("Emulation.setPageScaleFactor", { pageScaleFactor: 1 });
   await expect(stage).not.toHaveAttribute("data-browser-zoomed");

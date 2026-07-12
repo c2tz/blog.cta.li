@@ -207,6 +207,11 @@ test("shows one accessible simple tooltip without creating keyboard stops", asyn
   await trigger.focus();
   await expectPopoverOpen(tooltip, true);
   await expect(tooltip).toHaveText("Rechercher");
+  const tooltipPalette = await tooltip.evaluate((element) => ({
+    pageBackground: getComputedStyle(document.body).backgroundColor,
+    text: getComputedStyle(element).color,
+  }));
+  expect(tooltipPalette.text).toBe(tooltipPalette.pageBackground);
   const tooltipId = await tooltip.getAttribute("id");
   expect(tooltipId).toBeTruthy();
   await expect(trigger).toHaveAttribute("aria-describedby", tooltipId!);
@@ -915,6 +920,24 @@ test("applies and persists the Konachan Material palette across the site", async
     .poll(() => page.evaluate(() => document.documentElement.dataset.materialDynamicColor))
     .toBe("true");
 
+  await page.locator("md-icon-button.site-theme-trigger").click();
+  await expect(page.locator("md-menu.site-theme-menu")).not.toBeVisible();
+  await page.waitForTimeout(50);
+  const searchTrigger = page.locator("md-icon-button.site-search-trigger-button");
+  const tooltip = page.locator("[data-site-tooltip-surface]");
+  await searchTrigger.focus();
+  await expectPopoverOpen(tooltip, true);
+  await expect
+    .poll(() =>
+      tooltip.evaluate((element) => ({
+        pageBackground: getComputedStyle(document.body).backgroundColor,
+        text: getComputedStyle(element).color,
+      })),
+    )
+    .toEqual({
+      pageBackground: activePalette.bodyBackground,
+      text: activePalette.bodyBackground,
+    });
   await page.keyboard.press("Escape");
   await page.locator("md-icon-button.home-detail-trigger").click();
   await expect

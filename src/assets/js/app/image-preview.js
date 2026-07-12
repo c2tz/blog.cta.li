@@ -27,7 +27,6 @@ const TAP_DURATION_MS = 360;
 const TRACKPAD_SWIPE_DISTANCE = 72;
 const TRACKPAD_SWIPE_LOCK_MS = 420;
 const TRACKPAD_SWIPE_RESET_MS = 180;
-const WHEEL_LINE_HEIGHT = 16;
 const ZOOM_GESTURE_COOLDOWN_MS = 240;
 const ZOOM_EPSILON = 0.01;
 
@@ -669,16 +668,6 @@ class ImagePreviewController {
 
     if (this.isBrowserZoomed()) {
       if (event.cancelable) event.preventDefault();
-      const wheelUnit =
-        event.deltaMode === WheelEvent.DOM_DELTA_LINE
-          ? WHEEL_LINE_HEIGHT
-          : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
-            ? Math.max(this.stage.clientWidth, this.stage.clientHeight)
-            : 1;
-      this.setZoomPan(
-        this.zoomPanX - event.deltaX * wheelUnit,
-        this.zoomPanY - event.deltaY * wheelUnit,
-      );
       this.trackpadSwipeDelta = 0;
       return;
     }

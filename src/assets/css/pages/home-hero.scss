@@ -1,8 +1,8 @@
 .home-anime-landing {
   --home-banner-height: clamp(20rem, 52vh, 31rem);
   --home-banner-height: clamp(20rem, 52svh, 31rem);
-  --home-hero-on-image: #e6e0e9;
-  --home-hero-on-image-muted: #e6e0e9;
+  --home-hero-on-image: #e2e2e9;
+  --home-hero-on-image-muted: #e2e2e9;
   --home-hero-accent: var(--home-hero-on-image);
   --home-hero-surface-label: var(--home-hero-on-image-muted);
   position: relative;
@@ -60,76 +60,50 @@
   align-items: center;
 }
 
-.home-anime-rating-options {
-  position: absolute;
-  top: 0;
-  left: calc(100% + 0.35rem);
-  display: inline-flex;
-  gap: 0.25rem;
-  pointer-events: none;
-}
+.home-anime-rating-menu {
+  --md-menu-container-color: rgb(0 0 0 / 82%);
+  --md-menu-container-shape: var(--md-sys-shape-corner-medium);
 
-.home-anime-rating-options[hidden] {
-  display: none;
-}
-
-.home-anime-rating-picker.is-open .home-anime-rating-options {
-  pointer-events: auto;
-}
-
-.home-anime-rating-trigger,
-.home-anime-rating-option {
-  display: inline-flex;
-  width: 2.5rem;
-  height: 2.5rem;
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-}
-
-.home-anime-rating-option[hidden] {
-  display: none;
+  min-inline-size: min(14rem, calc(100vw - 1.5rem));
 }
 
 .home-anime-rating-option {
-  --md-icon-button-focus-icon-color: #fff;
-  --md-icon-button-hover-icon-color: #fff;
-  --md-icon-button-hover-state-layer-color: #fff;
-  --md-icon-button-icon-color: #fff;
-  --md-icon-button-pressed-icon-color: #fff;
-  --md-icon-button-pressed-state-layer-color: #fff;
-  border-radius: var(--md-sys-shape-corner-full);
-  background: rgb(0 0 0 / 52%);
-  opacity: 0;
-  transform: translateX(-0.5rem) scale(0.82);
-  transition:
-    opacity 160ms ease,
-    transform 180ms cubic-bezier(0.2, 0, 0, 1);
+  --md-menu-item-label-text-color: #fff;
+  --md-menu-item-hover-state-layer-color: #fff;
+  --md-menu-item-pressed-state-layer-color: #fff;
 }
 
-.home-anime-rating-option:nth-child(2) {
-  transition-delay: 25ms;
+.home-anime-rating-option[data-rating-selected] {
+  --md-menu-item-container-color: rgb(255 255 255 / 16%);
+  --md-menu-item-trailing-icon-color: #fff;
 }
 
-.home-anime-rating-option:nth-child(3) {
-  transition-delay: 50ms;
+.home-anime-rating-option.is-safe {
+  --md-menu-item-leading-icon-color: var(--md-sys-color-primary-container);
 }
 
-.home-anime-rating-picker.is-open .home-anime-rating-option {
-  opacity: 1;
-  transform: translateX(0) scale(1);
+.home-anime-rating-option.is-questionable {
+  --md-menu-item-leading-icon-color: var(--md-sys-color-tertiary-container);
+}
+
+.home-anime-rating-option.is-explicit {
+  --md-menu-item-leading-icon-color: var(--md-sys-color-error-container);
 }
 
 .home-anime-rating-trigger.is-safe {
+  --md-focus-ring-color: var(--md-sys-color-on-primary-container);
   --md-filled-tonal-icon-button-container-color: var(--md-sys-color-primary-container);
   --md-filled-tonal-icon-button-icon-color: var(--md-sys-color-on-primary-container);
 }
 
 .home-anime-rating-trigger.is-questionable {
+  --md-focus-ring-color: var(--md-sys-color-on-tertiary-container);
   --md-filled-tonal-icon-button-container-color: var(--md-sys-color-tertiary-container);
   --md-filled-tonal-icon-button-icon-color: var(--md-sys-color-on-tertiary-container);
 }
 
 .home-anime-rating-trigger.is-explicit {
+  --md-focus-ring-color: var(--md-sys-color-on-error-container);
   --md-filled-tonal-icon-button-container-color: var(--md-sys-color-error-container);
   --md-filled-tonal-icon-button-icon-color: var(--md-sys-color-on-error-container);
 }
@@ -213,33 +187,6 @@
   text-shadow: none;
 }
 
-md-elevated-button.home-hero-button {
-  --md-elevated-button-container-color: var(--md-sys-color-surface-container-low);
-  --md-elevated-button-label-text-color: var(--md-sys-color-primary);
-  --md-elevated-button-icon-color: var(--md-sys-color-primary);
-  --md-elevated-button-hover-label-text-color: var(--md-sys-color-primary);
-  --md-elevated-button-hover-icon-color: var(--md-sys-color-primary);
-  --md-elevated-button-hover-state-layer-color: var(--md-sys-color-primary);
-  --md-elevated-button-focus-label-text-color: var(--md-sys-color-primary);
-  --md-elevated-button-focus-icon-color: var(--md-sys-color-primary);
-  --md-elevated-button-pressed-label-text-color: var(--md-sys-color-primary);
-  --md-elevated-button-pressed-icon-color: var(--md-sys-color-primary);
-  --md-elevated-button-pressed-state-layer-color: var(--md-sys-color-primary);
-}
-
-md-text-button.home-hero-button {
-  --md-text-button-label-text-color: var(--home-hero-surface-label);
-  --md-text-button-icon-color: var(--home-hero-surface-label);
-  --md-text-button-hover-label-text-color: var(--home-hero-surface-label);
-  --md-text-button-hover-icon-color: var(--home-hero-surface-label);
-  --md-text-button-hover-state-layer-color: var(--home-hero-surface-label);
-  --md-text-button-focus-label-text-color: var(--home-hero-surface-label);
-  --md-text-button-focus-icon-color: var(--home-hero-surface-label);
-  --md-text-button-pressed-label-text-color: var(--home-hero-surface-label);
-  --md-text-button-pressed-icon-color: var(--home-hero-surface-label);
-  --md-text-button-pressed-state-layer-color: var(--home-hero-surface-label);
-}
-
 .home-hero-button md-icon[slot="icon"] {
   --md-icon-size: 1.125rem;
 }
@@ -281,6 +228,7 @@ body.home-page:not([data-home-detail-view="true"]) .home-anime-credit-link:not([
 }
 
 .home-anime-refresh {
+  --md-focus-ring-color: var(--home-hero-surface-label);
   --md-icon-button-disabled-icon-color: var(--home-hero-surface-label);
   --md-icon-button-disabled-icon-opacity: 0.92;
   --md-icon-button-focus-icon-color: var(--home-hero-surface-label);
@@ -291,18 +239,6 @@ body.home-page:not([data-home-detail-view="true"]) .home-anime-credit-link:not([
   --md-icon-button-pressed-state-layer-color: var(--home-hero-surface-label);
   flex: 0 0 auto;
   margin: 0;
-}
-
-@media (max-width: 360px) {
-  .home-anime-rating-options {
-    top: calc(100% + 0.35rem);
-    left: 0;
-    flex-direction: column;
-  }
-
-  .home-anime-rating-option {
-    transform: translateY(-0.5rem) scale(0.82);
-  }
 }
 
 @media (max-width: 735px) {

@@ -1,3 +1,5 @@
+import { bindMaterialMenuSelection } from "./material-menu.js";
+
 const RATING_OPTIONS = {
   safe: { icon: "\uEF80", label: "Safe" },
   questionable: { icon: "\uF8EA", label: "Questionnable" },
@@ -33,10 +35,21 @@ function normalizeRating(value) {
   return value === "sensitive" ? "questionable" : null;
 }
 
-export function initHomeKonachanControlsFromDocument() {
+export async function initHomeKonachanControlsFromDocument() {
   const config = readConfig();
   const landing = document.querySelector(".home-anime-landing");
-  if (!config || !landing || landing.dataset.controlsReady === "true") return;
+  if (!config || !landing || landing.dataset.controlsReady) return;
+  landing.dataset.controlsReady = "pending";
+
+  await Promise.all([
+    customElements.whenDefined("md-circular-progress"),
+    customElements.whenDefined("md-filled-tonal-icon-button"),
+    customElements.whenDefined("md-icon-button"),
+    customElements.whenDefined("md-menu"),
+    customElements.whenDefined("md-menu-item"),
+  ]);
+
+  if (!landing.isConnected) return;
   landing.dataset.controlsReady = "true";
 
   const loader = landing.querySelector("[data-konachan-loading]");
@@ -45,10 +58,13 @@ export function initHomeKonachanControlsFromDocument() {
   const picker = landing.querySelector("[data-konachan-rating-picker]");
   const trigger = picker?.querySelector("[data-konachan-rating-trigger]");
   const triggerIcon = trigger?.querySelector("md-icon");
-  const options = picker?.querySelector(".home-anime-rating-options");
-  const optionButtons = [...(picker?.querySelectorAll("[data-konachan-rating-option]") ?? [])];
+  const menu = picker?.querySelector("md-menu");
+  const optionItems = [...(picker?.querySelectorAll("[data-konachan-rating-option]") ?? [])];
   let revealTimer = 0;
-  let optionsOpen = false;
+  let menuReady = false;
+  let menuClosing = false;
+  let pendingOpen = null;
+  let queuedNavigation = 0;
   let detailed =
     document.documentElement.dataset.homeDetailView === "true" ||
     document.body.dataset.homeDetailView === "true";
@@ -76,14 +92,6 @@ export function initHomeKonachanControlsFromDocument() {
     document.cookie = `${encodeURIComponent(config.legacyRatingCookieName)}=; Max-Age=0; Path=/; SameSite=Lax`;
   };
 
-  const closeOptions = (restoreFocus = false) => {
-    optionsOpen = false;
-    picker?.classList.remove("is-open");
-    trigger?.setAttribute("aria-expanded", "false");
-    if (options) options.hidden = true;
-    if (restoreFocus) trigger?.focus({ preventScroll: true });
-  };
-
   const renderRating = () => {
     const current = RATING_OPTIONS[preference];
     if (trigger) {
@@ -94,22 +102,22 @@ export function initHomeKonachanControlsFromDocument() {
       trigger.classList.toggle("is-explicit", preference === "explicit");
     }
     if (triggerIcon) triggerIcon.textContent = current.icon;
-    for (const button of optionButtons) {
-      const rating = button.dataset.konachanRatingOption;
+    for (const item of optionItems) {
+      const rating = item.dataset.konachanRatingOption;
       const unavailable = rating === "explicit" && !detailed;
-      button.hidden = rating === preference || unavailable;
-      button.disabled = unavailable;
+      const selected = rating === preference;
+      item.hidden = unavailable;
+      item.disabled = unavailable;
+      item.toggleAttribute("data-rating-selected", selected);
+      item.setAttribute(
+        "aria-label",
+        `${RATING_OPTIONS[rating]?.label ?? "Niveau Konachan"}${
+          selected ? ", niveau sélectionné" : ""
+        }`,
+      );
+      const selectedIcon = item.querySelector("[data-konachan-rating-selected-icon]");
+      if (selectedIcon) selectedIcon.hidden = !selected;
     }
-  };
-
-  const visibleOptions = () => optionButtons.filter((button) => !button.hidden && !button.disabled);
-
-  const openOptions = (focusFirst = false) => {
-    optionsOpen = true;
-    picker?.classList.add("is-open");
-    trigger?.setAttribute("aria-expanded", "true");
-    if (options) options.hidden = false;
-    if (focusFirst) requestAnimationFrame(() => visibleOptions()[0]?.focus());
   };
 
   const emitRating = () => {
@@ -124,49 +132,99 @@ export function initHomeKonachanControlsFromDocument() {
     );
   };
 
+  const moveActiveItem = (direction) => {
+    if (!menu) return;
+    if (direction === 1) menu.activateNextItem();
+    else menu.activatePreviousItem();
+  };
+
+  const flushQueuedNavigation = () => {
+    while (queuedNavigation > 0) {
+      moveActiveItem(1);
+      queuedNavigation -= 1;
+    }
+    while (queuedNavigation < 0) {
+      moveActiveItem(-1);
+      queuedNavigation += 1;
+    }
+  };
+
+  const openOptions = (defaultFocus = "first-item") => {
+    if (!menu) return;
+    if (menuClosing) {
+      pendingOpen = defaultFocus;
+      return;
+    }
+    pendingOpen = null;
+    menuReady = false;
+    queuedNavigation = 0;
+    menu.defaultFocus = defaultFocus;
+    menu.show();
+  };
+
+  const closeOptions = () => {
+    pendingOpen = null;
+    if (menu?.open) menu.close();
+  };
+
+  menu?.addEventListener("opening", () => {
+    menuClosing = false;
+    menuReady = false;
+    trigger?.setAttribute("aria-expanded", "true");
+  });
+  menu?.addEventListener("opened", () => {
+    menuReady = true;
+    trigger?.setAttribute("aria-expanded", "true");
+    flushQueuedNavigation();
+  });
+  menu?.addEventListener("closing", () => {
+    menuClosing = true;
+    menuReady = false;
+    queuedNavigation = 0;
+    trigger?.setAttribute("aria-expanded", "false");
+  });
+  menu?.addEventListener("closed", () => {
+    const reopenDefaultFocus = pendingOpen;
+    pendingOpen = null;
+    menuClosing = false;
+    menuReady = false;
+    queuedNavigation = 0;
+    trigger?.setAttribute("aria-expanded", "false");
+    menu.defaultFocus = "first-item";
+    if (!reopenDefaultFocus) return;
+    window.requestAnimationFrame(() => {
+      if (!menu.isConnected || menu.open || menuClosing) return;
+      openOptions(reopenDefaultFocus);
+    });
+  });
   trigger?.addEventListener("click", () => {
-    if (optionsOpen) closeOptions();
+    if (!menu) return;
+    if (menu.open) closeOptions();
     else openOptions();
   });
   trigger?.addEventListener("keydown", (event) => {
-    if (event.key !== "ArrowDown" && event.key !== "ArrowRight") return;
+    if (!menu || (event.key !== "ArrowDown" && event.key !== "ArrowUp")) return;
     event.preventDefault();
-    openOptions(true);
+    const direction = event.key === "ArrowDown" ? 1 : -1;
+    if (menuClosing) {
+      pendingOpen = direction === 1 ? "first-item" : "last-item";
+    } else if (menu.open) {
+      if (menuReady) moveActiveItem(direction);
+      else queuedNavigation += direction;
+    } else {
+      openOptions(direction === 1 ? "first-item" : "last-item");
+    }
   });
-  for (const button of optionButtons) {
-    button.addEventListener("click", () => {
-      const next = normalizeRating(button.dataset.konachanRatingOption);
-      closeOptions(true);
+  if (menu) {
+    bindMaterialMenuSelection(menu, (item) => {
+      const next = normalizeRating(item.dataset.konachanRatingOption);
       if (!next || next === preference || (next === "explicit" && !detailed)) return;
       preference = next;
       persistPreference();
       renderRating();
       emitRating();
     });
-    button.addEventListener("keydown", (event) => {
-      const items = visibleOptions();
-      const current = items.indexOf(button);
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeOptions(true);
-        return;
-      }
-      if (!["ArrowDown", "ArrowLeft", "ArrowRight", "ArrowUp", "End", "Home"].includes(event.key)) {
-        return;
-      }
-      event.preventDefault();
-      if (event.key === "Home") items[0]?.focus();
-      else if (event.key === "End") items.at(-1)?.focus();
-      else {
-        const step = event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : -1;
-        items[(current + step + items.length) % items.length]?.focus();
-      }
-    });
   }
-  document.addEventListener("pointerdown", (event) => {
-    if (!optionsOpen || !picker || picker.contains(event.target)) return;
-    closeOptions();
-  });
   document.addEventListener(config.events.refreshState, (event) => {
     const busy = Boolean(event.detail?.busy);
     if (revealTimer) window.clearTimeout(revealTimer);
@@ -207,6 +265,6 @@ export function initHomeKonachanControlsFromDocument() {
   });
 
   persistPreference();
-  closeOptions();
+  trigger?.setAttribute("aria-expanded", "false");
   renderRating();
 }

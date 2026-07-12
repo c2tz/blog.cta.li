@@ -131,11 +131,11 @@ summary.material-admonition-title::-webkit-details-marker {
 }
 
 .material-shortcode-inline-icon {
-  --md-icon-size: 1.2em;
+  --md-icon-size: 1em;
 
-  margin-inline: 0.12em;
-  font-size: 1.2em;
-  vertical-align: -0.18em;
+  margin-inline: 0;
+  font-size: 1.1em;
+  vertical-align: -0.14em;
 }
 
 .material-inline-badge {
@@ -475,8 +475,7 @@ summary.material-admonition-title::-webkit-details-marker {
 
 .material-shortcode-tab-panel:focus-visible {
   border-radius: var(--md-sys-shape-corner-extra-small);
-  outline: 2px solid var(--md-sys-color-primary);
-  outline-offset: 2px;
+  outline: 0;
 }
 
 .material-shortcode-tab-content {
@@ -510,8 +509,7 @@ summary.material-admonition-title::-webkit-details-marker {
 }
 
 .material-shortcode-table-scroll:focus-visible {
-  outline: 2px solid var(--site-link);
-  outline-offset: 2px;
+  outline: 0;
 }
 
 .material-shortcode-table {
@@ -586,8 +584,7 @@ summary.material-admonition-title::-webkit-details-marker {
 }
 
 .material-shortcode-sort-button:focus-visible {
-  outline: 0;
-  box-shadow: inset 0 0 0 2px var(--site-link);
+  outline-offset: -3px;
 }
 
 .material-shortcode-table tr:last-child td,

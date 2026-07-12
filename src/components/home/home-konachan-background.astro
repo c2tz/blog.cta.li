@@ -70,17 +70,14 @@ const konachanClientConfigJson = JSON.stringify({
     </span>
   </div>
 
-  <div
-    class="home-anime-rating-picker"
-    data-konachan-rating-picker
-    role="group"
-    aria-label="Niveau Konachan"
-  >
+  <div class="home-anime-rating-picker" data-konachan-rating-picker>
     <md-filled-tonal-icon-button
+      id="home-anime-rating-trigger"
       type="button"
       class="home-anime-rating-trigger is-safe"
       data-konachan-rating-trigger
       title="Safe"
+      aria-haspopup="menu"
       aria-expanded="false"
       aria-controls="home-anime-rating-options"
       aria-label="Safe"
@@ -88,43 +85,51 @@ const konachanClientConfigJson = JSON.stringify({
       <md-icon aria-hidden="true">&#xEF80;</md-icon>
     </md-filled-tonal-icon-button>
 
-    <div
+    <md-menu
       id="home-anime-rating-options"
-      class="home-anime-rating-options"
-      role="group"
+      class="site-material-menu home-anime-rating-menu"
+      anchor="home-anime-rating-trigger"
+      positioning="popover"
       aria-label="Choisir le niveau Konachan"
-      hidden
     >
-      <md-icon-button
+      <md-menu-item
         type="button"
-        class="home-anime-rating-option is-safe"
+        class="site-material-menu-item home-anime-rating-option is-safe"
         data-konachan-rating-option="safe"
         aria-label="Choisir le niveau Konachan Safe"
-        title="Safe"
-        hidden
       >
-        <md-icon aria-hidden="true">&#xEF80;</md-icon>
-      </md-icon-button>
-      <md-icon-button
+        <md-icon slot="start" aria-hidden="true">&#xEF80;</md-icon>
+        <span slot="headline">Safe</span>
+        <md-icon slot="end" aria-hidden="true" data-konachan-rating-selected-icon hidden
+          >&#xE5CA;</md-icon
+        >
+      </md-menu-item>
+      <md-menu-item
         type="button"
-        class="home-anime-rating-option is-questionable"
+        class="site-material-menu-item home-anime-rating-option is-questionable"
         data-konachan-rating-option="questionable"
         aria-label="Choisir le niveau Konachan Questionnable"
-        title="Questionnable"
       >
-        <md-icon aria-hidden="true">&#xF8EA;</md-icon>
-      </md-icon-button>
-      <md-icon-button
+        <md-icon slot="start" aria-hidden="true">&#xF8EA;</md-icon>
+        <span slot="headline">Questionnable</span>
+        <md-icon slot="end" aria-hidden="true" data-konachan-rating-selected-icon hidden
+          >&#xE5CA;</md-icon
+        >
+      </md-menu-item>
+      <md-menu-item
         type="button"
-        class="home-anime-rating-option is-explicit"
+        class="site-material-menu-item home-anime-rating-option is-explicit"
         data-konachan-rating-option="explicit"
         aria-label="Choisir le niveau Konachan Explicit"
-        title="Explicit"
         hidden
       >
-        <md-icon aria-hidden="true">&#xF8FD;</md-icon>
-      </md-icon-button>
-    </div>
+        <md-icon slot="start" aria-hidden="true">&#xF8FD;</md-icon>
+        <span slot="headline">Explicit</span>
+        <md-icon slot="end" aria-hidden="true" data-konachan-rating-selected-icon hidden
+          >&#xE5CA;</md-icon
+        >
+      </md-menu-item>
+    </md-menu>
   </div>
 
   <div class="home-hero-content">
@@ -133,7 +138,7 @@ const konachanClientConfigJson = JSON.stringify({
       {lede}
     </p>
     <nav class="home-hero-actions" aria-label="Navigation d'accueil">
-      <md-elevated-button
+      <md-filled-button
         class="home-hero-button"
         href={primaryActionHref}
         aria-label={primaryActionLabel.toLocaleLowerCase("fr") === "voir plus"
@@ -143,8 +148,8 @@ const konachanClientConfigJson = JSON.stringify({
       >
         <md-icon slot="icon" aria-hidden="true">&#xE5D3;</md-icon>
         {primaryActionLabel}
-      </md-elevated-button>
-      <md-text-button
+      </md-filled-button>
+      <md-filled-tonal-button
         class="home-hero-button"
         href={secondaryActionHref}
         aria-label={secondaryActionLabel.toLocaleLowerCase("fr") === "à propos"
@@ -154,7 +159,7 @@ const konachanClientConfigJson = JSON.stringify({
       >
         <md-icon slot="icon" aria-hidden="true">&#xE89E;</md-icon>
         {secondaryActionLabel}
-      </md-text-button>
+      </md-filled-tonal-button>
     </nav>
   </div>
 
@@ -190,7 +195,7 @@ const konachanClientConfigJson = JSON.stringify({
   import { initHomeKonachanControlsFromDocument } from "@/assets/js/app/home-konachan-controls.js";
 
   const init = () => {
-    initHomeKonachanControlsFromDocument();
+    void initHomeKonachanControlsFromDocument();
     initHomeKonachanBackgroundFromDocument();
   };
 

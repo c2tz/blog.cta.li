@@ -144,7 +144,7 @@
   :where(img[data-image-dialog]:focus-visible):not(
     :where([class~="not-prose"], [class~="not-prose"] *)
   ) {
-  outline: 2px solid var(--site-link);
+  color: var(--site-link);
   outline-offset: 4px;
 }
 

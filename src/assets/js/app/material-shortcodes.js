@@ -1,3 +1,5 @@
+import { initMaterialMenuFocusIndicators } from "./material-menu.js";
+
 const SORT_ICON = "\uE5D7";
 const SORT_ASCENDING_ICON = "\uE5D8";
 const SORT_DESCENDING_ICON = "\uE5DB";
@@ -216,6 +218,7 @@ function enhanceTable(host) {
     pageSizeSelect.label = "Lignes par page";
     pageSizeSelect.value = String(state.pageSize);
     pageSizeSelect.setAttribute("aria-controls", tableId);
+    pageSizeSelect.setAttribute("menu-positioning", "popover");
 
     pageSizeOptions.forEach((size) => {
       const option = document.createElement("md-select-option");
@@ -385,6 +388,7 @@ function enhanceTable(host) {
   });
 
   host.replaceChildren(...content);
+  initMaterialMenuFocusIndicators(host);
   host.dataset.materialEnhanced = "true";
   render();
 }

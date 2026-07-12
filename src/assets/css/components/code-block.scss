@@ -43,6 +43,7 @@ pre.astro-code {
 }
 
 .code-copy-button {
+  --md-focus-ring-color: var(--md-icon-button-icon-color);
   --md-icon-button-focus-icon-color: var(--site-text);
   --md-icon-button-hover-icon-color: var(--site-text);
   --md-icon-button-hover-state-layer-color: var(--site-text);
@@ -116,7 +117,7 @@ pre.astro-code {
   }
 }
 
-.code-shell[data-scrollable="true"] pre {
+.code-shell[data-scrollable] pre {
   overflow-x: auto;
 }
 
@@ -251,13 +252,17 @@ pre.astro-code code * {
   inset-block: 0;
   inset-inline-start: calc(var(--code-inline-pad) * -1);
   width: var(--code-line-marker-width);
+  background: var(--code-line-marker-color);
+  content: "";
+}
+
+:where(.code-shell pre, pre.astro-code) code > .line:is(.diff.remove, .highlighted.error)::after {
   background: repeating-linear-gradient(
     to bottom,
     var(--code-line-marker-color) 0 var(--code-line-marker-dash),
     transparent var(--code-line-marker-dash)
       calc(var(--code-line-marker-dash) + var(--code-line-marker-gap))
   );
-  content: "";
 }
 
 :where(.code-shell pre, pre.astro-code) code > .line.diff {

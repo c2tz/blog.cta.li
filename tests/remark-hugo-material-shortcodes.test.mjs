@@ -127,6 +127,7 @@ Ce bloc est ouvert par défaut, mais peut être replié.
 test("accepte une icône Material Symbol nommée au milieu d’une phrase", async () => {
   const html = await render('Voici une icône {{< icon "children-face" />}} dans une phrase.');
   assert.match(html, /data-material-symbol="children-face"/);
+  assert.match(html, /material-shortcode-inline-icon/);
   assert.match(html, /aria-hidden="true"/);
   assert.match(html, /Voici une icône .* dans une phrase\./);
 });

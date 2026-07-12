@@ -95,6 +95,7 @@ class SearchPanelController {
     this.sortSelect.addEventListener("change", (event) => this.setSortMode(controlValue(event)));
 
     void this.connectMaterialTextField();
+    void this.connectSortMenuRepositioning();
     void this.loadTagFilters();
     void this.search(this.query.trim());
 
@@ -104,7 +105,7 @@ class SearchPanelController {
   }
 
   async connectMaterialTextField() {
-    await customElements.whenDefined("md-outlined-text-field");
+    await customElements.whenDefined("md-filled-text-field");
     await this.input.updateComplete;
 
     const control = this.input.shadowRoot?.querySelector("input, textarea");
@@ -113,6 +114,66 @@ class SearchPanelController {
     this.inputControl?.removeEventListener("input", this.handleInput);
     this.inputControl = control;
     control.addEventListener("input", this.handleInput);
+  }
+
+  async connectSortMenuRepositioning() {
+    await customElements.whenDefined("md-filled-select");
+    await this.sortSelect.updateComplete;
+
+    const dialog = this.root.closest("md-dialog");
+    if (!dialog) return;
+
+    await customElements.whenDefined("md-dialog");
+    await dialog.updateComplete;
+
+    const menu = this.sortSelect.shadowRoot?.querySelector("md-menu");
+    const dialogScroller = dialog.shadowRoot?.querySelector(".scroller");
+    if (!menu || !dialogScroller) return;
+
+    let repositionFrame = 0;
+    let settleTimer = 0;
+    let tracking = false;
+    const resizeObserver = new ResizeObserver(() => scheduleReposition());
+
+    const scheduleReposition = () => {
+      if (!menu.open) return;
+
+      window.clearTimeout(settleTimer);
+      window.cancelAnimationFrame(repositionFrame);
+      repositionFrame = window.requestAnimationFrame(() => {
+        repositionFrame = 0;
+        menu.reposition();
+
+        settleTimer = window.setTimeout(() => {
+          if (menu.open) menu.reposition();
+        }, 160);
+      });
+    };
+    const startTracking = () => {
+      if (tracking) return;
+      tracking = true;
+      dialogScroller.addEventListener("scroll", scheduleReposition, { passive: true });
+      window.addEventListener("resize", scheduleReposition, { passive: true });
+      window.visualViewport?.addEventListener("resize", scheduleReposition, { passive: true });
+      resizeObserver.observe(dialogScroller);
+      scheduleReposition();
+    };
+    const stopTracking = () => {
+      if (!tracking) return;
+      tracking = false;
+      dialogScroller.removeEventListener("scroll", scheduleReposition);
+      window.removeEventListener("resize", scheduleReposition);
+      window.visualViewport?.removeEventListener("resize", scheduleReposition);
+      resizeObserver.disconnect();
+      window.cancelAnimationFrame(repositionFrame);
+      window.clearTimeout(settleTimer);
+      repositionFrame = 0;
+      settleTimer = 0;
+    };
+
+    this.sortSelect.addEventListener("opened", startTracking);
+    this.sortSelect.addEventListener("closed", stopTracking);
+    document.addEventListener("astro:before-swap", stopTracking, { once: true });
   }
 
   handleInput(event) {
@@ -784,7 +845,7 @@ export function initSiteSearchTriggers() {
       try {
         await Promise.all([
           customElements.whenDefined("md-dialog"),
-          customElements.whenDefined("md-outlined-text-field"),
+          customElements.whenDefined("md-filled-text-field"),
           customElements.whenDefined("md-icon-button"),
         ]);
         // The Material dialog becomes visible before its opening animation

@@ -7,8 +7,9 @@ function isDialogImageCandidate(img) {
 
 function setImageDialogLabel(img) {
   const filename = fileNameFromURL(img.currentSrc || img.src);
-  img.setAttribute("aria-label", `Agrandir l'image : ${filename}`);
-  img.setAttribute("title", filename);
+  const label = img.alt.trim() || img.title.trim() || filename;
+  img.setAttribute("aria-label", `Agrandir l’image : ${label}`);
+  if (!img.title.trim()) img.setAttribute("title", label);
 }
 
 export function prepareBlogImageDialogs() {
@@ -30,6 +31,7 @@ export function prepareBlogImageDialogs() {
       img.dataset.imageDialog = "";
       img.dataset.imageDialogPrepared = "true";
       img.setAttribute("role", "button");
+      img.setAttribute("aria-haspopup", "dialog");
       if (!img.hasAttribute("tabindex")) img.tabIndex = 0;
       setImageDialogLabel(img);
 

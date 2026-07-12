@@ -20,8 +20,18 @@ import "@material/web/menu/menu.js";
 import "@material/web/progress/circular-progress.js";
 import "@material/web/progress/linear-progress.js";
 import "@material/web/ripple/ripple.js";
+import "@material/web/select/filled-select.js";
 import "@material/web/select/outlined-select.js";
 import "@material/web/select/select-option.js";
+import "@material/web/switch/switch.js";
 import "@material/web/tabs/primary-tab.js";
 import "@material/web/tabs/tabs.js";
+import "@material/web/textfield/filled-text-field.js";
 import "@material/web/textfield/outlined-text-field.js";
+
+import { initFocusModality } from "@/assets/js/app/focus-modality";
+import { initMaterialMenuFocusIndicators } from "@/assets/js/app/material-menu";
+
+initFocusModality();
+initMaterialMenuFocusIndicators();
+document.addEventListener("astro:page-load", () => initMaterialMenuFocusIndicators());

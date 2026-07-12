@@ -9,6 +9,7 @@ import PageLoadingIndicator from "@/components/feedback/page-loading-indicator.a
 import ImagePreview from "@/components/image-preview/image-preview.astro";
 import ScrollTopButton from "@/components/navigation/scroll-top-button.astro";
 import {
+  MATERIAL_DYNAMIC_COLOR_ROLES,
   SITE_COOKIE_NAMES,
   SITE_LEGACY_COOKIE_NAMES,
   SITE_LEGACY_STORAGE_KEYS,
@@ -48,6 +49,9 @@ const seoDescription = description ?? SITE_DESCRIPTION;
 const themeStorageKey = SITE_STORAGE_KEYS.themePreference;
 const legacyThemeStorageKey = SITE_LEGACY_STORAGE_KEYS.themePreference;
 const detailStorageKey = SITE_STORAGE_KEYS.homeDetailView;
+const dynamicColorEnabledStorageKey = SITE_STORAGE_KEYS.materialDynamicColorEnabled;
+const dynamicColorPaletteStorageKey = SITE_STORAGE_KEYS.materialDynamicColorPalette;
+const dynamicColorRoles = MATERIAL_DYNAMIC_COLOR_ROLES;
 const explicitContentCookieName = SITE_COOKIE_NAMES.explicitContentAcknowledgement;
 const explicitContentStorageKey = SITE_STORAGE_KEYS.explicitContentAcknowledgement;
 const legacyDetailStorageKey = SITE_LEGACY_STORAGE_KEYS.homeDetailView;
@@ -73,6 +77,9 @@ const speedInsightsVersion = speedInsightsPackage.version;
       define:vars={{
         detailCookieName,
         detailStorageKey,
+        dynamicColorEnabledStorageKey,
+        dynamicColorPaletteStorageKey,
+        dynamicColorRoles,
         legacyDetailCookieName,
         legacyDetailStorageKey,
         legacyThemeStorageKey,
@@ -80,6 +87,9 @@ const speedInsightsVersion = speedInsightsPackage.version;
       }}
     >
       (() => {
+        const root = document.documentElement;
+        const colorPattern = /^#[0-9a-f]{6}$/i;
+
         const syncThemePreference = () => {
           try {
             const key = themeStorageKey;
@@ -105,18 +115,19 @@ const speedInsightsVersion = speedInsightsPackage.version;
                   : "light"
                 : preference;
 
-            document.documentElement.dataset.theme = resolved;
-            document.documentElement.dataset.themePreference = preference;
-            document.documentElement.style.colorScheme = resolved;
+            root.dataset.theme = resolved;
+            root.dataset.themePreference = preference;
+            root.style.colorScheme = resolved;
+            return resolved;
           } catch {
-            document.documentElement.dataset.theme = "light";
+            root.dataset.theme = "light";
+            root.dataset.themePreference = "system";
+            root.style.colorScheme = "light";
+            return "light";
           }
         };
 
-        syncThemePreference();
-        addEventListener("pageshow", syncThemePreference);
-
-        try {
+        const syncDetailView = () => {
           const readCookie = (name) => {
             const encodedName = `${encodeURIComponent(name)}=`;
             const cookie = document.cookie
@@ -137,32 +148,87 @@ const speedInsightsVersion = speedInsightsPackage.version;
             if (value === "false" || value === "compact") return false;
             return null;
           };
-          const stored = localStorage.getItem(detailStorageKey);
-          const legacyStored = localStorage.getItem(legacyDetailStorageKey);
-          const candidates = [
-            stored,
-            legacyStored,
-            readCookie(detailCookieName),
-            readCookie(legacyDetailCookieName),
-          ];
-          const detailed = candidates.map(normalizeDetailView).find((value) => value !== null);
+          try {
+            const stored = localStorage.getItem(detailStorageKey);
+            const legacyStored = localStorage.getItem(legacyDetailStorageKey);
+            const candidates = [
+              stored,
+              legacyStored,
+              readCookie(detailCookieName),
+              readCookie(legacyDetailCookieName),
+            ];
+            const detailed =
+              candidates.map(normalizeDetailView).find((value) => value !== null) ?? false;
 
-          if (stored === null && legacyStored !== null) {
-            const normalizedLegacy = normalizeDetailView(legacyStored);
-            if (normalizedLegacy !== null) {
-              localStorage.setItem(detailStorageKey, normalizedLegacy ? "true" : "false");
-              localStorage.removeItem(legacyDetailStorageKey);
+            if (stored === null && legacyStored !== null) {
+              const normalizedLegacy = normalizeDetailView(legacyStored);
+              if (normalizedLegacy !== null) {
+                localStorage.setItem(detailStorageKey, normalizedLegacy ? "true" : "false");
+                localStorage.removeItem(legacyDetailStorageKey);
+              }
             }
-          }
 
-          if (detailed) {
-            document.documentElement.dataset.homeDetailView = "true";
-          } else {
-            delete document.documentElement.dataset.homeDetailView;
+            if (detailed) root.dataset.homeDetailView = "true";
+            else delete root.dataset.homeDetailView;
+            return detailed;
+          } catch {
+            delete root.dataset.homeDetailView;
+            return false;
           }
-        } catch {
-          delete document.documentElement.dataset.homeDetailView;
-        }
+        };
+
+        const clearDynamicColor = () => {
+          root.style.removeProperty("--md-source-color");
+          for (const role of dynamicColorRoles) {
+            root.style.removeProperty(`--md-sys-color-${role}`);
+          }
+          delete root.dataset.materialDynamicColor;
+          delete root.dataset.materialDynamicColorSource;
+        };
+
+        const syncDynamicColor = (theme, detailed) => {
+          clearDynamicColor();
+
+          try {
+            const enabled = localStorage.getItem(dynamicColorEnabledStorageKey) === "true";
+            root.toggleAttribute("data-material-dynamic-color-preference", enabled);
+            if (!enabled || !detailed) return;
+
+            const palette = JSON.parse(
+              localStorage.getItem(dynamicColorPaletteStorageKey) || "null",
+            );
+            const sourceColor = palette?.sourceColor;
+            const schemes = palette?.schemes;
+            const validPalette =
+              palette?.version === 1 &&
+              colorPattern.test(sourceColor) &&
+              dynamicColorRoles.every(
+                (role) =>
+                  colorPattern.test(schemes?.light?.[role]) &&
+                  colorPattern.test(schemes?.dark?.[role]),
+              );
+            if (!validPalette) return;
+
+            root.dataset.materialDynamicColor = "true";
+            root.dataset.materialDynamicColorSource = sourceColor;
+            root.style.setProperty("--md-source-color", sourceColor);
+            for (const role of dynamicColorRoles) {
+              root.style.setProperty(`--md-sys-color-${role}`, schemes[theme][role]);
+            }
+          } catch {
+            root.removeAttribute("data-material-dynamic-color-preference");
+            clearDynamicColor();
+          }
+        };
+
+        const syncPageAppearance = () => {
+          const theme = syncThemePreference();
+          const detailed = syncDetailView();
+          syncDynamicColor(theme, detailed);
+        };
+
+        syncPageAppearance();
+        addEventListener("pageshow", syncPageAppearance);
       })();
     </script>
     <meta name="viewport" content="width=device-width,initial-scale=1" />

@@ -22,7 +22,7 @@ const options = [
 
   <md-menu
     id="site-theme-menu"
-    class="site-theme-menu"
+    class="site-material-menu site-theme-menu"
     anchor="site-theme-trigger"
     anchor-corner="end-end"
     menu-corner="start-end"
@@ -33,7 +33,7 @@ const options = [
       options.map((option) => (
         <md-menu-item
           type="button"
-          class="site-theme-menu-item"
+          class="site-material-menu-item site-theme-menu-item"
           data-theme-option={option.value}
           aria-label={option.label}
         >
@@ -124,6 +124,26 @@ const options = [
         </md-menu-item>
       ))
     }
+    <md-divider class="site-theme-menu-divider" data-dynamic-color-control hidden></md-divider>
+    <div
+      class="site-theme-dynamic-color-row"
+      data-dynamic-color-control
+      data-dynamic-color-option
+      hidden
+    >
+      <span class="site-theme-dynamic-color-copy">
+        <span>Couleur dynamique</span>
+        <span class="site-theme-dynamic-color-support" data-dynamic-color-support>
+          Chargez d’abord une image sur l’accueil
+        </span>
+      </span>
+      <md-switch
+        class="site-theme-dynamic-color-switch"
+        touch-target="none"
+        show-only-selected-icon
+        aria-label="Couleur dynamique"
+        disabled></md-switch>
+    </div>
   </md-menu>
 
   <span class="sr-only" role="status" aria-live="polite" aria-atomic="true" data-theme-status
@@ -131,7 +151,14 @@ const options = [
 </div>
 
 <script>
-  import { SITE_LEGACY_STORAGE_KEYS, SITE_STORAGE_KEYS } from "@/lib/site-contracts";
+  import { bindMaterialMenuSelection } from "@/assets/js/app/material-menu";
+  import {
+    readMaterialDynamicColorEnabled,
+    readMaterialDynamicColorPalette,
+    setMaterialDynamicColorEnabled,
+    syncMaterialDynamicColor,
+  } from "@/assets/js/app/material-dynamic-color";
+  import { SITE_EVENTS, SITE_LEGACY_STORAGE_KEYS, SITE_STORAGE_KEYS } from "@/lib/site-contracts";
 
   type ThemePreference = "system" | "light" | "dark";
   type MaterialMenu = HTMLElement & {
@@ -142,7 +169,7 @@ const options = [
     activateNextItem(): HTMLElement;
     activatePreviousItem(): HTMLElement;
   };
-
+  type MaterialSwitch = HTMLElement & { disabled: boolean; selected: boolean };
   const labels: Record<ThemePreference, string> = {
     system: "Système",
     light: "Clair",
@@ -157,18 +184,56 @@ const options = [
   const isPreference = (value: string | null): value is ThemePreference =>
     value === "system" || value === "light" || value === "dark";
 
-  function enhanceThemeSwitcher(root: HTMLElement) {
-    if (root.dataset.enhanced === "true") return;
+  async function enhanceThemeSwitcher(root: HTMLElement) {
+    if (root.dataset.enhanced === "true" || root.dataset.enhancing === "true") return;
+    root.dataset.enhancing = "true";
+
+    await Promise.all([
+      customElements.whenDefined("md-icon-button"),
+      customElements.whenDefined("md-menu"),
+      customElements.whenDefined("md-menu-item"),
+      customElements.whenDefined("md-switch"),
+    ]);
+
+    if (!root.isConnected) return;
+    delete root.dataset.enhancing;
     root.dataset.enhanced = "true";
 
     const trigger = root.querySelector<HTMLElement>(".site-theme-trigger");
     const triggerIcon = root.querySelector<HTMLElement>("[data-theme-trigger-icon]");
     const menu = root.querySelector<MaterialMenu>(".site-theme-menu");
+    const dynamicColorControls = root.querySelectorAll<HTMLElement>("[data-dynamic-color-control]");
+    const dynamicColorRow = root.querySelector<HTMLElement>("[data-dynamic-color-option]");
+    const dynamicColorSupport = root.querySelector<HTMLElement>("[data-dynamic-color-support]");
+    const dynamicColorSwitch = root.querySelector<MaterialSwitch>(
+      ".site-theme-dynamic-color-switch",
+    );
     const status = root.querySelector<HTMLElement>("[data-theme-status]");
     const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
     if (!trigger || !triggerIcon || !menu) return;
 
     let preference: ThemePreference = "system";
+
+    const renderDynamicColor = () => {
+      if (!dynamicColorRow || !dynamicColorSwitch || !dynamicColorSupport) return;
+
+      const detailed = document.documentElement.dataset.homeDetailView === "true";
+      const palette = readMaterialDynamicColorPalette();
+      const enabled = readMaterialDynamicColorEnabled();
+      const available = Boolean(palette);
+
+      dynamicColorControls.forEach((control) => {
+        control.hidden = !detailed;
+      });
+      dynamicColorSwitch.disabled = !available;
+      const selected = Boolean(enabled && detailed && available);
+      dynamicColorSwitch.toggleAttribute("selected", selected);
+      dynamicColorSwitch.selected = selected;
+      dynamicColorSupport.hidden = available;
+      dynamicColorSupport.textContent = available ? "" : "Chargez d’abord une image sur l’accueil";
+
+      dynamicColorSwitch.setAttribute("aria-label", "Couleur dynamique");
+    };
 
     const render = () => {
       const label = labels[preference];
@@ -178,7 +243,7 @@ const options = [
 
       root.querySelectorAll<HTMLElement>("[data-theme-option]").forEach((item) => {
         const selected = item.dataset.themeOption === preference;
-        (item as HTMLElement & { selected: boolean }).selected = selected;
+        item.toggleAttribute("data-theme-selected", selected);
         const optionLabel = labels[item.dataset.themeOption as ThemePreference];
         item.setAttribute("aria-label", `${optionLabel}${selected ? ", thème sélectionné" : ""}`);
         const radio = item.querySelector<HTMLElement>(".site-theme-radio-icon");
@@ -186,6 +251,7 @@ const options = [
         const selectedLabel = item.querySelector<HTMLElement>("[data-theme-selected-label]");
         if (selectedLabel) selectedLabel.hidden = !selected;
       });
+      renderDynamicColor();
     };
 
     const apply = (persist: boolean) => {
@@ -199,6 +265,7 @@ const options = [
           localStorage.setItem(SITE_STORAGE_KEYS.themePreference, preference);
         } catch {}
       }
+      syncMaterialDynamicColor();
       render();
     };
 
@@ -217,59 +284,122 @@ const options = [
       apply(false);
     };
 
-    trigger.addEventListener("click", async () => {
-      await customElements.whenDefined("md-menu");
-      if (menu.open) menu.close();
-      else {
-        menu.defaultFocus = "first-item";
-        menu.show();
+    let menuReady = false;
+    let menuClosing = false;
+    let pendingOpen: MaterialMenu["defaultFocus"] | null = null;
+    let queuedNavigation = 0;
+
+    const moveActiveItem = (direction: 1 | -1) => {
+      if (direction === 1) menu.activateNextItem();
+      else menu.activatePreviousItem();
+    };
+
+    const flushQueuedNavigation = () => {
+      while (queuedNavigation > 0) {
+        moveActiveItem(1);
+        queuedNavigation -= 1;
       }
+      while (queuedNavigation < 0) {
+        moveActiveItem(-1);
+        queuedNavigation += 1;
+      }
+    };
+
+    const openMenu = (defaultFocus: MaterialMenu["defaultFocus"]) => {
+      if (menuClosing) {
+        pendingOpen = defaultFocus;
+        return;
+      }
+      pendingOpen = null;
+      menuReady = false;
+      queuedNavigation = 0;
+      menu.defaultFocus = defaultFocus;
+      menu.show();
+    };
+
+    trigger.addEventListener("click", () => {
+      if (menu.open) {
+        pendingOpen = null;
+        menu.close();
+      } else openMenu("first-item");
     });
-    trigger.addEventListener("keydown", async (event) => {
+    trigger.addEventListener("keydown", (event) => {
       if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
       event.preventDefault();
-      await customElements.whenDefined("md-menu");
       const target = event.key === "ArrowUp" ? "last-item" : "first-item";
       if (menu.open) {
-        if (target === "first-item") menu.activateNextItem();
-        else menu.activatePreviousItem();
-      } else {
-        menu.defaultFocus = target;
-        menu.show();
-      }
+        const direction = target === "first-item" ? 1 : -1;
+        if (menuReady) moveActiveItem(direction);
+        else queuedNavigation += direction;
+      } else openMenu(target);
     });
     menu.addEventListener("opening", () => {
+      menuClosing = false;
+      menuReady = false;
       trigger.setAttribute("aria-expanded", "true");
     });
     menu.addEventListener("opened", () => {
+      menuReady = true;
       trigger.setAttribute("aria-expanded", "true");
+      flushQueuedNavigation();
     });
     menu.addEventListener("closing", () => {
+      menuClosing = true;
+      menuReady = false;
+      queuedNavigation = 0;
       trigger.setAttribute("aria-expanded", "false");
     });
     menu.addEventListener("closed", () => {
+      const reopenDefaultFocus = pendingOpen;
+      pendingOpen = null;
+      menuClosing = false;
+      menuReady = false;
+      queuedNavigation = 0;
       trigger.setAttribute("aria-expanded", "false");
       menu.defaultFocus = "first-item";
-    });
-    root.querySelectorAll<HTMLElement>("[data-theme-option]").forEach((item) => {
-      item.addEventListener("click", () => {
-        const next = item.dataset.themeOption ?? null;
-        if (!isPreference(next)) return;
-        preference = next;
-        apply(true);
-        if (status) status.textContent = `Thème ${labels[preference]} activé`;
-        menu.close();
+      if (!reopenDefaultFocus) return;
+      window.requestAnimationFrame(() => {
+        if (!menu.isConnected || menu.open || menuClosing) return;
+        openMenu(reopenDefaultFocus);
       });
+    });
+    bindMaterialMenuSelection(menu, (item) => {
+      const next = item.dataset.themeOption ?? null;
+      if (!isPreference(next)) return;
+      preference = next;
+      apply(true);
+      if (status) status.textContent = `Thème ${labels[preference]} activé`;
+    });
+    dynamicColorSwitch?.addEventListener("click", (event) => {
+      if (dynamicColorSwitch.disabled) return;
+      event.preventDefault();
+      const enabled = !readMaterialDynamicColorEnabled();
+      window.setTimeout(() => {
+        const state = setMaterialDynamicColorEnabled(enabled);
+        renderDynamicColor();
+        if (status) {
+          status.textContent = state.active
+            ? "Couleur dynamique activée"
+            : "Couleur dynamique désactivée";
+        }
+      }, 0);
     });
     systemTheme.addEventListener("change", () => {
       if (preference === "system") apply(false);
     });
+    document.addEventListener(SITE_EVENTS.homeDetailViewChange, () => {
+      syncMaterialDynamicColor();
+      renderDynamicColor();
+    });
+    document.addEventListener(SITE_EVENTS.materialDynamicColorChange, renderDynamicColor);
     window.addEventListener("pageshow", sync);
     sync();
   }
 
   const init = () =>
-    document.querySelectorAll<HTMLElement>("[data-theme-switcher]").forEach(enhanceThemeSwitcher);
+    document
+      .querySelectorAll<HTMLElement>("[data-theme-switcher]")
+      .forEach((root) => void enhanceThemeSwitcher(root));
 
   init();
   document.addEventListener("astro:page-load", init);

@@ -1,0 +1,281 @@
+:root {
+  --md-focus-ring-color: transparent;
+}
+
+:is(
+  md-assist-chip,
+  md-chip-set,
+  md-circular-progress,
+  md-divider,
+  md-elevated-button,
+  md-fab,
+  md-filled-button,
+  md-filled-select,
+  md-filled-text-field,
+  md-filled-tonal-button,
+  md-filled-tonal-icon-button,
+  md-filter-chip,
+  md-icon-button,
+  md-linear-progress,
+  md-menu-item,
+  md-outlined-button,
+  md-outlined-select,
+  md-outlined-text-field,
+  md-primary-tab,
+  md-ripple,
+  md-select-option,
+  md-switch,
+  md-tabs,
+  md-text-button
+):not(:defined) {
+  visibility: hidden;
+}
+
+:is(md-dialog, md-menu):not(:defined) {
+  display: none;
+}
+
+.site-material-menu {
+  --md-menu-container-color: var(--md-sys-color-surface-container);
+  --md-menu-container-shape: var(--md-sys-shape-corner-small);
+}
+
+md-text-button {
+  --md-focus-ring-color: var(
+    --md-text-button-focus-label-text-color,
+    var(--md-text-button-label-text-color, var(--md-sys-color-primary))
+  );
+}
+
+md-elevated-button {
+  --md-focus-ring-color: var(
+    --md-elevated-button-focus-label-text-color,
+    var(--md-elevated-button-label-text-color, var(--md-sys-color-primary))
+  );
+}
+
+md-outlined-button {
+  --md-focus-ring-color: var(
+    --md-outlined-button-focus-label-text-color,
+    var(--md-outlined-button-label-text-color, var(--md-sys-color-primary))
+  );
+}
+
+md-filled-button {
+  --md-focus-ring-color: var(--md-filled-button-container-color, var(--md-sys-color-primary));
+}
+
+md-filled-tonal-button {
+  --md-focus-ring-color: var(
+    --md-filled-tonal-button-focus-label-text-color,
+    var(--md-filled-tonal-button-label-text-color, var(--md-sys-color-on-secondary-container))
+  );
+}
+
+md-icon-button {
+  --md-focus-ring-color: var(
+    --md-icon-button-focus-icon-color,
+    var(--md-icon-button-icon-color, var(--md-sys-color-on-surface-variant))
+  );
+}
+
+md-icon-button[selected] {
+  --md-focus-ring-color: var(
+    --md-icon-button-selected-focus-icon-color,
+    var(--md-icon-button-selected-icon-color, var(--md-sys-color-primary))
+  );
+}
+
+md-filled-tonal-icon-button {
+  --md-focus-ring-color: var(
+    --md-filled-tonal-icon-button-focus-icon-color,
+    var(--md-filled-tonal-icon-button-icon-color, var(--md-sys-color-on-secondary-container))
+  );
+}
+
+md-filled-tonal-icon-button[selected] {
+  --md-focus-ring-color: var(
+    --md-filled-tonal-icon-button-toggle-selected-focus-icon-color,
+    var(
+      --md-filled-tonal-icon-button-toggle-selected-icon-color,
+      var(--md-sys-color-on-secondary-container)
+    )
+  );
+}
+
+md-filter-chip {
+  --md-focus-ring-color: var(
+    --md-filter-chip-focus-label-text-color,
+    var(--md-filter-chip-label-text-color, var(--md-sys-color-on-surface-variant))
+  );
+}
+
+md-filter-chip[selected] {
+  --md-focus-ring-color: var(
+    --md-filter-chip-selected-focus-label-text-color,
+    var(--md-filter-chip-selected-label-text-color, var(--md-sys-color-on-secondary-container))
+  );
+}
+
+:root:not([data-focus-modality="keyboard"])
+  :is(
+    md-elevated-button,
+    md-fab,
+    md-filled-button,
+    md-filled-tonal-button,
+    md-filled-tonal-icon-button,
+    md-filter-chip,
+    md-icon-button,
+    md-outlined-button,
+    md-text-button
+  )::part(focus-ring) {
+  display: none;
+}
+
+:root[data-focus-modality="keyboard"]
+  :is(
+    md-elevated-button,
+    md-fab,
+    md-filled-button,
+    md-filled-tonal-button,
+    md-filled-tonal-icon-button,
+    md-filter-chip,
+    md-icon-button,
+    md-outlined-button,
+    md-text-button
+  ):focus-within::part(focus-ring) {
+  display: flex;
+}
+
+:is(
+  md-elevated-button,
+  md-fab,
+  md-filled-button,
+  md-filled-tonal-button,
+  md-filled-tonal-icon-button,
+  md-filter-chip,
+  md-icon-button,
+  md-outlined-button,
+  md-text-button
+)::part(focus-ring) {
+  --md-focus-ring-active-width: 8px;
+}
+
+:is(md-menu-item, md-select-option) {
+  --md-focus-ring-color: var(--md-sys-color-on-surface-variant);
+  --md-focus-ring-width: 2px;
+}
+
+:is(md-menu-item, md-select-option)::part(focus-ring) {
+  --md-focus-ring-active-width: 8px;
+}
+
+.site-material-menu-item {
+  --md-menu-item-label-text-color: var(--md-sys-color-on-surface);
+  --md-menu-item-leading-icon-color: var(--md-sys-color-on-surface-variant);
+
+  position: relative;
+  min-height: 3.25rem;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :is(md-menu-item, md-select-option):not([data-menu-focus-indicator])::part(focus-ring) {
+    display: none;
+  }
+
+  :is(md-menu-item, md-select-option)[data-menu-focus-indicator]:focus-within::part(focus-ring) {
+    display: flex;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  :is(md-menu-item, md-select-option) {
+    --md-focus-ring-color: transparent;
+  }
+}
+
+.site-material-menu-item md-icon {
+  --md-icon-size: 1.5rem;
+}
+
+.site-material-select {
+  --md-menu-container-color: var(--md-sys-color-surface-container);
+  --md-menu-container-shape: var(--md-sys-shape-corner-small);
+}
+
+.site-material-select-option {
+  --md-menu-item-label-text-color: var(--md-sys-color-on-surface);
+  --md-menu-item-selected-container-color: transparent;
+  --md-menu-item-selected-label-text-color: var(--md-sys-color-on-surface);
+  --md-menu-item-trailing-icon-color: var(--md-sys-color-on-surface-variant);
+  --md-menu-item-selected-trailing-icon-color: var(--md-sys-color-on-surface-variant);
+
+  min-height: 3.25rem;
+  cursor: pointer;
+}
+
+.site-material-select-option::part(focus-ring) {
+  --md-focus-ring-inward-offset: 4px;
+  --md-focus-ring-shape: var(--md-sys-shape-corner-extra-small);
+}
+
+.site-material-menu-check {
+  --md-icon-size: 1.25rem;
+
+  visibility: hidden;
+  color: var(--md-sys-color-on-surface-variant);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.site-material-select-option:is([selected], [data-selected-option]) .site-material-menu-check {
+  visibility: visible;
+  opacity: 1;
+}
+
+.site-table-filter-field {
+  --md-outlined-text-field-container-shape: var(--md-sys-shape-corner-extra-large);
+  --md-outlined-text-field-focus-caret-color: var(--md-sys-color-on-surface);
+  --md-outlined-text-field-focus-label-text-color: var(--md-sys-color-on-surface-variant);
+  --md-outlined-text-field-focus-outline-color: var(--md-sys-color-outline);
+  --md-outlined-text-field-hover-outline-color: var(--md-sys-color-outline);
+  --md-outlined-text-field-input-text-color: var(--md-sys-color-on-surface);
+  --md-outlined-text-field-input-text-font: var(--site-font);
+  --md-outlined-text-field-label-text-color: var(--md-sys-color-on-surface-variant);
+  --md-outlined-text-field-label-text-font: var(--site-font);
+  --md-outlined-text-field-outline-color: var(--md-sys-color-outline-variant);
+}
+
+.site-table-page-size-select {
+  --md-outlined-select-text-field-focus-label-text-color: var(--md-sys-color-on-surface-variant);
+  --md-outlined-select-text-field-focus-outline-color: var(--md-sys-color-outline);
+  --md-outlined-select-text-field-focus-trailing-icon-color: var(--md-sys-color-on-surface-variant);
+  --md-outlined-select-text-field-hover-outline-color: var(--md-sys-color-outline);
+  --md-outlined-select-text-field-hover-trailing-icon-color: var(--md-sys-color-on-surface-variant);
+  --md-outlined-select-text-field-label-text-color: var(--md-sys-color-on-surface-variant);
+  --md-outlined-select-text-field-outline-color: var(--md-sys-color-outline-variant);
+  --md-outlined-select-text-field-trailing-icon-color: var(--md-sys-color-on-surface-variant);
+}
+
+@media (forced-colors: active) {
+  :root {
+    --md-focus-ring-color: transparent;
+  }
+
+  :is(md-menu-item, md-select-option) {
+    --md-focus-ring-color: Highlight;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  :root {
+    --md-focus-ring-active-width: 0px;
+    --md-focus-ring-width: 0px;
+  }
+
+  :is(md-menu-item, md-select-option):focus-within::part(focus-ring) {
+    display: none;
+  }
+}

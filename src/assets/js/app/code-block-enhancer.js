@@ -1,3 +1,5 @@
+import { copyTextToClipboard } from "./clipboard.js";
+
 const COPY_FEEDBACK_DURATION_MS = 2200;
 const COPY_ICON = "\uE14D";
 const COPIED_ICON = "\uE5CA";
@@ -15,67 +17,6 @@ let observedProse = null;
 function matchingCodeBlocks(root) {
   const matches = root instanceof Element && root.matches("pre > code") ? [root] : [];
   return [...matches, ...root.querySelectorAll("pre > code")];
-}
-
-function restoreSelection(selection, selectedRange) {
-  if (!selection || !selectedRange) return;
-
-  try {
-    selection.removeAllRanges();
-    selection.addRange(selectedRange);
-  } catch {
-    selection.removeAllRanges();
-  }
-}
-
-function copySelectedCodeBlock(source) {
-  const selection = document.getSelection();
-  const selectedRange = selection?.rangeCount ? selection.getRangeAt(0) : null;
-  const range = document.createRange();
-  range.selectNodeContents(source);
-  selection?.removeAllRanges();
-  selection?.addRange(range);
-
-  try {
-    return document.execCommand("copy");
-  } catch {
-    return false;
-  } finally {
-    selection?.removeAllRanges();
-    restoreSelection(selection, selectedRange);
-  }
-}
-
-async function copyToClipboard(text, source) {
-  try {
-    if (!navigator.clipboard?.writeText) throw new Error("Clipboard API unavailable");
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    const textarea = document.createElement("textarea");
-    const selection = document.getSelection();
-    const selectedRange = selection?.rangeCount ? selection.getRangeAt(0) : null;
-
-    textarea.value = text;
-    textarea.setAttribute("readonly", "");
-    textarea.className = "code-copy-fallback-input";
-    document.body.appendChild(textarea);
-    textarea.focus({ preventScroll: true });
-    textarea.select();
-    textarea.setSelectionRange(0, textarea.value.length);
-
-    let copied = false;
-    try {
-      copied = document.execCommand("copy");
-    } catch {
-      copied = false;
-    } finally {
-      textarea.remove();
-      restoreSelection(selection, selectedRange);
-    }
-
-    return copied || (source ? copySelectedCodeBlock(source) : false);
-  }
 }
 
 function setCopyState(control, state) {
@@ -113,7 +54,10 @@ function createCopyControl(codeBlock) {
 
   const handleCopy = async () => {
     document.dispatchEvent(new CustomEvent(TOOLTIP_HIDE_EVENT));
-    const copied = await copyToClipboard(codeBlock.innerText, codeBlock);
+    const copied = await copyTextToClipboard(codeBlock.innerText, {
+      fallbackClassName: "code-copy-fallback-input",
+      fallbackSelectionSource: codeBlock,
+    });
     setCopyState(control, copied ? "copied" : "error");
     window.clearTimeout(control.resetTimer);
     control.resetTimer = window.setTimeout(() => {

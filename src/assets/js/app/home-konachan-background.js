@@ -3,8 +3,16 @@ import {
   MaterialDynamicColors,
   SchemeTonalSpot,
   hexFromArgb,
-  sourceColorFromImage,
+  sourceColorFromImageBytes,
 } from "@material/material-color-utilities";
+import {
+  isMaterialDynamicColorActive,
+  storeMaterialDynamicColorPalette,
+  syncMaterialDynamicColor,
+} from "@/assets/js/app/material-dynamic-color";
+import { withDeterministicMaterialSourceColorRandom } from "@/assets/js/app/material-source-color-random";
+import { sourceColorFromImageBytesInWorker } from "@/assets/js/app/material-source-color-worker";
+import { MATERIAL_DYNAMIC_COLOR_ROLES, SITE_EVENTS } from "@/lib/site-contracts";
 
 const MATERIAL_DYNAMIC_COLORS = new MaterialDynamicColors();
 const MATERIAL_DYNAMIC_SPEC_VERSION = "2021";
@@ -61,7 +69,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     images: [],
     ratingPreference: "safe",
     refreshPromise: null,
-    themeObserver: null,
+    themeSyncReady: false,
   };
 
   const pickRandom = (items) => items[Math.floor(Math.random() * items.length)];
@@ -105,57 +113,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     "--home-hero-tonal-label",
     "--home-hero-tonal-hover",
   ];
-  const HOME_DYNAMIC_TOKEN_NAMES = [
-    "background",
-    "error",
-    "error-container",
-    "inverse-on-surface",
-    "inverse-primary",
-    "inverse-surface",
-    "on-background",
-    "on-error",
-    "on-error-container",
-    "on-primary",
-    "on-primary-container",
-    "on-primary-fixed",
-    "on-primary-fixed-variant",
-    "on-secondary",
-    "on-secondary-container",
-    "on-secondary-fixed",
-    "on-secondary-fixed-variant",
-    "on-surface",
-    "on-surface-variant",
-    "on-tertiary",
-    "on-tertiary-container",
-    "on-tertiary-fixed",
-    "on-tertiary-fixed-variant",
-    "outline",
-    "outline-variant",
-    "primary",
-    "primary-container",
-    "primary-fixed",
-    "primary-fixed-dim",
-    "scrim",
-    "secondary",
-    "secondary-container",
-    "secondary-fixed",
-    "secondary-fixed-dim",
-    "shadow",
-    "surface",
-    "surface-bright",
-    "surface-container",
-    "surface-container-high",
-    "surface-container-highest",
-    "surface-container-low",
-    "surface-container-lowest",
-    "surface-dim",
-    "surface-tint",
-    "surface-variant",
-    "tertiary",
-    "tertiary-container",
-    "tertiary-fixed",
-    "tertiary-fixed-dim",
-  ];
+  const HOME_DYNAMIC_TOKEN_NAMES = MATERIAL_DYNAMIC_COLOR_ROLES;
   const HOME_DYNAMIC_ROLE_METHODS = {
     background: "background",
     error: "error",
@@ -237,8 +195,40 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     );
   }
 
+  function imageBytes(image) {
+    const width = image.naturalWidth || image.width;
+    const height = image.naturalHeight || image.height;
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context || width <= 0 || height <= 0) {
+      throw new Error("konachan_dynamic_theme_canvas_unavailable");
+    }
+
+    canvas.width = width;
+    canvas.height = height;
+    context.drawImage(image, 0, 0, width, height);
+    return context.getImageData(0, 0, width, height).data;
+  }
+
+  function deterministicMaterialSourceColorFromBytes(bytes) {
+    return withDeterministicMaterialSourceColorRandom(() => sourceColorFromImageBytes(bytes));
+  }
+
+  async function deterministicMaterialSourceColor(image) {
+    let bytes = imageBytes(image);
+
+    try {
+      return await sourceColorFromImageBytesInWorker(bytes);
+    } catch {
+      // A successful transfer detaches the main-thread buffer. Recreate the
+      // exact full-resolution pixels only when the Worker cannot return them.
+      if (bytes.byteLength === 0) bytes = imageBytes(image);
+      return deterministicMaterialSourceColorFromBytes(bytes);
+    }
+  }
+
   async function createHomeDynamicTheme(image) {
-    const sourceColor = await sourceColorFromImage(image);
+    const sourceColor = await deterministicMaterialSourceColor(image);
 
     return {
       dark: createHomeDynamicScheme(sourceColor, { dark: true }),
@@ -252,15 +242,20 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     return createHomeDynamicTheme(image);
   }
 
-  function applyHomeDynamicTokens(theme) {
-    const body = document.body;
-    if (!body?.classList.contains("home-page")) return null;
+  function applyHomeDynamicTokens(theme, image, loadedUrl) {
+    const palette = storeMaterialDynamicColorPalette({
+      version: 1,
+      imageId: typeof image === "object" ? image?.id : null,
+      imageUrl: loadedUrl,
+      sourceColor: cssColor(theme.sourceColor),
+      updatedAt: new Date().toISOString(),
+      schemes: {
+        dark: tokensFromTheme(theme, { dark: true }),
+        light: tokensFromTheme(theme, { dark: false }),
+      },
+    });
 
-    const tokens = tokensFromTheme(theme, { dark: isDarkTheme() });
-    // The illustration may influence the hero overlay, but never the global site palette.
-    // Global Material roles stay generated from the explicit #1565C0 brand source.
-    clearHomeDynamicTokens();
-    return tokens;
+    return palette ? tokensFromTheme(theme, { dark: isDarkTheme() }) : null;
   }
 
   function applyHeroDynamicTokens(landing, theme) {
@@ -285,38 +280,22 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     }
   }
 
-  function clearHomeDynamicTokens() {
-    const body = document.body;
-    if (!body?.classList.contains("home-page")) return;
-
-    delete body.dataset.homeDynamicColor;
-    document.documentElement.style.removeProperty("--home-dynamic-page-bg");
-    body.style.removeProperty("--home-dynamic-light-primary");
-    body.style.removeProperty("--home-dynamic-light-surface");
-    body.style.removeProperty("--home-dynamic-dark-primary");
-    body.style.removeProperty("--home-dynamic-dark-surface");
-    for (const name of HOME_DYNAMIC_TOKEN_NAMES) {
-      body.style.removeProperty(`--m3-${name}`);
+  function syncDynamicHeroColor(landing) {
+    if (!state.dynamicTheme || !isMaterialDynamicColorActive()) {
+      clearDynamicHeroColor(landing);
+      return null;
     }
-  }
 
-  function syncHomeDynamicTheme() {
-    if (!state.dynamicTheme) return null;
-    return applyHomeDynamicTokens(state.dynamicTheme);
+    applyHeroDynamicTokens(landing, state.dynamicTheme);
+    return tokensFromTheme(state.dynamicTheme, { dark: true });
   }
 
   function initHomeDynamicThemeSync() {
-    if (state.themeObserver) return;
+    if (state.themeSyncReady) return;
 
-    state.themeObserver = new MutationObserver(() => {
-      const tokens = syncHomeDynamicTheme();
-      if (tokens) {
-        applyHeroDynamicTokens(document.querySelector(LANDING_SELECTOR), state.dynamicTheme);
-      }
-    });
-    state.themeObserver.observe(document.documentElement, {
-      attributeFilter: ["data-theme"],
-      attributes: true,
+    state.themeSyncReady = true;
+    document.addEventListener(SITE_EVENTS.materialDynamicColorChange, () => {
+      syncDynamicHeroColor(document.querySelector(LANDING_SELECTOR));
     });
   }
 
@@ -354,12 +333,12 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
       if (!dynamicTheme) throw new Error("konachan_dynamic_theme_unavailable");
 
       state.dynamicTheme = dynamicTheme;
-      const tokens = syncHomeDynamicTheme();
+      const tokens = applyHomeDynamicTokens(dynamicTheme, image, loadedUrl);
       if (!tokens) return;
-      applyHeroDynamicTokens(landing, state.dynamicTheme);
+      syncDynamicHeroColor(landing);
     } catch {
       state.dynamicTheme = null;
-      clearHomeDynamicTokens();
+      syncMaterialDynamicColor();
       clearDynamicHeroColor(landing);
     }
   }
@@ -390,13 +369,14 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     }
   }
 
-  function writeStoredImages(images) {
+  function writeStoredImages(images, currentImage) {
     try {
       localStorage.setItem(
         KONACHAN_CACHE_KEY,
         JSON.stringify({
           storedAt: Date.now(),
           images: images.slice(0, 96),
+          currentImage: normalizeImage(currentImage),
         }),
       );
       localStorage.removeItem(KONACHAN_LEGACY_CACHE_KEY);
@@ -408,15 +388,19 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     if (!normalizedImage) return;
 
     const cachedImages = readStoredImages()?.images ?? [];
-    writeStoredImages(
-      mergeImages(
-        {
-          ...normalizedImage,
-          url: normalizeUrl(loadedUrl) || normalizedImage.url,
-        },
-        cachedImages,
-      ),
-    );
+    const rememberedImage =
+      typeof normalizedImage === "string"
+        ? normalizeUrl(loadedUrl) || normalizedImage
+        : {
+            ...normalizedImage,
+            url: normalizeUrl(loadedUrl) || normalizedImage.url,
+          };
+    writeStoredImages(mergeImages(rememberedImage, cachedImages), rememberedImage);
+  }
+
+  function readStoredCurrentImage() {
+    const image = normalizeImage(readStoredImages()?.currentImage);
+    return image && ratingAllowed(image) ? image : null;
   }
 
   async function readCachedJson(url) {
@@ -698,7 +682,6 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     target.dataset.loaded = "false";
     target.dataset.konachanCurrentUrl = "";
     clearDynamicHeroColor(target.closest(LANDING_SELECTOR));
-    clearHomeDynamicTokens();
     state.currentImage = null;
     state.currentUrl = "";
     state.dynamicTheme = null;
@@ -819,7 +802,11 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
       );
     };
 
-    const refresh = async ({ forceReload = false, rotateAfter = false } = {}) => {
+    const refresh = async ({
+      forceReload = false,
+      rotateAfter = false,
+      preferredImage = null,
+    } = {}) => {
       if (!syncExplicitContentState(landing, target)) {
         setRefreshState({ busy: false, message: "Avertissement à confirmer" });
         return;
@@ -830,8 +817,17 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
 
       try {
         await refreshImagePool({ forceReload });
-        const changed =
-          rotateAfter || target.dataset.loaded !== "true" ? await rotate(target) : true;
+        let changed = target.dataset.loaded === "true" && !rotateAfter;
+        if (preferredImage && target.dataset.loaded !== "true") {
+          try {
+            changed = await setBackground(target, preferredImage);
+          } catch {
+            changed = false;
+          }
+        }
+        if (!changed && (rotateAfter || target.dataset.loaded !== "true")) {
+          changed = await rotate(target);
+        }
         message = changed ? "Image mise à jour" : message;
       } catch {
         message = target.dataset.loaded === "true" ? "Image prête" : message;
@@ -890,14 +886,26 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
 
     document.addEventListener(EXPLICIT_CONTENT_CHANGE_EVENT, () => {
       if (syncExplicitContentState(landing, target)) {
-        refresh({ rotateAfter: target.dataset.loaded !== "true" });
+        refresh({
+          preferredImage:
+            target.dataset.loaded !== "true"
+              ? (readStoredCurrentImage() ?? INITIAL_BACKGROUND)
+              : null,
+          rotateAfter: target.dataset.loaded !== "true",
+        });
       } else {
         setRefreshState({ busy: false, message: "Avertissement à confirmer" });
       }
     });
 
     if (syncExplicitContentState(landing, target)) {
-      refresh({ rotateAfter: target.dataset.loaded !== "true" });
+      refresh({
+        preferredImage:
+          target.dataset.loaded !== "true"
+            ? (readStoredCurrentImage() ?? INITIAL_BACKGROUND)
+            : null,
+        rotateAfter: target.dataset.loaded !== "true",
+      });
     } else {
       setRefreshState({ busy: false, message: "Avertissement à confirmer" });
     }

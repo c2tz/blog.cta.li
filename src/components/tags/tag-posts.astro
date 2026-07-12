@@ -31,7 +31,8 @@ const initialStatus =
       <div class="tag-posts-table-tools">
         <md-outlined-text-field
           id="tag-posts-filter"
-          class="tag-posts-table-filter"
+          name="tag-posts-filter"
+          class="site-table-filter-field tag-posts-table-filter"
           type="search"
           label="Filtrer les articles"
           autocomplete="off"
@@ -155,14 +156,25 @@ const initialStatus =
         <div class="tag-posts-page-size">
           <span>Articles par page</span>
           <md-outlined-select
+            id="tag-posts-page-size"
+            name="tag-posts-page-size"
+            class="site-material-select site-table-page-size-select"
             label="Articles par page"
             value={PAGE_SIZE_OPTIONS[0].toString()}
             aria-controls={contentId}
+            menu-positioning="popover"
             data-page-size
           >
             {PAGE_SIZE_OPTIONS.map((size, index) => (
-              <md-select-option value={size.toString()} selected={index === 0 ? true : undefined}>
+              <md-select-option
+                class="site-material-select-option"
+                value={size.toString()}
+                selected={index === 0 ? true : undefined}
+              >
                 <span slot="headline">{size}</span>
+                <md-icon slot="end" class="site-material-menu-check" aria-hidden="true">
+                  &#xE5CA;
+                </md-icon>
               </md-select-option>
             ))}
           </md-outlined-select>
@@ -214,6 +226,8 @@ const initialStatus =
     )
   }
 </site-tag-posts>
+
+{isTable && <script>import "@/assets/js/material-web/tags.js";</script>}
 
 <script>
   type TagPostsView = "list" | "table";
@@ -494,15 +508,6 @@ const initialStatus =
 
   .tag-posts-table-filter {
     width: min(100%, 24rem);
-    --md-outlined-text-field-container-shape: var(--md-sys-shape-corner-extra-large);
-    --md-outlined-text-field-focus-caret-color: var(--site-link);
-    --md-outlined-text-field-focus-label-text-color: var(--site-link);
-    --md-outlined-text-field-focus-outline-color: var(--site-link);
-    --md-outlined-text-field-input-text-color: var(--site-text);
-    --md-outlined-text-field-input-text-font: var(--site-font);
-    --md-outlined-text-field-label-text-color: var(--site-muted);
-    --md-outlined-text-field-label-text-font: var(--site-font);
-    --md-outlined-text-field-outline-color: var(--site-border);
   }
 
   .tag-posts-table-scroll {
@@ -527,8 +532,7 @@ const initialStatus =
 
   .tag-posts-table-scroll:focus-visible {
     border-radius: var(--site-shape-extra-small);
-    outline: 2px solid var(--site-link);
-    outline-offset: 2px;
+    outline: 0;
   }
 
   .tag-posts-table {
@@ -613,13 +617,12 @@ const initialStatus =
   }
 
   .tag-posts-sort-active {
-    background: color-mix(in srgb, var(--site-link) 10%, var(--site-bg));
+    background: var(--md-sys-color-surface-container-low);
     color: var(--site-text);
   }
 
   .tag-posts-sort-button:focus-visible {
-    outline: 0;
-    box-shadow: inset 0 0 0 2px var(--site-link);
+    outline-offset: -3px;
   }
 
   .tag-posts-table .tag-posts-table-row.is-last-visible td,

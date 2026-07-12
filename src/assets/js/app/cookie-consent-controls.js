@@ -29,9 +29,9 @@ const MATERIAL_BUTTON_TAG_NAMES = new Set([
   "md-text-button",
 ]);
 const STATUS_LABELS = {
-  accepted: "autorisés",
-  rejected: "refusés",
-  unset: "aucun choix enregistré",
+  accepted: "Autorisés",
+  rejected: "Refusés",
+  unset: "Aucun choix enregistré",
 };
 
 function readCookie(name) {
@@ -211,6 +211,15 @@ class SiteCookieConsentBanner extends HTMLElement {
     }
   };
 
+  #handleFocusIn = (event) => {
+    if (this.#activeNotice !== "explicit-content") return;
+
+    const dialog = this.querySelector(".cookie-consent");
+    if (event.target instanceof Node && dialog?.contains(event.target)) return;
+
+    this.#focusInitialAction();
+  };
+
   connectedCallback() {
     if (this.dataset.cookieConsentReady === "true") return;
 
@@ -222,13 +231,15 @@ class SiteCookieConsentBanner extends HTMLElement {
     this.#explicitContentPending = readExplicitContentAcknowledgement() === null;
     this.#cookieConsentPending = readConsent() === null;
     document.addEventListener(SITE_EVENTS.consentChange, this.#handleConsentChange);
-    window.addEventListener("keydown", this.#handleKeydown);
+    window.addEventListener("focusin", this.#handleFocusIn, true);
+    window.addEventListener("keydown", this.#handleKeydown, true);
     this.#showNextNotice();
   }
 
   disconnectedCallback() {
     document.removeEventListener(SITE_EVENTS.consentChange, this.#handleConsentChange);
-    window.removeEventListener("keydown", this.#handleKeydown);
+    window.removeEventListener("focusin", this.#handleFocusIn, true);
+    window.removeEventListener("keydown", this.#handleKeydown, true);
     if (this.#focusFrame) cancelAnimationFrame(this.#focusFrame);
     this.#unlockPage();
     delete this.dataset.cookieConsentReady;
@@ -270,6 +281,11 @@ class SiteCookieConsentBanner extends HTMLElement {
   }
 
   #bindNoticeActions() {
+    this.querySelector(".cookie-consent-backdrop")?.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      this.#focusInitialAction();
+    });
+
     this.querySelector("[data-cookie-action='leave']")?.addEventListener("click", () => {
       if (window.history.length > 1) {
         window.history.back();
@@ -386,7 +402,10 @@ class SiteCookiePreferences extends HTMLElement {
     this.#clearFeedbackTimer();
     writeConsent(choice);
     this.#choice = choice;
-    this.#syncView(choice, "Choix cookies mis à jour.");
+    this.#syncView(
+      choice,
+      choice === "accepted" ? "Services optionnels autorisés." : "Services optionnels refusés.",
+    );
     document.dispatchEvent(new Event(SITE_EVENTS.consentChange));
   }
 
@@ -394,29 +413,30 @@ class SiteCookiePreferences extends HTMLElement {
     this.#clearFeedbackTimer();
     resetConsent();
     this.#choice = "unset";
-    this.#syncView(null, "Choix cookies réinitialisé.");
+    this.#syncView(null, "Choix des services optionnels réinitialisé.");
     document.dispatchEvent(new Event(SITE_EVENTS.consentChange));
   }
 
   #syncView(selectedChoice, feedback = "") {
     const status = this.querySelector("[data-cookie-preferences-status]");
     const feedbackElement = this.querySelector("[data-cookie-preferences-feedback]");
+    const panel = this.querySelector(".cookie-preferences-panel");
 
     if (status) status.textContent = STATUS_LABELS[this.#choice];
     if (feedbackElement) feedbackElement.textContent = feedback;
+    if (panel) panel.dataset.cookiePreferenceState = this.#choice;
     this.#syncSelection(selectedChoice);
   }
 
   #syncSelection(selectedChoice) {
     for (const control of this.querySelectorAll("[data-cookie-preference-choice]")) {
       if (control.dataset.cookiePreferenceChoice === "unset") {
-        control.removeAttribute("selected");
+        control.removeAttribute("data-selected");
+        control.toggleAttribute("disabled", this.#choice === "unset");
         continue;
       }
-      control.toggleAttribute(
-        "selected",
-        control.dataset.cookiePreferenceChoice === selectedChoice,
-      );
+      const selected = control.dataset.cookiePreferenceChoice === selectedChoice;
+      control.toggleAttribute("data-selected", selected);
     }
   }
 

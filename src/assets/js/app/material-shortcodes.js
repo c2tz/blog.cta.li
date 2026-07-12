@@ -1,3 +1,5 @@
+import { initMaterialMenuFocusIndicators } from "./material-menu.js";
+
 const SORT_ICON = "\uE5D7";
 const SORT_ASCENDING_ICON = "\uE5D8";
 const SORT_DESCENDING_ICON = "\uE5DB";
@@ -193,7 +195,8 @@ function enhanceTable(host) {
   if (filterEnabled) {
     filterField = document.createElement("md-outlined-text-field");
     filterField.id = filterId;
-    filterField.className = "material-shortcode-table-filter";
+    filterField.name = filterId;
+    filterField.className = "site-table-filter-field material-shortcode-table-filter";
     filterField.type = "search";
     filterField.label = "Filtrer le tableau";
     filterField.autocomplete = "off";
@@ -213,17 +216,27 @@ function enhanceTable(host) {
     pageSizeContainer.className = "material-shortcode-page-size";
     pageSizeLabel.textContent = "Lignes par page";
     pageSizeSelect = document.createElement("md-outlined-select");
+    pageSizeSelect.id = `${tableId}-page-size`;
+    pageSizeSelect.name = `${tableId}-page-size`;
+    pageSizeSelect.className = "site-material-select site-table-page-size-select";
     pageSizeSelect.label = "Lignes par page";
     pageSizeSelect.value = String(state.pageSize);
     pageSizeSelect.setAttribute("aria-controls", tableId);
+    pageSizeSelect.setAttribute("menu-positioning", "popover");
 
     pageSizeOptions.forEach((size) => {
       const option = document.createElement("md-select-option");
       const headline = document.createElement("span");
+      const check = document.createElement("md-icon");
+      option.className = "site-material-select-option";
       option.value = String(size);
       headline.slot = "headline";
       headline.textContent = String(size);
-      option.appendChild(headline);
+      check.slot = "end";
+      check.className = "site-material-menu-check";
+      check.setAttribute("aria-hidden", "true");
+      check.textContent = "\uE5CA";
+      option.append(headline, check);
       pageSizeSelect.appendChild(option);
     });
 
@@ -385,6 +398,7 @@ function enhanceTable(host) {
   });
 
   host.replaceChildren(...content);
+  initMaterialMenuFocusIndicators(host);
   host.dataset.materialEnhanced = "true";
   render();
 }

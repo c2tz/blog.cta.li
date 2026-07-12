@@ -5,16 +5,23 @@ const LEGACY_CACHE_KEY = SITE_LEGACY_STORAGE_KEYS.ipGeolocation;
 const CACHE_MAX_AGE_MS = 60 * 60 * 1000;
 const MIN_REQUEST_INTERVAL_MS = 5000;
 
+function regionName(countryCode) {
+  if (!countryCode) return "";
+
+  try {
+    return new Intl.DisplayNames([document.documentElement.lang || "fr"], { type: "region" }).of(
+      countryCode,
+    );
+  } catch {
+    return countryCode;
+  }
+}
+
 const PROVIDERS = [
   {
-    name: "geojs",
-    url: "https://get.geojs.io/v1/ip/geo.json",
-    map: (data) => ({ ip: data.ip, countryName: data.country || "" }),
-  },
-  {
-    name: "ipapi",
-    url: "https://ipapi.co/json/",
-    map: (data) => ({ ip: data.ip, countryName: data.country_name || "" }),
+    name: "country",
+    url: "https://api.country.is/",
+    map: (data) => ({ ip: data.ip, countryName: regionName(data.country) }),
   },
   {
     name: "ipify",

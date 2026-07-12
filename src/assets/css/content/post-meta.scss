@@ -65,8 +65,7 @@ abbr.site-tooltip {
 }
 
 .post-icon-tooltip:focus-visible {
-  outline: 2px solid var(--site-link);
-  outline-offset: 2px;
+  outline: 0;
 }
 
 .post-header {

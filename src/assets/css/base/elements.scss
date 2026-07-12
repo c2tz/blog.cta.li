@@ -24,7 +24,8 @@
     font-family: var(--site-font);
     line-height: 1.5;
     letter-spacing: 0;
-    overscroll-behavior: none;
+    overscroll-behavior-x: none;
+    overscroll-behavior-y: auto;
   }
 
   @supports (overflow: clip) {
@@ -146,9 +147,66 @@
   }
 
   a[href]:focus-visible {
+    outline: 0;
+    text-decoration-thickness: 0.125em;
+    text-underline-offset: 0.2em;
+  }
+
+  :root[data-focus-modality="keyboard"]
+    :is(
+      button:not(:disabled),
+      input:is([type="button"], [type="image"], [type="reset"], [type="submit"]):not(:disabled),
+      [role="button"]:not([aria-disabled="true"]):not(a[href])
+    ):focus {
     border-radius: var(--site-shape-extra-small);
-    outline: 2px solid var(--site-link);
-    outline-offset: 2px;
+    outline: 3px solid currentColor;
+    outline-offset: 3px;
+    animation:
+      site-focus-ring-grow 150ms cubic-bezier(0.2, 0, 0, 1),
+      site-focus-ring-shrink 450ms 150ms cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  @keyframes site-focus-ring-grow {
+    from {
+      outline-width: 0;
+    }
+
+    to {
+      outline-width: 8px;
+    }
+  }
+
+  @keyframes site-focus-ring-shrink {
+    from {
+      outline-width: 8px;
+    }
+
+    to {
+      outline-width: 3px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :root[data-focus-modality="keyboard"]
+      :is(
+        button:not(:disabled),
+        input:is([type="button"], [type="image"], [type="reset"], [type="submit"]):not(:disabled),
+        [role="button"]:not([aria-disabled="true"]):not(a[href])
+      ):focus {
+      animation: none;
+    }
+  }
+
+  @media (hover: none) and (pointer: coarse) {
+    :root[data-focus-modality="keyboard"]
+      :is(
+        button:not(:disabled),
+        input:is([type="button"], [type="image"], [type="reset"], [type="submit"]):not(:disabled),
+        [role="button"]:not([aria-disabled="true"]):not(a[href])
+      ):focus {
+      outline: 0;
+      animation: none;
+    }
   }
 
   p {

@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "dev:local": "astro dev --host 127.0.0.1 --port 4321",
+    "dev:local": "astro dev --host --port 4321",
     "build": "astro build && pnpm index:search && pnpm minify:html",
     "build:debug": "astro build && pnpm index:search",
     "build:vercel": "node scripts/ensure-git-history.mjs && pnpm build && pnpm check:headers",

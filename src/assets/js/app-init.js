@@ -16,9 +16,8 @@ async function initProseImageEnhancements() {
   const hasProseImage = document.querySelector(".site-prose img");
   if (!hasProseImage) return;
 
-  const { initBlogImageReveal, prepareBlogImageDialogs } = await import("./app/blog-images.js");
+  const { prepareBlogImageDialogs } = await import("./app/blog-images.js");
   prepareBlogImageDialogs();
-  initBlogImageReveal();
 }
 
 function initApp() {

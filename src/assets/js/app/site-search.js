@@ -13,6 +13,12 @@ const MAX_PRIORITY = 100;
 const RELEVANCE_PRIORITY_WEIGHT = 0.01;
 
 const panelControllers = new WeakMap();
+let filterChipModule;
+
+function loadFilterChipModule() {
+  filterChipModule ??= import("@material/web/chips/filter-chip.js");
+  return filterChipModule;
+}
 
 function controlValue(event) {
   const candidates = [event.composedPath()[0], event.target, event.currentTarget];
@@ -61,6 +67,7 @@ class SearchPanelController {
     this.loadingIndicatorTimer = 0;
     this.queryDebounceTimer = 0;
     this.inputControl = undefined;
+    this.filterChipReady = loadFilterChipModule();
 
     this.handleInput = this.handleInput.bind(this);
     this.connect();
@@ -95,6 +102,7 @@ class SearchPanelController {
     this.sortSelect.addEventListener("change", (event) => this.setSortMode(controlValue(event)));
 
     void this.connectMaterialTextField();
+    void this.connectSortMenuRepositioning();
     void this.loadTagFilters();
     void this.search(this.query.trim());
 
@@ -104,7 +112,7 @@ class SearchPanelController {
   }
 
   async connectMaterialTextField() {
-    await customElements.whenDefined("md-outlined-text-field");
+    await customElements.whenDefined("md-filled-text-field");
     await this.input.updateComplete;
 
     const control = this.input.shadowRoot?.querySelector("input, textarea");
@@ -113,6 +121,66 @@ class SearchPanelController {
     this.inputControl?.removeEventListener("input", this.handleInput);
     this.inputControl = control;
     control.addEventListener("input", this.handleInput);
+  }
+
+  async connectSortMenuRepositioning() {
+    await customElements.whenDefined("md-filled-select");
+    await this.sortSelect.updateComplete;
+
+    const dialog = this.root.closest("md-dialog");
+    if (!dialog) return;
+
+    await customElements.whenDefined("md-dialog");
+    await dialog.updateComplete;
+
+    const menu = this.sortSelect.shadowRoot?.querySelector("md-menu");
+    const dialogScroller = dialog.shadowRoot?.querySelector(".scroller");
+    if (!menu || !dialogScroller) return;
+
+    let repositionFrame = 0;
+    let settleTimer = 0;
+    let tracking = false;
+    const resizeObserver = new ResizeObserver(() => scheduleReposition());
+
+    const scheduleReposition = () => {
+      if (!menu.open) return;
+
+      window.clearTimeout(settleTimer);
+      window.cancelAnimationFrame(repositionFrame);
+      repositionFrame = window.requestAnimationFrame(() => {
+        repositionFrame = 0;
+        menu.reposition();
+
+        settleTimer = window.setTimeout(() => {
+          if (menu.open) menu.reposition();
+        }, 160);
+      });
+    };
+    const startTracking = () => {
+      if (tracking) return;
+      tracking = true;
+      dialogScroller.addEventListener("scroll", scheduleReposition, { passive: true });
+      window.addEventListener("resize", scheduleReposition, { passive: true });
+      window.visualViewport?.addEventListener("resize", scheduleReposition, { passive: true });
+      resizeObserver.observe(dialogScroller);
+      scheduleReposition();
+    };
+    const stopTracking = () => {
+      if (!tracking) return;
+      tracking = false;
+      dialogScroller.removeEventListener("scroll", scheduleReposition);
+      window.removeEventListener("resize", scheduleReposition);
+      window.visualViewport?.removeEventListener("resize", scheduleReposition);
+      resizeObserver.disconnect();
+      window.cancelAnimationFrame(repositionFrame);
+      window.clearTimeout(settleTimer);
+      repositionFrame = 0;
+      settleTimer = 0;
+    };
+
+    this.sortSelect.addEventListener("opened", startTracking);
+    this.sortSelect.addEventListener("closed", stopTracking);
+    document.addEventListener("astro:before-swap", stopTracking, { once: true });
   }
 
   handleInput(event) {
@@ -324,7 +392,7 @@ class SearchPanelController {
 
     try {
       const pagefind = await this.loadPagefind();
-      const filters = await pagefind.filters();
+      const [filters] = await Promise.all([pagefind.filters(), this.filterChipReady]);
       this.allTagFilterCounts = filters.tag;
       this.setTagFilterCounts(filters.tag);
     } catch {
@@ -395,6 +463,7 @@ class SearchPanelController {
         pagefind.search(query || null, this.pagefindSearchOptions()),
       );
 
+      await this.filterChipReady;
       if (currentRequest !== this.requestId) return;
 
       this.setTagFilterCounts(response.filters?.tag ?? response.totalFilters?.tag);
@@ -567,17 +636,21 @@ class SearchPanelController {
     return selectedTags.length === 0 || selectedTags.every((tag) => result.tags.includes(tag));
   }
 
-  withSearchTimeout(promise) {
+  async withSearchTimeout(promise) {
     let timeoutId = 0;
-    return Promise.race([
-      promise,
-      new Promise((_, reject) => {
-        timeoutId = window.setTimeout(
-          () => reject(new Error("Search request timed out.")),
-          SEARCH_TIMEOUT_MS,
-        );
-      }),
-    ]).finally(() => window.clearTimeout(timeoutId));
+    try {
+      return await Promise.race([
+        promise,
+        new Promise((_, reject) => {
+          timeoutId = window.setTimeout(
+            () => reject(new Error("Search request timed out.")),
+            SEARCH_TIMEOUT_MS,
+          );
+        }),
+      ]);
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
   }
 
   parseTagsParam(params) {
@@ -784,7 +857,7 @@ export function initSiteSearchTriggers() {
       try {
         await Promise.all([
           customElements.whenDefined("md-dialog"),
-          customElements.whenDefined("md-outlined-text-field"),
+          customElements.whenDefined("md-filled-text-field"),
           customElements.whenDefined("md-icon-button"),
         ]);
         // The Material dialog becomes visible before its opening animation

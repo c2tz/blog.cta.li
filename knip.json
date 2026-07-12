@@ -8,6 +8,7 @@
     "src/pages/**/*.{astro,js,ts}",
     "src/assets/js/app/home-konachan-background.js",
     "src/assets/js/app/home-konachan-controls.js",
+    "src/assets/js/material-web/home.js",
     "scripts/**/*.mjs",
     "tests/**/*.test.mjs",
     "tests/e2e/**/*.spec.ts"

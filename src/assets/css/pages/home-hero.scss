@@ -1,8 +1,8 @@
 .home-anime-landing {
   --home-banner-height: clamp(20rem, 52vh, 31rem);
   --home-banner-height: clamp(20rem, 52svh, 31rem);
-  --home-hero-on-image: #e6e0e9;
-  --home-hero-on-image-muted: #e6e0e9;
+  --home-hero-on-image: #e2e2e9;
+  --home-hero-on-image-muted: #e2e2e9;
   --home-hero-accent: var(--home-hero-on-image);
   --home-hero-surface-label: var(--home-hero-on-image-muted);
   position: relative;
@@ -57,81 +57,120 @@
   left: 0.75rem;
   z-index: 2;
   display: inline-flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
-.home-anime-rating-options {
-  position: absolute;
-  top: 0;
-  left: calc(100% + 0.35rem);
-  display: inline-flex;
-  gap: 0.25rem;
-  pointer-events: none;
+.home-anime-rating-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-block-start: 0.5rem;
 }
 
-.home-anime-rating-options[hidden] {
+.home-anime-rating-actions[hidden] {
   display: none;
 }
 
-.home-anime-rating-picker.is-open .home-anime-rating-options {
-  pointer-events: auto;
-}
-
-.home-anime-rating-trigger,
 .home-anime-rating-option {
-  display: inline-flex;
-  width: 2.5rem;
-  height: 2.5rem;
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  --md-focus-ring-color: var(--home-rating-on-container);
+  --md-fab-container-color: var(--home-rating-container);
+  --md-fab-container-height: 2.75rem;
+  --md-fab-container-shape: var(--md-sys-shape-corner-full);
+  --md-fab-focus-icon-color: var(--home-rating-on-container);
+  --md-fab-focus-label-text-color: var(--home-rating-on-container);
+  --md-fab-hover-icon-color: var(--home-rating-on-container);
+  --md-fab-hover-label-text-color: var(--home-rating-on-container);
+  --md-fab-hover-state-layer-color: var(--home-rating-on-container);
+  --md-fab-icon-color: var(--home-rating-on-container);
+  --md-fab-icon-size: 1.25rem;
+  --md-fab-label-text-color: var(--home-rating-on-container);
+  --md-fab-pressed-icon-color: var(--home-rating-on-container);
+  --md-fab-pressed-label-text-color: var(--home-rating-on-container);
+  --md-fab-pressed-state-layer-color: var(--home-rating-on-container);
+
+  text-shadow: none;
+  transform-origin: top left;
 }
 
 .home-anime-rating-option[hidden] {
   display: none;
 }
 
-.home-anime-rating-option {
-  --md-icon-button-focus-icon-color: #fff;
-  --md-icon-button-hover-icon-color: #fff;
-  --md-icon-button-hover-state-layer-color: #fff;
-  --md-icon-button-icon-color: #fff;
-  --md-icon-button-pressed-icon-color: #fff;
-  --md-icon-button-pressed-state-layer-color: #fff;
-  border-radius: var(--md-sys-shape-corner-full);
-  background: rgb(0 0 0 / 52%);
-  opacity: 0;
-  transform: translateX(-0.5rem) scale(0.82);
-  transition:
-    opacity 160ms ease,
-    transform 180ms cubic-bezier(0.2, 0, 0, 1);
+.home-anime-rating-actions[data-open] .home-anime-rating-option {
+  animation: home-rating-action-enter 200ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
-.home-anime-rating-option:nth-child(2) {
-  transition-delay: 25ms;
+.home-anime-rating-actions[data-open] .home-anime-rating-option:nth-child(2) {
+  animation-delay: 30ms;
 }
 
-.home-anime-rating-option:nth-child(3) {
-  transition-delay: 50ms;
+.home-anime-rating-actions[data-open] .home-anime-rating-option:nth-child(3) {
+  animation-delay: 60ms;
 }
 
-.home-anime-rating-picker.is-open .home-anime-rating-option {
-  opacity: 1;
-  transform: translateX(0) scale(1);
+.home-anime-rating-option.is-safe {
+  --home-rating-container: var(--md-sys-color-primary-container);
+  --home-rating-on-container: var(--md-sys-color-on-primary-container);
+}
+
+.home-anime-rating-option.is-questionable {
+  --home-rating-container: var(--md-sys-color-tertiary-container);
+  --home-rating-on-container: var(--md-sys-color-on-tertiary-container);
+}
+
+.home-anime-rating-option.is-explicit {
+  --home-rating-container: var(--md-sys-color-error-container);
+  --home-rating-on-container: var(--md-sys-color-on-error-container);
 }
 
 .home-anime-rating-trigger.is-safe {
+  --md-focus-ring-color: var(--md-sys-color-on-primary-container);
   --md-filled-tonal-icon-button-container-color: var(--md-sys-color-primary-container);
   --md-filled-tonal-icon-button-icon-color: var(--md-sys-color-on-primary-container);
 }
 
 .home-anime-rating-trigger.is-questionable {
+  --md-focus-ring-color: var(--md-sys-color-on-tertiary-container);
   --md-filled-tonal-icon-button-container-color: var(--md-sys-color-tertiary-container);
   --md-filled-tonal-icon-button-icon-color: var(--md-sys-color-on-tertiary-container);
 }
 
 .home-anime-rating-trigger.is-explicit {
+  --md-focus-ring-color: var(--md-sys-color-on-error-container);
   --md-filled-tonal-icon-button-container-color: var(--md-sys-color-error-container);
   --md-filled-tonal-icon-button-icon-color: var(--md-sys-color-on-error-container);
+}
+
+.home-anime-rating-trigger.is-open {
+  --md-focus-ring-color: var(--md-sys-color-inverse-on-surface);
+  --md-filled-tonal-icon-button-container-color: var(--md-sys-color-inverse-surface);
+  --md-filled-tonal-icon-button-focus-icon-color: var(--md-sys-color-inverse-on-surface);
+  --md-filled-tonal-icon-button-hover-icon-color: var(--md-sys-color-inverse-on-surface);
+  --md-filled-tonal-icon-button-hover-state-layer-color: var(--md-sys-color-inverse-on-surface);
+  --md-filled-tonal-icon-button-icon-color: var(--md-sys-color-inverse-on-surface);
+  --md-filled-tonal-icon-button-pressed-icon-color: var(--md-sys-color-inverse-on-surface);
+  --md-filled-tonal-icon-button-pressed-state-layer-color: var(--md-sys-color-inverse-on-surface);
+}
+
+@keyframes home-rating-action-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem) scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-anime-rating-actions[data-open] .home-anime-rating-option {
+    animation-duration: 1ms;
+    animation-delay: 0ms;
+  }
 }
 
 .home-anime-background {
@@ -213,33 +252,6 @@
   text-shadow: none;
 }
 
-md-elevated-button.home-hero-button {
-  --md-elevated-button-container-color: var(--md-sys-color-surface-container-low);
-  --md-elevated-button-label-text-color: var(--md-sys-color-primary);
-  --md-elevated-button-icon-color: var(--md-sys-color-primary);
-  --md-elevated-button-hover-label-text-color: var(--md-sys-color-primary);
-  --md-elevated-button-hover-icon-color: var(--md-sys-color-primary);
-  --md-elevated-button-hover-state-layer-color: var(--md-sys-color-primary);
-  --md-elevated-button-focus-label-text-color: var(--md-sys-color-primary);
-  --md-elevated-button-focus-icon-color: var(--md-sys-color-primary);
-  --md-elevated-button-pressed-label-text-color: var(--md-sys-color-primary);
-  --md-elevated-button-pressed-icon-color: var(--md-sys-color-primary);
-  --md-elevated-button-pressed-state-layer-color: var(--md-sys-color-primary);
-}
-
-md-text-button.home-hero-button {
-  --md-text-button-label-text-color: var(--home-hero-surface-label);
-  --md-text-button-icon-color: var(--home-hero-surface-label);
-  --md-text-button-hover-label-text-color: var(--home-hero-surface-label);
-  --md-text-button-hover-icon-color: var(--home-hero-surface-label);
-  --md-text-button-hover-state-layer-color: var(--home-hero-surface-label);
-  --md-text-button-focus-label-text-color: var(--home-hero-surface-label);
-  --md-text-button-focus-icon-color: var(--home-hero-surface-label);
-  --md-text-button-pressed-label-text-color: var(--home-hero-surface-label);
-  --md-text-button-pressed-icon-color: var(--home-hero-surface-label);
-  --md-text-button-pressed-state-layer-color: var(--home-hero-surface-label);
-}
-
 .home-hero-button md-icon[slot="icon"] {
   --md-icon-size: 1.125rem;
 }
@@ -281,6 +293,7 @@ body.home-page:not([data-home-detail-view="true"]) .home-anime-credit-link:not([
 }
 
 .home-anime-refresh {
+  --md-focus-ring-color: var(--home-hero-surface-label);
   --md-icon-button-disabled-icon-color: var(--home-hero-surface-label);
   --md-icon-button-disabled-icon-opacity: 0.92;
   --md-icon-button-focus-icon-color: var(--home-hero-surface-label);
@@ -291,18 +304,6 @@ body.home-page:not([data-home-detail-view="true"]) .home-anime-credit-link:not([
   --md-icon-button-pressed-state-layer-color: var(--home-hero-surface-label);
   flex: 0 0 auto;
   margin: 0;
-}
-
-@media (max-width: 360px) {
-  .home-anime-rating-options {
-    top: calc(100% + 0.35rem);
-    left: 0;
-    flex-direction: column;
-  }
-
-  .home-anime-rating-option {
-    transform: translateY(-0.5rem) scale(0.82);
-  }
 }
 
 @media (max-width: 735px) {

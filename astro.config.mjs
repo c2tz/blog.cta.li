@@ -77,6 +77,10 @@ const SHIKI_NOTATION_OPTIONS = { matchAlgorithm: "v3" };
 
 export default defineConfig({
   site: "https://ct-blog.cta.li/",
+  server: {
+    host: true,
+    port: 4321,
+  },
   build: {
     inlineStylesheets: "always",
   },
@@ -87,6 +91,7 @@ export default defineConfig({
   vite: {
     customLogger: viteLogger,
     server: {
+      strictPort: true,
       headers: {
         "Access-Control-Allow-Origin": "https://giscus.app",
         "Cross-Origin-Resource-Policy": "cross-origin",

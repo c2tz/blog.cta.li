@@ -2,12 +2,29 @@
   font-family: "Material Symbols Rounded";
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
-  src: url("/fonts/material-symbols-rounded-subset.woff2?v=bc075c972748") format("woff2");
+  font-display: block;
+  src: url("/fonts/material-symbols-rounded-subset.woff2?v=dd7b8dc571c9") format("woff2");
 }
 
-.material-symbols-rounded,
-.material-icons {
+md-icon:defined,
+md-icon:not(:defined) {
+  --md-icon-font: "Material Symbols Rounded";
+  font-family: "Material Symbols Rounded";
+}
+
+md-icon:not(:defined) {
+  display: inline-flex;
+  width: var(--md-icon-size, 24px);
+  height: var(--md-icon-size, 24px);
+  flex-shrink: 0;
+  overflow: hidden;
+  color: transparent;
+  font-family: var(--md-icon-font, "Material Symbols Rounded");
+  font-size: var(--md-icon-size, 24px);
+  line-height: 1;
+}
+
+.material-symbols-rounded {
   display: inline-block;
   font-family: "Material Symbols Rounded";
   font-size: 24px;

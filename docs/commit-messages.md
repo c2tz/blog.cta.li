@@ -1,6 +1,6 @@
 # Commit Messages
 
-This repository uses the Angular conventional commit style for new work:
+This repository uses the Conventional Commits style for new work:
 
 ```text
 fix(search): avoid eval-dependent search opener

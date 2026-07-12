@@ -31,10 +31,13 @@ const limitId = `${idPrefix}-filter-limit`;
   <form class="site-search-panel-form" role="search" data-search-form>
     <div class="site-search-panel-field">
       <div class="site-search-panel-query">
-        <md-outlined-text-field
+        <md-filled-text-field
+          id={`${idPrefix}-query`}
+          name="query"
           class="site-search-panel-input"
           type="search"
-          label="Mot-clé, titre ou contenu"
+          placeholder="Mot-clé, titre ou contenu"
+          aria-label="Mot-clé, titre ou contenu"
           autocomplete="off"
           spellcheck="false"
           has-leading-icon
@@ -43,7 +46,7 @@ const limitId = `${idPrefix}-filter-limit`;
           data-search-input
         >
           <md-icon slot="leading-icon" aria-hidden="true">&#xE8B6;</md-icon>
-        </md-outlined-text-field>
+        </md-filled-text-field>
 
         <md-icon-button
           class="site-search-panel-clear-search"
@@ -58,25 +61,35 @@ const limitId = `${idPrefix}-filter-limit`;
       </div>
 
       <span class="site-search-panel-divider" aria-hidden="true"></span>
-      <md-outlined-select
-        class="site-search-panel-sort-select"
+      <md-filled-select
+        id={`${idPrefix}-sort`}
+        name="sort"
+        class="site-material-select site-search-panel-sort-select"
         label="Tri par"
         aria-label="Trier les résultats"
-        menu-positioning="fixed"
+        menu-positioning="popover"
         value={deferred ? undefined : "relevance"}
         data-sort-select
       >
+        <md-icon slot="trailing-icon" class="site-search-sort-chevron" aria-hidden="true">
+          &#xE5CF;
+        </md-icon>
         {
           SORT_OPTIONS.map((option) => (
             <md-select-option
+              class="site-material-select-option site-search-sort-option"
               value={option.value}
+              aria-label={option.accessibleLabel}
               selected={!deferred && option.value === "relevance" ? true : undefined}
             >
               <span slot="headline">{option.label}</span>
+              <md-icon slot="end" class="site-material-menu-check" aria-hidden="true">
+                &#xE5CA;
+              </md-icon>
             </md-select-option>
           ))
         }
-      </md-outlined-select>
+      </md-filled-select>
     </div>
   </form>
 

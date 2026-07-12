@@ -59,4 +59,8 @@ const structuredDataJson = structuredData
   )
 }
 
-{structuredDataJson && <script type="application/ld+json" set:html={structuredDataJson} />}
+{
+  structuredDataJson && (
+    <script is:inline type="application/ld+json" set:html={structuredDataJson} />
+  )
+}

@@ -6,6 +6,7 @@ import Footer from "@/components/layout/site-footer.astro";
 import Header from "@/components/layout/site-header.astro";
 import CookieConsentBanner from "@/components/feedback/cookie-consent-banner.astro";
 import PageLoadingIndicator from "@/components/feedback/page-loading-indicator.astro";
+import SiteTooltip from "@/components/feedback/site-tooltip.astro";
 import ImagePreview from "@/components/image-preview/image-preview.astro";
 import ScrollTopButton from "@/components/navigation/scroll-top-button.astro";
 import {
@@ -320,6 +321,7 @@ const speedInsightsVersion = speedInsightsPackage.version;
     <Footer />
     <CookieConsentBanner />
     <PageLoadingIndicator />
+    <SiteTooltip />
     {shouldEnhanceContent && <ImagePreview />}
     {readingProgress && <ScrollTopButton />}
     <script>

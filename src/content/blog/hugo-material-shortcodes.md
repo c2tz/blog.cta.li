@@ -14,7 +14,8 @@ forcer tous les contenus à dépendre d’une bibliothèque d’interface.
 Les shortcodes `button`, `icon`, `progress` et `tabs` produisent directement les Web Components
 officiels de `@material/web`. Les cartes, annotations, tableaux et admonitions restent du HTML
 sémantique stylé avec les tokens Material 3 : Material Web ne livre pas de `md-card`,
-`md-data-table`, snackbar ou tooltip, et le blog n’invente aucune balise de remplacement.
+`md-data-table`, snackbar ou tooltip. Le blog complète donc la bibliothèque avec les primitives
+HTML natives, sans inventer de faux composant `md-*`.
 
 La syntaxe recommandée suit Hugo :
 
@@ -367,17 +368,28 @@ Retrouver rapidement un contenu.
 
 ## Annotations et abréviations
 
-Les références d’annotation sont des liens clavier vers des blocs `<details>` natifs. Elles restent
-donc consultables sans JavaScript. `abbr` utilise l’attribut HTML natif `title`.
+Les abréviations utilisent le tooltip simple du site. Les annotations deviennent des popovers
+contextuels non modaux : la référence reste un vrai bouton clavier, tandis que le contenu enrichi
+est rendu dans un `<dialog popover>` capable d’accueillir du Markdown, une image et des liens.
+Le repère numérique conserve le retour visuel Material au clic. `Escape` ferme la surface et rend
+le focus à sa référence.
+
+Pour une indication courte, `title` ou `data-tooltip` suffit : le contrôleur central l’affiche au
+survol et au focus sans rendre le texte ou l’icône focalisable. Pour une annotation enrichie,
+`annotation-ref` et `annotation` doivent partager le même `id`; `title` nomme le dialogue.
 
 ```markdown
 API {{< abbr text="HTTP" title="Hypertext Transfer Protocol" />}}
 {{< annotation-ref id="note-http" label="1" />}}
 
 {{< annotations label="Notes" >}}
-{{< annotation id="note-http" label="1" >}}
+{{< annotation id="note-http" label="1" title="HTTP et contenu enrichi" >}}
 
-Le contenu de l’annotation reste du **Markdown**.
+Le contenu reste du **Markdown** et peut inclure une image.
+
+![Logo du site](/mask.webp)
+
+[Voir les articles Material](/tags/material/)
 
 {{< /annotation >}}
 {{< /annotations >}}
@@ -388,9 +400,13 @@ API {{< abbr text="HTTP" title="Hypertext Transfer Protocol" />}}
 
 {{< annotations label="Notes" >}}
 
-{{< annotation id="note-http" label="1" >}}
+{{< annotation id="note-http" label="1" title="HTTP et contenu enrichi" >}}
 
-Le contenu de l’annotation reste du **Markdown**.
+Le contenu reste du **Markdown** et peut inclure une image.
+
+![Logo du site](/mask.webp)
+
+[Voir les articles Material](/tags/material/)
 
 {{< /annotation >}}
 

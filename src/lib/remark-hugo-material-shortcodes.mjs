@@ -440,6 +440,7 @@ function createAbbreviation(shortcode, file) {
   return elementNode(
     "abbr",
     {
+      ariaLabel: `${String(text)} — ${String(title)}`,
       className: ["material-abbreviation"],
       dataTooltip: String(title),
       title: String(title),
@@ -453,10 +454,18 @@ function createAnnotationReference(shortcode, file) {
   const label = String(parameter(shortcode, "label", 1, id));
   return elementNode("sup", { className: ["material-annotation-reference"] }, [
     elementNode(
-      "a",
+      "button",
       {
-        ariaLabel: `Voir l’annotation ${label}`,
-        href: `#${id}`,
+        ariaControls: id,
+        ariaExpanded: "false",
+        ariaHasPopup: "dialog",
+        ariaLabel: `Afficher l’annotation ${label}`,
+        className: ["site-context-popover-trigger"],
+        dataContextPopoverTrigger: id,
+        dataSiteContextTrigger: id,
+        popoverTarget: id,
+        popoverTargetAction: "toggle",
+        type: "button",
       },
       [textNode(label)],
     ),
@@ -479,17 +488,36 @@ function createAnnotations(shortcode, children) {
 function createAnnotation(shortcode, children, file) {
   const id = safeId(parameter(shortcode, "id", 0, undefined), "annotation", file);
   const label = String(parameter(shortcode, "label", 1, id));
-  const open = booleanParameter(shortcode.named.open, false);
+  const title = String(shortcode.named.title ?? `Annotation ${label}`);
+  const titleId = `${id}-title`;
   return elementNode(
-    "details",
+    "dialog",
     {
-      className: ["material-annotation"],
+      ariaLabelledBy: titleId,
+      ariaModal: "false",
+      className: ["material-annotation", "site-context-popover"],
+      dataNoImageDialog: "",
+      dataSiteContextPopover: "",
       id,
-      ...(open ? { open: true } : {}),
+      popover: "auto",
+      role: "dialog",
     },
     [
-      elementNode("summary", { className: ["material-annotation-summary"] }, [textNode(label)]),
-      elementNode("div", { className: ["material-annotation-content"] }, children),
+      elementNode(
+        "div",
+        {
+          ariaLevel: 2,
+          className: ["material-annotation-title", "site-context-popover-title"],
+          id: titleId,
+          role: "heading",
+        },
+        [textNode(title)],
+      ),
+      elementNode(
+        "div",
+        { className: ["material-annotation-content", "site-context-popover-content"] },
+        children,
+      ),
     ],
   );
 }

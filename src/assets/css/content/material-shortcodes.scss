@@ -325,70 +325,46 @@ summary.material-admonition-title::-webkit-details-marker {
   vertical-align: super;
 }
 
-.material-annotation-reference a {
+.material-annotation-reference button {
   display: inline-grid;
+  position: relative;
   min-width: 1.25rem;
   height: 1.25rem;
+  padding: 0;
   place-items: center;
+  border: 0;
   border-radius: var(--md-sys-shape-corner-full);
   background: var(--md-sys-color-primary-container);
   color: var(--md-sys-color-on-primary-container);
+  cursor: help;
+  font: inherit;
   font-weight: 700;
+  overflow: hidden;
   text-decoration: none;
 }
 
+.material-annotation-reference md-ripple {
+  border-radius: inherit;
+}
+
+.material-annotation-reference button:is(:hover, :focus-visible) {
+  background: color-mix(
+    in srgb,
+    var(--md-sys-color-on-primary-container) 10%,
+    var(--md-sys-color-primary-container)
+  );
+}
+
 .material-annotations {
-  display: grid;
-  gap: 0.75rem;
-  margin-block: 1.25rem;
+  display: contents;
 }
 
 .material-annotation {
-  scroll-margin-block-start: 1rem;
-  overflow: hidden;
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: var(--md-sys-shape-corner-medium);
-  background: var(--md-sys-color-surface-container-low);
-}
-
-.material-annotation:target {
-  border-color: var(--md-sys-color-primary);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--md-sys-color-primary) 22%, transparent);
-}
-
-.material-annotation-summary {
-  display: flex;
-  min-height: 2.75rem;
-  align-items: center;
-  padding-inline: 1rem;
-  color: var(--md-sys-color-primary);
-  cursor: pointer;
-  font-weight: 700;
-  list-style: none;
-}
-
-.material-annotation-summary::-webkit-details-marker {
-  display: none;
-}
-
-.material-annotation-summary::before {
-  display: inline-grid;
-  min-width: 1.5rem;
-  height: 1.5rem;
-  margin-inline-end: 0.625rem;
-  place-items: center;
-  border-radius: var(--md-sys-shape-corner-full);
-  background: var(--md-sys-color-primary-container);
-  color: var(--md-sys-color-on-primary-container);
-  content: "+";
-}
-
-.material-annotation[open] > .material-annotation-summary::before {
-  content: "−";
+  text-align: start;
 }
 
 .material-annotation-content {
-  padding: 0 1rem 1rem;
+  padding: 0;
 }
 
 .material-annotation-content > :first-child {

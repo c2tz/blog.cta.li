@@ -134,6 +134,16 @@ test("keeps native lazy loading without an artificial image blur", async ({ page
     ]);
 });
 
+test("keeps lightbox source images in the keyboard order", async ({ page }) => {
+  const image = page.locator(SOURCE_IMAGE_SELECTOR).first();
+
+  await expect(image).toHaveAttribute("role", "button");
+  await expect(image).toHaveAttribute("tabindex", "0");
+  await expect(image).toHaveAttribute("aria-haspopup", "dialog");
+  await image.focus();
+  await expect(image).toBeFocused();
+});
+
 async function swipe(stage: Locator, direction: "left" | "right") {
   const box = await stage.boundingBox();
   expect(box).not.toBeNull();
@@ -223,10 +233,10 @@ test("uses a modal Material dialog with only two accessible, focus-trapped contr
   await expect(toolbar).toHaveRole("toolbar");
   await expect(toolbar).toHaveAccessibleName("Commandes de l’image");
   await expect(toolbar.getByRole("button")).toHaveCount(2);
-  await expect(informationButton).toHaveAccessibleName("Afficher les informations");
+  await expect(toolbar.getByRole("button", { name: "Afficher les informations" })).toBeVisible();
   await expectMaterialAria(informationButton, "aria-haspopup", "dialog");
   await expectMaterialAria(informationButton, "aria-expanded", "false");
-  await expect(closeButton).toHaveAccessibleName("Fermer");
+  await expect(toolbar.getByRole("button", { name: "Fermer", exact: true })).toBeVisible();
   await expect(informationButton).toHaveAttribute("type", "button");
   await expect(closeButton).toHaveAttribute("type", "button");
   await expect(
@@ -594,7 +604,9 @@ test("opens a second information dialog, then restores history, scroll and focus
     .toBe(true);
   await expect(informationNativeDialog).toHaveAccessibleName("Informations sur l’image");
   await expect(nativeDialog).toHaveJSProperty("open", true);
-  await expect(informationCloseButton).toHaveAccessibleName("Fermer les informations");
+  await expect(
+    informationDialog.getByRole("button", { name: "Fermer les informations" }),
+  ).toBeVisible();
   await expect(downloadControl).toHaveAccessibleName("Télécharger");
   await expect(shareControl).toHaveAccessibleName("Partager");
   await expect(fullscreenControl).toHaveAccessibleName(/Plein écran|Quitter le plein écran/);

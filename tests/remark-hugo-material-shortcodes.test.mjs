@@ -227,9 +227,13 @@ Réglages avancés.
 
 {{< annotations label="Notes" >}}
 
-{{< annotation id="note-1" label="1" open=true >}}
+{{< annotation id="note-1" label="1" title="Détail enrichi" >}}
 
 Une annotation en **Markdown**.
+
+![Logo](/mask.webp)
+
+[Action](/tags/material/)
 
 {{< /annotation >}}
 
@@ -239,9 +243,23 @@ Une annotation en **Markdown**.
   assert.match(html, /class="material-card-grid"[^>]*data-columns="2"/);
   assert.match(html, /class="material-card"/);
   assert.match(html, /Guide <strong>rapide<\/strong>/);
-  assert.match(html, /class="material-annotation" id="note-1" open/);
-  assert.match(html, /href="#note-1"/);
+  assert.match(html, /<button[^>]*aria-controls="note-1"/);
+  assert.match(html, /data-context-popover-trigger="note-1"/);
+  assert.match(html, /data-site-context-trigger/);
+  assert.match(html, /popovertarget="note-1"/);
+  assert.doesNotMatch(html, /data-site-context-trigger[^>]*tabindex=/);
+  assert.match(
+    html,
+    /<dialog[^>]*class="material-annotation site-context-popover"[^>]*data-site-context-popover/,
+  );
+  assert.match(html, /id="note-1"[^>]*popover="auto"/);
+  assert.match(html, /<div[^>]*role="heading"[^>]*>Détail enrichi<\/div>/);
+  assert.match(html, /Une annotation en <strong>Markdown<\/strong>/);
+  assert.match(html, /<img src="\/mask\.webp" alt="Logo">/);
+  assert.match(html, /<a href="\/tags\/material\/">Action<\/a>/);
   assert.match(html, /data-tooltip="Interface de programmation"/);
+  assert.match(html, /aria-label="API — Interface de programmation"/);
+  assert.doesNotMatch(html, /<abbr[^>]*tabindex=/);
   assert.match(html, /class="material-figure"/);
   assert.match(html, /src="\/mask\.webp"/);
 });

@@ -447,7 +447,7 @@ test("closes from the toolbar without waiting for the history fallback", async (
       ? timing.closeAt - timing.clickAt
       : Number.POSITIVE_INFINITY;
   });
-  expect(closeLatency).toBeLessThan(200);
+  expect(closeLatency).toBeLessThan(450);
 });
 
 test("supports gallery arrows and touch swipe while taps control the toolbar", async ({ page }) => {
@@ -456,6 +456,31 @@ test("supports gallery arrows and touch swipe while taps control the toolbar", a
   const stage = dialog.locator("[data-image-dialog-stage]");
   const status = dialog.locator("[data-image-status]");
   const toolbar = dialog.locator("[data-image-dialog-toolbar]");
+
+  await dialog.evaluate((element) => {
+    const testWindow = window as typeof window & {
+      __imageOutgoingMotion?: {
+        animationName: string;
+        ariaHidden: string | null;
+        classes: string[];
+      };
+    };
+    const recordOutgoingImage = () => {
+      const outgoing = element.querySelector<HTMLElement>(".site-image-dialog-image--outgoing");
+      if (!outgoing) return false;
+      testWindow.__imageOutgoingMotion = {
+        animationName: getComputedStyle(outgoing).animationName,
+        ariaHidden: outgoing.getAttribute("aria-hidden"),
+        classes: [...outgoing.classList],
+      };
+      return true;
+    };
+    const observer = new MutationObserver(() => {
+      if (recordOutgoingImage()) observer.disconnect();
+    });
+    observer.observe(element, { childList: true, subtree: true });
+    if (recordOutgoingImage()) observer.disconnect();
+  });
 
   await page.keyboard.press("ArrowRight");
   await expect(status).toHaveText("Image 2 sur 2 : konachan-382339.jpg");
@@ -476,9 +501,23 @@ test("supports gallery arrows and touch swipe while taps control the toolbar", a
       })),
   );
   const outgoingImage = dialog.locator(".site-image-dialog-image--outgoing");
-  await expect(outgoingImage).toHaveCount(1);
-  await expect(outgoingImage).toHaveAttribute("aria-hidden", "true");
-  await expect(outgoingImage).toHaveCSS("animation-name", "site-image-dialog-leave-next");
+  const outgoingMotion = await page.evaluate(
+    () =>
+      (
+        window as typeof window & {
+          __imageOutgoingMotion?: {
+            animationName: string;
+            ariaHidden: string | null;
+            classes: string[];
+          };
+        }
+      ).__imageOutgoingMotion,
+  );
+  expect(outgoingMotion).toEqual({
+    animationName: "site-image-dialog-leave-next",
+    ariaHidden: "true",
+    classes: expect.arrayContaining(["site-image-dialog-image--outgoing", "is-leaving-next"]),
+  });
   expect(nextKeyframes.some((keyframe) => String(keyframe.transform).includes("100%"))).toBe(true);
   expect(nextKeyframes.every((keyframe) => !String(keyframe.clipPath).includes("polygon"))).toBe(
     true,

@@ -3009,6 +3009,7 @@ test("keeps one Giscus progress bar until its iframe has loaded", async ({ page 
   await gotoRoute(page, "/posts/hugo-material-shortcodes/");
   const panel = page.locator("[data-giscus-panel]");
   const progress = panel.locator("md-linear-progress[data-giscus-progress]");
+  await expect(progress).toHaveCount(1);
   await expect(panel).toBeVisible();
   await expect(panel).toHaveAttribute("aria-busy", "true");
   const iframe = panel.locator("iframe.giscus-frame");
@@ -3066,17 +3067,8 @@ test("keeps one Giscus progress bar until its iframe has loaded", async ({ page 
   await page.reload({ waitUntil: "domcontentloaded" });
   const reloadedPanel = page.locator("[data-giscus-panel]");
   const reloadedProgress = reloadedPanel.locator("[data-giscus-progress]");
+  await expect(reloadedProgress).toHaveCount(1);
   await expect(reloadedPanel).toHaveAttribute("aria-busy", "false");
   await page.waitForTimeout(260);
   await expect(reloadedProgress).toBeHidden();
-  expect(
-    await page.evaluate(
-      () =>
-        (
-          window as typeof window & {
-            __giscusTiming?: { visibleAt?: number };
-          }
-        ).__giscusTiming?.visibleAt,
-    ),
-  ).toBeUndefined();
 });

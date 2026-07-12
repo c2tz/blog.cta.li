@@ -1,4 +1,5 @@
 .site-tooltip-surface,
+.site-rich-tooltip,
 .site-context-popover {
   position: fixed;
   inset: auto;
@@ -10,7 +11,7 @@
 .site-tooltip-surface {
   z-index: 1000;
   width: max-content;
-  max-width: min(20rem, calc(var(--site-floating-viewport-width, 100vw) - 1.5rem));
+  max-width: min(20rem, var(--site-floating-available-width, calc(100vw - 1.5rem)));
   min-height: 1.5rem;
   padding: 0.25rem 0.5rem;
   border: 0;
@@ -22,10 +23,8 @@
   font-weight: 500;
   line-height: 1rem;
   overflow-wrap: anywhere;
-  pointer-events: auto;
-  scale: var(--site-floating-zoom-compensation, 1);
+  pointer-events: none;
   text-align: center;
-  transform-origin: top left;
   user-select: none;
 }
 
@@ -39,9 +38,9 @@
 
 .site-context-popover {
   z-index: 999;
-  width: min(22.5rem, calc(var(--site-floating-viewport-width, 100vw) - 1.5rem));
-  max-width: min(22.5rem, calc(var(--site-floating-viewport-width, 100vw) - 1.5rem));
-  max-height: min(calc(var(--site-floating-viewport-height, 100dvh) - 1.5rem), 30rem);
+  width: min(22.5rem, var(--site-floating-available-width, calc(100vw - 1.5rem)));
+  max-width: min(22.5rem, var(--site-floating-available-width, calc(100vw - 1.5rem)));
+  max-height: min(var(--site-floating-available-height, calc(100dvh - 1.5rem)), 30rem);
   padding: 1.25rem;
   overflow: auto;
   border: 1px solid var(--md-sys-color-outline-variant);
@@ -55,6 +54,95 @@
   scrollbar-gutter: stable;
 }
 
+.site-rich-tooltip {
+  z-index: 1000;
+  width: min(22.5rem, var(--site-floating-available-width, calc(100vw - 1.5rem)));
+  max-width: min(22.5rem, var(--site-floating-available-width, calc(100vw - 1.5rem)));
+  padding: 1rem;
+  overflow: visible;
+  border: 0;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface-variant);
+  box-shadow: var(
+    --md-sys-elevation-level2,
+    0 3px 8px color-mix(in srgb, var(--md-sys-color-shadow) 22%, transparent)
+  );
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  overscroll-behavior: contain;
+  pointer-events: none;
+}
+
+.site-rich-tooltip-title {
+  margin: 0 0 0.75rem;
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--site-font);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.25rem;
+}
+
+.site-rich-tooltip-content {
+  min-width: 0;
+}
+
+.site-rich-tooltip-content > :first-child {
+  margin-block-start: 0;
+}
+
+.site-rich-tooltip-content > :last-child {
+  margin-block-end: 0;
+}
+
+.site-rich-tooltip pre.astro-code {
+  width: 100%;
+  max-width: 100%;
+  margin-block: 0.75rem 0;
+  padding: 0.75rem;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--md-sys-shape-corner-small);
+  background: var(--md-sys-color-surface-container-high) !important;
+  box-shadow: none;
+  font-family: var(--site-mono-font);
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.site-rich-tooltip pre.astro-code code {
+  display: block;
+  width: auto;
+  min-width: 0;
+  counter-reset: none;
+  background: transparent !important;
+  font-size: inherit;
+  line-height: inherit;
+  white-space: inherit;
+}
+
+.site-rich-tooltip pre.astro-code code > .line {
+  display: block;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: inherit;
+  line-height: inherit;
+  opacity: 1 !important;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.site-rich-tooltip pre.astro-code code > .line::before,
+.site-rich-tooltip pre.astro-code code > .line::after {
+  content: none !important;
+  display: none !important;
+}
+
 .site-context-popover::backdrop {
   background: transparent;
 }
@@ -62,6 +150,10 @@
 .site-context-popover:popover-open,
 .site-context-popover[open] {
   animation: site-context-popover-enter 160ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+.site-rich-tooltip:popover-open {
+  animation: site-rich-tooltip-enter 160ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
 .site-context-popover-title {
@@ -124,8 +216,21 @@
   }
 }
 
+@keyframes site-rich-tooltip-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.25rem) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .site-tooltip-surface:popover-open,
+  .site-rich-tooltip:popover-open,
   .site-context-popover:popover-open,
   .site-context-popover[open] {
     animation: none;
@@ -135,6 +240,17 @@
 @media print {
   .site-tooltip-surface {
     display: none !important;
+  }
+
+  .site-rich-tooltip {
+    position: static;
+    display: block !important;
+    width: auto;
+    max-width: none;
+    max-height: none;
+    margin-block: 1rem;
+    overflow: visible;
+    box-shadow: none;
   }
 
   .material-annotations {

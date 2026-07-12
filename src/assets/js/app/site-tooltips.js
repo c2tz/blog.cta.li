@@ -1,12 +1,12 @@
 import { SITE_EVENTS } from "@/lib/site-contracts";
 import { positionFloatingSurface, trackFloatingSurface } from "./site-floating-surface.js";
 
-const TOOLTIP_SELECTOR = "[data-tooltip]:not([data-context-popover-trigger])";
+const TOOLTIP_SELECTOR =
+  "[data-tooltip]:not([data-context-popover-trigger]):not([data-rich-tooltip-trigger])";
 const SHOW_DELAY_MS = 180;
 const HIDE_DELAY_MS = 100;
 const TOUCH_HIDE_DELAY_MS = 3000;
 const TOUCH_FOCUS_GUARD_MS = 500;
-const INITIAL_DEVICE_PIXEL_RATIO = window.devicePixelRatio || 1;
 
 let controller;
 
@@ -44,41 +44,81 @@ function popoverIsOpen(surface) {
   }
 }
 
+function ownsOpenInteractiveSurface(target) {
+  return (
+    target.hasAttribute("data-tooltip-suppress-expanded") &&
+    (target.getAttribute("aria-expanded") === "true" ||
+      target.getAttribute("data-aria-expanded") === "true")
+  );
+}
+
+function virtualReference(target, point) {
+  return {
+    contextElement: target,
+    getBoundingClientRect() {
+      return {
+        bottom: point.y,
+        height: 0,
+        left: point.x,
+        right: point.x,
+        top: point.y,
+        width: 0,
+        x: point.x,
+        y: point.y,
+      };
+    },
+  };
+}
+
 class SiteTooltipController {
   constructor(surface) {
     this.surface = surface;
     this.abortController = new AbortController();
     this.activeTarget = null;
+    this.activeMode = null;
+    this.activeReason = null;
     this.showTimer = 0;
     this.hideTimer = 0;
     this.touchTimer = 0;
     this.touchFocusGuardTimer = 0;
     this.pendingTouchFocusTarget = null;
+    this.pendingVirtualTarget = null;
+    this.pendingVirtualPoint = null;
+    this.lastPointerPoint = null;
+    this.virtualSuppressedUntilMove = false;
     this.stopTracking = null;
-    this.activeCustomMode = null;
     this.finePointer = matchMedia("(hover: hover) and (pointer: fine)");
-    this.nativeZoomFallback = false;
     this.bindEvents();
     this.observeDocument();
-    this.syncVisualZoomMode(true);
   }
 
   bindEvents() {
     const capture = { capture: true, signal: this.abortController.signal };
+    const passiveCapture = { capture: true, passive: true, signal: this.abortController.signal };
     const options = { signal: this.abortController.signal };
 
     document.addEventListener("pointerover", this.handlePointerOver, capture);
+    document.addEventListener("pointermove", this.handlePointerMove, passiveCapture);
     document.addEventListener("pointerout", this.handlePointerOut, capture);
     document.addEventListener("pointerdown", this.handlePointerDown, capture);
     document.addEventListener("focusin", this.handleFocusIn, capture);
     document.addEventListener("focusout", this.handleFocusOut, capture);
     document.addEventListener("keydown", this.handleKeydown, capture);
+    document.addEventListener("opening", this.handleInteractiveSurfaceChange, capture);
+    document.addEventListener("opened", this.handleInteractiveSurfaceChange, capture);
+    document.addEventListener("closing", this.handleInteractiveSurfaceChange, capture);
+    document.addEventListener("closed", this.handleInteractiveSurfaceClosed, capture);
+    document.addEventListener("scroll", this.handleDocumentScroll, passiveCapture);
+    document.addEventListener("wheel", this.handleDocumentScroll, passiveCapture);
     document.addEventListener("astro:before-swap", this.handleBeforeSwap, options);
     document.addEventListener(SITE_EVENTS.tooltipHide, this.handleHideRequest, options);
-    this.surface.addEventListener("pointerenter", this.handleSurfacePointerEnter, options);
-    this.surface.addEventListener("pointerleave", this.handleSurfacePointerLeave, options);
-    window.addEventListener("resize", this.handleVisualViewportResize, options);
-    window.visualViewport?.addEventListener("resize", this.handleVisualViewportResize, options);
+    window.addEventListener("resize", this.handleViewportChange, options);
+    window.addEventListener("scroll", this.handleDocumentScroll, {
+      passive: true,
+      signal: this.abortController.signal,
+    });
+    window.visualViewport?.addEventListener("resize", this.handleViewportChange, options);
+    window.visualViewport?.addEventListener("scroll", this.handleViewportChange, options);
   }
 
   observeDocument() {
@@ -93,26 +133,15 @@ class SiteTooltipController {
 
         const element = record.target;
         if (!(element instanceof HTMLElement)) continue;
-        if (record.attributeName === "title") this.prepareTarget(element);
-        if (
-          record.attributeName === "data-tooltip" &&
-          this.nativeZoomFallback &&
-          element !== this.activeTarget
-        ) {
-          const message = element.dataset.tooltip?.trim();
-          if (message && element.getAttribute("title") !== message) {
-            element.setAttribute("title", message);
-          } else if (!message) {
-            element.removeAttribute("title");
-            element.classList.remove("site-tooltip");
-          }
+        if (record.attributeName === "data-tooltip" || record.attributeName === "title") {
+          this.prepareTarget(element);
         }
         if (element === this.activeTarget) this.refreshActiveTooltip();
       }
       if (this.activeTarget && !this.activeTarget.isConnected) this.hide();
     });
     this.observer.observe(document.documentElement, {
-      attributeFilter: ["data-tooltip", "title"],
+      attributeFilter: ["aria-expanded", "data-aria-expanded", "data-tooltip", "title"],
       attributes: true,
       childList: true,
       subtree: true,
@@ -120,10 +149,8 @@ class SiteTooltipController {
   }
 
   enhance(root = document) {
-    if (root instanceof HTMLElement && root.matches("[title], [data-tooltip]")) {
-      this.prepareTarget(root);
-    }
-    root.querySelectorAll?.("[title], [data-tooltip]").forEach((element) => {
+    if (root instanceof HTMLElement && root.matches(TOOLTIP_SELECTOR)) this.prepareTarget(root);
+    root.querySelectorAll?.(TOOLTIP_SELECTOR).forEach((element) => {
       if (element instanceof HTMLElement) this.prepareTarget(element);
     });
 
@@ -163,35 +190,26 @@ class SiteTooltipController {
   }
 
   prepareTarget(element) {
-    if (element.hasAttribute("data-context-popover-trigger")) {
+    if (
+      element.hasAttribute("data-context-popover-trigger") ||
+      element.hasAttribute("data-rich-tooltip-trigger")
+    ) {
       element.removeAttribute("data-tooltip");
       element.classList.remove("site-tooltip");
       return;
     }
 
-    const title = element.getAttribute("title")?.trim();
-    if (title) {
-      if (element.matches("abbr") && !element.hasAttribute("aria-label")) {
-        const abbreviation = element.textContent?.trim();
-        element.setAttribute("aria-label", abbreviation ? `${abbreviation} — ${title}` : title);
-      }
-      if (element.dataset.tooltip !== title) element.dataset.tooltip = title;
-      element.dataset.tooltipSource = "title";
-      if (!this.nativeZoomFallback) element.removeAttribute("title");
-    } else if (
-      this.nativeZoomFallback &&
-      element !== this.activeTarget &&
-      element.dataset.tooltip?.trim()
-    ) {
-      const message = element.dataset.tooltip.trim();
-      if (element.getAttribute("title") !== message) element.setAttribute("title", message);
-    }
-
-    if (!element.dataset.tooltip?.trim()) {
+    const message = element.dataset.tooltip?.trim();
+    if (!message) {
       element.classList.remove("site-tooltip");
       return;
     }
 
+    if (element.hasAttribute("title")) element.removeAttribute("title");
+    if (element.matches("abbr") && !element.hasAttribute("aria-label")) {
+      const abbreviation = element.textContent?.trim();
+      element.setAttribute("aria-label", abbreviation ? `${abbreviation} — ${message}` : message);
+    }
     element.classList.add("site-tooltip");
   }
 
@@ -202,7 +220,29 @@ class SiteTooltipController {
     const target = tooltipTarget(event.target);
     if (!target) return;
     if (event.relatedTarget instanceof Node && target.contains(event.relatedTarget)) return;
-    this.scheduleShow(target, SHOW_DELAY_MS);
+    if (target.dataset.tooltipAnchor === "cursor") {
+      if (this.virtualSuppressedUntilMove) return;
+      this.recordPointerMovement(event);
+      this.scheduleVirtualShow(target, event);
+      return;
+    }
+    this.scheduleShow(target, SHOW_DELAY_MS, "hover");
+  };
+
+  handlePointerMove = (event) => {
+    if (!this.finePointer.matches || event.pointerType === "touch" || event.pointerType === "pen") {
+      return;
+    }
+    const moved = this.recordPointerMovement(event);
+    const target = tooltipTarget(event.target);
+    if (target?.dataset.tooltipAnchor === "cursor") {
+      if (!moved) return;
+      this.virtualSuppressedUntilMove = false;
+      this.scheduleVirtualShow(target, event);
+    } else if (this.pendingVirtualTarget || this.activeMode === "virtual") {
+      this.hide();
+      if (moved) this.virtualSuppressedUntilMove = false;
+    }
   };
 
   handlePointerOut = (event) => {
@@ -212,12 +252,14 @@ class SiteTooltipController {
     const target = tooltipTarget(event.target);
     if (!target) return;
     if (event.relatedTarget instanceof Node && target.contains(event.relatedTarget)) return;
-    if (event.relatedTarget === this.surface) return;
+    if (target.dataset.tooltipAnchor === "cursor") {
+      this.hide();
+      return;
+    }
     this.scheduleHide();
   };
 
   handlePointerDown = (event) => {
-    if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
     const target = tooltipTarget(event.target);
     if (!target) {
       this.hide();
@@ -229,11 +271,15 @@ class SiteTooltipController {
       this.touchFocusGuardTimer = 0;
       this.pendingTouchFocusTarget = null;
     }, TOUCH_FOCUS_GUARD_MS);
+    if (event.pointerType !== "touch" && event.pointerType !== "pen") {
+      this.hide();
+      return;
+    }
     if (target.dataset.tooltipTouchGestures === "off") {
       this.hide();
       return;
     }
-    this.show(target, { forceCustom: true });
+    this.show(target);
     this.touchTimer = window.setTimeout(() => this.hide(), TOUCH_HIDE_DELAY_MS);
   };
 
@@ -245,7 +291,7 @@ class SiteTooltipController {
       this.touchFocusGuardTimer = 0;
       return;
     }
-    if (target) this.scheduleShow(target, 0, { forceCustom: true });
+    if (target) this.scheduleShow(target, 0, "focus");
   };
 
   handleFocusOut = (event) => {
@@ -256,7 +302,24 @@ class SiteTooltipController {
   };
 
   handleKeydown = (event) => {
-    if (event.key === "Escape") this.hide();
+    if (event.key === "Escape" || event.key === "Enter" || event.key === " ") this.hide();
+  };
+
+  handleInteractiveSurfaceChange = () => this.hide();
+
+  handleInteractiveSurfaceClosed = () => {
+    this.hide();
+    requestAnimationFrame(() => this.hide());
+  };
+
+  handleDocumentScroll = () => {
+    this.virtualSuppressedUntilMove = true;
+    if (this.pendingVirtualTarget || this.activeMode === "virtual") this.hide();
+  };
+
+  handleViewportChange = () => {
+    this.virtualSuppressedUntilMove = true;
+    if (this.pendingVirtualTarget || this.activeMode === "virtual") this.hide();
   };
 
   handleHideRequest = (event) => {
@@ -265,17 +328,37 @@ class SiteTooltipController {
 
   handleBeforeSwap = () => this.hide();
 
-  handleSurfacePointerEnter = () => this.clearHideTimer();
-  handleSurfacePointerLeave = () => this.scheduleHide();
-  handleVisualViewportResize = () => this.syncVisualZoomMode();
+  recordPointerMovement(event) {
+    const point = { x: event.clientX, y: event.clientY };
+    const previous = this.lastPointerPoint;
+    this.lastPointerPoint = point;
+    return !previous || Math.hypot(point.x - previous.x, point.y - previous.y) > 0.5;
+  }
 
-  scheduleShow(target, delay, { forceCustom = false } = {}) {
-    if (this.nativeZoomFallback && !forceCustom) return;
+  scheduleVirtualShow(target, event) {
     this.clearShowTimer();
     this.clearHideTimer();
+    if (this.activeMode === "virtual") this.hide();
+    this.pendingVirtualTarget = target;
+    this.pendingVirtualPoint = { x: event.clientX, y: event.clientY };
     this.showTimer = window.setTimeout(() => {
       this.showTimer = 0;
-      this.show(target, { forceCustom });
+      const pendingTarget = this.pendingVirtualTarget;
+      const point = this.pendingVirtualPoint;
+      this.pendingVirtualTarget = null;
+      this.pendingVirtualPoint = null;
+      if (pendingTarget && point) this.show(pendingTarget, { point, reason: "virtual" });
+    }, SHOW_DELAY_MS);
+  }
+
+  scheduleShow(target, delay, reason) {
+    this.clearShowTimer();
+    this.clearHideTimer();
+    this.pendingVirtualTarget = null;
+    this.pendingVirtualPoint = null;
+    this.showTimer = window.setTimeout(() => {
+      this.showTimer = 0;
+      this.show(target, { reason });
     }, delay);
   }
 
@@ -284,33 +367,31 @@ class SiteTooltipController {
     this.clearHideTimer();
     this.hideTimer = window.setTimeout(() => {
       this.hideTimer = 0;
-      if (this.shouldKeepOpen()) return;
-      this.hide();
+      const remainsActive =
+        this.activeReason === "focus"
+          ? this.activeTarget?.matches(":focus, :focus-within")
+          : this.activeTarget?.matches(":hover");
+      if (!remainsActive) this.hide();
     }, HIDE_DELAY_MS);
   }
 
-  shouldKeepOpen() {
-    if (!this.activeTarget) return false;
-    return (
-      this.activeTarget.matches(":hover, :focus, :focus-within") ||
-      this.surface.matches(":hover, :focus-within")
-    );
-  }
-
-  show(target, { forceCustom = false } = {}) {
-    if (this.nativeZoomFallback && !forceCustom) return;
+  show(target, { point, reason = "touch" } = {}) {
     const message = target.dataset.tooltip?.trim();
-    if (!message || !target.isConnected) return;
+    if (!message || !target.isConnected || ownsOpenInteractiveSurface(target)) return;
     this.clearTimers();
     if (this.activeTarget && this.activeTarget !== target) this.hide();
 
+    const reference = point ? virtualReference(target, point) : target;
+    const activeReason =
+      this.activeTarget === target && this.activeReason === "focus" && reason === "hover"
+        ? "focus"
+        : reason;
     this.activeTarget = target;
-    this.activeCustomMode = forceCustom ? "forced" : "hover";
-    if (this.nativeZoomFallback && target.getAttribute("title") === message) {
-      target.removeAttribute("title");
-    }
+    this.activeMode = point ? "virtual" : "anchor";
+    this.activeReason = activeReason;
     this.surface.textContent = message;
     this.surface.hidden = false;
+    this.surface.style.visibility = "hidden";
     this.surface.removeAttribute("aria-hidden");
     syncTooltipDescription(target, this.surface.id, true);
 
@@ -321,12 +402,14 @@ class SiteTooltipController {
     }
 
     this.stopTracking?.();
-    this.stopTracking = trackFloatingSurface(this.surface, target, {
-      gap: 6,
-      placement: target.dataset.tooltipPlacement || "top",
-    });
-    positionFloatingSurface(this.surface, target, {
-      gap: 6,
+    this.stopTracking = point
+      ? null
+      : trackFloatingSurface(this.surface, reference, {
+          gap: 6,
+          placement: target.dataset.tooltipPlacement || "top",
+        });
+    void positionFloatingSurface(this.surface, reference, {
+      gap: point ? 8 : 6,
       placement: target.dataset.tooltipPlacement || "top",
     });
   }
@@ -335,15 +418,9 @@ class SiteTooltipController {
     this.clearTimers();
     this.stopTracking?.();
     this.stopTracking = null;
-    const target = this.activeTarget;
+    this.pendingVirtualTarget = null;
+    this.pendingVirtualPoint = null;
     this.detachActiveTarget();
-
-    if (this.nativeZoomFallback && target?.isConnected) {
-      const message = target.dataset.tooltip?.trim();
-      if (message && target.getAttribute("title") !== message) {
-        target.setAttribute("title", message);
-      }
-    }
 
     try {
       if (popoverIsOpen(this.surface)) this.surface.hidePopover();
@@ -353,27 +430,32 @@ class SiteTooltipController {
     this.surface.setAttribute("aria-hidden", "true");
     this.surface.hidden = true;
     this.surface.textContent = "";
+    this.surface.style.removeProperty("visibility");
+    this.surface.removeAttribute("data-reference-hidden");
   }
 
   refreshActiveTooltip() {
     if (!this.activeTarget) return;
     const message = this.activeTarget.dataset.tooltip?.trim();
-    if (!message) {
+    if (!message || ownsOpenInteractiveSurface(this.activeTarget)) {
       this.hide();
       return;
     }
     this.surface.textContent = message;
-    positionFloatingSurface(this.surface, this.activeTarget, {
-      gap: 6,
-      placement: this.activeTarget.dataset.tooltipPlacement || "top",
-    });
+    if (this.activeMode === "anchor") {
+      void positionFloatingSurface(this.surface, this.activeTarget, {
+        gap: 6,
+        placement: this.activeTarget.dataset.tooltipPlacement || "top",
+      });
+    }
   }
 
   detachActiveTarget() {
     if (!this.activeTarget) return;
     syncTooltipDescription(this.activeTarget, this.surface.id, false);
     this.activeTarget = null;
-    this.activeCustomMode = null;
+    this.activeMode = null;
+    this.activeReason = null;
   }
 
   clearShowTimer() {
@@ -391,40 +473,6 @@ class SiteTooltipController {
     this.clearHideTimer();
     if (this.touchTimer) window.clearTimeout(this.touchTimer);
     this.touchTimer = 0;
-  }
-
-  syncVisualZoomMode(force = false) {
-    const visualScale = window.visualViewport?.scale ?? 1;
-    const pageScale = (window.devicePixelRatio || 1) / INITIAL_DEVICE_PIXEL_RATIO;
-    const effectiveScale = Math.max(0.25, Math.min(4, visualScale * pageScale));
-    const zoomed = Math.abs(effectiveScale - 1) > 0.01;
-    this.surface.style.setProperty("--site-floating-zoom-compensation", String(1 / effectiveScale));
-    if (!force && zoomed === this.nativeZoomFallback) return;
-
-    this.nativeZoomFallback = zoomed;
-    const keepCustom = Boolean(this.activeTarget && this.activeCustomMode === "forced");
-    if (!keepCustom) this.hide();
-    document.querySelectorAll(TOOLTIP_SELECTOR).forEach((candidate) => {
-      if (!(candidate instanceof HTMLElement)) return;
-      const message = candidate.dataset.tooltip?.trim();
-      if (!message) return;
-      if (keepCustom && candidate === this.activeTarget) {
-        candidate.removeAttribute("title");
-        return;
-      }
-      if (zoomed) {
-        if (candidate.getAttribute("title") !== message) candidate.setAttribute("title", message);
-      } else if (candidate.getAttribute("title") === message) {
-        candidate.removeAttribute("title");
-      }
-    });
-
-    if (keepCustom && this.activeTarget) {
-      positionFloatingSurface(this.surface, this.activeTarget, {
-        gap: 6,
-        placement: this.activeTarget.dataset.tooltipPlacement || "top",
-      });
-    }
   }
 
   destroy() {

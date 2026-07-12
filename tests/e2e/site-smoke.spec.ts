@@ -8,6 +8,7 @@ const ROUTES = [
 ];
 
 const pageRuntimeErrors = new WeakMap<Page, string[]>();
+const geoRequestCounts = new WeakMap<Page, { count: number }>();
 
 async function seedLocalPreferences(page: Page) {
   await page.addInitScript(() => {
@@ -99,19 +100,27 @@ async function expectPopoverOpen(locator: Locator, open: boolean) {
 
 test.beforeEach(async ({ page }) => {
   const runtimeErrors: string[] = [];
+  const geoRequests = { count: 0 };
   pageRuntimeErrors.set(page, runtimeErrors);
+  geoRequestCounts.set(page, geoRequests);
   page.on("pageerror", (error) => runtimeErrors.push(error.message));
   page.on("console", (message) => {
     if (message.type() === "error") runtimeErrors.push(message.text());
   });
 
-  await page.route("https://api.country.is/**", (route) =>
-    route.fulfill({
-      body: JSON.stringify({ country: "FR", ip: "192.0.2.1" }),
+  await page.route("https://api.ipapi.is/**", (route) => {
+    geoRequests.count += 1;
+    return route.fulfill({
+      body: JSON.stringify({
+        asn: { asn: 3215, org: "Orange S.A." },
+        company: { name: "Orange S.A." },
+        ip: "192.0.2.1",
+        location: { country: "France", country_code: "FR" },
+      }),
       contentType: "application/json",
       status: 200,
-    }),
-  );
+    });
+  });
 
   await seedLocalPreferences(page);
 });
@@ -131,6 +140,44 @@ for (const route of ROUTES) {
     await expectNoPageOverflow(page);
   });
 }
+
+test("shows one cached localized IP and network lookup after consent", async ({ page }) => {
+  await page.addInitScript(() => {
+    const updatedAt = new Date().toISOString();
+    localStorage.setItem(
+      "ct-cookie-consent-v1",
+      JSON.stringify({ functionality: true, updatedAt, version: 1 }),
+    );
+    if (!sessionStorage.getItem("playwright-ip-cache-cleared")) {
+      localStorage.removeItem("site-ip-geolocation-v3");
+      localStorage.removeItem("site-ip-geolocation-v2");
+      localStorage.removeItem("site_ip_geolocation_v2");
+      sessionStorage.setItem("playwright-ip-cache-cleared", "true");
+    }
+  });
+
+  await gotoRoute(page, "/");
+
+  const location = page.locator("#ip-wrapper");
+  await expect(location).toBeVisible();
+  await expect(page.locator("#client-ip")).toHaveText("192.0.2.1");
+  await expect(page.locator("#client-country")).toHaveText("France");
+  await expect(page.locator("#client-network")).toContainText("AS3215 · Orange S.A.");
+  await expect.poll(() => geoRequestCounts.get(page)?.count ?? 0).toBe(1);
+
+  await page.evaluate(() => {
+    document.dispatchEvent(new Event("visibilitychange"));
+    window.dispatchEvent(new Event("online"));
+  });
+  await page.waitForTimeout(100);
+  expect(geoRequestCounts.get(page)?.count).toBe(1);
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.locator("#client-ip")).toHaveText("192.0.2.1");
+  await expect(page.locator("#client-country")).toHaveText("France");
+  await expect(page.locator("#client-network")).toContainText("AS3215 · Orange S.A.");
+  expect(geoRequestCounts.get(page)?.count).toBe(1);
+});
 
 test("scrolls the document vertically with a mouse wheel in Chromium", async ({ page }) => {
   await gotoRoute(page, "/posts/hugo-material-shortcodes/");
@@ -176,10 +223,10 @@ test("shows one accessible simple tooltip without creating keyboard stops", asyn
   await page.waitForTimeout(160);
   await expectPopoverOpen(tooltip, true);
 
-  await trigger.evaluate((element) => element.setAttribute("title", "Recherche mise à jour"));
+  await trigger.evaluate((element) => element.setAttribute("title", "Tooltip natif concurrent"));
   await expect(trigger).not.toHaveAttribute("title");
-  await expect(trigger).toHaveAttribute("data-tooltip", "Recherche mise à jour");
-  await expect(tooltip).toHaveText("Recherche mise à jour");
+  await expect(trigger).toHaveAttribute("data-tooltip", "Rechercher");
+  await expect(tooltip).toHaveText("Rechercher");
 
   const tooltipBox = await tooltip.boundingBox();
   const viewport = page.viewportSize();
@@ -207,7 +254,7 @@ test("shows one accessible simple tooltip without creating keyboard stops", asyn
   await trigger.focus();
   await expectPopoverOpen(tooltip, true);
 
-  const nativeZoomFallbackAvailable = await trigger.evaluate(() => {
+  const nativeZoomAvailable = await trigger.evaluate(() => {
     if (!window.visualViewport) return false;
     Object.defineProperty(window.visualViewport, "scale", {
       configurable: true,
@@ -216,15 +263,18 @@ test("shows one accessible simple tooltip without creating keyboard stops", asyn
     window.visualViewport.dispatchEvent(new Event("resize"));
     return true;
   });
-  expect(nativeZoomFallbackAvailable).toBe(true);
+  expect(nativeZoomAvailable).toBe(true);
   await expectPopoverOpen(tooltip, true);
   await expect(trigger).not.toHaveAttribute("title");
   await expect(trigger).toHaveAttribute("aria-describedby", tooltipId!);
   await expect
     .poll(() =>
-      tooltip.evaluate((element) => Number.parseFloat(getComputedStyle(element).scale || "1")),
+      tooltip.evaluate((element) => {
+        const scale = getComputedStyle(element).scale;
+        return scale === "none" ? 1 : Number.parseFloat(scale || "1");
+      }),
     )
-    .toBe(0.5);
+    .toBe(1);
   await expect
     .poll(() =>
       trigger.evaluate((element) =>
@@ -235,17 +285,17 @@ test("shows one accessible simple tooltip without creating keyboard stops", asyn
 
   await trigger.blur();
   await expectPopoverOpen(tooltip, false);
-  await expect(trigger).toHaveAttribute("title", "Recherche mise à jour");
+  await expect(trigger).not.toHaveAttribute("title");
   await expect(trigger).not.toHaveAttribute("aria-describedby");
 
   await trigger.evaluate((element) => element.setAttribute("data-tooltip", "Recherche zoomée"));
-  await expect(trigger).toHaveAttribute("title", "Recherche zoomée");
+  await expect(trigger).not.toHaveAttribute("title");
   await trigger.evaluate((element) => element.removeAttribute("data-tooltip"));
   await expect(trigger).not.toHaveAttribute("title");
   await trigger.evaluate((element) =>
     element.setAttribute("data-tooltip", "Recherche mise à jour"),
   );
-  await expect(trigger).toHaveAttribute("title", "Recherche mise à jour");
+  await expect(trigger).not.toHaveAttribute("title");
 
   await trigger.evaluate(() => {
     if (!window.visualViewport) return;
@@ -277,6 +327,7 @@ test("shows one accessible simple tooltip without creating keyboard stops", asyn
   }
 
   if (test.info().project.name.includes("desktop")) {
+    await trigger.blur();
     await trigger.hover();
     await page.waitForTimeout(90);
     await page.mouse.move(1, 1);
@@ -294,6 +345,123 @@ test("shows one accessible simple tooltip without creating keyboard stops", asyn
     await page.mouse.move(1, 1);
     await expectPopoverOpen(tooltip, false);
   }
+});
+
+test("dismisses trigger tooltips throughout search dialog open and close", async ({ page }) => {
+  test.skip(test.info().project.name.includes("mobile"), "Hover lifecycle needs a fine pointer.");
+  await gotoRoute(page, "/");
+
+  const trigger = page.locator("md-icon-button.site-search-trigger-button");
+  const dialog = page.locator("md-dialog.site-search-dialog");
+  const closeButton = dialog.locator("[data-search-close]");
+  const tooltip = page.locator("[data-site-tooltip-surface]");
+
+  await trigger.hover();
+  await expectPopoverOpen(tooltip, true);
+  await trigger.click();
+  await expect(dialog).toHaveAttribute("open", "");
+  await expect(trigger).toHaveAttribute("data-aria-expanded", "true");
+  await expectPopoverOpen(tooltip, false);
+
+  await closeButton.click();
+  await expect(dialog).not.toHaveAttribute("open", "");
+  await expect(trigger).toHaveAttribute("data-aria-expanded", "false");
+  await expect(trigger).toBeFocused();
+  await page.waitForTimeout(250);
+  await expectPopoverOpen(tooltip, false);
+
+  await trigger.hover();
+  await expectPopoverOpen(tooltip, true);
+  await page.mouse.move(1, 1);
+  await expectPopoverOpen(tooltip, false);
+
+  await page.keyboard.press("Enter");
+  await expect(dialog).toHaveAttribute("open", "");
+  await expectPopoverOpen(tooltip, false);
+  await page.keyboard.press("Escape");
+  await expect(dialog).not.toHaveAttribute("open", "");
+  await expect(trigger).toBeFocused();
+  await page.waitForTimeout(250);
+  await expectPopoverOpen(tooltip, false);
+});
+
+test("opens a virtual tooltip only after the cursor stops", async ({ page }) => {
+  test.skip(test.info().project.name.includes("mobile"), "Virtual cursor anchors need a mouse.");
+  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
+
+  const trigger = page.locator('a[data-tooltip-anchor="cursor"][data-tooltip]').first();
+  const tooltip = page.locator("[data-site-tooltip-surface]");
+  await expect(trigger).toBeVisible();
+  await expect(trigger).not.toHaveAttribute("title");
+  await trigger.scrollIntoViewIfNeeded();
+  const triggerBox = await trigger.boundingBox();
+  expect(triggerBox).not.toBeNull();
+
+  const point = {
+    x: triggerBox!.x + triggerBox!.width / 2,
+    y: triggerBox!.y + triggerBox!.height / 2,
+  };
+  await page.mouse.move(1, 1);
+  await page.keyboard.press("Escape");
+  await page.mouse.move(point.x - 8, point.y);
+  await page.waitForTimeout(70);
+  await page.mouse.move(point.x, point.y);
+  await page.waitForTimeout(70);
+  await page.mouse.move(point.x + 3, point.y);
+  expect(await tooltip.evaluate((element) => element.matches(":popover-open"))).toBe(false);
+  await expectPopoverOpen(tooltip, true);
+
+  const stoppedPosition = await tooltip.boundingBox();
+  expect(stoppedPosition).not.toBeNull();
+  expect(point.x).toBeGreaterThanOrEqual(stoppedPosition!.x - 1);
+  expect(point.x).toBeLessThanOrEqual(stoppedPosition!.x + stoppedPosition!.width + 1);
+  expect(
+    Math.min(
+      Math.abs(point.y - (stoppedPosition!.y + stoppedPosition!.height)),
+      Math.abs(stoppedPosition!.y - point.y),
+    ),
+  ).toBeLessThanOrEqual(12);
+
+  await page.mouse.move(point.x + 4, point.y);
+  expect(await tooltip.evaluate((element) => element.matches(":popover-open"))).toBe(false);
+  await page.mouse.move(point.x + 6, point.y);
+  expect(await tooltip.evaluate((element) => element.matches(":popover-open"))).toBe(false);
+  await expectPopoverOpen(tooltip, true);
+
+  const scrollBeforeWheel = await page.evaluate(() => window.scrollY);
+  await page.mouse.wheel(0, -120);
+  await expectPopoverOpen(tooltip, false);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(scrollBeforeWheel);
+  await page.waitForTimeout(220);
+  await expectPopoverOpen(tooltip, false);
+
+  await trigger.focus();
+  await expectPopoverOpen(tooltip, true);
+  const triggerPosition = await trigger.boundingBox();
+  const keyboardPosition = await tooltip.boundingBox();
+  expect(triggerPosition).not.toBeNull();
+  expect(keyboardPosition).not.toBeNull();
+  expect(
+    Math.min(
+      Math.abs(triggerPosition!.y - (keyboardPosition!.y + keyboardPosition!.height)),
+      Math.abs(keyboardPosition!.y - (triggerPosition!.y + triggerPosition!.height)),
+    ),
+  ).toBeLessThanOrEqual(10);
+  await page.keyboard.press("Escape");
+
+  await page.evaluate(() => {
+    const nativeOnly = document.createElement("button");
+    nativeOnly.id = "native-only-tooltip";
+    nativeOnly.title = "Tooltip natif uniquement";
+    nativeOnly.textContent = "Natif";
+    document.body.append(nativeOnly);
+  });
+  const nativeOnly = page.locator("#native-only-tooltip");
+  await nativeOnly.hover();
+  await page.waitForTimeout(220);
+  await expectPopoverOpen(tooltip, false);
+  await expect(nativeOnly).toHaveAttribute("title", "Tooltip natif uniquement");
+  await expect(nativeOnly).not.toHaveAttribute("data-tooltip");
 });
 
 test("keeps latest posts visible on the home page", async ({ page }) => {
@@ -465,6 +633,25 @@ test("only exposes image colors after detailed mode is selected", async ({ page 
       ),
     )
     .toBe("Mode détaillé");
+  await expect(detailToggle).toHaveAttribute("selected", "");
+  const detailedVisualState = await detailToggle.evaluate((button) => {
+    const selectedIcon = button.querySelector("md-icon[slot='selected']");
+    const internalButton = button.shadowRoot?.querySelector("button");
+    const probe = document.createElement("span");
+    probe.style.position = "fixed";
+    probe.style.visibility = "hidden";
+    probe.style.color = "var(--md-sys-color-primary)";
+    document.body.append(probe);
+    const result = {
+      container: internalButton ? getComputedStyle(internalButton).backgroundColor : "missing",
+      icon: selectedIcon ? getComputedStyle(selectedIcon).color : "missing",
+      primary: getComputedStyle(probe).color,
+    };
+    probe.remove();
+    return result;
+  });
+  expect(detailedVisualState.icon).toBe(detailedVisualState.primary);
+  expect(detailedVisualState.container).toBe("rgba(0, 0, 0, 0)");
   await expect
     .poll(() => dynamicColorRow.evaluate((element) => (element as HTMLElement).hidden))
     .toBe(false);
@@ -558,6 +745,97 @@ test("keeps the exact Konachan palette when Worker construction fails", async ({
 
   await gotoRoute(page, "/");
   await expectStoredSourceColor(page, "#5BC3D6");
+});
+
+test("restores dynamic hero text colors before the first hydrated frame", async ({ page }) => {
+  await seedFixedKonachanImage(page);
+  await gotoRoute(page, "/");
+  await expectStoredSourceColor(page, "#5BC3D6");
+
+  const expected = await page.evaluate(() => {
+    const palette = JSON.parse(
+      localStorage.getItem("site-material-dynamic-color-palette-v1") || "null",
+    );
+    localStorage.setItem("home-detail-view-v1", "true");
+    localStorage.setItem("site-material-dynamic-color-enabled-v1", "true");
+    return {
+      lede: palette.schemes.dark.secondary,
+      title: palette.schemes.dark.primary,
+    };
+  });
+
+  await page.addInitScript(() => {
+    const testWindow = window as typeof window & {
+      __heroPaintSamples?: Array<{ lede: string; title: string }>;
+    };
+    testWindow.__heroPaintSamples = [];
+    document.addEventListener(
+      "DOMContentLoaded",
+      () => {
+        const sample = () => {
+          const title = document.querySelector("#home-hero-title");
+          const lede = document.querySelector(".home-hero-lede");
+          if (!title || !lede) return;
+          testWindow.__heroPaintSamples?.push({
+            lede: getComputedStyle(lede).color,
+            title: getComputedStyle(title).color,
+          });
+        };
+        sample();
+        requestAnimationFrame(() => {
+          sample();
+          requestAnimationFrame(sample);
+        });
+      },
+      { once: true },
+    );
+  });
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(80);
+  const paintState = await page.evaluate(() => {
+    const probe = document.createElement("span");
+    probe.style.position = "fixed";
+    probe.style.visibility = "hidden";
+    document.body.append(probe);
+    const resolve = (color: string) => {
+      probe.style.color = color;
+      return getComputedStyle(probe).color;
+    };
+    const samples = (
+      window as typeof window & {
+        __heroPaintSamples?: Array<{ lede: string; title: string }>;
+      }
+    ).__heroPaintSamples;
+    const result = {
+      initialLede: document.documentElement.style
+        .getPropertyValue("--home-hero-initial-on-image-muted")
+        .trim(),
+      initialTitle: document.documentElement.style
+        .getPropertyValue("--home-hero-initial-on-image")
+        .trim(),
+      resolvedLede: resolve(
+        document.documentElement.style.getPropertyValue("--home-hero-initial-on-image-muted"),
+      ),
+      resolvedTitle: resolve(
+        document.documentElement.style.getPropertyValue("--home-hero-initial-on-image"),
+      ),
+      samples: samples ?? [],
+    };
+    probe.remove();
+    return result;
+  });
+
+  expect(paintState.initialTitle).toBe(expected.title);
+  expect(paintState.initialLede).toBe(expected.lede);
+  expect(paintState.samples.length).toBeGreaterThan(0);
+  expect(paintState.samples.every(({ title }) => title === paintState.resolvedTitle)).toBe(true);
+  expect(paintState.samples.every(({ lede }) => lede === paintState.resolvedLede)).toBe(true);
+  expect(
+    paintState.samples.some(
+      ({ title, lede }) => title === "rgb(255, 255, 255)" || lede === "rgb(255, 255, 255)",
+    ),
+  ).toBe(false);
 });
 
 test("applies and persists the Konachan Material palette across the site", async ({ page }) => {
@@ -747,9 +1025,18 @@ test("opens the Material Web theme menu from its icon button", async ({ page }) 
   await gotoRoute(page, "/");
 
   await waitForNativeEnhancement(page, "[data-theme-switcher]");
-  await page.getByRole("button", { name: "Thème : Système" }).click();
+  const themeTrigger = page.getByRole("button", { name: "Thème : Système" });
+  const tooltip = page.locator("[data-site-tooltip-surface]");
+  if (!test.info().project.name.includes("mobile")) {
+    await themeTrigger.hover();
+    await expectPopoverOpen(tooltip, true);
+  }
+  await themeTrigger.click();
+  await expectPopoverOpen(tooltip, false);
   await expect(page.getByRole("menuitem", { name: "Sombre" })).toBeVisible();
   await page.getByRole("menuitem", { name: "Sombre" }).click();
+  await page.waitForTimeout(250);
+  await expectPopoverOpen(tooltip, false);
 
   await expect.poll(() => page.evaluate(() => document.documentElement.dataset.theme)).toBe("dark");
   await expect
@@ -855,7 +1142,9 @@ test("keeps tab panels and href links free of focus contours", async ({ page }) 
     .toBe("0px");
 });
 
-test("keeps every custom contour hidden on coarse touch screens", async ({ page }) => {
+test("shows Material keyboard focus on coarse screens without adding a pointer outline", async ({
+  page,
+}) => {
   test.skip(!test.info().project.name.includes("mobile"), "Touch-only behavior.");
   await gotoRoute(page, "/");
 
@@ -868,10 +1157,23 @@ test("keeps every custom contour hidden on coarse touch screens", async ({ page 
     .poll(() =>
       materialButton.evaluate((element) => {
         const focusRing = element.shadowRoot?.querySelector("md-focus-ring");
-        return focusRing ? getComputedStyle(focusRing).outlineWidth : "missing";
+        return focusRing
+          ? {
+              color: getComputedStyle(focusRing).color,
+              display: getComputedStyle(focusRing).display,
+            }
+          : null;
       }),
     )
-    .toBe("0px");
+    .toMatchObject({ display: "flex" });
+  await expect
+    .poll(() =>
+      materialButton.evaluate((element) => {
+        const focusRing = element.shadowRoot?.querySelector("md-focus-ring");
+        return focusRing ? getComputedStyle(focusRing).color : "rgba(0, 0, 0, 0)";
+      }),
+    )
+    .not.toBe("rgba(0, 0, 0, 0)");
 
   const nativeButton = page.locator(".home-posts-sort-button").first();
   await nativeButton.focus();
@@ -946,6 +1248,7 @@ test("uses a Konachan FAB menu and only reveals Explicit in detailed mode", asyn
   await trigger.focus();
   await page.keyboard.press("ArrowDown");
   await expect(actions).toBeVisible();
+  await expect(trigger).toHaveAttribute("data-tooltip", "Fermer le panneau");
   await expect(actions).toHaveAttribute("role", "toolbar");
   await expect(safeItem).toBeHidden();
   await expect(questionableItem).toBeVisible();
@@ -972,7 +1275,7 @@ test("uses a Konachan FAB menu and only reveals Explicit in detailed mode", asyn
         element.shadowRoot?.querySelector("button")?.getAttribute("aria-label"),
       ),
     )
-    .toBe("Niveau Konachan : Questionnable");
+    .toBe("Questionnable");
   await expect(actions).toBeHidden();
 
   await detailToggle.click();
@@ -988,7 +1291,7 @@ test("uses a Konachan FAB menu and only reveals Explicit in detailed mode", asyn
         element.shadowRoot?.querySelector("button")?.getAttribute("aria-label"),
       ),
     )
-    .toBe("Niveau Konachan : Explicit");
+    .toBe("Explicit");
 
   await detailToggle.click();
   await trigger.click();
@@ -1057,7 +1360,7 @@ test("keeps the theme menu focus indicator after reopen and reload", async ({ pa
   await expectMenuFocus(lightItem);
 });
 
-test("keeps the menu contour hidden on coarse touch screens", async ({ page }) => {
+test("distinguishes touch selection from keyboard focus on coarse screens", async ({ page }) => {
   test.skip(!test.info().project.name.includes("mobile"), "Touch-only behavior.");
 
   await gotoRoute(page, "/");
@@ -1086,10 +1389,36 @@ test("keeps the menu contour hidden on coarse touch screens", async ({ page }) =
     .poll(() =>
       lightItem.evaluate((element) => {
         const focusRing = element.shadowRoot?.querySelector("md-focus-ring");
-        return focusRing ? getComputedStyle(focusRing).color : "missing";
+        if (!focusRing) return null;
+        const probe = document.createElement("span");
+        probe.style.position = "fixed";
+        probe.style.visibility = "hidden";
+        probe.style.color = "var(--md-sys-color-secondary)";
+        document.body.append(probe);
+        const result = {
+          color: getComputedStyle(focusRing).color,
+          display: getComputedStyle(focusRing).display,
+          secondary: getComputedStyle(probe).color,
+        };
+        probe.remove();
+        return result;
       }),
     )
-    .toBe("rgba(0, 0, 0, 0)");
+    .toMatchObject({ display: "flex" });
+  await expect
+    .poll(() =>
+      lightItem.evaluate((element) => {
+        const focusRing = element.shadowRoot?.querySelector("md-focus-ring");
+        if (!focusRing) return false;
+        const probe = document.createElement("span");
+        probe.style.color = "var(--md-sys-color-secondary)";
+        document.body.append(probe);
+        const matches = getComputedStyle(focusRing).color === getComputedStyle(probe).color;
+        probe.remove();
+        return matches;
+      }),
+    )
+    .toBe(true);
 });
 
 test("uses the Material Web pagination menu with keyboard selection", async ({ page }) => {
@@ -1124,6 +1453,23 @@ test("uses the Material Web pagination menu with keyboard selection", async ({ p
   await expect(pageSizeSelect).toHaveAttribute("id", /material-table-\d+-page-size/);
   await expect(pageSizeSelect).toHaveAttribute("name", /material-table-\d+-page-size/);
   await expect(pageSizeSelect).toHaveAttribute("menu-positioning", "popover");
+  await expect
+    .poll(() =>
+      pageSizeSelect.evaluate((select) => {
+        const styles = getComputedStyle(select);
+        const primary = getComputedStyle(document.documentElement)
+          .getPropertyValue("--md-sys-color-primary")
+          .trim();
+        return [
+          styles
+            .getPropertyValue("--md-outlined-select-text-field-focus-trailing-icon-color")
+            .trim(),
+          styles.getPropertyValue("--md-outlined-select-text-field-focus-label-text-color").trim(),
+          styles.getPropertyValue("--md-outlined-select-text-field-focus-outline-color").trim(),
+        ].every((value) => value === primary);
+      }),
+    )
+    .toBe(true);
   await pageSizeSelect.click();
   await expect
     .poll(() =>
@@ -1305,8 +1651,16 @@ test("keeps every search sort option visible above the dialog surface", async ({
     const customChevron = select.querySelector(".site-search-sort-chevron");
     const firstOption = select.querySelector("md-select-option");
     const wrapper = select.closest(".site-search-panel-field");
+    const probe = document.createElement("span");
+    probe.style.position = "fixed";
+    probe.style.visibility = "hidden";
+    document.body.append(probe);
+    const resolveColor = (token: string) => {
+      probe.style.color = `var(${token})`;
+      return getComputedStyle(probe).color;
+    };
 
-    return {
+    const result = {
       chevronColor: trailingIcon ? getComputedStyle(trailingIcon).color : "missing",
       chevronWidth: customChevron?.getBoundingClientRect().width ?? 0,
       cursor: field ? getComputedStyle(field).cursor : "missing",
@@ -1319,13 +1673,17 @@ test("keeps every search sort option visible above the dialog surface", async ({
         endIcons: option.querySelectorAll('[slot="end"]').length,
         startIcons: option.querySelectorAll('[slot="start"]').length,
       })),
-      primaryColor: getComputedStyle(document.documentElement)
-        .getPropertyValue("--md-sys-color-primary")
+      primaryColor: resolveColor("--md-sys-color-primary"),
+      secondaryColor: resolveColor("--md-sys-color-secondary"),
+      selectedContainer: getComputedStyle(firstOption as Element)
+        .getPropertyValue("--md-menu-item-selected-container-color")
         .trim(),
       optionHeight: firstOption?.getBoundingClientRect().height ?? 0,
       selectWidth: select.getBoundingClientRect().width,
       wrapperRadius: wrapper ? getComputedStyle(wrapper).borderTopLeftRadius : "missing",
     };
+    probe.remove();
+    return result;
   });
   expect(sortVisualState).toMatchObject({
     cursor: "pointer",
@@ -1343,7 +1701,9 @@ test("keeps every search sort option visible above the dialog surface", async ({
     selectWidth: 152,
     wrapperRadius: "28px",
   });
+  expect(sortVisualState.focusColor).toBe(sortVisualState.secondaryColor);
   expect(sortVisualState.focusColor).not.toBe(sortVisualState.primaryColor);
+  expect(sortVisualState.selectedContainer).toBe("transparent");
   await expect(nameOption).toBeVisible();
   await expect
     .poll(() =>
@@ -1606,6 +1966,63 @@ test("delays and aggregates the linear search progress indicator", async ({ page
   });
   await expect(searchPanel.getByText("1 résultat.")).toBeVisible();
   await expect(progress).toBeHidden();
+
+  await page.evaluate(() => {
+    const testWindow = window as typeof window & {
+      __pagefindModule?: {
+        filters(): Promise<Record<string, unknown>>;
+        search(): Promise<unknown>;
+      };
+      __playwrightQuickSearchCompleted?: boolean;
+      __playwrightSearchVisibilityChanges?: Array<{ at: number; hidden: boolean }>;
+    };
+    testWindow.__playwrightSearchVisibilityChanges = [];
+    testWindow.__playwrightQuickSearchCompleted = false;
+    if (!testWindow.__pagefindModule) return;
+    testWindow.__pagefindModule.search = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      testWindow.__playwrightQuickSearchCompleted = true;
+      return {
+        results: [
+          {
+            score: 1,
+            data: async () => ({
+              excerpt: "Résultat rapide",
+              meta: { tags: "material" },
+              title: "Résultat rapide",
+              url: "/quick/",
+            }),
+          },
+        ],
+      };
+    };
+  });
+  await searchPanel.getByRole("searchbox", { name: "Mot-clé, titre ou contenu" }).fill("Rapide");
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        Boolean(
+          (
+            window as typeof window & {
+              __playwrightQuickSearchCompleted?: boolean;
+            }
+          ).__playwrightQuickSearchCompleted,
+        ),
+      ),
+    )
+    .toBe(true);
+  await page.waitForTimeout(220);
+  await expect(progress).toBeHidden();
+  expect(
+    await page.evaluate(
+      () =>
+        (
+          window as typeof window & {
+            __playwrightSearchVisibilityChanges?: Array<{ hidden: boolean }>;
+          }
+        ).__playwrightSearchVisibilityChanges?.some(({ hidden }) => !hidden) ?? false,
+    ),
+  ).toBe(false);
 });
 
 test("delays and aggregates short indeterminate loading indicators", async ({ page }) => {
@@ -1624,10 +2041,25 @@ test("delays and aggregates short indeterminate loading indicators", async ({ pa
   });
   await page.waitForTimeout(120);
   await expect(pageProgress).toHaveCount(0);
-  await expect(pageProgress).toHaveCount(1);
   await page.evaluate(() => {
     document.dispatchEvent(
       new CustomEvent("site:loading-end", { detail: { key: "playwright-guideline-check" } }),
+    );
+  });
+  await page.waitForTimeout(140);
+  await expect(pageProgress).toHaveCount(0);
+
+  await page.evaluate(() => {
+    document.dispatchEvent(
+      new CustomEvent("site:loading-start", { detail: { key: "playwright-long-check" } }),
+    );
+  });
+  await page.waitForTimeout(120);
+  await expect(pageProgress).toHaveCount(0);
+  await expect(pageProgress).toHaveCount(1);
+  await page.evaluate(() => {
+    document.dispatchEvent(
+      new CustomEvent("site:loading-end", { detail: { key: "playwright-long-check" } }),
     );
   });
   await expect(pageProgress).toHaveCount(0);
@@ -1637,6 +2069,25 @@ test("delays and aggregates short indeterminate loading indicators", async ({ pa
     document.querySelector(".home-anime-landing")?.setAttribute("aria-busy", "true");
     document.dispatchEvent(
       new CustomEvent("konachan:refresh-state", { detail: { busy: true, status: "Test" } }),
+    );
+  });
+  await page.waitForTimeout(120);
+  await expect(konachanProgress).toBeHidden();
+  await page.evaluate(() => {
+    document.querySelector(".home-anime-landing")?.setAttribute("aria-busy", "false");
+    document.dispatchEvent(
+      new CustomEvent("konachan:refresh-state", {
+        detail: { busy: false, status: "Test court terminé" },
+      }),
+    );
+  });
+  await page.waitForTimeout(140);
+  await expect(konachanProgress).toBeHidden();
+
+  await page.evaluate(() => {
+    document.querySelector(".home-anime-landing")?.setAttribute("aria-busy", "true");
+    document.dispatchEvent(
+      new CustomEvent("konachan:refresh-state", { detail: { busy: true, status: "Test long" } }),
     );
   });
   await page.waitForTimeout(120);
@@ -1759,6 +2210,39 @@ test("keeps consent actions uppercase and the privacy banner below the search sc
     name: "Avertissement relatif aux images",
   });
   await expect(explicitConsent).toBeVisible();
+  const modalVisualState = await explicitConsent.evaluate((dialog) => {
+    const root = getComputedStyle(document.documentElement);
+    const probe = document.createElement("span");
+    probe.style.position = "fixed";
+    probe.style.visibility = "hidden";
+    document.body.append(probe);
+    const resolveColor = (value: string) => {
+      probe.style.backgroundColor = value;
+      return getComputedStyle(probe).backgroundColor;
+    };
+    const styles = getComputedStyle(dialog);
+    const result = {
+      background: styles.backgroundColor,
+      border: styles.borderTopColor,
+      expectedBackground: resolveColor("var(--md-sys-color-surface-container-high)"),
+      expectedBorder: resolveColor("var(--md-sys-color-outline-variant)"),
+      radius: styles.borderTopLeftRadius,
+      scrim: getComputedStyle(document.querySelector(".cookie-consent-backdrop--modal") as Element)
+        .backgroundColor,
+      shadow: styles.boxShadow,
+      surfaceToken: root.getPropertyValue("--md-sys-color-surface-container-high").trim(),
+    };
+    probe.remove();
+    return result;
+  });
+  expect(modalVisualState.background).toBe(modalVisualState.expectedBackground);
+  expect(modalVisualState.border).toBe(modalVisualState.expectedBorder);
+  expect(modalVisualState.radius).toBe("28px");
+  expect(modalVisualState.shadow).toContain("8px");
+  expect(modalVisualState.shadow).not.toContain("40px");
+  expect(modalVisualState.scrim).not.toBe("rgba(0, 0, 0, 0)");
+  expect(modalVisualState.scrim).not.toBe("rgb(0, 0, 0)");
+  expect(modalVisualState.surfaceToken).toBeTruthy();
   const leaveButton = explicitConsent.locator("[data-cookie-action='leave']");
   const acknowledgeButton = explicitConsent.locator("[data-cookie-action='acknowledge']");
   const expectFocused = (button: typeof leaveButton) =>
@@ -1830,22 +2314,52 @@ test("keeps consent actions uppercase and the privacy banner below the search sc
     .toEqual({ privacyBanner: "1", search: "2" });
 });
 
-test("opens a rich annotation with Markdown content and restores focus", async ({ page }) => {
+test("keeps the Material rich tooltip anchored and its Shiki block unenhanced", async ({
+  page,
+}) => {
   await gotoRoute(page, "/posts/hugo-material-shortcodes/");
 
-  const trigger = page
-    .locator('[data-context-popover-trigger="note-http"][aria-controls="note-http"]')
-    .first();
-  const popover = page.locator("#note-http");
+  const trigger = page.locator('[data-rich-tooltip-trigger="tooltip-http-shiki"]').first();
+  const popover = page.locator("#tooltip-http-shiki");
   await expect(trigger).toBeVisible();
-  await expect(trigger).not.toHaveAttribute("tabindex");
+  await expect(trigger).toHaveText("Voir l’exemple Shiki");
+  await expect(trigger).not.toHaveAttribute("title");
+  await expect(trigger).not.toHaveAttribute("data-tooltip");
   await expect(page.locator(".material-abbreviation").first()).not.toHaveAttribute("tabindex");
   await expect(page.locator('.post-icon-tooltip[role="img"]').first()).not.toHaveAttribute(
     "tabindex",
   );
-  await expect(popover).toHaveAttribute("data-site-context-popover", "");
-  await expect(popover).toHaveAttribute("popover", "auto");
+  await expect(page.locator(".material-annotation-reference")).toHaveCount(0);
+  await expect(popover).toHaveAttribute("data-site-rich-tooltip", "");
+  await expect(popover).toHaveAttribute("role", "tooltip");
+  await expect(popover).toHaveAttribute("popover", "manual");
+  await expect(popover).not.toHaveAttribute("tabindex");
   await expectPopoverOpen(popover, false);
+
+  const shiki = popover.locator("pre.astro-code > code");
+  await expect(shiki).toHaveCount(1);
+  await expect(shiki.locator("span").first()).toBeAttached();
+  await expect(popover.locator(".code-shell, .code-actions, .code-copy-button")).toHaveCount(0);
+  await expect(popover.locator(".line.highlighted, .line.focused, .line.diff")).toHaveCount(0);
+
+  if (test.info().project.name.includes("mobile")) {
+    await trigger.dispatchEvent("pointerdown", {
+      button: 0,
+      buttons: 1,
+      isPrimary: true,
+      pointerId: 91,
+      pointerType: "touch",
+    });
+    await trigger.focus();
+    await page.waitForTimeout(3_100);
+    await expectPopoverOpen(popover, true);
+    await page.evaluate(() => {
+      document.body.tabIndex = -1;
+      document.body.focus();
+    });
+    await page.waitForTimeout(140);
+    await expectPopoverOpen(popover, false);
+  }
 
   if (test.info().project.name.includes("desktop")) {
     await trigger.hover();
@@ -1856,118 +2370,103 @@ test("opens a rich annotation with Markdown content and restores focus", async (
 
     await trigger.hover();
     await expectPopoverOpen(popover, true);
-    await popover.hover();
-    await page.waitForTimeout(220);
-    await expectPopoverOpen(popover, true);
     await page.mouse.move(1, 1);
+    await page.waitForTimeout(140);
     await expectPopoverOpen(popover, false);
   }
 
   await trigger.focus();
   await expectPopoverOpen(popover, true);
-  await trigger.hover();
-  await page.mouse.move(1, 1);
-  await page.waitForTimeout(260);
-  await expectPopoverOpen(popover, true);
-  await page.keyboard.press("Escape");
-  await expectPopoverOpen(popover, false);
-  await expect
-    .poll(() => trigger.evaluate((element) => element.matches(":focus-within")))
-    .toBe(true);
-
-  await page.keyboard.press("Enter");
-  await expectPopoverOpen(popover, true);
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
-  await expect(popover.getByRole("heading", { name: "HTTP et contenu enrichi" })).toBeVisible();
-  await expect(popover.locator("strong")).toContainText("Markdown");
-  await expect(popover.getByRole("link", { name: "Voir les articles Material" })).toHaveAttribute(
-    "href",
-    "/tags/material/",
-  );
-
-  const image = popover.getByRole("img", { name: "Logo du site" });
-  await expect(image).toBeVisible();
-  await expect(image).toHaveAttribute("loading", "lazy");
+  await expect(popover.getByText("Requête HTTP", { exact: true })).toBeVisible();
+  const tooltipId = await popover.getAttribute("id");
+  expect(tooltipId).toBeTruthy();
+  await expect(trigger).toHaveAttribute("aria-describedby", tooltipId!);
+  await expect(trigger).toHaveAccessibleDescription(/Requête HTTP/);
+  await expect(trigger).toHaveAccessibleDescription(/const response = await fetch/);
   await expect
-    .poll(() => image.evaluate((element: HTMLImageElement) => element.naturalWidth))
-    .toBeGreaterThan(0);
-  await expect
-    .poll(() => popover.evaluate((element) => element.contains(document.activeElement)))
+    .poll(() => trigger.evaluate((element) => element === document.activeElement))
     .toBe(true);
 
-  const popoverMetrics = await popover.evaluate((element) => {
-    const rect = element.getBoundingClientRect();
-    const viewport = window.visualViewport;
-    return {
-      bottom: rect.bottom,
-      left: rect.left,
-      overflowY: getComputedStyle(element).overflowY,
-      right: rect.right,
-      top: rect.top,
-      viewportBottom: (viewport?.offsetTop ?? 0) + (viewport?.height ?? window.innerHeight),
-      viewportLeft: viewport?.offsetLeft ?? 0,
-      viewportRight: (viewport?.offsetLeft ?? 0) + (viewport?.width ?? window.innerWidth),
-      viewportTop: viewport?.offsetTop ?? 0,
-    };
-  });
-  expect(popoverMetrics.overflowY).toBe("auto");
-  expect(popoverMetrics.left).toBeGreaterThanOrEqual(popoverMetrics.viewportLeft - 1);
-  expect(popoverMetrics.top).toBeGreaterThanOrEqual(popoverMetrics.viewportTop - 1);
-  expect(popoverMetrics.right).toBeLessThanOrEqual(popoverMetrics.viewportRight + 1);
-  expect(popoverMetrics.bottom).toBeLessThanOrEqual(popoverMetrics.viewportBottom + 1);
+  const anchoredMetrics = () =>
+    page.evaluate(() => {
+      const reference = document.querySelector<HTMLElement>(
+        '[data-rich-tooltip-trigger="tooltip-http-shiki"]',
+      );
+      const surface = document.querySelector<HTMLElement>("#tooltip-http-shiki");
+      if (!reference || !surface) return null;
+      const referenceRect = reference.getBoundingClientRect();
+      const surfaceRect = surface.getBoundingClientRect();
+      const horizontalOverlap =
+        Math.min(referenceRect.right, surfaceRect.right) -
+        Math.max(referenceRect.left, surfaceRect.left);
+      const verticalGap = Math.min(
+        Math.abs(referenceRect.top - surfaceRect.bottom),
+        Math.abs(surfaceRect.top - referenceRect.bottom),
+      );
+      return {
+        bottom: surfaceRect.bottom,
+        horizontalOverlap,
+        left: surfaceRect.left,
+        right: surfaceRect.right,
+        scale:
+          getComputedStyle(surface).scale === "none"
+            ? 1
+            : Number.parseFloat(getComputedStyle(surface).scale || "1"),
+        top: surfaceRect.top,
+        verticalGap,
+        viewportHeight: window.innerHeight,
+        viewportWidth: window.innerWidth,
+      };
+    });
 
-  const originalVisualViewport = await page.evaluate(() => {
+  const initialMetrics = await anchoredMetrics();
+  expect(initialMetrics).not.toBeNull();
+  expect(initialMetrics!.horizontalOverlap).toBeGreaterThan(0);
+  expect(initialMetrics!.verticalGap).toBeLessThanOrEqual(14);
+  expect(initialMetrics!.left).toBeGreaterThanOrEqual(-1);
+  expect(initialMetrics!.top).toBeGreaterThanOrEqual(-1);
+  expect(initialMetrics!.right).toBeLessThanOrEqual(initialMetrics!.viewportWidth + 1);
+  expect(initialMetrics!.bottom).toBeLessThanOrEqual(initialMetrics!.viewportHeight + 1);
+
+  const zoomChanged = await page.evaluate(() => {
     if (!window.visualViewport) return null;
-    const original = {
-      height: window.visualViewport.height,
-      width: window.visualViewport.width,
-    };
-    Object.defineProperty(window.visualViewport, "height", {
+    Object.defineProperty(window.visualViewport, "scale", {
       configurable: true,
-      value: 320,
-    });
-    Object.defineProperty(window.visualViewport, "width", {
-      configurable: true,
-      value: 280,
+      value: 2,
     });
     window.visualViewport.dispatchEvent(new Event("resize"));
-    return original;
+    return true;
   });
-  expect(originalVisualViewport).not.toBeNull();
-  await expect
-    .poll(() =>
-      popover.evaluate((element) => {
-        const rect = element.getBoundingClientRect();
-        return (
-          rect.left >= -1 &&
-          rect.top >= -1 &&
-          rect.right <= 281 &&
-          rect.bottom <= 321 &&
-          rect.width <= 257 &&
-          rect.height <= 297
-        );
-      }),
-    )
-    .toBe(true);
-  await page.evaluate((original) => {
-    if (!window.visualViewport || !original) return;
-    Object.defineProperty(window.visualViewport, "height", {
-      configurable: true,
-      value: original.height,
-    });
-    Object.defineProperty(window.visualViewport, "width", {
-      configurable: true,
-      value: original.width,
-    });
-    window.visualViewport.dispatchEvent(new Event("resize"));
-  }, originalVisualViewport);
+  expect(zoomChanged).toBe(true);
+  await expect.poll(async () => (await anchoredMetrics())?.scale).toBe(1);
 
   await page.keyboard.press("Escape");
   await expectPopoverOpen(popover, false);
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  await expect(trigger).not.toHaveAttribute("aria-describedby");
   await expect
-    .poll(() => trigger.evaluate((element) => element.matches(":focus-within")))
+    .poll(() => trigger.evaluate((element) => element === document.activeElement))
     .toBe(true);
+
+  await page.evaluate(() => {
+    document.body.tabIndex = -1;
+    document.body.focus();
+  });
+  await trigger.focus();
+  await expectPopoverOpen(popover, true);
+  await page.evaluate(() => {
+    document.body.tabIndex = -1;
+    document.body.focus();
+  });
+  await page.waitForTimeout(140);
+  await expectPopoverOpen(popover, false);
+
+  await page.evaluate(() => {
+    if (!window.visualViewport) return;
+    Object.defineProperty(window.visualViewport, "scale", { configurable: true, value: 1 });
+    window.visualViewport.dispatchEvent(new Event("resize"));
+  });
 });
 
 test("previews a Markdown footnote without duplicating ids or its backreference", async ({
@@ -2024,6 +2523,9 @@ test("renders shortcode code blocks with highlighted lines and copy controls", a
   await expect(page.locator(".code-shell").first()).toBeVisible();
   const copyButton = page.locator(".code-copy-button").first();
   await expect(copyButton).toBeVisible();
+  await expect(copyButton).not.toHaveAttribute("title");
+  await expect(copyButton).toHaveAttribute("data-tooltip", "Copier le code source");
+  await expect.poll(() => copyButton.evaluate((element) => Boolean(element.shadowRoot))).toBe(true);
 
   if (test.info().project.name.includes("mobile")) {
     const tooltip = page.locator("[data-site-tooltip-surface]");
@@ -2038,6 +2540,69 @@ test("renders shortcode code blocks with highlighted lines and copy controls", a
     await page.waitForTimeout(100);
     await expectPopoverOpen(tooltip, false);
   }
+
+  const readCopyVisualState = () =>
+    copyButton.evaluate((button) => {
+      const icon = button.querySelector("md-icon");
+      const focusRing = button.shadowRoot?.querySelector("md-focus-ring");
+      const probe = document.createElement("span");
+      probe.style.position = "fixed";
+      probe.style.visibility = "hidden";
+      document.body.append(probe);
+      const resolve = (token: string) => {
+        probe.style.color = `var(${token})`;
+        return getComputedStyle(probe).color;
+      };
+      const result = {
+        focusColor: focusRing ? getComputedStyle(focusRing).color : "missing",
+        iconColor: icon ? getComputedStyle(icon).color : "missing",
+        onSurfaceVariant: resolve("--md-sys-color-on-surface-variant"),
+        primary: resolve("--md-sys-color-primary"),
+        secondary: resolve("--md-sys-color-secondary"),
+      };
+      probe.remove();
+      return result;
+    });
+
+  const normalCopyState = await readCopyVisualState();
+  expect(normalCopyState.iconColor).toBe(normalCopyState.onSurfaceVariant);
+
+  if (test.info().project.name.includes("desktop")) {
+    await copyButton.hover();
+    await page.waitForTimeout(80);
+    expect((await readCopyVisualState()).iconColor).toBe(normalCopyState.iconColor);
+    await page.mouse.move(1, 1);
+  }
+
+  await page.keyboard.press("Tab");
+  await copyButton.focus();
+  const focusedCopyState = await readCopyVisualState();
+  expect(focusedCopyState.iconColor).toBe(normalCopyState.iconColor);
+  expect(focusedCopyState.focusColor).toBe(focusedCopyState.secondary);
+
+  await copyButton.dispatchEvent("pointerdown", {
+    button: 0,
+    buttons: 1,
+    isPrimary: true,
+    pointerId: 88,
+    pointerType: "mouse",
+  });
+  expect((await readCopyVisualState()).iconColor).toBe(normalCopyState.iconColor);
+  await copyButton.dispatchEvent("pointerup", {
+    button: 0,
+    buttons: 0,
+    isPrimary: true,
+    pointerId: 88,
+    pointerType: "mouse",
+  });
+
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  await copyButton.click();
+  await expect(copyButton).toHaveClass(/code-copy-button-copied/);
+  await expect(copyButton).toHaveAttribute("data-tooltip", "Code copié");
+  const copiedState = await readCopyVisualState();
+  expect(copiedState.iconColor).toBe(copiedState.primary);
+
   expect(await page.locator("pre code .line").count()).toBeGreaterThan(10);
   expect(
     await page.locator("pre code .line.highlighted, pre code .line.diff").count(),
@@ -2236,10 +2801,14 @@ test("keeps one Giscus progress bar until its iframe has loaded", async ({ page 
   await page.route("https://giscus.app/client.js", async (route) => {
     await route.fulfill({
       body: `
+        window.__giscusTiming = window.__giscusTiming || {};
+        window.__giscusTiming.clientAt = performance.now();
         const host = document.currentScript?.parentElement;
         const iframe = document.createElement("iframe");
         iframe.className = "giscus-frame";
-        iframe.src = "/__giscus-frame";
+        iframe.title = "Comments";
+        iframe.dataset.initialTheme = document.currentScript?.dataset.theme || "";
+        iframe.src = "https://giscus.app/__giscus-frame";
         host?.append(iframe);
       `,
       contentType: "application/javascript",
@@ -2248,9 +2817,43 @@ test("keeps one Giscus progress bar until its iframe has loaded", async ({ page 
   });
   await page.route("**/__giscus-frame", async (route) => {
     await frameResponseGate;
-    await route.fulfill({ body: "<!doctype html><title>Giscus prêt</title>", status: 200 });
+    await route.fulfill({
+      body: `<!doctype html><html><body><script>
+        addEventListener("message", (event) => {
+          const theme = event.data?.giscus?.setConfig?.theme;
+          if (typeof theme === "string") document.body.dataset.theme = theme;
+        });
+      <\/script></body></html>`,
+      contentType: "text/html",
+      status: 200,
+    });
   });
   await page.addInitScript(() => {
+    const testWindow = window as typeof window & {
+      __giscusTiming?: { busyAt?: number; clientAt?: number; visibleAt?: number };
+      cookieConsent: {
+        acceptedService(): boolean;
+        isCategoryAccepted(): boolean;
+      };
+    };
+    const timing: { busyAt?: number; clientAt?: number; visibleAt?: number } = {};
+    testWindow.__giscusTiming = timing;
+    const recordProgress = () => {
+      const panel = document.querySelector<HTMLElement>("[data-giscus-panel]");
+      const progress = document.querySelector<HTMLElement>("[data-giscus-progress]");
+      if (panel?.getAttribute("aria-busy") === "true" && timing.busyAt === undefined) {
+        timing.busyAt = performance.now();
+      }
+      if (progress && !progress.hidden && timing.visibleAt === undefined) {
+        timing.visibleAt = performance.now();
+      }
+    };
+    new MutationObserver(recordProgress).observe(document, {
+      attributeFilter: ["aria-busy", "hidden"],
+      attributes: true,
+      childList: true,
+      subtree: true,
+    });
     const updatedAt = new Date().toISOString();
     localStorage.setItem(
       "ct-cookie-consent-v1",
@@ -2260,14 +2863,7 @@ test("keeps one Giscus progress bar until its iframe has loaded", async ({ page 
       "site-giscus-comments-enabled-v1",
       JSON.stringify({ accepted: true, updatedAt, version: 1 }),
     );
-    (
-      window as typeof window & {
-        cookieConsent: {
-          acceptedService(): boolean;
-          isCategoryAccepted(): boolean;
-        };
-      }
-    ).cookieConsent = {
+    testWindow.cookieConsent = {
       acceptedService: () => true,
       isCategoryAccepted: () => true,
     };
@@ -2278,14 +2874,72 @@ test("keeps one Giscus progress bar until its iframe has loaded", async ({ page 
   const progress = panel.locator("md-linear-progress[data-giscus-progress]");
   await expect(panel).toBeVisible();
   await expect(panel).toHaveAttribute("aria-busy", "true");
-  await expect(progress).toBeVisible();
-  await expect(panel.locator("iframe.giscus-frame")).toHaveCount(1);
+  const iframe = panel.locator("iframe.giscus-frame");
+  await expect(iframe).toHaveCount(1);
+  await expect(iframe).not.toHaveAttribute("title");
+  await expect(iframe).toHaveAttribute("aria-label", "Commentaires");
+  await expect(iframe).toHaveAttribute("data-initial-theme", /^data:text\/css;charset=utf-8,/);
 
-  await page.waitForTimeout(250);
+  const initialThemeCss = await iframe.evaluate((element) => {
+    const theme = (element as HTMLIFrameElement).dataset.initialTheme || "";
+    return decodeURIComponent(theme.slice(theme.indexOf(",") + 1));
+  });
+  expect(initialThemeCss).toContain("--color-canvas-default:transparent");
+  expect(initialThemeCss).toContain("background:transparent!important");
+  expect(initialThemeCss).toContain(".gsc-reactions-popover.color-bg-overlay");
+  expect(initialThemeCss).toContain(
+    test.info().project.name.includes("dark") ? "#238636" : "#1F883D",
+  );
+
   await expect(panel).toHaveAttribute("aria-busy", "true");
   await expect(progress).toBeVisible();
+  const progressDelay = await page.evaluate(() => {
+    const timing = (
+      window as typeof window & {
+        __giscusTiming?: { busyAt?: number; clientAt?: number; visibleAt?: number };
+      }
+    ).__giscusTiming;
+    return (timing?.visibleAt ?? 0) - (timing?.busyAt ?? 0);
+  });
+  expect(progressDelay).toBeGreaterThanOrEqual(180);
 
   releaseFrameResponse();
   await expect(panel).toHaveAttribute("aria-busy", "false");
   await expect(progress).toBeHidden();
+
+  const giscusFrame = page.frameLocator("iframe.giscus-frame");
+  await expect(giscusFrame.locator("body")).toHaveAttribute(
+    "data-theme",
+    /^data:text\/css;charset=utf-8,/,
+  );
+  const firstLiveTheme = await giscusFrame.locator("body").getAttribute("data-theme");
+
+  await page.evaluate(() => {
+    document.documentElement.style.setProperty("--md-sys-color-primary", "#123456");
+    document.dispatchEvent(new CustomEvent("site:material-dynamic-color-change"));
+  });
+  await expect
+    .poll(() => giscusFrame.locator("body").getAttribute("data-theme"))
+    .not.toBe(firstLiveTheme);
+  const updatedTheme = await giscusFrame.locator("body").getAttribute("data-theme");
+  expect(decodeURIComponent(updatedTheme!.slice(updatedTheme!.indexOf(",") + 1))).toContain(
+    "#123456",
+  );
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  const reloadedPanel = page.locator("[data-giscus-panel]");
+  const reloadedProgress = reloadedPanel.locator("[data-giscus-progress]");
+  await expect(reloadedPanel).toHaveAttribute("aria-busy", "false");
+  await page.waitForTimeout(260);
+  await expect(reloadedProgress).toBeHidden();
+  expect(
+    await page.evaluate(
+      () =>
+        (
+          window as typeof window & {
+            __giscusTiming?: { visibleAt?: number };
+          }
+        ).__giscusTiming?.visibleAt,
+    ),
+  ).toBeUndefined();
 });

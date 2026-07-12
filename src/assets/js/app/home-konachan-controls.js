@@ -1,3 +1,5 @@
+import { SITE_LOADING_INDICATOR_DELAY_MS } from "@/lib/site-contracts";
+
 const RATING_OPTIONS = {
   safe: { icon: "\uEF80", label: "Safe" },
   questionable: { icon: "\uF8EA", label: "Questionnable" },
@@ -89,10 +91,8 @@ export async function initHomeKonachanControlsFromDocument() {
   const renderRating = () => {
     const current = RATING_OPTIONS[preference];
     if (trigger) {
-      const triggerLabel = menuOpen
-        ? "Fermer les niveaux Konachan"
-        : `Niveau Konachan : ${current.label}`;
-      trigger.title = triggerLabel;
+      const triggerLabel = menuOpen ? "Fermer le panneau" : current.label;
+      trigger.dataset.tooltip = triggerLabel;
       trigger.setAttribute("aria-label", triggerLabel);
       trigger.setAttribute("aria-expanded", String(menuOpen));
       trigger.classList.toggle("is-open", menuOpen);
@@ -159,7 +159,10 @@ export async function initHomeKonachanControlsFromDocument() {
     actions.hidden = true;
     actions.removeAttribute("data-open");
     renderRating();
-    if (restoreFocus) trigger?.focus();
+    if (restoreFocus) {
+      trigger?.focus();
+      document.dispatchEvent(new CustomEvent(config.events.tooltipHide));
+    }
   };
 
   trigger?.addEventListener("click", () => {
@@ -214,7 +217,7 @@ export async function initHomeKonachanControlsFromDocument() {
       refreshButton.disabled = busy;
       refreshButton.setAttribute("aria-busy", String(busy));
       const label = busy ? "Actualisation de l'image en cours" : "Actualiser l'image";
-      refreshButton.title = label;
+      refreshButton.dataset.tooltip = label;
       refreshButton.setAttribute("aria-label", label);
     }
     if (refreshStatus && typeof event.detail?.status === "string") {
@@ -227,7 +230,7 @@ export async function initHomeKonachanControlsFromDocument() {
     revealTimer = window.setTimeout(() => {
       revealTimer = 0;
       if (landing.getAttribute("aria-busy") === "true" && loader) loader.hidden = false;
-    }, 200);
+    }, SITE_LOADING_INDICATOR_DELAY_MS);
   });
   document.addEventListener("home:detail-view-change", (event) => {
     detailed = Boolean(event.detail?.detailed);

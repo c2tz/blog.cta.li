@@ -16,7 +16,9 @@ let observedProse = null;
 
 function matchingCodeBlocks(root) {
   const matches = root instanceof Element && root.matches("pre > code") ? [root] : [];
-  return [...matches, ...root.querySelectorAll("pre > code")];
+  return [...matches, ...root.querySelectorAll("pre > code")].filter(
+    (codeBlock) => !codeBlock.closest("[data-site-rich-tooltip]"),
+  );
 }
 
 function setCopyState(control, state) {
@@ -28,7 +30,6 @@ function setCopyState(control, state) {
   button.classList.toggle("code-copy-button-copied", copied);
   button.classList.toggle("code-copy-button-error", error);
   button.setAttribute("aria-label", tooltip);
-  button.setAttribute("title", tooltip);
   button.dataset.tooltip = tooltip;
   icon.textContent = copied ? COPIED_ICON : error ? ERROR_ICON : COPY_ICON;
   status.textContent = copied ? "Code copié" : error ? "Impossible de copier le code" : "";

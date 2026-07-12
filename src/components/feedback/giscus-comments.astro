@@ -105,9 +105,14 @@ const configured = Boolean(repo.trim() && repoId.trim() && category.trim() && ca
 </section>
 
 <script>
-  import { SITE_COOKIE_NAMES, SITE_EVENTS, SITE_STORAGE_KEYS } from "@/lib/site-contracts";
+  import { createGiscusThemeUrl } from "@/assets/js/app/giscus-theme.js";
+  import {
+    SITE_COOKIE_NAMES,
+    SITE_EVENTS,
+    SITE_LOADING_INDICATOR_DELAY_MS,
+    SITE_STORAGE_KEYS,
+  } from "@/lib/site-contracts";
 
-  type SiteTheme = "dark" | "light";
   type MaterialButton = HTMLElement & { disabled: boolean };
   type CookieConsentWindow = Window & {
     cookieConsent?: {
@@ -117,8 +122,6 @@ const configured = Boolean(repo.trim() && repoId.trim() && category.trim() && ca
   };
   const GISCUS_ORIGIN = "https://giscus.app";
   const GISCUS_LOAD_TIMEOUT_MS = 30_000;
-  const THEME_VERSION = "20260708-emoji-popover";
-  const THEME_DELAYS = [0, 150, 500, 1200];
 
   const readCookie = (name: string) => {
     const prefix = `${encodeURIComponent(name)}=`;
@@ -160,15 +163,6 @@ const configured = Boolean(repo.trim() && repoId.trim() && category.trim() && ca
       return false;
     }
   };
-  const currentTheme = (): SiteTheme =>
-    document.documentElement.dataset.theme === "dark" ? "dark" : "light";
-  const themeUrl = (theme: SiteTheme) => {
-    if (location.protocol !== "https:") return theme === "dark" ? "dark_dimmed" : "light";
-    const url = new URL(`/giscus/ct-${theme}.css`, location.origin);
-    url.searchParams.set("v", THEME_VERSION);
-    return url.toString();
-  };
-
   function enhanceGiscus(root: HTMLElement) {
     if (root.dataset.enhanced === "true") return;
     root.dataset.enhanced = "true";
@@ -187,6 +181,7 @@ const configured = Boolean(repo.trim() && repoId.trim() && category.trim() && ca
     let loading = false;
     let revealTimer = 0;
     let frameLoadTimer = 0;
+    let themeAnimationFrame = 0;
     let frameObserver: MutationObserver | null = null;
     let observedIframe: HTMLIFrameElement | null = null;
 
@@ -206,6 +201,7 @@ const configured = Boolean(repo.trim() && repoId.trim() && category.trim() && ca
       progress.hidden = true;
     };
     const postTheme = () => {
+      themeAnimationFrame = 0;
       const iframe = frame.querySelector<HTMLIFrameElement>("iframe.giscus-frame");
       if (!iframe?.src) return;
       try {
@@ -214,16 +210,20 @@ const configured = Boolean(repo.trim() && repoId.trim() && category.trim() && ca
         return;
       }
       iframe.contentWindow?.postMessage(
-        { giscus: { setConfig: { theme: themeUrl(currentTheme()) } } },
+        { giscus: { setConfig: { theme: createGiscusThemeUrl() } } },
         GISCUS_ORIGIN,
       );
+    };
+    const scheduleThemeUpdate = () => {
+      if (themeAnimationFrame) cancelAnimationFrame(themeAnimationFrame);
+      themeAnimationFrame = requestAnimationFrame(postTheme);
     };
     function handleFrameLoaded() {
       if (!loading) return;
       loaded = true;
       stopFrameWatch();
       endLoading();
-      THEME_DELAYS.forEach((delay) => setTimeout(postTheme, delay));
+      scheduleThemeUpdate();
     }
     const observeGiscusFrame = () => {
       const iframe = frame.querySelector<HTMLIFrameElement>("iframe.giscus-frame");
@@ -231,6 +231,8 @@ const configured = Boolean(repo.trim() && repoId.trim() && category.trim() && ca
 
       observedIframe?.removeEventListener("load", handleFrameLoaded);
       observedIframe = iframe;
+      iframe.setAttribute("aria-label", "Commentaires");
+      iframe.removeAttribute("title");
       iframe.addEventListener("load", handleFrameLoaded, { once: true });
     };
     const beginFrameWatch = () => {
@@ -257,7 +259,7 @@ const configured = Boolean(repo.trim() && repoId.trim() && category.trim() && ca
       revealTimer = window.setTimeout(() => {
         revealTimer = 0;
         if (loading) progress.hidden = false;
-      }, 200);
+      }, SITE_LOADING_INDICATOR_DELAY_MS);
 
       const script = document.createElement("script");
       script.src = `${GISCUS_ORIGIN}/client.js`;
@@ -277,8 +279,7 @@ const configured = Boolean(repo.trim() && repoId.trim() && category.trim() && ca
       ]) {
         script.setAttribute(`data-${name}`, value ?? "");
       }
-      script.setAttribute("data-theme", themeUrl(currentTheme()));
-      script.setAttribute("data-loading", "lazy");
+      script.setAttribute("data-theme", createGiscusThemeUrl());
       script.addEventListener("error", () => {
         loaded = false;
         error.hidden = false;
@@ -302,7 +303,8 @@ const configured = Boolean(repo.trim() && repoId.trim() && category.trim() && ca
       setTimeout(load);
     });
     document.addEventListener(SITE_EVENTS.consentChange, syncConsent);
-    new MutationObserver(postTheme).observe(document.documentElement, {
+    document.addEventListener(SITE_EVENTS.materialDynamicColorChange, scheduleThemeUpdate);
+    new MutationObserver(scheduleThemeUpdate).observe(document.documentElement, {
       attributeFilter: ["data-theme"],
       attributes: true,
     });

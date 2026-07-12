@@ -124,13 +124,26 @@ test("keeps native lazy loading without an artificial image blur", async ({ page
             loading: image.loading,
             revealClass: image.classList.contains("blog-image-reveal"),
             revealState: image.dataset.imageRevealState ?? null,
+            tooltipAnchor: image.dataset.tooltipAnchor ?? null,
           };
         }),
       ),
     )
     .toEqual([
-      { filter: "none", loading: "lazy", revealClass: false, revealState: null },
-      { filter: "none", loading: "lazy", revealClass: false, revealState: null },
+      {
+        filter: "none",
+        loading: "lazy",
+        revealClass: false,
+        revealState: null,
+        tooltipAnchor: "cursor",
+      },
+      {
+        filter: "none",
+        loading: "lazy",
+        revealClass: false,
+        revealState: null,
+        tooltipAnchor: "cursor",
+      },
     ]);
 });
 
@@ -371,6 +384,7 @@ test("fits the complete image with CSS and stays scroll-free through gestures an
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(openScrollY);
 
   await page.setViewportSize(viewport);
+  await page.evaluate(() => document.dispatchEvent(new Event("gestureend")));
   await expectImageContained(stage);
   await expect(shell).toHaveCSS("overflow-x", "hidden");
   await expect(shell).toHaveCSS("overflow-y", "hidden");
@@ -391,10 +405,6 @@ test("supports gallery arrows and touch swipe while taps control the toolbar", a
   await expect
     .poll(() => image.evaluate((element) => getComputedStyle(element).animationName))
     .toBe("site-image-dialog-enter-next");
-  const outgoingImage = dialog.locator(".site-image-dialog-image--outgoing");
-  await expect(outgoingImage).toHaveCount(1);
-  await expect(outgoingImage).toHaveAttribute("aria-hidden", "true");
-  await expect(outgoingImage).toHaveCSS("animation-name", "site-image-dialog-leave-next");
   const nextKeyframes = await image.evaluate((element) =>
     element
       .getAnimations()
@@ -407,6 +417,10 @@ test("supports gallery arrows and touch swipe while taps control the toolbar", a
         transform: keyframe.transform,
       })),
   );
+  const outgoingImage = dialog.locator(".site-image-dialog-image--outgoing");
+  await expect(outgoingImage).toHaveCount(1);
+  await expect(outgoingImage).toHaveAttribute("aria-hidden", "true");
+  await expect(outgoingImage).toHaveCSS("animation-name", "site-image-dialog-leave-next");
   expect(nextKeyframes.some((keyframe) => String(keyframe.transform).includes("100%"))).toBe(true);
   expect(nextKeyframes.every((keyframe) => !String(keyframe.clipPath).includes("polygon"))).toBe(
     true,
@@ -444,7 +458,55 @@ test("supports gallery arrows and touch swipe while taps control the toolbar", a
   await expect(image).toHaveCSS("transform", "none");
 });
 
-test("supports mouse and trackpad swipe plus hand panning during browser zoom", async ({
+test("keeps rapid gallery navigation ordered while images decode", async ({ page }) => {
+  const { dialog } = await openLightbox(page);
+  const status = dialog.locator("[data-image-status]");
+
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
+  await expect(status).toHaveText("Image 1 sur 2 : konachan-382339.jpg");
+  await expect(dialog.locator(".site-image-dialog-image--outgoing")).toHaveCount(0, {
+    timeout: 600,
+  });
+});
+
+test("does not commit a decoded gallery image after closing starts", async ({ page }) => {
+  const { dialog, sourceImage } = await openLightbox(page);
+
+  await page.evaluate(() => {
+    const NativeImage = window.Image;
+    window.Image = function DelayedImage() {
+      const image = new NativeImage();
+      const srcDescriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
+      if (!srcDescriptor?.get || !srcDescriptor.set) return image;
+      Object.defineProperty(image, "src", {
+        configurable: true,
+        get: () => srcDescriptor.get?.call(image),
+        set: (value: string) => {
+          window.setTimeout(() => srcDescriptor.set?.call(image, value), 300);
+        },
+      });
+      return image;
+    } as unknown as typeof Image;
+  });
+
+  await page.keyboard.press("ArrowRight");
+  await dialog.locator("[data-image-close]").click();
+  await expect(dialog).toHaveJSProperty("open", false);
+  await page.waitForTimeout(380);
+  await expect(dialog.locator(".site-image-dialog-image--outgoing")).toHaveCount(0);
+  await expect
+    .poll(() =>
+      dialog.locator("[data-image-dialog-image]").evaluate((element) => ({
+        opacity: (element as HTMLElement).style.opacity,
+        transform: (element as HTMLElement).style.transform,
+      })),
+    )
+    .toEqual({ opacity: "", transform: "" });
+  await expect(sourceImage).toBeFocused();
+});
+
+test("keeps gallery gestures at 100% and pans a browser-zoomed image with the mouse hand", async ({
   page,
 }) => {
   const { dialog } = await openLightbox(page);
@@ -458,49 +520,110 @@ test("supports mouse and trackpad swipe plus hand panning during browser zoom", 
   await trackpadSwipe(stage, -100);
   await expect(status).toHaveText("Image 1 sur 2 : konachan-382339.jpg");
 
-  const browserZoomAvailable = await stage.evaluate(() => {
-    if (!window.visualViewport) return false;
-    Object.defineProperty(window.visualViewport, "scale", {
-      configurable: true,
-      value: 2,
-    });
-    window.visualViewport.dispatchEvent(new Event("resize"));
-    return true;
-  });
+  const cdp = await page.context().newCDPSession(page);
+  const browserZoomAvailable = await cdp
+    .send("Emulation.setPageScaleFactor", { pageScaleFactor: 2 })
+    .then(() => true)
+    .catch(() => false);
   expect(browserZoomAvailable).toBe(true);
   await expect(stage).toHaveAttribute("data-browser-zoomed", "");
   await expect(stage).toHaveCSS("cursor", "grab");
+  await expect
+    .poll(async () => {
+      const value = await stage.evaluate((element) => getComputedStyle(element).touchAction);
+      return value === "manipulation" || value === "pan-x pan-y pinch-zoom";
+    })
+    .toBe(true);
 
-  const transformBeforePan = await image.evaluate(
-    (element) => (element as HTMLElement).style.transform,
-  );
+  // Safari and some touchpads can omit gestureend after native zoom. The hand
+  // must remain usable, and dezoom must still release gallery navigation.
+  await page.evaluate(() => document.dispatchEvent(new Event("gesturestart")));
   await mouseDrag(page, stage, 120, 0);
-  const transformAfterPan = await image.evaluate(
+  const zoomPanTransform = await image.evaluate(
     (element) => (element as HTMLElement).style.transform,
   );
-  expect(transformAfterPan).not.toBe(transformBeforePan);
+  expect(zoomPanTransform).toMatch(/^translate3d\((?!0px)/);
+  await swipe(stage, "left");
   await expect(stage).toHaveCSS("cursor", "grab");
   await expect(status).toHaveText("Image 1 sur 2 : konachan-382339.jpg");
+  await expect
+    .poll(() =>
+      image.evaluate((element) => ({
+        opacity: (element as HTMLElement).style.opacity,
+        transform: (element as HTMLElement).style.transform,
+      })),
+    )
+    .toEqual({ opacity: "", transform: zoomPanTransform });
 
-  const transformBeforeTrackpadPan = await image.evaluate(
+  const beforeWheelTransform = await image.evaluate(
     (element) => (element as HTMLElement).style.transform,
   );
-  await stage.dispatchEvent("wheel", { deltaX: 80, deltaY: 60, deltaMode: 0 });
-  const transformAfterTrackpadPan = await image.evaluate(
-    (element) => (element as HTMLElement).style.transform,
-  );
-  expect(transformAfterTrackpadPan).not.toBe(transformBeforeTrackpadPan);
-  await expect(status).toHaveText("Image 1 sur 2 : konachan-382339.jpg");
-
-  await stage.evaluate(() => {
-    if (!window.visualViewport) return;
-    Object.defineProperty(window.visualViewport, "scale", {
-      configurable: true,
-      value: 1,
+  const wheelPrevented = await stage.evaluate((element) => {
+    const event = new WheelEvent("wheel", {
+      bubbles: true,
+      cancelable: true,
+      deltaMode: WheelEvent.DOM_DELTA_PIXEL,
+      deltaX: 80,
+      deltaY: 60,
     });
-    window.visualViewport.dispatchEvent(new Event("resize"));
+    element.dispatchEvent(event);
+    return event.defaultPrevented;
   });
+  expect(wheelPrevented).toBe(true);
+  await expect(status).toHaveText("Image 1 sur 2 : konachan-382339.jpg");
+  await expect
+    .poll(() => image.evaluate((element) => (element as HTMLElement).style.transform))
+    .not.toBe(beforeWheelTransform);
+
+  await cdp.send("Emulation.setPageScaleFactor", { pageScaleFactor: 1 });
   await expect(stage).not.toHaveAttribute("data-browser-zoomed");
+  await page.waitForTimeout(260);
+  await expect(dialog.locator(".site-image-dialog-image--outgoing")).toHaveCount(0);
+  await expect
+    .poll(() =>
+      image.evaluate((element) => ({
+        opacity: (element as HTMLElement).style.opacity,
+        transform: (element as HTMLElement).style.transform,
+      })),
+    )
+    .toEqual({ opacity: "", transform: "" });
+
+  const pageZoomAvailable = await stage.evaluate(() => {
+    const current = window.devicePixelRatio;
+    try {
+      Object.defineProperty(window, "devicePixelRatio", {
+        configurable: true,
+        value: current * 1.25,
+      });
+      window.dispatchEvent(new Event("resize"));
+      return current;
+    } catch {
+      return null;
+    }
+  });
+  expect(pageZoomAvailable).not.toBeNull();
+  await expect(stage).toHaveAttribute("data-browser-zoomed", "");
+  await mouseDrag(page, stage, -90, 60);
+  await expect(status).toHaveText("Image 1 sur 2 : konachan-382339.jpg");
+  await expect
+    .poll(() => image.evaluate((element) => (element as HTMLElement).style.transform))
+    .toMatch(/^translate3d\((?!0px, 0px)/);
+
+  await stage.evaluate((_, originalDpr) => {
+    Object.defineProperty(window, "devicePixelRatio", {
+      configurable: true,
+      value: originalDpr,
+    });
+    window.dispatchEvent(new Event("resize"));
+  }, pageZoomAvailable);
+  await expect(stage).not.toHaveAttribute("data-browser-zoomed");
+  await page.waitForTimeout(260);
+  await expect
+    .poll(() => image.evaluate((element) => (element as HTMLElement).style.transform))
+    .toBe("");
+
+  await trackpadSwipe(stage, 100);
+  await expect(status).toHaveText("Image 2 sur 2 : konachan-382339.jpg");
 });
 
 test("delays then progressively softens the image and scrim during vertical dismissal", async ({

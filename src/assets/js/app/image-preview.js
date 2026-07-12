@@ -6,7 +6,7 @@ const DOUBLE_TAP_MS = 280;
 const CHECK_ICON = "\uE5CA";
 const FULLSCREEN_EXIT_ICON = "\uE5D1";
 const FULLSCREEN_ICON = "\uE5D0";
-const GALLERY_MOTION_DURATION_MS = 340;
+const GALLERY_MOTION_DURATION_MS = 320;
 const HISTORY_STATE_KEY = "__siteImageDialog";
 const IMAGE_DIALOG_SCRIM_OPACITY = 0.68;
 const INFORMATION_LOADING_DELAY_MS = 200;
@@ -27,8 +27,9 @@ const TAP_DURATION_MS = 360;
 const TRACKPAD_SWIPE_DISTANCE = 72;
 const TRACKPAD_SWIPE_LOCK_MS = 420;
 const TRACKPAD_SWIPE_RESET_MS = 180;
-const ZOOM_EPSILON = 0.01;
 const WHEEL_LINE_HEIGHT = 16;
+const ZOOM_GESTURE_COOLDOWN_MS = 240;
+const ZOOM_EPSILON = 0.01;
 
 let activeController;
 let pendingDialog;
@@ -181,6 +182,29 @@ function restoreInlineStyle(style, property, value) {
   else style.removeProperty(property);
 }
 
+function decodeImageSource(src) {
+  return new Promise((resolve) => {
+    const image = new Image();
+    let settled = false;
+    const finish = (loaded) => {
+      if (settled) return;
+      settled = true;
+      resolve(loaded);
+    };
+
+    image.decoding = "async";
+    image.onload = async () => {
+      try {
+        await image.decode?.();
+      } catch {}
+      finish(true);
+    };
+    image.onerror = () => finish(false);
+    image.src = src;
+    if (image.complete) queueMicrotask(() => finish(image.naturalWidth > 0));
+  });
+}
+
 class ImagePreviewController {
   constructor(dialog) {
     this.dialog = dialog;
@@ -216,7 +240,9 @@ class ImagePreviewController {
 
     this.items = [];
     this.currentIndex = 0;
+    this.pendingIndex = undefined;
     this.activePointers = new Set();
+    this.browserZoomBaselineDpr = Math.max(0.1, window.devicePixelRatio || 1);
     this.browserZoomScale = 1;
     this.controlsVisible = true;
     this.informationOpen = false;
@@ -229,13 +255,17 @@ class ImagePreviewController {
     this.gestureOffsetX = 0;
     this.gestureOffsetY = 0;
     this.gestureScrimOpacity = undefined;
-    this.panX = 0;
-    this.panY = 0;
     this.swipeDismissActive = false;
     this.swipeDismissScrimOpacity = undefined;
     this.trackpadSwipeDelta = 0;
     this.trackpadSwipeLastTime = 0;
     this.trackpadSwipeLockedUntil = 0;
+    this.nativeGestureActive = false;
+    this.zoomGestureCooldownUntil = 0;
+    this.zoomPanX = 0;
+    this.zoomPanY = 0;
+    this.zoomPanGesture = undefined;
+    this.renderRequest = 0;
     this.motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     this.dialog.getOpenAnimation = () => IMAGE_DIALOG_OPEN_ANIMATION;
@@ -254,6 +284,10 @@ class ImagePreviewController {
     document.addEventListener("click", this.handleDocumentClick, { ...options, capture: true });
     document.addEventListener("keydown", this.handleDocumentKeydown, { ...options, capture: true });
     document.addEventListener("gesturestart", this.handleNativeGestureStart, {
+      ...options,
+      passive: true,
+    });
+    document.addEventListener("gestureend", this.handleNativeGestureEnd, {
       ...options,
       passive: true,
     });
@@ -371,7 +405,7 @@ class ImagePreviewController {
     if (!this.isOpen || isHistoryMarker(event.state, this.historyToken)) return;
 
     this.historyEntryActive = false;
-    void this.closeDialog("history");
+    this.requestClose("history");
   };
 
   handleDialogKeydown = (event) => {
@@ -385,7 +419,7 @@ class ImagePreviewController {
       return;
     }
 
-    if (this.isBrowserZoomed()) return;
+    if (this.gestureNavigationBlocked()) return;
 
     if (this.items.length <= 1) return;
 
@@ -408,6 +442,28 @@ class ImagePreviewController {
       return;
     }
 
+    if (this.isBrowserZoomed()) {
+      if (event.pointerType !== "mouse") return;
+
+      this.hideTooltip();
+      this.activePointers.add(event.pointerId);
+      this.zoomPanGesture = {
+        id: event.pointerId,
+        startPanX: this.zoomPanX,
+        startPanY: this.zoomPanY,
+        x: event.clientX,
+        y: event.clientY,
+      };
+      this.stage.setAttribute("data-image-dragging", "");
+      try {
+        this.stage.setPointerCapture(event.pointerId);
+      } catch {}
+      if (event.cancelable) event.preventDefault();
+      return;
+    }
+
+    if (this.gestureNavigationBlocked()) return;
+
     this.hideTooltip();
     this.activePointers.add(event.pointerId);
     if (event.pointerType === "mouse") {
@@ -428,9 +484,6 @@ class ImagePreviewController {
     this.pointerGesture = {
       axis: null,
       id: event.pointerId,
-      mode: this.isBrowserZoomed() ? "browser-pan" : "gesture",
-      panX: this.panX,
-      panY: this.panY,
       time: Date.now(),
       x: event.clientX,
       y: event.clientY,
@@ -442,19 +495,29 @@ class ImagePreviewController {
   handlePointerMove = (event) => {
     if (!this.activePointers.has(event.pointerId)) return;
 
-    const gesture = this.pointerGesture;
-    if (!gesture || gesture.id !== event.pointerId) return;
-    const deltaX = event.clientX - gesture.x;
-    const deltaY = event.clientY - gesture.y;
+    const zoomPanGesture = this.zoomPanGesture;
+    if (zoomPanGesture?.id === event.pointerId) {
+      if (!this.isBrowserZoomed()) {
+        this.cancelPointerGesture();
+        return;
+      }
 
-    if (gesture.mode === "browser-pan") {
+      this.setZoomPan(
+        zoomPanGesture.startPanX + event.clientX - zoomPanGesture.x,
+        zoomPanGesture.startPanY + event.clientY - zoomPanGesture.y,
+      );
       if (event.cancelable) event.preventDefault();
-      this.panX = gesture.panX + deltaX;
-      this.panY = gesture.panY + deltaY;
-      this.clampPan();
-      this.applyViewTransform();
       return;
     }
+
+    const gesture = this.pointerGesture;
+    if (!gesture || gesture.id !== event.pointerId) return;
+    if (this.gestureNavigationBlocked()) {
+      this.cancelPointerGesture();
+      return;
+    }
+    const deltaX = event.clientX - gesture.x;
+    const deltaY = event.clientY - gesture.y;
 
     if (!gesture.axis && Math.hypot(deltaX, deltaY) >= DRAG_AXIS_LOCK_DISTANCE) {
       gesture.axis = Math.abs(deltaX) >= Math.abs(deltaY) ? "horizontal" : "vertical";
@@ -470,6 +533,17 @@ class ImagePreviewController {
   };
 
   handlePointerUp = (event) => {
+    if (this.zoomPanGesture?.id === event.pointerId) {
+      this.activePointers.delete(event.pointerId);
+      this.zoomPanGesture = undefined;
+      this.stage.removeAttribute("data-image-dragging");
+      try {
+        this.stage.releasePointerCapture(event.pointerId);
+      } catch {}
+      if (event.cancelable) event.preventDefault();
+      return;
+    }
+
     const gesture = this.pointerGesture;
     const wasMultiPointer = this.hadMultiPointerGesture || this.activePointers.size > 1;
     const pointer = { x: event.clientX, y: event.clientY };
@@ -491,16 +565,14 @@ class ImagePreviewController {
     this.pointerGesture = undefined;
     this.stage.removeAttribute("data-image-dragging");
     if (!gesture || gesture.id !== event.pointerId) return;
+    if (this.gestureNavigationBlocked()) {
+      this.clearGesturePreview();
+      return;
+    }
 
     const deltaX = event.clientX - gesture.x;
     const deltaY = event.clientY - gesture.y;
     const elapsed = Math.max(1, Date.now() - gesture.time);
-    if (gesture.mode === "browser-pan") {
-      if (Math.abs(deltaX) <= TAP_DISTANCE && Math.abs(deltaY) <= TAP_DISTANCE) {
-        this.handleTap(pointer);
-      }
-      return;
-    }
 
     const axis =
       gesture.axis ??
@@ -547,6 +619,13 @@ class ImagePreviewController {
   };
 
   handlePointerCancel = (event) => {
+    if (this.zoomPanGesture?.id === event.pointerId) {
+      this.activePointers.delete(event.pointerId);
+      this.zoomPanGesture = undefined;
+      this.stage.removeAttribute("data-image-dragging");
+      return;
+    }
+
     this.activePointers.delete(event.pointerId);
     if (this.activePointers.size > 0) return;
 
@@ -559,13 +638,23 @@ class ImagePreviewController {
   handleNativeGestureStart = () => {
     if (!this.isOpen) return;
 
-    this.activePointers.clear();
-    this.hadMultiPointerGesture = false;
-    this.pointerGesture = undefined;
-    this.stage.removeAttribute("data-image-dragging");
+    this.nativeGestureActive = true;
+    this.renderRequest += 1;
+    this.cancelPointerGesture();
+    this.cancelImageMotion();
     this.clearGesturePreview();
     this.clearTapTimer();
     this.lastTap = undefined;
+    this.trackpadSwipeDelta = 0;
+  };
+
+  handleNativeGestureEnd = () => {
+    if (!this.isOpen) return;
+
+    this.nativeGestureActive = false;
+    this.zoomGestureCooldownUntil = performance.now() + ZOOM_GESTURE_COOLDOWN_MS;
+    requestAnimationFrame(this.handleViewportChange);
+    window.setTimeout(this.handleViewportChange, ZOOM_GESTURE_COOLDOWN_MS);
   };
 
   handleWheel = (event) => {
@@ -580,17 +669,21 @@ class ImagePreviewController {
 
     if (this.isBrowserZoomed()) {
       if (event.cancelable) event.preventDefault();
-
       const wheelUnit =
         event.deltaMode === WheelEvent.DOM_DELTA_LINE
           ? WHEEL_LINE_HEIGHT
           : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
             ? Math.max(this.stage.clientWidth, this.stage.clientHeight)
             : 1;
-      this.panX -= event.deltaX * wheelUnit;
-      this.panY -= event.deltaY * wheelUnit;
-      this.clampPan();
-      this.applyViewTransform();
+      this.setZoomPan(
+        this.zoomPanX - event.deltaX * wheelUnit,
+        this.zoomPanY - event.deltaY * wheelUnit,
+      );
+      this.trackpadSwipeDelta = 0;
+      return;
+    }
+
+    if (this.gestureNavigationBlocked()) {
       this.trackpadSwipeDelta = 0;
       return;
     }
@@ -616,15 +709,39 @@ class ImagePreviewController {
   };
 
   handleViewportChange = () => {
+    const wasZoomed = this.isBrowserZoomed();
     this.syncBrowserZoomState();
-    if (!this.isBrowserZoomed()) return;
-    this.clampPan();
-    this.applyViewTransform();
+    const zoomed = this.isBrowserZoomed();
+
+    if (zoomed) {
+      if (!wasZoomed) {
+        this.renderRequest += 1;
+        this.cancelPointerGesture();
+        this.cancelImageMotion();
+        this.clearGesturePreview();
+      }
+      this.clampZoomPan();
+      this.applyViewTransform();
+      this.trackpadSwipeDelta = 0;
+      return;
+    }
+
+    if (wasZoomed) {
+      this.nativeGestureActive = false;
+      this.zoomGestureCooldownUntil = performance.now() + ZOOM_GESTURE_COOLDOWN_MS;
+      this.cancelPointerGesture();
+      this.cancelImageMotion();
+      this.clearGesturePreview();
+      this.image.style.removeProperty("opacity");
+      this.image.style.removeProperty("transform");
+      this.trackpadSwipeDelta = 0;
+      this.trackpadSwipeLockedUntil = this.zoomGestureCooldownUntil;
+    }
   };
 
   handleImageLoad = () => {
     if (this.isBrowserZoomed()) {
-      this.clampPan();
+      this.clampZoomPan();
       this.applyViewTransform();
     }
     if (this.informationOpen) this.updateInformation();
@@ -661,12 +778,15 @@ class ImagePreviewController {
       0,
       this.items.findIndex((item) => item.src === selectedItem.src),
     );
+    this.pendingIndex = undefined;
+    this.browserZoomBaselineDpr = Math.max(0.1, window.devicePixelRatio || 1);
+    this.browserZoomScale = 1;
     this.triggerImage = sourceImage;
     this.isOpen = true;
     this.isClosing = false;
     this.finishInformationClose(false);
     this.setControlsVisible(true);
-    this.renderCurrent();
+    await this.renderCurrent();
     this.lockPageScroll();
     this.hideTooltip();
 
@@ -721,13 +841,31 @@ class ImagePreviewController {
     return Number.isFinite(value) && value > 0 ? value : undefined;
   }
 
-  renderCurrent(motion) {
-    const item = this.items[this.currentIndex];
+  async renderCurrent(motion, index = this.currentIndex) {
+    const normalizedIndex = ((index % this.items.length) + this.items.length) % this.items.length;
+    const item = this.items[normalizedIndex];
     if (!item) return;
+    const request = ++this.renderRequest;
+
+    if (motion && !(await decodeImageSource(item.src))) {
+      if (request === this.renderRequest) this.pendingIndex = undefined;
+      return;
+    }
+    if (
+      request !== this.renderRequest ||
+      !this.isOpen ||
+      this.isClosing ||
+      (motion && this.gestureNavigationBlocked())
+    ) {
+      if (request === this.renderRequest) this.pendingIndex = undefined;
+      return;
+    }
 
     this.cancelImageMotion();
     this.resetView();
     const outgoingImage = motion ? this.createOutgoingImage(motion) : null;
+    this.currentIndex = normalizedIndex;
+    this.pendingIndex = undefined;
     this.image.src = item.src;
     this.image.alt = item.alt || item.label;
     this.dialog.setAttribute("aria-label", `Aperçu de l’image : ${item.label}`);
@@ -741,12 +879,19 @@ class ImagePreviewController {
       this.imageMotionFrame = requestAnimationFrame(() => {
         this.imageMotionFrame = undefined;
         this.image.classList.add(`is-entering-${motion}`);
-        this.imageMotionTimer = window.setTimeout(() => {
+        const finishMotion = () => {
+          if (this.imageMotionCleanup !== finishMotion) return;
+          this.image.removeEventListener("animationend", finishMotion);
+          if (this.imageMotionTimer) window.clearTimeout(this.imageMotionTimer);
           this.image.classList.remove(`is-entering-${motion}`);
           this.outgoingImage?.remove();
           this.outgoingImage = undefined;
           this.imageMotionTimer = undefined;
-        }, GALLERY_MOTION_DURATION_MS);
+          this.imageMotionCleanup = undefined;
+        };
+        this.imageMotionCleanup = finishMotion;
+        this.image.addEventListener("animationend", finishMotion);
+        this.imageMotionTimer = window.setTimeout(finishMotion, GALLERY_MOTION_DURATION_MS + 100);
       });
     }
 
@@ -772,65 +917,87 @@ class ImagePreviewController {
   }
 
   previous() {
-    this.goTo(this.currentIndex - 1, "previous");
+    this.goTo((this.pendingIndex ?? this.currentIndex) - 1, "previous");
   }
 
   next() {
-    this.goTo(this.currentIndex + 1, "next");
+    this.goTo((this.pendingIndex ?? this.currentIndex) + 1, "next");
   }
 
   goTo(index, motion) {
-    if (this.items.length < 1) return;
+    if (this.items.length < 1 || this.gestureNavigationBlocked()) return;
 
     this.hideTooltip();
     this.setControlsVisible(true);
-    this.currentIndex = ((index % this.items.length) + this.items.length) % this.items.length;
-    this.renderCurrent(motion);
+    this.pendingIndex = ((index % this.items.length) + this.items.length) % this.items.length;
+    void this.renderCurrent(motion, this.pendingIndex);
   }
 
   syncBrowserZoomState() {
-    this.browserZoomScale = Math.max(1, window.visualViewport?.scale ?? 1);
-    if (!this.isBrowserZoomed()) {
-      this.panX = 0;
-      this.panY = 0;
+    const pageZoomScale = (window.devicePixelRatio || 1) / this.browserZoomBaselineDpr;
+    this.browserZoomScale = Math.max(1, window.visualViewport?.scale ?? 1, pageZoomScale);
+    const zoomed = this.isBrowserZoomed();
+    if (zoomed) this.clampZoomPan();
+    else {
+      this.zoomPanX = 0;
+      this.zoomPanY = 0;
     }
-    this.stage.toggleAttribute("data-browser-zoomed", this.isBrowserZoomed());
+    this.stage.toggleAttribute("data-browser-zoomed", zoomed);
   }
 
   isBrowserZoomed() {
     return this.browserZoomScale > 1 + ZOOM_EPSILON;
   }
 
-  getPanBounds() {
-    const stageRect = this.stage.getBoundingClientRect();
-    const hiddenRatio = this.isBrowserZoomed() ? 1 - 1 / this.browserZoomScale : 0;
+  gestureNavigationBlocked() {
+    return (
+      this.nativeGestureActive ||
+      this.isBrowserZoomed() ||
+      performance.now() < this.zoomGestureCooldownUntil
+    );
+  }
+
+  zoomPanBounds() {
+    if (!this.isBrowserZoomed()) return { x: 0, y: 0 };
+
+    const rect = this.stage.getBoundingClientRect();
+    const hiddenRatio = 1 - 1 / this.browserZoomScale;
     return {
-      x: Math.max(0, (stageRect.width * hiddenRatio) / 2),
-      y: Math.max(0, (stageRect.height * hiddenRatio) / 2),
+      x: Math.max(0, (rect.width * hiddenRatio) / 2),
+      y: Math.max(0, (rect.height * hiddenRatio) / 2),
     };
   }
 
-  clampPan() {
-    if (!this.isBrowserZoomed()) {
-      this.panX = 0;
-      this.panY = 0;
-      return;
-    }
+  clampZoomPan() {
+    const bounds = this.zoomPanBounds();
+    this.zoomPanX = clamp(this.zoomPanX, -bounds.x, bounds.x);
+    this.zoomPanY = clamp(this.zoomPanY, -bounds.y, bounds.y);
+  }
 
-    const bounds = this.getPanBounds();
-    this.panX = clamp(this.panX, -bounds.x, bounds.x);
-    this.panY = clamp(this.panY, -bounds.y, bounds.y);
+  setZoomPan(x, y) {
+    this.zoomPanX = x;
+    this.zoomPanY = y;
+    this.clampZoomPan();
+    this.applyViewTransform();
   }
 
   applyViewTransform() {
-    const x = this.panX + this.gestureOffsetX;
-    const y = this.panY + this.gestureOffsetY;
+    const zoomed = this.isBrowserZoomed();
+    const x = zoomed ? this.zoomPanX : this.gestureOffsetX;
+    const y = zoomed ? this.zoomPanY : this.gestureOffsetY;
     const transformed = Math.abs(x) > 0.1 || Math.abs(y) > 0.1;
 
     if (transformed) {
       this.image.style.transform = `translate3d(${x}px, ${y}px, 0)`;
     } else {
       this.image.style.removeProperty("transform");
+    }
+
+    if (zoomed) {
+      this.image.style.removeProperty("opacity");
+      this.clearGestureScrim();
+      this.stage.setAttribute("data-browser-zoomed", "");
+      return;
     }
 
     const distance = Math.hypot(this.gestureOffsetX, this.gestureOffsetY);
@@ -934,8 +1101,9 @@ class ImagePreviewController {
     this.gestureSettleTimer = undefined;
     this.gestureOffsetX = 0;
     this.gestureOffsetY = 0;
-    this.panX = 0;
-    this.panY = 0;
+    this.zoomPanX = 0;
+    this.zoomPanY = 0;
+    this.zoomPanGesture = undefined;
     this.swipeDismissActive = false;
     this.swipeDismissScrimOpacity = undefined;
     this.image.classList.remove("is-gesture-settling");
@@ -944,6 +1112,19 @@ class ImagePreviewController {
     this.stage.removeAttribute("data-image-dragging");
     this.clearGestureScrim();
     this.syncBrowserZoomState();
+  }
+
+  cancelPointerGesture() {
+    for (const pointerId of this.activePointers) {
+      try {
+        if (this.stage.hasPointerCapture(pointerId)) this.stage.releasePointerCapture(pointerId);
+      } catch {}
+    }
+    this.activePointers.clear();
+    this.hadMultiPointerGesture = false;
+    this.pointerGesture = undefined;
+    this.zoomPanGesture = undefined;
+    this.stage.removeAttribute("data-image-dragging");
   }
 
   handleTap(pointer) {
@@ -1026,7 +1207,10 @@ class ImagePreviewController {
     this.informationButton.setAttribute("aria-expanded", "false");
     this.resetShareFeedback();
     if (restoreFocus && this.isOpen && this.dialog.open) {
-      requestAnimationFrame(() => this.informationButton.focus({ preventScroll: true }));
+      requestAnimationFrame(() => {
+        this.informationButton.focus({ preventScroll: true });
+        this.hideTooltip();
+      });
     }
   }
 
@@ -1227,6 +1411,11 @@ class ImagePreviewController {
 
   requestClose(reason) {
     if (!this.isOpen || this.isClosing) return;
+    if (reason.startsWith("swipe-") && this.gestureNavigationBlocked()) return;
+
+    this.renderRequest += 1;
+    this.pendingIndex = undefined;
+    this.cancelImageMotion();
 
     if (!reason.startsWith("swipe-")) {
       this.swipeDismissActive = false;
@@ -1272,6 +1461,8 @@ class ImagePreviewController {
     }
     this.historyEntryActive = false;
     this.historyToken = null;
+    this.renderRequest += 1;
+    this.pendingIndex = undefined;
     this.cancelImageMotion();
     this.clearTapTimer();
     this.lastTap = undefined;
@@ -1279,6 +1470,8 @@ class ImagePreviewController {
     this.hadMultiPointerGesture = false;
     this.pointerGesture = undefined;
     this.trackpadSwipeDelta = 0;
+    this.nativeGestureActive = false;
+    this.zoomGestureCooldownUntil = 0;
     this.resetView();
     this.status.textContent = "";
     this.isOpen = false;
@@ -1289,16 +1482,19 @@ class ImagePreviewController {
     this.setControlsVisible(true);
     this.unlockPageScroll();
     this.triggerImage?.focus({ preventScroll: true });
+    this.hideTooltip();
     this.restoreLockedScrollPosition();
     this.triggerImage = undefined;
   }
 
   cancelImageMotion() {
     if (this.imageMotionFrame) cancelAnimationFrame(this.imageMotionFrame);
-    if (this.imageMotionTimer) window.clearTimeout(this.imageMotionTimer);
+    if (this.imageMotionCleanup) this.imageMotionCleanup();
+    else if (this.imageMotionTimer) window.clearTimeout(this.imageMotionTimer);
     if (this.gestureSettleTimer) window.clearTimeout(this.gestureSettleTimer);
     this.imageMotionFrame = undefined;
     this.imageMotionTimer = undefined;
+    this.imageMotionCleanup = undefined;
     this.gestureSettleTimer = undefined;
     this.outgoingImage?.remove();
     this.outgoingImage = undefined;

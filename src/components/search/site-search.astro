@@ -8,7 +8,8 @@ const dialogId = "site-search-dialog";
   <md-icon-button
     type="button"
     class="site-search-trigger-button"
-    title="Rechercher"
+    data-tooltip="Rechercher"
+    data-tooltip-suppress-expanded
     aria-label="Rechercher"
     aria-haspopup="dialog"
     aria-controls={dialogId}
@@ -29,7 +30,7 @@ const dialogId = "site-search-dialog";
         <h2>Recherche</h2>
         <md-icon-button
           type="button"
-          title="Fermer la recherche"
+          data-tooltip="Fermer la recherche"
           aria-label="Fermer la recherche"
           data-search-close
         >

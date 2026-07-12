@@ -366,51 +366,40 @@ Retrouver rapidement un contenu.
 
 {{< /cards >}}
 
-## Annotations et abréviations
+## Tooltips simples et enrichis
 
-Les abréviations utilisent le tooltip simple du site. Les annotations deviennent des popovers
-contextuels non modaux : la référence reste un vrai bouton clavier, tandis que le contenu enrichi
-est rendu dans un `<dialog popover>` capable d’accueillir du Markdown, une image et des liens.
-Le repère numérique conserve le retour visuel Material au clic. `Escape` ferme la surface et rend
-le focus à sa référence.
+Les abréviations utilisent le tooltip simple du site. Un rich tooltip est une surface Material
+distincte : son déclencheur reste un vrai bouton clavier, sans repère numérique ni apparence de note
+de bas de page. Il s’ouvre au survol ou au focus et se referme dès que le déclencheur est quitté.
 
-Pour une indication courte, `title` ou `data-tooltip` suffit : le contrôleur central l’affiche au
-survol et au focus sans rendre le texte ou l’icône focalisable. Pour une annotation enrichie,
-`annotation-ref` et `annotation` doivent partager le même `id`; `title` nomme le dialogue.
+Le contenu enrichi accepte du Markdown. Un bloc de code est colorisé directement par Shiki sous la
+forme `<pre><code>`, sans bouton de copie et sans surlignage de lignes.
 
-```markdown
-API {{< abbr text="HTTP" title="Hypertext Transfer Protocol" />}}
-{{< annotation-ref id="note-http" label="1" />}}
+````markdown
+API {{< abbr text="HTTP" title="Hypertext Transfer Protocol" />}} —
+{{< rich-tooltip-ref id="tooltip-http-shiki" label="Voir l’exemple Shiki" />}}
 
-{{< annotations label="Notes" >}}
-{{< annotation id="note-http" label="1" title="HTTP et contenu enrichi" >}}
+{{< rich-tooltip id="tooltip-http-shiki" title="Requête HTTP" >}}
 
-Le contenu reste du **Markdown** et peut inclure une image.
-
-![Logo du site](/mask.webp)
-
-[Voir les articles Material](/tags/material/)
-
-{{< /annotation >}}
-{{< /annotations >}}
+```ts
+const response = await fetch("https://example.com/api");
+const payload = await response.json();
 ```
 
-API {{< abbr text="HTTP" title="Hypertext Transfer Protocol" />}}
-{{< annotation-ref id="note-http" label="1" />}}
+{{< /rich-tooltip >}}
+````
 
-{{< annotations label="Notes" >}}
+API {{< abbr text="HTTP" title="Hypertext Transfer Protocol" />}} —
+{{< rich-tooltip-ref id="tooltip-http-shiki" label="Voir l’exemple Shiki" />}}
 
-{{< annotation id="note-http" label="1" title="HTTP et contenu enrichi" >}}
+{{< rich-tooltip id="tooltip-http-shiki" title="Requête HTTP" >}}
 
-Le contenu reste du **Markdown** et peut inclure une image.
+```ts
+const response = await fetch("https://example.com/api");
+const payload = await response.json();
+```
 
-![Logo du site](/mask.webp)
-
-[Voir les articles Material](/tags/material/)
-
-{{< /annotation >}}
-
-{{< /annotations >}}
+{{< /rich-tooltip >}}
 
 ## Figures
 

@@ -180,6 +180,8 @@ const speedInsightsVersion = speedInsightsPackage.version;
 
         const clearDynamicColor = () => {
           root.style.removeProperty("--md-source-color");
+          root.style.removeProperty("--home-hero-initial-on-image");
+          root.style.removeProperty("--home-hero-initial-on-image-muted");
           for (const role of dynamicColorRoles) {
             root.style.removeProperty(`--md-sys-color-${role}`);
           }
@@ -213,6 +215,8 @@ const speedInsightsVersion = speedInsightsPackage.version;
             root.dataset.materialDynamicColor = "true";
             root.dataset.materialDynamicColorSource = sourceColor;
             root.style.setProperty("--md-source-color", sourceColor);
+            root.style.setProperty("--home-hero-initial-on-image", schemes.dark.primary);
+            root.style.setProperty("--home-hero-initial-on-image-muted", schemes.dark.secondary);
             for (const role of dynamicColorRoles) {
               root.style.setProperty(`--md-sys-color-${role}`, schemes[theme][role]);
             }

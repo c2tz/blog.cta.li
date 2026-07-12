@@ -11,13 +11,17 @@ export const SITE_EVENTS = Object.freeze({
   konachanRefreshState: "konachan:refresh-state",
 });
 
+// Material does not prescribe a reveal delay. This site-level threshold keeps
+// indeterminate indicators from flashing during operations that finish quickly.
+export const SITE_LOADING_INDICATOR_DELAY_MS = 200;
+
 export const SITE_STORAGE_KEYS = Object.freeze({
   cookieConsent: "ct-cookie-consent-v1",
   explicitContentAcknowledgement: "ct-explicit-content-ack-v1",
   homeDetailView: "home-detail-view-v1",
   homeKonachanBackgrounds: "home-konachan-backgrounds-v8",
   homeKonachanRatingPreference: "home-konachan-rating-preference-v1",
-  ipGeolocation: "site-ip-geolocation-v2",
+  ipGeolocation: "site-ip-geolocation-v3",
   giscusCommentsEnabled: "site-giscus-comments-enabled-v1",
   materialDynamicColorEnabled: "site-material-dynamic-color-enabled-v1",
   materialDynamicColorPalette: "site-material-dynamic-color-palette-v1",
@@ -81,7 +85,7 @@ export const SITE_LEGACY_STORAGE_KEYS = Object.freeze({
   homeDetailView: "home_detail_view_v1",
   homeKonachanBackgrounds: "home_konachan_backgrounds_v6",
   homeKonachanRatingPreference: "home_konachan_rating_preference_v1",
-  ipGeolocation: "site_ip_geolocation_v2",
+  ipGeolocation: "site-ip-geolocation-v2",
   themePreference: "site_theme_preference",
 });
 

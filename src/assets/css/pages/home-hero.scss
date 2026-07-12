@@ -16,6 +16,11 @@
   isolation: isolate;
 }
 
+:root[data-material-dynamic-color] .home-anime-landing {
+  --home-hero-on-image: var(--home-hero-initial-on-image, #e2e2e9);
+  --home-hero-on-image-muted: var(--home-hero-initial-on-image-muted, #e2e2e9);
+}
+
 .home-anime-landing[data-explicit-content="pending"] .home-anime-credit,
 .home-anime-landing[data-explicit-content="pending"] .home-anime-rating-picker {
   display: none;

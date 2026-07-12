@@ -162,7 +162,7 @@ md-filter-chip[selected] {
 }
 
 :is(md-menu-item, md-select-option) {
-  --md-focus-ring-color: var(--md-sys-color-on-surface-variant);
+  --md-focus-ring-color: var(--md-sys-color-secondary);
   --md-focus-ring-width: 2px;
 }
 
@@ -191,8 +191,18 @@ md-filter-chip[selected] {
 }
 
 @media (hover: none) and (pointer: coarse) {
-  :is(md-menu-item, md-select-option) {
+  :root:not([data-focus-modality="keyboard"]) :is(md-menu-item, md-select-option) {
     --md-focus-ring-color: transparent;
+  }
+
+  :root:not([data-focus-modality="keyboard"])
+    :is(md-menu-item, md-select-option):focus-within::part(focus-ring) {
+    display: none;
+  }
+
+  :root[data-focus-modality="keyboard"]
+    :is(md-menu-item, md-select-option):focus-within::part(focus-ring) {
+    display: flex;
   }
 }
 
@@ -249,9 +259,9 @@ md-filter-chip[selected] {
 }
 
 .site-table-page-size-select {
-  --md-outlined-select-text-field-focus-label-text-color: var(--md-sys-color-on-surface-variant);
-  --md-outlined-select-text-field-focus-outline-color: var(--md-sys-color-outline);
-  --md-outlined-select-text-field-focus-trailing-icon-color: var(--md-sys-color-on-surface-variant);
+  --md-outlined-select-text-field-focus-label-text-color: var(--md-sys-color-primary);
+  --md-outlined-select-text-field-focus-outline-color: var(--md-sys-color-primary);
+  --md-outlined-select-text-field-focus-trailing-icon-color: var(--md-sys-color-primary);
   --md-outlined-select-text-field-hover-outline-color: var(--md-sys-color-outline);
   --md-outlined-select-text-field-hover-trailing-icon-color: var(--md-sys-color-on-surface-variant);
   --md-outlined-select-text-field-label-text-color: var(--md-sys-color-on-surface-variant);
@@ -266,16 +276,5 @@ md-filter-chip[selected] {
 
   :is(md-menu-item, md-select-option) {
     --md-focus-ring-color: Highlight;
-  }
-}
-
-@media (hover: none) and (pointer: coarse) {
-  :root {
-    --md-focus-ring-active-width: 0px;
-    --md-focus-ring-width: 0px;
-  }
-
-  :is(md-menu-item, md-select-option):focus-within::part(focus-ring) {
-    display: none;
   }
 }

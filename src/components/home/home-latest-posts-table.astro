@@ -104,7 +104,7 @@ const initialPosts = posts.slice(0, 3);
 </site-home-latest-posts-table>
 
 <script>
-  import { SITE_EVENTS } from "@/lib/site-contracts";
+  import { SITE_EVENTS, SITE_LOADING_INDICATOR_DELAY_MS } from "@/lib/site-contracts";
 
   interface HomeLatestPost {
     readonly dateCompact: string;
@@ -121,7 +121,6 @@ const initialPosts = posts.slice(0, 3);
   type HomeSortColumn = "date" | "title";
   type SortDirection = "asc" | "desc";
 
-  const LOADING_INDICATOR_DELAY_MS = 200;
   const UNSORTED_ICON = "\uE5D7";
   const ASCENDING_ICON = "\uE5D8";
   const DESCENDING_ICON = "\uE5DB";
@@ -428,7 +427,7 @@ const initialPosts = posts.slice(0, 3);
       this.loadingIndicatorTimer = window.setTimeout(() => {
         this.loadingIndicatorTimer = 0;
         if (this.loading && this.loadingProgress) this.loadingProgress.hidden = false;
-      }, LOADING_INDICATOR_DELAY_MS);
+      }, SITE_LOADING_INDICATOR_DELAY_MS);
     }
 
     private endLoading() {

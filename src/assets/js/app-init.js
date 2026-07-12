@@ -1,6 +1,7 @@
 import { initScrollProgressBar, removeReadingProgress } from "./app/reading-progress.js";
 import { initConsoleArt } from "./app/console-art.js";
 import { initSiteTooltips } from "./app/site-tooltips.js";
+import { initSiteRichTooltips } from "./app/site-rich-tooltips.js";
 import { initSiteContextPopovers } from "./app/site-context-popovers.js";
 
 function syncDetailViewBodyState() {
@@ -25,6 +26,7 @@ function initApp() {
   initConsoleArt();
   syncDetailViewBodyState();
   initSiteTooltips();
+  initSiteRichTooltips();
   initSiteContextPopovers();
   void initProseImageEnhancements();
   if (document.body?.dataset.readingProgress === "off") {

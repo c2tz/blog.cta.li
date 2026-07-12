@@ -11,7 +11,7 @@ const options = [
     id="site-theme-trigger"
     type="button"
     class="site-theme-trigger"
-    title="Thème : Système"
+    data-tooltip="Thème : Système"
     aria-label="Thème : Système"
     aria-expanded="false"
     aria-controls="site-theme-menu"
@@ -237,7 +237,7 @@ const options = [
 
     const render = () => {
       const label = labels[preference];
-      trigger.title = `Thème : ${label}`;
+      trigger.dataset.tooltip = `Thème : ${label}`;
       trigger.setAttribute("aria-label", `Thème : ${label}`);
       triggerIcon.textContent = icons[preference];
 

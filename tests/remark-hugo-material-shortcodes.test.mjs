@@ -259,9 +259,34 @@ Une annotation en **Markdown**.
   assert.match(html, /<a href="\/tags\/material\/">Action<\/a>/);
   assert.match(html, /data-tooltip="Interface de programmation"/);
   assert.match(html, /aria-label="API — Interface de programmation"/);
+  assert.doesNotMatch(html, /<abbr[^>]*title=/);
   assert.doesNotMatch(html, /<abbr[^>]*tabindex=/);
   assert.match(html, /class="material-figure"/);
   assert.match(html, /src="\/mask\.webp"/);
+});
+
+test("rend un rich tooltip Material sans repère numérique autour d’un bloc Shiki brut", async () => {
+  const html =
+    await render(`Référence {{< rich-tooltip-ref id="rich-code" label="Voir le code" />}}.
+
+{{< rich-tooltip id="rich-code" title="Exemple TypeScript" >}}
+
+\`\`\`ts
+const value = await Promise.resolve(42);
+\`\`\`
+
+{{< /rich-tooltip >}}`);
+
+  assert.match(html, /<button[^>]*class="material-rich-tooltip-trigger site-rich-tooltip-trigger"/);
+  assert.match(html, /data-rich-tooltip-trigger="rich-code"/);
+  assert.match(html, />Voir le code<\/button>/);
+  assert.doesNotMatch(html, /<sup/);
+  assert.match(html, /<div[^>]*class="material-rich-tooltip site-rich-tooltip"/);
+  assert.match(html, /data-site-rich-tooltip/);
+  assert.match(html, /id="rich-code"[^>]*popover="manual"[^>]*role="tooltip"/);
+  assert.match(html, /id="rich-code-title"[^>]*>Exemple TypeScript<\/div>/);
+  assert.match(html, /<pre[^>]*class="astro-code[^\"]*"[^>]*><code>/);
+  assert.doesNotMatch(html, /code-copy-button|code-actions|highlighted|focused|diff/);
 });
 
 test("rend les onglets et tableaux uniquement via leurs shortcodes", async () => {

@@ -1,7 +1,7 @@
 <div data-page-loading-root></div>
 
 <script>
-  import { SITE_EVENTS } from "@/lib/site-contracts";
+  import { SITE_EVENTS, SITE_LOADING_INDICATOR_DELAY_MS } from "@/lib/site-contracts";
 
   interface LoadingEventDetail {
     key?: string;
@@ -33,7 +33,7 @@
               aria-label="Chargement de la page"
             ></md-circular-progress>
           </div>`;
-      }, 200);
+      }, SITE_LOADING_INDICATOR_DELAY_MS);
     };
     const start = (key: string) => {
       const wasInactive = active.size === 0;

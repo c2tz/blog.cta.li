@@ -375,6 +375,39 @@ summary.material-admonition-title::-webkit-details-marker {
   margin-block-end: 0;
 }
 
+.material-rich-tooltip-trigger {
+  position: relative;
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  background: transparent;
+  color: var(--md-sys-color-primary);
+  cursor: help;
+  font: inherit;
+  font-weight: 500;
+  line-height: inherit;
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: from-font;
+  text-underline-offset: 0.16em;
+}
+
+.material-rich-tooltip-trigger:hover {
+  color: var(--md-sys-color-primary);
+  text-decoration-style: solid;
+}
+
+.material-rich-tooltip-trigger:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
+.material-rich-tooltip {
+  text-align: start;
+}
+
 .material-figure {
   display: grid;
   justify-items: center;

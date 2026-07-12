@@ -1,5 +1,7 @@
 import { isSearchSortMode } from "@/components/search/site-search-model";
 import { loadPagefindModule } from "@/components/search/site-search-pagefind";
+import { SITE_LOADING_INDICATOR_DELAY_MS } from "@/lib/site-contracts";
+import { hideSiteTooltip } from "./site-tooltips.js";
 
 const MIN_QUERY_LENGTH = 2;
 const RESULT_LIMIT = 12;
@@ -7,7 +9,6 @@ const EXPANDED_RESULT_FETCH_LIMIT = 100;
 const TAG_FILTER_LIMIT = 18;
 const MAX_SELECTED_TAGS = 3;
 const SEARCH_TIMEOUT_MS = 12_000;
-const LOADING_INDICATOR_DELAY_MS = 200;
 const QUERY_DEBOUNCE_MS = 160;
 const MAX_PRIORITY = 100;
 const RELEVANCE_PRIORITY_WEIGHT = 0.01;
@@ -361,7 +362,7 @@ class SearchPanelController {
     const wrapper = document.createElement("span");
     const icon = document.createElement("md-icon");
     icon.textContent = iconValue;
-    icon.title = tooltip;
+    icon.dataset.tooltip = tooltip;
     icon.setAttribute("aria-label", tooltip);
     const time = document.createElement("time");
     if (dateTime) time.dateTime = dateTime;
@@ -543,7 +544,7 @@ class SearchPanelController {
     this.loadingIndicatorTimer = window.setTimeout(() => {
       this.loadingIndicatorTimer = 0;
       if (this.loadingOperations.size > 0) this.progress.hidden = false;
-    }, LOADING_INDICATOR_DELAY_MS);
+    }, SITE_LOADING_INDICATOR_DELAY_MS);
   }
 
   hideLoadingIndicator() {
@@ -844,7 +845,9 @@ export function initSiteSearchTriggers() {
 
     const open = async () => {
       if (opening || dialog.open) return;
+      hideSiteTooltip();
       opening = true;
+      openButton.setAttribute("aria-expanded", "true");
       openButton.disabled = true;
       openButton.setAttribute("aria-busy", "true");
       indicatorTimer = window.setTimeout(() => {
@@ -852,7 +855,7 @@ export function initSiteSearchTriggers() {
         if (!opening) return;
         openIcon.hidden = true;
         openProgress.hidden = false;
-      }, LOADING_INDICATOR_DELAY_MS);
+      }, SITE_LOADING_INDICATOR_DELAY_MS);
 
       try {
         await Promise.all([
@@ -876,6 +879,11 @@ export function initSiteSearchTriggers() {
       void open();
     });
     closeButton.addEventListener("click", () => void dialog.close("close-button"));
-    dialog.addEventListener("closed", () => openButton.focus({ preventScroll: true }));
+    dialog.addEventListener("closed", () => {
+      openButton.setAttribute("aria-expanded", "false");
+      openButton.focus({ preventScroll: true });
+      hideSiteTooltip();
+    });
+    openButton.setAttribute("aria-expanded", "false");
   });
 }

@@ -53,11 +53,19 @@ const PAIRED_SHORTCODES = new Set([
   "card",
   "cards",
   "material-table",
+  "rich-tooltip",
   "shiki",
   "tab",
   "tabs",
 ]);
-const INLINE_SHORTCODES = new Set(["abbr", "annotation-ref", "icon", "inline-badge", "kbd"]);
+const INLINE_SHORTCODES = new Set([
+  "abbr",
+  "annotation-ref",
+  "icon",
+  "inline-badge",
+  "kbd",
+  "rich-tooltip-ref",
+]);
 const KNOWN_SHORTCODES = Object.freeze([
   "abbr",
   "admonition",
@@ -73,6 +81,8 @@ const KNOWN_SHORTCODES = Object.freeze([
   "kbd",
   "material-table",
   "progress",
+  "rich-tooltip",
+  "rich-tooltip-ref",
   "shiki",
   "tab",
   "tabs",
@@ -443,7 +453,6 @@ function createAbbreviation(shortcode, file) {
       ariaLabel: `${String(text)} — ${String(title)}`,
       className: ["material-abbreviation"],
       dataTooltip: String(title),
-      title: String(title),
     },
     [textNode(String(text))],
   );
@@ -516,6 +525,55 @@ function createAnnotation(shortcode, children, file) {
       elementNode(
         "div",
         { className: ["material-annotation-content", "site-context-popover-content"] },
+        children,
+      ),
+    ],
+  );
+}
+
+function createRichTooltipReference(shortcode, file) {
+  const id = safeId(parameter(shortcode, "id", 0, undefined), "rich-tooltip-ref", file);
+  const label = String(parameter(shortcode, "label", 1, "Afficher le détail"));
+  return elementNode(
+    "button",
+    {
+      ariaControls: id,
+      ariaExpanded: "false",
+      className: ["material-rich-tooltip-trigger", "site-rich-tooltip-trigger"],
+      dataRichTooltipTrigger: id,
+      dataSiteRichTooltipTrigger: "",
+      type: "button",
+    },
+    [textNode(label)],
+  );
+}
+
+function createRichTooltip(shortcode, children, file) {
+  const id = safeId(parameter(shortcode, "id", 0, undefined), "rich-tooltip", file);
+  const title = String(shortcode.named.title ?? "Information complémentaire");
+  const titleId = `${id}-title`;
+  return elementNode(
+    "div",
+    {
+      className: ["material-rich-tooltip", "site-rich-tooltip"],
+      dataNoImageDialog: "",
+      dataSiteRichTooltip: "",
+      id,
+      popover: "manual",
+      role: "tooltip",
+    },
+    [
+      elementNode(
+        "div",
+        {
+          className: ["material-rich-tooltip-title", "site-rich-tooltip-title"],
+          id: titleId,
+        },
+        [textNode(title)],
+      ),
+      elementNode(
+        "div",
+        { className: ["material-rich-tooltip-content", "site-rich-tooltip-content"] },
         children,
       ),
     ],
@@ -878,6 +936,10 @@ function renderShortcode(shortcode, children, file) {
       return createMaterialTable(shortcode, children);
     case "progress":
       return createProgress(shortcode, file);
+    case "rich-tooltip":
+      return createRichTooltip(shortcode, children, file);
+    case "rich-tooltip-ref":
+      return createRichTooltipReference(shortcode, file);
     case "shiki":
       return createShiki(shortcode, children, file);
     case "tab":

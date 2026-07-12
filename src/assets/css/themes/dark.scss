@@ -16,14 +16,6 @@
   color: var(--site-muted);
 }
 
-:root[data-theme="dark"] .cookie-consent-backdrop {
-  background: transparent;
-}
-
-:root[data-theme="dark"] .cookie-consent-backdrop--modal {
-  background: var(--site-bg);
-}
-
 :root[data-theme="dark"] .home-anime-background::after {
   background:
     linear-gradient(to bottom, rgb(0 0 0 / 0.18), rgb(0 0 0 / 0.42)),

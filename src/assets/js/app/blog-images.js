@@ -7,9 +7,11 @@ function isDialogImageCandidate(img) {
 
 function setImageDialogLabel(img) {
   const filename = fileNameFromURL(img.currentSrc || img.src);
-  const label = img.alt.trim() || img.title.trim() || filename;
+  const label = img.alt.trim() || img.title.trim() || img.dataset.tooltip?.trim() || filename;
   img.setAttribute("aria-label", `Agrandir l’image : ${label}`);
-  if (!img.title.trim()) img.setAttribute("title", label);
+  img.dataset.tooltip = label;
+  img.dataset.tooltipAnchor = "cursor";
+  img.removeAttribute("title");
 }
 
 export function prepareBlogImageDialogs() {

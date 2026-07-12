@@ -73,6 +73,8 @@ export function readMaterialDynamicColorPalette() {
 
 function clearMaterialDynamicColorProperties(root) {
   root.style.removeProperty("--md-source-color");
+  root.style.removeProperty("--home-hero-initial-on-image");
+  root.style.removeProperty("--home-hero-initial-on-image-muted");
   for (const role of MATERIAL_DYNAMIC_COLOR_ROLES) {
     root.style.removeProperty(`--md-sys-color-${role}`);
   }
@@ -96,6 +98,8 @@ export function syncMaterialDynamicColor({ palette: paletteInput } = {}) {
     root.dataset.materialDynamicColor = "true";
     root.dataset.materialDynamicColorSource = palette.sourceColor;
     root.style.setProperty("--md-source-color", palette.sourceColor);
+    root.style.setProperty("--home-hero-initial-on-image", palette.schemes.dark.primary);
+    root.style.setProperty("--home-hero-initial-on-image-muted", palette.schemes.dark.secondary);
     for (const role of MATERIAL_DYNAMIC_COLOR_ROLES) {
       root.style.setProperty(`--md-sys-color-${role}`, palette.schemes[theme][role]);
     }

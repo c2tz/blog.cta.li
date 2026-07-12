@@ -2,7 +2,7 @@
   <md-icon-button
     type="button"
     class="home-detail-trigger"
-    title="Mode simple"
+    data-tooltip="Mode simple"
     aria-label="Mode simple"
     toggle
   >
@@ -79,7 +79,7 @@
     const apply = () => {
       button.selected = detailed;
       const label = detailed ? "Mode détaillé" : "Mode simple";
-      button.title = label;
+      button.dataset.tooltip = label;
       button.setAttribute("aria-label", label);
       if (detailed) {
         document.documentElement.dataset.homeDetailView = "true";

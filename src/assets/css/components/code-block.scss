@@ -43,13 +43,7 @@ pre.astro-code {
 }
 
 .code-copy-button {
-  --md-focus-ring-color: var(--md-icon-button-icon-color);
-  --md-icon-button-focus-icon-color: var(--site-text);
-  --md-icon-button-hover-icon-color: var(--site-text);
-  --md-icon-button-hover-state-layer-color: var(--site-text);
-  --md-icon-button-icon-color: var(--site-muted);
-  --md-icon-button-pressed-icon-color: var(--site-text);
-  --md-icon-button-pressed-state-layer-color: var(--site-text);
+  --md-focus-ring-color: var(--md-sys-color-secondary);
 
   pointer-events: auto;
 }

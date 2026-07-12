@@ -361,7 +361,9 @@ class SearchPanelController {
 
   syncSortOptions() {
     this.sortSelect.querySelectorAll("md-select-option").forEach((option) => {
-      option.selected = option.value === this.sortMode;
+      const selected = option.value === this.sortMode;
+      option.selected = selected;
+      option.toggleAttribute("data-selected-option", selected);
     });
   }
 

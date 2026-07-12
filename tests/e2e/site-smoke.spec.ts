@@ -88,6 +88,32 @@ async function gotoRoute(page: Page, route: string) {
   await page.goto(route, { waitUntil: "domcontentloaded" });
 }
 
+async function openMaterialSelect(select: Locator) {
+  const field = select.getByRole("combobox");
+
+  await expect(field).toBeVisible();
+  await expect
+    .poll(() =>
+      select.evaluate(async (element) => {
+        const materialSelect = element as HTMLElement & { updateComplete?: Promise<unknown> };
+        await materialSelect.updateComplete;
+
+        const menu = materialSelect.shadowRoot?.querySelector("md-menu") as
+          (HTMLElement & { updateComplete?: Promise<unknown> }) | null;
+        await menu?.updateComplete;
+
+        return Boolean(menu?.shadowRoot && materialSelect.shadowRoot?.querySelector(".field"));
+      }),
+    )
+    .toBe(true);
+  await field.click();
+  await expect
+    .poll(() =>
+      select.evaluate((element) => Boolean((element as HTMLElement & { open?: boolean }).open)),
+    )
+    .toBe(true);
+}
+
 async function waitForNativeEnhancement(page: Page, selector: string) {
   await expect.poll(() => page.locator(selector).getAttribute("data-enhanced")).toBe("true");
 }
@@ -1549,14 +1575,7 @@ test("uses the Material Web pagination menu with keyboard selection", async ({ p
       }),
     )
     .toBe(true);
-  await pageSizeSelect.click();
-  await expect
-    .poll(() =>
-      pageSizeSelect.evaluate((select) =>
-        Boolean((select as HTMLElement & { open?: boolean }).open),
-      ),
-    )
-    .toBe(true);
+  await openMaterialSelect(pageSizeSelect);
   const initialPageSize = pageSizeSelect.locator("md-select-option").first();
   await expect(initialPageSize).toHaveAttribute("data-selected-option", "");
   await expect(initialPageSize.locator(".site-material-menu-check")).toHaveCSS(
@@ -1576,17 +1595,10 @@ test("uses the Material Web pagination menu with keyboard selection", async ({ p
     )
     .toBe(false);
 
-  await pageSizeSelect.click();
+  await openMaterialSelect(pageSizeSelect);
   await expect
     .poll(() => pageSizeSelect.evaluate((select) => String((select as HTMLInputElement).value)))
     .toBe("10");
-  await expect
-    .poll(() =>
-      pageSizeSelect.evaluate((select) =>
-        Boolean((select as HTMLElement & { open?: boolean }).open),
-      ),
-    )
-    .toBe(true);
   await page.keyboard.press("Escape");
   await expect
     .poll(() =>
@@ -1652,10 +1664,10 @@ test("keeps every search sort option visible above the dialog surface", async ({
   await expect(sortSelect).toHaveAttribute("id", /-sort$/);
   await expect(sortSelect).toHaveAttribute("name", "sort");
   await expect.poll(() => sortSelect.evaluate((select) => Boolean(select.shadowRoot))).toBe(true);
-  await sortSelect.click();
   await expect
-    .poll(() => sortSelect.evaluate((select) => (select as HTMLElement & { open: boolean }).open))
-    .toBe(true);
+    .poll(() => sortSelect.evaluate((select) => (select as HTMLInputElement).value))
+    .toBe("relevance");
+  await openMaterialSelect(sortSelect);
 
   const sortOptions = sortSelect.locator("md-select-option");
   await expect(sortOptions).toHaveCount(3);
@@ -1678,7 +1690,7 @@ test("keeps every search sort option visible above the dialog surface", async ({
   await expect
     .poll(() => sortSelect.evaluate((select) => select.matches(":focus-within")))
     .toBe(true);
-  await sortSelect.click();
+  await openMaterialSelect(sortSelect);
   await expect(relevanceOption).toBeVisible();
   const expectOptionFocus = async (option: typeof relevanceOption) => {
     await expect
@@ -1838,7 +1850,7 @@ test("keeps the search sort menu anchored while the zoomed dialog scrolls", asyn
   await expect(searchDialog.getByText(/résultats?\./)).toBeVisible();
 
   const sortSelect = searchDialog.locator("[data-sort-select]");
-  await sortSelect.click();
+  await openMaterialSelect(sortSelect);
   await expect(sortSelect.locator('md-select-option[value="relevance"]')).toBeVisible();
 
   const scrollerState = await searchDialog.evaluate((dialog) => {
@@ -1894,7 +1906,7 @@ test("restores the complete search sort menu after browser dezoom", async ({ pag
 
   const searchDialog = page.locator("md-dialog.site-search-dialog[open]");
   const sortSelect = searchDialog.locator("[data-sort-select]");
-  await sortSelect.click();
+  await openMaterialSelect(sortSelect);
   const titleOption = sortSelect.locator('md-select-option[value="title-asc"]');
 
   const readMenuSize = () =>

@@ -141,6 +141,54 @@ for (const route of ROUTES) {
   });
 }
 
+test("renders the inverse-theme 404 artwork without site chrome", async ({ page }) => {
+  const response = await page.goto("/page-absente-pour-test/", {
+    waitUntil: "domcontentloaded",
+  });
+
+  expect(response?.status()).toBe(404);
+  const expectedNavigationError =
+    "Failed to load resource: the server responded with a status of 404 (Not Found)";
+  expect(pageRuntimeErrors.get(page)).toEqual([expectedNavigationError]);
+  pageRuntimeErrors.set(page, []);
+  await expectResolvedTheme(page);
+  await expect(page.locator("body")).toHaveClass(/not-found-page/);
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Page introuvable (404)" }),
+  ).toBeAttached();
+  await expect(page.locator(".site-header, .site-footer")).toHaveCount(0);
+
+  const expectedArtwork = test.info().project.name.includes("dark")
+    ? "/images/404-screen-light.webp"
+    : "/images/404-screen-dark.webp";
+  const artwork = await page.locator(".not-found-artwork").evaluate((element) => {
+    const styles = getComputedStyle(element);
+    const bounds = element.getBoundingClientRect();
+    return {
+      image: styles.backgroundImage,
+      viewportCovered: bounds.width >= window.innerWidth && bounds.height >= window.innerHeight,
+    };
+  });
+
+  expect(artwork.image).toContain(expectedArtwork);
+  expect(artwork.viewportCovered).toBe(true);
+  await expectNoPageOverflow(page);
+
+  const homeHotspot = page.getByRole("link", { name: "Revenir à l’accueil" });
+  await expect(homeHotspot).toBeVisible();
+  const hotspotBounds = await homeHotspot.boundingBox();
+  const viewport = page.viewportSize();
+  expect(hotspotBounds).not.toBeNull();
+  expect(viewport).not.toBeNull();
+  expect(hotspotBounds!.x).toBeLessThan(viewport!.width);
+  expect(hotspotBounds!.x + hotspotBounds!.width).toBeGreaterThan(0);
+  expect(hotspotBounds!.y).toBeLessThan(viewport!.height);
+  expect(hotspotBounds!.y + hotspotBounds!.height).toBeGreaterThan(0);
+
+  await homeHotspot.click();
+  await expect(page).toHaveURL(/\/$/);
+});
+
 test("shows one cached localized IP and network lookup after consent", async ({ page }) => {
   await page.addInitScript(() => {
     const updatedAt = new Date().toISOString();
@@ -207,11 +255,18 @@ test("shows one accessible simple tooltip without creating keyboard stops", asyn
   await trigger.focus();
   await expectPopoverOpen(tooltip, true);
   await expect(tooltip).toHaveText("Rechercher");
-  const tooltipPalette = await tooltip.evaluate((element) => ({
-    pageBackground: getComputedStyle(document.body).backgroundColor,
-    text: getComputedStyle(element).color,
-  }));
-  expect(tooltipPalette.text).toBe(tooltipPalette.pageBackground);
+  const tooltipPalette = await tooltip.evaluate((element) => {
+    const probe = document.createElement("span");
+    probe.style.color = "var(--md-sys-color-inverse-on-surface)";
+    document.body.append(probe);
+    const result = {
+      expected: getComputedStyle(probe).color,
+      text: getComputedStyle(element).color,
+    };
+    probe.remove();
+    return result;
+  });
+  expect(tooltipPalette.text).toBe(tooltipPalette.expected);
   const tooltipId = await tooltip.getAttribute("id");
   expect(tooltipId).toBeTruthy();
   await expect(trigger).toHaveAttribute("aria-describedby", tooltipId!);
@@ -463,10 +518,10 @@ test("opens a virtual tooltip only after the cursor stops", async ({ page }) => 
   });
   const nativeOnly = page.locator("#native-only-tooltip");
   await nativeOnly.hover();
-  await page.waitForTimeout(220);
-  await expectPopoverOpen(tooltip, false);
-  await expect(nativeOnly).toHaveAttribute("title", "Tooltip natif uniquement");
-  await expect(nativeOnly).not.toHaveAttribute("data-tooltip");
+  await expectPopoverOpen(tooltip, true);
+  await expect(tooltip).toHaveText("Tooltip natif uniquement");
+  await expect(nativeOnly).not.toHaveAttribute("title");
+  await expect(nativeOnly).toHaveAttribute("data-tooltip", "Tooltip natif uniquement");
 });
 
 test("keeps latest posts visible on the home page", async ({ page }) => {
@@ -929,15 +984,16 @@ test("applies and persists the Konachan Material palette across the site", async
   await expectPopoverOpen(tooltip, true);
   await expect
     .poll(() =>
-      tooltip.evaluate((element) => ({
-        pageBackground: getComputedStyle(document.body).backgroundColor,
-        text: getComputedStyle(element).color,
-      })),
+      tooltip.evaluate((element) => {
+        const probe = document.createElement("span");
+        probe.style.color = "var(--md-sys-color-inverse-on-surface)";
+        document.body.append(probe);
+        const matches = getComputedStyle(element).color === getComputedStyle(probe).color;
+        probe.remove();
+        return matches;
+      }),
     )
-    .toEqual({
-      pageBackground: activePalette.bodyBackground,
-      text: activePalette.bodyBackground,
-    });
+    .toBe(true);
   await page.keyboard.press("Escape");
   await page.locator("md-icon-button.home-detail-trigger").click();
   await expect
@@ -1467,12 +1523,12 @@ test("uses the Material Web pagination menu with keyboard selection", async ({ p
           .getPropertyValue("--md-sys-color-primary")
           .trim();
         return {
-          neutral: focusOutline !== primary,
+          primary: focusOutline === primary,
           radius: styles.getPropertyValue("--md-outlined-text-field-container-shape").trim(),
         };
       }),
     )
-    .toEqual({ neutral: true, radius: "28px" });
+    .toEqual({ primary: true, radius: "28px" });
   await expect(pageSizeSelect).toHaveAttribute("id", /material-table-\d+-page-size/);
   await expect(pageSizeSelect).toHaveAttribute("name", /material-table-\d+-page-size/);
   await expect(pageSizeSelect).toHaveAttribute("menu-positioning", "popover");
@@ -1932,9 +1988,10 @@ test("delays and aggregates the linear search progress indicator", async ({ page
         }),
     };
   });
-  await gotoRoute(page, "/search/");
+  await gotoRoute(page, "/");
+  await page.getByRole("button", { name: "Rechercher" }).click();
 
-  const searchPanel = page.locator(".site-search-page-panel");
+  const searchPanel = page.locator(".site-search-dialog-content");
   const progress = searchPanel.locator("md-linear-progress.site-search-panel-progress");
   await searchPanel.locator("md-filter-chip").first().waitFor();
   await progress.evaluate((element) => {
@@ -2393,6 +2450,15 @@ test("keeps the Material rich tooltip anchored and its Shiki block unenhanced", 
 
     await trigger.hover();
     await expectPopoverOpen(popover, true);
+    await expect(popover).toHaveCSS("pointer-events", "auto");
+    const popoverBox = await popover.boundingBox();
+    expect(popoverBox).not.toBeNull();
+    await page.mouse.move(
+      popoverBox!.x + popoverBox!.width / 2,
+      popoverBox!.y + popoverBox!.height / 2,
+    );
+    await page.waitForTimeout(160);
+    await expectPopoverOpen(popover, true);
     await page.mouse.move(1, 1);
     await page.waitForTimeout(140);
     await expectPopoverOpen(popover, false);
@@ -2451,6 +2517,28 @@ test("keeps the Material rich tooltip anchored and its Shiki block unenhanced", 
   expect(initialMetrics!.top).toBeGreaterThanOrEqual(-1);
   expect(initialMetrics!.right).toBeLessThanOrEqual(initialMetrics!.viewportWidth + 1);
   expect(initialMetrics!.bottom).toBeLessThanOrEqual(initialMetrics!.viewportHeight + 1);
+  const shikiMetrics = await popover.locator("pre.astro-code").evaluate((element) => {
+    const surface = element.closest(".site-rich-tooltip");
+    const rect = element.getBoundingClientRect();
+    const surfaceRect = surface?.getBoundingClientRect();
+    const styles = getComputedStyle(element);
+    return {
+      boxSizing: styles.boxSizing,
+      contained: Boolean(
+        surfaceRect && rect.left >= surfaceRect.left - 1 && rect.right <= surfaceRect.right + 1,
+      ),
+      overflowX: styles.overflowX,
+      overflowY: styles.overflowY,
+      whiteSpace: styles.whiteSpace,
+    };
+  });
+  expect(shikiMetrics).toEqual({
+    boxSizing: "border-box",
+    contained: true,
+    overflowX: "auto",
+    overflowY: "auto",
+    whiteSpace: "pre",
+  });
 
   const zoomChanged = await page.evaluate(() => {
     if (!window.visualViewport) return null;
@@ -2545,6 +2633,7 @@ test("renders shortcode code blocks with highlighted lines and copy controls", a
 
   await expect(page.locator(".code-shell").first()).toBeVisible();
   const copyButton = page.locator(".code-copy-button").first();
+  const copyTooltip = page.locator("[data-site-tooltip-surface]");
   await expect(copyButton).toBeVisible();
   await expect(copyButton).not.toHaveAttribute("title");
   await expect(copyButton).toHaveAttribute("data-tooltip", "Copier le code source");
@@ -2599,6 +2688,25 @@ test("renders shortcode code blocks with highlighted lines and copy controls", a
 
   await page.keyboard.press("Tab");
   await copyButton.focus();
+  await expectPopoverOpen(copyTooltip, true);
+  const zoomAvailable = await copyButton.evaluate(() => {
+    if (!window.visualViewport) return false;
+    Object.defineProperty(window.visualViewport, "scale", {
+      configurable: true,
+      value: 2,
+    });
+    window.visualViewport.dispatchEvent(new Event("resize"));
+    return true;
+  });
+  expect(zoomAvailable).toBe(true);
+  await expectPopoverOpen(copyTooltip, true);
+  await expect(copyTooltip).not.toHaveAttribute("data-reference-hidden");
+  await expect(copyTooltip).toHaveCSS("visibility", "visible");
+  await copyButton.evaluate(() => {
+    if (!window.visualViewport) return;
+    Object.defineProperty(window.visualViewport, "scale", { configurable: true, value: 1 });
+    window.visualViewport.dispatchEvent(new Event("resize"));
+  });
   const focusedCopyState = await readCopyVisualState();
   expect(focusedCopyState.iconColor).toBe(normalCopyState.iconColor);
   expect(focusedCopyState.focusColor).toBe(focusedCopyState.secondary);
@@ -2623,6 +2731,12 @@ test("renders shortcode code blocks with highlighted lines and copy controls", a
   await copyButton.click();
   await expect(copyButton).toHaveClass(/code-copy-button-copied/);
   await expect(copyButton).toHaveAttribute("data-tooltip", "Code copié");
+  if (test.info().project.name.includes("desktop")) {
+    await expectPopoverOpen(copyTooltip, true);
+    await expect(copyTooltip).toHaveText("Code copié");
+    await expect(copyTooltip).not.toHaveAttribute("data-reference-hidden");
+    await expect(copyTooltip).toHaveCSS("visibility", "visible");
+  }
   const copiedState = await readCopyVisualState();
   expect(copiedState.iconColor).toBe(copiedState.primary);
 
@@ -2789,7 +2903,7 @@ test("filters the semantic tag table through a Material Web text field", async (
     };
   });
   expect(filterStyle.radius).toBe("28px");
-  expect(filterStyle.focusOutline).not.toBe(filterStyle.primary);
+  expect(filterStyle.focusOutline).toBe(filterStyle.primary);
 
   await page.getByRole("searchbox", { name: "Filtrer les articles" }).fill("Markdown");
   await expect(page.getByRole("link", { name: "Markdown Style Guide" })).toBeVisible();

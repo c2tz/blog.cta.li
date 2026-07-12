@@ -27,6 +27,7 @@ interface Props {
   bodyClass?: string;
   readingProgress?: boolean;
   contentEnhancements?: boolean;
+  barePage?: boolean;
   openGraph?: OpenGraphData;
   structuredData?: Record<string, unknown> | readonly Record<string, unknown>[];
 }
@@ -41,6 +42,7 @@ const {
   bodyClass,
   readingProgress = true,
   contentEnhancements,
+  barePage = false,
   openGraph,
   structuredData,
 } = Astro.props as Props;
@@ -258,6 +260,7 @@ const speedInsightsVersion = speedInsightsPackage.version;
 
   <body
     class:list={[bodyClass, { "reading-progress-disabled": !readingProgress }]}
+    data-bare-page={barePage ? "true" : undefined}
     data-reading-progress={readingProgress ? "on" : "off"}
     data-speed-insights-enabled={shouldLoadSpeedInsights ? "true" : undefined}
     data-speed-insights-route={shouldLoadSpeedInsights ? speedInsightsRoute : undefined}
@@ -303,7 +306,9 @@ const speedInsightsVersion = speedInsightsPackage.version;
           event.stopImmediatePropagation?.();
         };
 
-        if (!hasExplicitContentAcknowledgement()) {
+        const isBarePage = document.body.dataset.barePage === "true";
+
+        if (!isBarePage && !hasExplicitContentAcknowledgement()) {
           document.documentElement.classList.add(
             "interaction-disabled",
             "consent-prelock",
@@ -316,18 +321,18 @@ const speedInsightsVersion = speedInsightsPackage.version;
         }
       })();
     </script>
-    <Header />
+    {!barePage && <Header />}
     <main class="site-main">
       <div id="main-content" class="site-content">
         <slot name="content" />
       </div>
     </main>
-    <Footer />
-    <CookieConsentBanner />
-    <PageLoadingIndicator />
-    <SiteTooltip />
-    {shouldEnhanceContent && <ImagePreview />}
-    {readingProgress && <ScrollTopButton />}
+    {!barePage && <Footer />}
+    {!barePage && <CookieConsentBanner />}
+    {!barePage && <PageLoadingIndicator />}
+    {!barePage && <SiteTooltip />}
+    {!barePage && shouldEnhanceContent && <ImagePreview />}
+    {!barePage && readingProgress && <ScrollTopButton />}
     <script>
       import "@/assets/js/material-web.js";
       import "@/assets/js/app-init.js";

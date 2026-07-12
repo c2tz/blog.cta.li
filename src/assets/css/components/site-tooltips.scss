@@ -17,7 +17,7 @@
   border: 0;
   border-radius: var(--md-sys-shape-corner-extra-small);
   background: var(--md-sys-color-inverse-surface);
-  color: var(--site-bg);
+  color: var(--md-sys-color-inverse-on-surface);
   box-shadow: none;
   font-size: 0.75rem;
   font-weight: 500;
@@ -71,7 +71,7 @@
   font-size: 0.875rem;
   line-height: 1.25rem;
   overscroll-behavior: contain;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .site-rich-tooltip-title {
@@ -96,11 +96,13 @@
 }
 
 .site-rich-tooltip pre.astro-code {
+  box-sizing: border-box;
   width: 100%;
   max-width: 100%;
+  max-height: min(18rem, var(--site-floating-available-height, 18rem));
   margin-block: 0.75rem 0;
   padding: 0.75rem;
-  overflow: hidden;
+  overflow: auto;
   border: 0;
   border-radius: var(--md-sys-shape-corner-small);
   background: var(--md-sys-color-surface-container-high) !important;
@@ -108,8 +110,9 @@
   font-family: var(--site-mono-font);
   font-size: 0.8125rem;
   line-height: 1.25rem;
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
+  overflow-wrap: normal;
+  overscroll-behavior: contain;
+  white-space: pre;
 }
 
 .site-rich-tooltip pre.astro-code code {
@@ -133,8 +136,8 @@
   font-size: inherit;
   line-height: inherit;
   opacity: 1 !important;
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
+  overflow-wrap: normal;
+  white-space: pre;
 }
 
 .site-rich-tooltip pre.astro-code code > .line::before,

@@ -2,13 +2,15 @@
 import Layout from "@/layouts/site-layout.astro";
 ---
 
-<Layout title="Page introuvable">
+<Layout title="Page introuvable" bodyClass="not-found-page" readingProgress={false} barePage>
   <Fragment slot="content">
     <section class="not-found" aria-labelledby="not-found-title">
-      <h1 id="not-found-title">404</h1>
-      <p>
-        Cette page n’existe pas. <a href="/">Revenir à l’accueil</a>.
-      </p>
+      <h1 id="not-found-title" class="sr-only">Page introuvable (404)</h1>
+      <div class="not-found-artwork">
+        <a class="not-found-home-hotspot" href="/">
+          <span class="sr-only">Revenir à l’accueil</span>
+        </a>
+      </div>
     </section>
   </Fragment>
 </Layout>

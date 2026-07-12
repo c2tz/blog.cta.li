@@ -404,6 +404,14 @@ class ImagePreviewController {
     if (!this.isOpen || isHistoryMarker(event.state, this.historyToken)) return;
 
     this.historyEntryActive = false;
+    if (this.isClosing) {
+      if (this.historyCloseFallbackTimer) {
+        window.clearTimeout(this.historyCloseFallbackTimer);
+        this.historyCloseFallbackTimer = undefined;
+      }
+      void this.closeDialog("history");
+      return;
+    }
     this.requestClose("history");
   };
 

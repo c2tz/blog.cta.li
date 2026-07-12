@@ -247,15 +247,15 @@ md-filter-chip[selected] {
 
 .site-table-filter-field {
   --md-outlined-text-field-container-shape: var(--md-sys-shape-corner-extra-large);
-  --md-outlined-text-field-focus-caret-color: var(--md-sys-color-on-surface);
-  --md-outlined-text-field-focus-label-text-color: var(--md-sys-color-on-surface-variant);
-  --md-outlined-text-field-focus-outline-color: var(--md-sys-color-outline);
-  --md-outlined-text-field-hover-outline-color: var(--md-sys-color-outline);
+  --md-outlined-text-field-focus-caret-color: var(--md-sys-color-primary);
+  --md-outlined-text-field-focus-label-text-color: var(--md-sys-color-primary);
+  --md-outlined-text-field-focus-outline-color: var(--md-sys-color-primary);
+  --md-outlined-text-field-hover-outline-color: var(--md-sys-color-on-surface);
   --md-outlined-text-field-input-text-color: var(--md-sys-color-on-surface);
   --md-outlined-text-field-input-text-font: var(--site-font);
   --md-outlined-text-field-label-text-color: var(--md-sys-color-on-surface-variant);
   --md-outlined-text-field-label-text-font: var(--site-font);
-  --md-outlined-text-field-outline-color: var(--md-sys-color-outline-variant);
+  --md-outlined-text-field-outline-color: var(--md-sys-color-outline);
 }
 
 .site-table-page-size-select {

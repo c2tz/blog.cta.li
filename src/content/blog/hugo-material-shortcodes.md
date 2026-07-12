@@ -303,7 +303,7 @@ Voir les articles
 
 {{< /button >}}
 
-{{< button href="/search/" variant="outlined" label="Rechercher" />}}
+{{< button href="/tags/all/" variant="outlined" label="Parcourir" />}}
 
 {{< button href="/cookies/" variant="tonal" label="Préférences" />}}
 
@@ -318,7 +318,7 @@ Voir les articles
 
 {{< /button >}}
 
-{{< button href="/search/" variant="outlined" label="Rechercher" />}}
+{{< button href="/tags/all/" variant="outlined" label="Parcourir" />}}
 
 {{< button href="/cookies/" variant="tonal" label="Préférences" />}}
 
@@ -341,7 +341,7 @@ Accéder aux guides et aux articles publiés.
 
 {{< /card >}}
 
-{{< card title="Recherche" icon="search" href="/search/" >}}
+{{< card title="Parcourir" icon="search" href="/tags/all/" >}}
 
 Retrouver rapidement un contenu.
 
@@ -358,7 +358,7 @@ Accéder aux guides et aux articles publiés.
 
 {{< /card >}}
 
-{{< card title="Recherche" icon="search" href="/search/" >}}
+{{< card title="Parcourir" icon="search" href="/tags/all/" >}}
 
 Retrouver rapidement un contenu.
 

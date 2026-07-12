@@ -3,6 +3,7 @@ import { positionFloatingSurface, trackFloatingSurface } from "./site-floating-s
 
 const TOOLTIP_SELECTOR =
   "[data-tooltip]:not([data-context-popover-trigger]):not([data-rich-tooltip-trigger])";
+const TOOLTIP_CANDIDATE_SELECTOR = "[data-tooltip], [title]";
 const SHOW_DELAY_MS = 180;
 const HIDE_DELAY_MS = 100;
 const TOUCH_HIDE_DELAY_MS = 3000;
@@ -149,8 +150,10 @@ class SiteTooltipController {
   }
 
   enhance(root = document) {
-    if (root instanceof HTMLElement && root.matches(TOOLTIP_SELECTOR)) this.prepareTarget(root);
-    root.querySelectorAll?.(TOOLTIP_SELECTOR).forEach((element) => {
+    if (root instanceof HTMLElement && root.matches(TOOLTIP_CANDIDATE_SELECTOR)) {
+      this.prepareTarget(root);
+    }
+    root.querySelectorAll?.(TOOLTIP_CANDIDATE_SELECTOR).forEach((element) => {
       if (element instanceof HTMLElement) this.prepareTarget(element);
     });
 
@@ -190,15 +193,20 @@ class SiteTooltipController {
   }
 
   prepareTarget(element) {
+    if (!document.body?.contains(element)) return;
+
     if (
       element.hasAttribute("data-context-popover-trigger") ||
       element.hasAttribute("data-rich-tooltip-trigger")
     ) {
       element.removeAttribute("data-tooltip");
+      element.removeAttribute("title");
       element.classList.remove("site-tooltip");
       return;
     }
 
+    const nativeTitle = element.getAttribute("title")?.trim();
+    if (!element.dataset.tooltip?.trim() && nativeTitle) element.dataset.tooltip = nativeTitle;
     const message = element.dataset.tooltip?.trim();
     if (!message) {
       element.classList.remove("site-tooltip");
@@ -291,6 +299,13 @@ class SiteTooltipController {
       this.touchFocusGuardTimer = 0;
       return;
     }
+    if (
+      target?.hasAttribute("data-tooltip-suppress-pointer-focus") &&
+      document.documentElement.dataset.focusModality !== "keyboard"
+    ) {
+      this.hide();
+      return;
+    }
     if (target) this.scheduleShow(target, 0, "focus");
   };
 
@@ -319,7 +334,11 @@ class SiteTooltipController {
 
   handleViewportChange = () => {
     this.virtualSuppressedUntilMove = true;
-    if (this.pendingVirtualTarget || this.activeMode === "virtual") this.hide();
+    if (this.pendingVirtualTarget || this.activeMode === "virtual") {
+      this.hide();
+      return;
+    }
+    if (this.activeMode === "anchor") this.refreshActiveTooltip();
   };
 
   handleHideRequest = (event) => {
@@ -485,6 +504,10 @@ class SiteTooltipController {
 
 export function hideSiteTooltip() {
   document.dispatchEvent(new CustomEvent(SITE_EVENTS.tooltipHide));
+}
+
+export function showSiteTooltip(target) {
+  if (controller && target instanceof HTMLElement) controller.show(target, { reason: "focus" });
 }
 
 export function initSiteTooltips() {

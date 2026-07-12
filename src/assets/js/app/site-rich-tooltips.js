@@ -15,6 +15,12 @@ function triggerFrom(target) {
   return trigger instanceof HTMLElement ? trigger : null;
 }
 
+function richTooltipSurfaceFrom(target) {
+  if (!(target instanceof Element)) return null;
+  const surface = target.closest("[data-site-rich-tooltip]");
+  return surface instanceof HTMLElement ? surface : null;
+}
+
 function surfaceFor(trigger) {
   const id = trigger.dataset.richTooltipTrigger;
   const surface = id ? document.getElementById(id) : null;
@@ -102,6 +108,11 @@ class SiteRichTooltipController {
 
   handlePointerOver = (event) => {
     if (event.pointerType === "touch" || event.pointerType === "pen") return;
+    const surface = richTooltipSurfaceFrom(event.target);
+    if (surface && surface === this.active?.surface) {
+      this.clearCloseTimer();
+      return;
+    }
     const trigger = triggerFrom(event.target);
     if (!trigger) return;
     if (event.relatedTarget instanceof Node && trigger.contains(event.relatedTarget)) return;
@@ -110,14 +121,36 @@ class SiteRichTooltipController {
 
   handlePointerOut = (event) => {
     if (event.pointerType === "touch" || event.pointerType === "pen") return;
+    const surface = richTooltipSurfaceFrom(event.target);
+    if (surface) {
+      if (event.relatedTarget instanceof Node && surface.contains(event.relatedTarget)) return;
+      if (
+        event.relatedTarget instanceof Node &&
+        this.active?.trigger.contains(event.relatedTarget)
+      ) {
+        this.clearCloseTimer();
+        return;
+      }
+      this.scheduleClose();
+      return;
+    }
     const trigger = triggerFrom(event.target);
     if (!trigger) return;
     if (event.relatedTarget instanceof Node && trigger.contains(event.relatedTarget)) return;
+    if (event.relatedTarget instanceof Node && this.active?.surface.contains(event.relatedTarget)) {
+      this.clearCloseTimer();
+      return;
+    }
     this.scheduleClose();
   };
 
   handlePointerDown = (event) => {
     if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
+    if (richTooltipSurfaceFrom(event.target) === this.active?.surface) {
+      if (this.touchTimer) window.clearTimeout(this.touchTimer);
+      this.touchTimer = 0;
+      return;
+    }
     const trigger = triggerFrom(event.target);
     if (!trigger) {
       this.pendingTouchFocusTarget = null;
@@ -184,7 +217,12 @@ class SiteRichTooltipController {
     this.clearCloseTimer();
     this.closeTimer = window.setTimeout(() => {
       this.closeTimer = 0;
-      if (!this.active?.trigger.matches(":hover, :focus, :focus-within")) this.close();
+      if (
+        !this.active?.trigger.matches(":hover, :focus, :focus-within") &&
+        !this.active?.surface.matches(":hover")
+      ) {
+        this.close();
+      }
     }, HOVER_CLOSE_DELAY_MS);
   }
 

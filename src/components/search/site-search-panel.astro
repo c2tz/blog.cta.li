@@ -3,18 +3,11 @@ import "@/assets/css/components/site-search.scss";
 import { SORT_OPTIONS } from "./site-search-model";
 
 interface Props {
-  autofocus?: boolean;
   deferred?: boolean;
   idPrefix?: string;
-  syncUrl?: boolean;
 }
 
-const {
-  autofocus = false,
-  deferred = false,
-  idPrefix = "site-search-panel",
-  syncUrl = false,
-} = Astro.props;
+const { deferred = false, idPrefix = "site-search-panel" } = Astro.props;
 const resultsId = `${idPrefix}-results`;
 const tagsId = `${idPrefix}-tags`;
 const statusId = `${idPrefix}-status`;
@@ -24,9 +17,7 @@ const limitId = `${idPrefix}-filter-limit`;
 <section
   class="site-search-panel"
   data-site-search-panel
-  data-autofocus={autofocus ? "true" : "false"}
   data-deferred={deferred ? "true" : "false"}
-  data-sync-url={syncUrl ? "true" : "false"}
 >
   <form class="site-search-panel-form" role="search" data-search-form>
     <div class="site-search-panel-field">

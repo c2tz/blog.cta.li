@@ -45,9 +45,6 @@ class SearchPanelController {
     this.progress = root.querySelector("[data-search-progress]");
     this.tagsElement = root.querySelector("[data-search-tags]");
     this.resultsElement = root.querySelector("[data-search-results]");
-    this.syncUrl = root.dataset.syncUrl === "true";
-    this.autofocus = root.dataset.autofocus === "true";
-
     this.dateFormatter = new Intl.DateTimeFormat("fr-FR", {
       day: "numeric",
       month: "short",
@@ -75,12 +72,7 @@ class SearchPanelController {
   }
 
   connect() {
-    if (this.syncUrl && window.location.pathname === "/search/") {
-      const params = new URLSearchParams(window.location.search);
-      this.query = params.get("q") ?? "";
-      this.selectedTags = this.parseTagsParam(params);
-      this.sortMode = this.parseSortMode(params.get("sort"));
-    } else if (typeof this.input.value === "string" && this.input.value) {
+    if (typeof this.input.value === "string" && this.input.value) {
       // Preserve a value entered by autofill or automation before a deferred
       // panel finishes connecting.
       this.query = this.input.value;
@@ -106,10 +98,6 @@ class SearchPanelController {
     void this.connectSortMenuRepositioning();
     void this.loadTagFilters();
     void this.search(this.query.trim());
-
-    if (this.autofocus && this.shouldAutofocusSearch()) {
-      window.setTimeout(() => this.focus());
-    }
   }
 
   async connectMaterialTextField() {
@@ -435,7 +423,6 @@ class SearchPanelController {
   async search(query) {
     const currentRequest = ++this.requestId;
     const hasActiveFilters = this.hasActiveFilters();
-    this.updateUrl(query);
     this.cancelCurrentSearchOperation();
 
     if (query.length > 0 && query.length < MIN_QUERY_LENGTH) {
@@ -558,32 +545,6 @@ class SearchPanelController {
     this.loadingIndicatorTimer = 0;
   }
 
-  updateUrl(query) {
-    if (!this.syncUrl || window.location.pathname !== "/search/") return;
-
-    const url = new URL(window.location.href);
-    if (query) url.searchParams.set("q", query);
-    else url.searchParams.delete("q");
-
-    if (this.selectedTags.length > 0) {
-      url.searchParams.set("tags", this.selectedTags.join(","));
-      url.searchParams.delete("tag");
-    } else {
-      url.searchParams.delete("tags");
-      url.searchParams.delete("tag");
-    }
-
-    url.searchParams.delete("from");
-    url.searchParams.delete("to");
-    if (this.sortMode !== "relevance") url.searchParams.set("sort", this.sortMode);
-    else url.searchParams.delete("sort");
-    window.history.replaceState({}, "", url);
-  }
-
-  parseSortMode(value) {
-    return isSearchSortMode(value) ? value : "relevance";
-  }
-
   pagefindSearchOptions() {
     const options = {};
     const sort = this.pagefindSort();
@@ -654,21 +615,9 @@ class SearchPanelController {
     }
   }
 
-  parseTagsParam(params) {
-    return (params.get("tags") ?? params.get("tag") ?? "")
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter(Boolean)
-      .slice(0, MAX_SELECTED_TAGS);
-  }
-
   normalizeSelectedTags(value) {
     const tags = Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
     return [...new Set(tags.filter((tag) => typeof tag === "string"))].slice(0, MAX_SELECTED_TAGS);
-  }
-
-  shouldAutofocusSearch() {
-    return !window.matchMedia("(max-width: 720px), (pointer: coarse)").matches;
   }
 
   dateValue(value) {

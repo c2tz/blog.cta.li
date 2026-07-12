@@ -1,4 +1,5 @@
 import { copyTextToClipboard } from "./clipboard.js";
+import { showSiteTooltip } from "./site-tooltips.js";
 
 const COPY_FEEDBACK_DURATION_MS = 2200;
 const COPY_ICON = "\uE14D";
@@ -60,6 +61,7 @@ function createCopyControl(codeBlock) {
       fallbackSelectionSource: codeBlock,
     });
     setCopyState(control, copied ? "copied" : "error");
+    if (matchMedia("(hover: hover) and (pointer: fine)").matches) showSiteTooltip(button);
     window.clearTimeout(control.resetTimer);
     control.resetTimer = window.setTimeout(() => {
       control.resetTimer = 0;

@@ -58,7 +58,8 @@ html.site-image-dialog-fullscreen body {
 }
 
 .site-image-dialog-image {
-  position: relative;
+  position: absolute;
+  inset: 0;
   z-index: 2;
   display: block;
   width: 100%;

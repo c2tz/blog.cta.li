@@ -23,6 +23,12 @@ async function expectFocusWithin(locator: Locator) {
     .toBe(true);
 }
 
+async function expectPopoverOpen(locator: Locator, open: boolean) {
+  await expect
+    .poll(() => locator.evaluate((element) => element.matches(":popover-open")))
+    .toBe(open);
+}
+
 async function expectMaterialAria(locator: Locator, name: string, value: string) {
   await expect
     .poll(() =>
@@ -392,6 +398,58 @@ test("fits the complete image with CSS and stays scroll-free through gestures an
   await expect(stage).toHaveCSS("overflow-y", "hidden");
 });
 
+test("contains a small square figure inside the preview stage", async ({ page }) => {
+  await page.goto("/posts/hugo-material-shortcodes/", { waitUntil: "domcontentloaded" });
+  const sourceImage = page.locator('img[data-image-dialog][src="/mask.webp"]');
+  const dialog = page.locator(DIALOG_SELECTOR);
+  await expect(sourceImage).toBeVisible();
+  await waitForLightboxController(dialog);
+  await sourceImage.scrollIntoViewIfNeeded();
+  await sourceImage.click();
+  await expect(dialog).toHaveJSProperty("open", true);
+  await expectImageContained(dialog.locator("[data-image-dialog-stage]"));
+});
+
+test("closes from the toolbar without waiting for the history fallback", async ({ page }) => {
+  const { dialog, nativeDialog } = await openLightbox(page);
+  await dialog.evaluate((element) => {
+    const testWindow = window as typeof window & {
+      __imageCloseTiming?: { clickAt?: number; closeAt?: number };
+    };
+    const materialDialog = element as HTMLElement & {
+      close(returnValue?: string): Promise<void>;
+    };
+    const closeButton = element.querySelector("[data-image-close]");
+    const originalClose = materialDialog.close.bind(materialDialog);
+    testWindow.__imageCloseTiming = {};
+    materialDialog.close = (returnValue?: string) => {
+      testWindow.__imageCloseTiming!.closeAt = performance.now();
+      return originalClose(returnValue);
+    };
+    closeButton?.addEventListener(
+      "click",
+      () => {
+        testWindow.__imageCloseTiming!.clickAt = performance.now();
+      },
+      { capture: true, once: true },
+    );
+  });
+  await dialog.locator("[data-image-close]").click();
+  await expect(dialog).toHaveJSProperty("open", false);
+  await expect(nativeDialog).toBeHidden();
+  const closeLatency = await page.evaluate(() => {
+    const timing = (
+      window as typeof window & {
+        __imageCloseTiming?: { clickAt?: number; closeAt?: number };
+      }
+    ).__imageCloseTiming;
+    return timing?.clickAt !== undefined && timing.closeAt !== undefined
+      ? timing.closeAt - timing.clickAt
+      : Number.POSITIVE_INFINITY;
+  });
+  expect(closeLatency).toBeLessThan(200);
+});
+
 test("supports gallery arrows and touch swipe while taps control the toolbar", async ({ page }) => {
   const { dialog, nativeDialog } = await openLightbox(page);
   const image = dialog.locator("[data-image-dialog-image]");
@@ -721,6 +779,7 @@ test("opens a second information dialog, then restores history, scroll and focus
   await informationButton.click();
   await expectMaterialAria(informationButton, "aria-expanded", "true");
   await expect(informationDialog).toHaveJSProperty("open", true);
+  await expectPopoverOpen(page.locator("[data-site-tooltip-surface]"), false);
   await expect(informationNativeDialog).toBeVisible();
   await expect
     .poll(() => informationNativeDialog.evaluate((element) => element.matches(":modal")))

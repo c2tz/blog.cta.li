@@ -141,7 +141,8 @@ a:hover,a:focus-visible{color:${colors.primary};text-decoration:underline;text-u
 .gsc-reactions-popover.color-bg-overlay{border-color:${colors.outlineVariant};background:${colors.surfaceContainerHigh};box-shadow:0 8px 24px color-mix(in srgb,${colors.onSurface} 18%,transparent)}
 .gsc-reactions-popover .border-t{border-color:${colors.outlineVariant}}
 .gsc-btn,.btn{border-radius:9999px}
-.gsc-comment-box-buttons a.btn-primary{--color-btn-primary-text:#FFF;--color-btn-primary-bg:${githubGreen};--color-btn-primary-border:color-mix(in srgb,#FFF 10%,transparent);--color-btn-primary-hover-bg:${githubGreenHover};--color-btn-primary-hover-border:color-mix(in srgb,#FFF 10%,transparent);--color-btn-primary-selected-bg:${githubGreenPressed};--color-btn-primary-selected-shadow:0 0 transparent}
+.gsc-comment-box-buttons a.btn-primary{--color-btn-primary-text:#FFF;--color-btn-primary-bg:${githubGreen};--color-btn-primary-border:color-mix(in srgb,#FFF 10%,transparent);--color-btn-primary-hover-bg:${githubGreenHover};--color-btn-primary-hover-border:color-mix(in srgb,#FFF 10%,transparent);--color-btn-primary-selected-bg:${githubGreenPressed};--color-btn-primary-selected-shadow:0 0 transparent;color:#FFF!important}
+.gsc-comment-box-buttons a.btn-primary svg{color:#FFF!important;fill:currentColor!important}
 `;
 }
 

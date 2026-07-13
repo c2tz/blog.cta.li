@@ -65,12 +65,19 @@
           </p>
         </div>
 
-        <div class="cookie-consent-actions">
+        <div class="cookie-consent-actions cookie-consent-actions--desktop">
           <md-text-button href="/cookies/">PLUS DE DÉTAILS</md-text-button>
           <div class="cookie-consent-choice-actions">
             <md-text-button type="button" data-cookie-action="reject">REFUSER</md-text-button>
             <md-text-button type="button" data-cookie-action="accept">ACCEPTER</md-text-button>
           </div>
+        </div>
+        <div class="cookie-consent-actions cookie-consent-actions--mobile">
+          <md-filled-button type="button" data-cookie-action="accept">ACCEPTER</md-filled-button>
+          <md-filled-tonal-button type="button" data-cookie-action="reject">
+            REFUSER
+          </md-filled-tonal-button>
+          <md-text-button href="/cookies/">PLUS DE DÉTAILS</md-text-button>
         </div>
       </section>
     </div>

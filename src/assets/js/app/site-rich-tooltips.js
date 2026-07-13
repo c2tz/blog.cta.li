@@ -37,16 +37,6 @@ function popoverIsOpen(surface) {
   }
 }
 
-function describedByWith(element, id, add) {
-  const tokens = new Set(
-    (element.getAttribute("aria-describedby") || "").split(/\s+/).filter(Boolean),
-  );
-  if (add) tokens.add(id);
-  else tokens.delete(id);
-  if (tokens.size > 0) element.setAttribute("aria-describedby", [...tokens].join(" "));
-  else element.removeAttribute("aria-describedby");
-}
-
 class SiteRichTooltipController {
   constructor() {
     this.abortController = new AbortController();
@@ -56,6 +46,7 @@ class SiteRichTooltipController {
     this.touchTimer = 0;
     this.touchFocusGuardTimer = 0;
     this.pendingTouchFocusTarget = null;
+    this.suppressedFocusTrigger = null;
     this.bindEvents();
   }
 
@@ -172,7 +163,15 @@ class SiteRichTooltipController {
   };
 
   handleFocusIn = (event) => {
+    if (richTooltipSurfaceFrom(event.target) === this.active?.surface) {
+      this.clearCloseTimer();
+      return;
+    }
     const trigger = triggerFrom(event.target);
+    if (trigger && trigger === this.suppressedFocusTrigger) {
+      this.suppressedFocusTrigger = null;
+      return;
+    }
     if (trigger && trigger === this.pendingTouchFocusTarget) {
       this.pendingTouchFocusTarget = null;
       if (this.touchFocusGuardTimer) window.clearTimeout(this.touchFocusGuardTimer);
@@ -183,14 +182,37 @@ class SiteRichTooltipController {
   };
 
   handleFocusOut = (event) => {
+    const surface = richTooltipSurfaceFrom(event.target);
+    if (surface === this.active?.surface) {
+      if (event.relatedTarget instanceof Node && surface.contains(event.relatedTarget)) return;
+      if (
+        event.relatedTarget instanceof Node &&
+        this.active?.trigger.contains(event.relatedTarget)
+      ) {
+        this.clearCloseTimer();
+        return;
+      }
+      this.scheduleClose();
+      return;
+    }
     const trigger = triggerFrom(event.target);
     if (!trigger) return;
     if (event.relatedTarget instanceof Node && trigger.contains(event.relatedTarget)) return;
+    if (event.relatedTarget instanceof Node && this.active?.surface.contains(event.relatedTarget)) {
+      this.clearCloseTimer();
+      return;
+    }
     this.scheduleClose();
   };
 
   handleKeydown = (event) => {
-    if (event.key === "Escape") this.close();
+    if (event.key !== "Escape" || !this.active) return;
+    const trigger = this.active.trigger;
+    const restoreFocus = document.activeElement !== trigger;
+    event.preventDefault();
+    this.suppressedFocusTrigger = restoreFocus ? trigger : null;
+    this.close();
+    if (restoreFocus) trigger.focus({ preventScroll: true });
   };
 
   handleSurfaceToggle = (event) => {
@@ -200,7 +222,13 @@ class SiteRichTooltipController {
     this.finishClose();
   };
 
-  handleHideRequest = () => this.close();
+  handleHideRequest = (event) => {
+    if (event.detail?.simpleOnly) return;
+    if (event.detail?.suppressNextFocus && this.active?.trigger) {
+      this.suppressedFocusTrigger = this.active.trigger;
+    }
+    this.close();
+  };
   handleBeforeSwap = () => this.close();
 
   scheduleOpen(trigger) {
@@ -219,7 +247,7 @@ class SiteRichTooltipController {
       this.closeTimer = 0;
       if (
         !this.active?.trigger.matches(":hover, :focus, :focus-within") &&
-        !this.active?.surface.matches(":hover")
+        !this.active?.surface.matches(":hover, :focus-within")
       ) {
         this.close();
       }
@@ -245,7 +273,6 @@ class SiteRichTooltipController {
     }
 
     trigger.setAttribute("aria-expanded", "true");
-    describedByWith(trigger, surface.id, true);
     this.active = {
       surface,
       stopTracking: trackFloatingSurface(surface, trigger, {
@@ -271,7 +298,6 @@ class SiteRichTooltipController {
       delete surface.dataset.open;
     }
     trigger.setAttribute("aria-expanded", "false");
-    describedByWith(trigger, surface.id, false);
     this.finishClose();
   }
 

@@ -141,9 +141,7 @@ function bindMaterialSelectIndicator(owner) {
       const selectedValue = String(owner.value ?? owner.getAttribute("value") ?? "");
       owner.querySelectorAll("md-select-option").forEach((option) => {
         const optionValue = String(option.value ?? option.getAttribute("value") ?? "");
-        const selected =
-          option.shadowRoot?.querySelector('[role="option"]')?.getAttribute("aria-selected") ===
-            "true" || optionValue === selectedValue;
+        const selected = optionValue === selectedValue;
         option.toggleAttribute("data-selected-option", selected);
       });
     });

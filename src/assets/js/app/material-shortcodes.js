@@ -219,7 +219,7 @@ function enhanceTable(host) {
     pageSizeSelect.id = `${tableId}-page-size`;
     pageSizeSelect.name = `${tableId}-page-size`;
     pageSizeSelect.className = "site-material-select site-table-page-size-select";
-    pageSizeSelect.label = "Lignes par page";
+    pageSizeSelect.setAttribute("aria-label", "Lignes par page");
     pageSizeSelect.value = String(state.pageSize);
     pageSizeSelect.setAttribute("aria-controls", tableId);
     pageSizeSelect.setAttribute("menu-positioning", "popover");
@@ -227,17 +227,20 @@ function enhanceTable(host) {
     pageSizeOptions.forEach((size) => {
       const option = document.createElement("md-select-option");
       const headline = document.createElement("span");
+      const label = document.createElement("span");
       const check = document.createElement("md-icon");
       option.className = "site-material-select-option";
       option.value = String(size);
-      option.toggleAttribute("selected", size === state.pageSize);
+      option.displayText = String(size);
+      option.selected = size === state.pageSize;
       headline.slot = "headline";
-      headline.textContent = String(size);
-      check.slot = "end";
+      headline.className = "site-material-option-content";
+      label.textContent = String(size);
       check.className = "site-material-menu-check";
       check.setAttribute("aria-hidden", "true");
       check.textContent = "\uE5CA";
-      option.append(headline, check);
+      headline.append(label, check);
+      option.append(headline);
       pageSizeSelect.appendChild(option);
     });
 
@@ -405,8 +408,20 @@ function enhanceTable(host) {
   render();
 }
 
-function initMaterialShortcodes(root = document) {
+async function initMaterialShortcodes(root = document) {
   if (typeof document === "undefined" || !root?.querySelectorAll) return;
+  await Promise.all(
+    [
+      "md-icon",
+      "md-icon-button",
+      "md-outlined-select",
+      "md-outlined-text-field",
+      "md-primary-tab",
+      "md-ripple",
+      "md-select-option",
+      "md-tabs",
+    ].map((tagName) => customElements.whenDefined(tagName)),
+  );
   matchingElements(root, "[data-material-tabs]").forEach(enhanceTabs);
   matchingElements(root, "[data-material-table]").forEach(enhanceTable);
 }
@@ -415,7 +430,7 @@ function installMaterialShortcodes() {
   if (installed || typeof window === "undefined") return;
   installed = true;
 
-  const enhance = () => initMaterialShortcodes();
+  const enhance = () => void initMaterialShortcodes();
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", enhance, { once: true });
   } else {

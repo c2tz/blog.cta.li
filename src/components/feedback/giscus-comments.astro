@@ -167,13 +167,11 @@ const configured = Boolean(repo.trim() && repoId.trim() && category.trim() && ca
     position: absolute;
     inset: 0 0 auto;
     width: 100%;
-    overflow: hidden;
-    border-radius: 9999px;
     --md-linear-progress-active-indicator-color: var(--site-link);
-    --md-linear-progress-active-indicator-height: 0.18rem;
-    --md-linear-progress-track-color: color-mix(in srgb, var(--site-link) 16%, transparent);
-    --md-linear-progress-track-height: 0.18rem;
-    --md-linear-progress-track-shape: 9999px;
+    --md-linear-progress-active-indicator-height: 0.25rem;
+    --md-linear-progress-track-color: var(--md-sys-color-surface-container-highest);
+    --md-linear-progress-track-height: 0.25rem;
+    --md-linear-progress-track-shape: var(--md-sys-shape-corner-none);
   }
 
   .giscus-comments-progress[hidden] {
@@ -195,15 +193,11 @@ const configured = Boolean(repo.trim() && repoId.trim() && category.trim() && ca
     }
 
     .giscus-comments-actions {
-      justify-content: flex-start;
+      flex-wrap: nowrap;
+      justify-content: center;
       width: 100%;
-    }
-  }
-
-  @media (max-width: 360px) {
-    .giscus-comments-conduct-link,
-    .giscus-comments-accept-button {
-      width: 100%;
+      margin-inline: auto;
+      text-align: center;
     }
   }
 </style>

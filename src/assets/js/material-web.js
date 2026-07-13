@@ -1,5 +1,6 @@
 // Keep the all-route registry small; route-specific controls live in material-web/.
 import "@material/web/button/filled-button.js";
+import "@material/web/button/filled-tonal-button.js";
 import "@material/web/button/text-button.js";
 import "@material/web/chips/chip-set.js";
 import "@material/web/divider/divider.js";

@@ -65,6 +65,7 @@ class ImagePreviewController extends ImagePreviewControllerBase {
     this.historyEntryActive = false;
     this.isClosing = false;
     this.isOpen = false;
+    this.restoreTriggerFocus = false;
     this.informationRequest = 0;
     this.fullscreenFallback = false;
     this.gestureOffsetX = 0;
@@ -128,7 +129,14 @@ class ImagePreviewController extends ImagePreviewControllerBase {
     this.informationDialog.addEventListener("cancel", this.handleInformationCancel, options);
     this.informationDialog.addEventListener("closed", this.handleInformationClosed, options);
     this.informationButton.addEventListener("click", () => void this.openInformation(), options);
-    this.closeButton.addEventListener("click", () => this.requestClose("close-button"), options);
+    this.closeButton.addEventListener(
+      "click",
+      (event) => {
+        if (event.detail === 0) this.restoreTriggerFocus = true;
+        this.requestClose("close-button");
+      },
+      options,
+    );
     this.informationCloseButton.addEventListener(
       "click",
       () => void this.closeInformation(true),
@@ -179,7 +187,7 @@ class ImagePreviewController extends ImagePreviewControllerBase {
 
     event.preventDefault();
     event.stopPropagation();
-    void this.open(image);
+    void this.open(image, { restoreFocus: false });
   };
 
   handleDocumentKeydown = (event) => {
@@ -190,7 +198,7 @@ class ImagePreviewController extends ImagePreviewControllerBase {
 
     event.preventDefault();
     event.stopPropagation();
-    void this.open(image);
+    void this.open(image, { restoreFocus: true });
   };
 
   handleDialogCancel = (event) => {
@@ -200,6 +208,7 @@ class ImagePreviewController extends ImagePreviewControllerBase {
       return;
     }
 
+    this.restoreTriggerFocus = true;
     this.requestClose("cancel");
   };
 

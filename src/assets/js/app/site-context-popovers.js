@@ -153,14 +153,6 @@ class SiteContextPopoverController {
       candidate.removeAttribute("data-tooltip");
       candidate.removeAttribute("title");
       candidate.classList.remove("site-tooltip");
-      if (
-        candidate.closest(".material-annotation-reference") &&
-        !candidate.querySelector("md-ripple")
-      ) {
-        const ripple = document.createElement("md-ripple");
-        ripple.setAttribute("aria-hidden", "true");
-        candidate.append(ripple);
-      }
       surface.querySelectorAll("img:not([loading])").forEach((image) => {
         image.setAttribute("loading", "lazy");
       });
@@ -262,7 +254,9 @@ class SiteContextPopoverController {
     trigger.setAttribute("aria-expanded", "false");
   };
 
-  handleHideRequest = () => this.close();
+  handleHideRequest = (event) => {
+    if (!event.detail?.simpleOnly) this.close();
+  };
   handleBeforeSwap = () => this.close();
 
   scheduleOpen(trigger) {

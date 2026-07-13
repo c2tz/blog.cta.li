@@ -8,6 +8,46 @@ import {
   expectPopoverOpen,
 } from "./site-fixture";
 
+test("tracks reading progress fractionally without a delayed indicator transition", async ({
+  page,
+}) => {
+  await gotoRoute(page, "/posts/markdown-style-guide/");
+  const progress = page.locator("md-linear-progress.site-scroll-progress");
+  await expect(progress).toBeVisible();
+
+  const metrics = await progress.evaluate(async (element) => {
+    const bar = element as HTMLElement & {
+      max: number;
+      updateComplete: Promise<unknown>;
+      value: number;
+    };
+    await customElements.whenDefined("md-linear-progress");
+    await bar.updateComplete;
+    const scroller = document.scrollingElement ?? document.documentElement;
+    const scrollable = scroller.scrollHeight - scroller.clientHeight;
+    scrollTo(0, scrollable * 0.37123);
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => resolve());
+    });
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => resolve());
+    });
+    await bar.updateComplete;
+
+    return {
+      expected: scrollY / scrollable,
+      max: bar.max,
+      transition: (bar.shadowRoot?.querySelector(".primary-bar") as HTMLElement | null)?.style
+        .transition,
+      value: bar.value,
+    };
+  });
+
+  expect(metrics.max).toBe(1);
+  expect(Math.abs(metrics.value - metrics.expected)).toBeLessThan(0.0001);
+  expect(metrics.transition).toBe("none");
+});
+
 test("opens the Material Web theme menu from its icon button", async ({ page }) => {
   await gotoRoute(page, "/");
 
@@ -470,6 +510,11 @@ test("uses the Material Web pagination menu with keyboard selection", async ({ p
   await expect
     .poll(() => pageSizeSelect.evaluate((select) => String((select as HTMLInputElement).value)))
     .toBe("10");
+  await expect(pageSizeSelect.locator("[data-selected-option]")).toHaveCount(1);
+  await expect(initialPageSize.locator(".site-material-menu-check")).toHaveCSS(
+    "visibility",
+    "hidden",
+  );
   await expect
     .poll(() =>
       pageSizeSelect.evaluate((select) =>

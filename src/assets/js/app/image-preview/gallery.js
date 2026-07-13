@@ -13,7 +13,7 @@ export const withImagePreviewGallery = (Base) =>
       return image;
     }
 
-    async open(sourceImage) {
+    async open(sourceImage, { restoreFocus = false } = {}) {
       if (this.isOpen || this.dialog.open) return;
 
       const selectedItem = this.getImagePreviewItem(sourceImage);
@@ -30,14 +30,23 @@ export const withImagePreviewGallery = (Base) =>
       this.pendingIndex = undefined;
       this.browserZoomBaselineDpr = Math.max(0.1, window.devicePixelRatio || 1);
       this.browserZoomScale = 1;
-      this.triggerImage = sourceImage;
+      const richTooltip = sourceImage.closest("[data-site-rich-tooltip][id]");
+      const richTooltipTrigger = richTooltip
+        ? [...document.querySelectorAll("[data-rich-tooltip-trigger]")].find(
+            (trigger) => trigger.dataset.richTooltipTrigger === richTooltip.id,
+          )
+        : null;
+      this.triggerImage = restoreFocus && richTooltipTrigger ? richTooltipTrigger : sourceImage;
+      this.restoreTriggerFocus = restoreFocus;
       this.isOpen = true;
       this.isClosing = false;
       this.finishInformationClose(false);
       this.setControlsVisible(true);
       await this.renderCurrent();
       this.lockPageScroll();
-      this.hideTooltip();
+      this.hideTooltip(
+        richTooltipTrigger && restoreFocus ? { suppressNextFocus: true } : undefined,
+      );
 
       try {
         await this.dialog.show();
@@ -48,7 +57,10 @@ export const withImagePreviewGallery = (Base) =>
     }
 
     getImagePreviewCandidates(activeImage) {
-      const container = activeImage.closest(".site-prose") ?? document;
+      const container =
+        activeImage.closest("[data-site-rich-tooltip]") ??
+        activeImage.closest(".site-prose") ??
+        document;
       const images = [...container.querySelectorAll("img")].filter((image) => {
         if (!image.src) return false;
         if (image.closest("header, footer, nav, [data-no-image-dialog]")) return false;

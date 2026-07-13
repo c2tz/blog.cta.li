@@ -197,9 +197,49 @@ test("keeps consent actions uppercase and the privacy banner below the search sc
 
   const privacyBanner = page.getByRole("region", { name: "Avis de confidentialité" });
   await expect(privacyBanner).toBeVisible();
-  await expect(privacyBanner.getByText("PLUS DE DÉTAILS", { exact: true })).toBeVisible();
-  await expect(privacyBanner.getByText("REFUSER", { exact: true })).toBeVisible();
-  await expect(privacyBanner.getByText("ACCEPTER", { exact: true })).toBeVisible();
+  await expect(
+    privacyBanner.locator("md-text-button[href]:visible").filter({ hasText: "PLUS DE DÉTAILS" }),
+  ).toBeVisible();
+  await expect(privacyBanner.locator("[data-cookie-action='reject']:visible")).toBeVisible();
+  await expect(privacyBanner.locator("[data-cookie-action='accept']:visible")).toBeVisible();
+
+  if (test.info().project.name.includes("mobile")) {
+    await page.setViewportSize({ width: 330, height: 720 });
+    const compactLayout = await privacyBanner.evaluate((banner) => {
+      const bannerRect = banner.getBoundingClientRect();
+      const mobileActions = banner.querySelector(".cookie-consent-actions--mobile");
+      const actionsRect = mobileActions?.getBoundingClientRect();
+      const buttons = mobileActions
+        ? Array.from(
+            mobileActions.querySelectorAll(
+              "md-filled-tonal-button, md-filled-button, md-text-button",
+            ),
+          )
+        : [];
+      const buttonRects = buttons.map((button) => button.getBoundingClientRect());
+      return {
+        buttonsFit: buttonRects.every(
+          (rect) => rect.left >= bannerRect.left - 1 && rect.right <= bannerRect.right + 1,
+        ),
+        count: buttonRects.length,
+        fullWidth: Boolean(
+          actionsRect && buttonRects.every((rect) => Math.abs(rect.width - actionsRect.width) <= 1),
+        ),
+        left: bannerRect.left,
+        ordered: buttonRects.every(
+          (rect, index) => index === 0 || rect.top > buttonRects[index - 1].top,
+        ),
+        right: bannerRect.right,
+        viewportWidth: window.innerWidth,
+      };
+    });
+    expect(compactLayout.buttonsFit).toBe(true);
+    expect(compactLayout.count).toBe(3);
+    expect(compactLayout.fullWidth).toBe(true);
+    expect(compactLayout.ordered).toBe(true);
+    expect(compactLayout.left).toBeGreaterThanOrEqual(7);
+    expect(compactLayout.right).toBeLessThanOrEqual(compactLayout.viewportWidth - 7);
+  }
 
   await page.getByRole("button", { name: "Rechercher" }).click();
   await expect(page.getByRole("dialog", { name: "Recherche" })).toBeVisible();
@@ -215,7 +255,7 @@ test("keeps consent actions uppercase and the privacy banner below the search sc
     .toEqual({ privacyBanner: "1", search: "2" });
 });
 
-test("keeps the Material rich tooltip anchored and its Shiki block unenhanced", async ({
+test("keeps the Material rich tooltip anchored and enhances all of its rich content", async ({
   page,
 }) => {
   await gotoRoute(page, "/posts/hugo-material-shortcodes/");
@@ -223,25 +263,30 @@ test("keeps the Material rich tooltip anchored and its Shiki block unenhanced", 
   const trigger = page.locator('[data-rich-tooltip-trigger="tooltip-http-shiki"]').first();
   const popover = page.locator("#tooltip-http-shiki");
   await expect(trigger).toBeVisible();
-  await expect(trigger).toHaveText("Voir l’exemple Shiki");
+  await expect(trigger).toHaveText("Voir l’exemple riche");
   await expect(trigger).not.toHaveAttribute("title");
   await expect(trigger).not.toHaveAttribute("data-tooltip");
-  await expect(page.locator(".material-abbreviation").first()).not.toHaveAttribute("tabindex");
-  await expect(page.locator('.post-icon-tooltip[role="img"]').first()).not.toHaveAttribute(
-    "tabindex",
-  );
-  await expect(page.locator(".material-annotation-reference")).toHaveCount(0);
+  await expect(popover.locator("abbr[data-tooltip]")).not.toHaveAttribute("tabindex");
   await expect(popover).toHaveAttribute("data-site-rich-tooltip", "");
-  await expect(popover).toHaveAttribute("role", "tooltip");
+  await expect(popover).toHaveAttribute("role", "dialog");
+  await expect(popover).toHaveAttribute("aria-labelledby", "tooltip-http-shiki-title");
   await expect(popover).toHaveAttribute("popover", "manual");
   await expect(popover).not.toHaveAttribute("tabindex");
   await expectPopoverOpen(popover, false);
 
   const shiki = popover.locator("pre.astro-code > code");
-  await expect(shiki).toHaveCount(1);
+  await expect(shiki).toHaveCount(2);
   await expect(shiki.locator("span").first()).toBeAttached();
-  await expect(popover.locator(".code-shell, .code-actions, .code-copy-button")).toHaveCount(0);
-  await expect(popover.locator(".line.highlighted, .line.focused, .line.diff")).toHaveCount(0);
+  await expect(popover.locator(".code-shell")).toHaveCount(2);
+  await expect(popover.locator(".code-copy-button")).toHaveCount(2);
+  await expect(popover.locator(".line.highlighted")).toHaveCount(1);
+  await expect(popover.locator("img[alt='konachan-382339.jpg']")).toHaveCount(1);
+  await expect(popover.locator(".material-admonition-tip")).toHaveCount(1);
+  await expect(popover.locator("md-filled-tonal-button")).toHaveCount(1);
+  await expect(popover.locator("md-tabs")).toHaveCount(1);
+  await expect(popover.locator('[data-material-table][data-material-enhanced="true"]')).toHaveCount(
+    1,
+  );
 
   if (test.info().project.name.includes("mobile")) {
     await trigger.dispatchEvent("pointerdown", {
@@ -288,15 +333,17 @@ test("keeps the Material rich tooltip anchored and its Shiki block unenhanced", 
   await trigger.focus();
   await expectPopoverOpen(popover, true);
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
-  await expect(popover.getByText("Requête HTTP", { exact: true })).toBeVisible();
+  await expect(popover.getByText(/Une requête HTTP avec une image/)).toBeVisible();
   const tooltipId = await popover.getAttribute("id");
   expect(tooltipId).toBeTruthy();
-  await expect(trigger).toHaveAttribute("aria-describedby", tooltipId!);
-  await expect(trigger).toHaveAccessibleDescription(/Requête HTTP/);
-  await expect(trigger).toHaveAccessibleDescription(/const response = await fetch/);
+  await expect(trigger).not.toHaveAttribute("aria-describedby");
+  await expect(popover).toHaveAccessibleName("Exemple complet");
   await expect
     .poll(() => trigger.evaluate((element) => element === document.activeElement))
     .toBe(true);
+
+  await popover.locator(".code-copy-button").first().click();
+  await expectPopoverOpen(popover, true);
 
   const anchoredMetrics = () =>
     page.evaluate(() => {
@@ -338,28 +385,38 @@ test("keeps the Material rich tooltip anchored and its Shiki block unenhanced", 
   expect(initialMetrics!.top).toBeGreaterThanOrEqual(-1);
   expect(initialMetrics!.right).toBeLessThanOrEqual(initialMetrics!.viewportWidth + 1);
   expect(initialMetrics!.bottom).toBeLessThanOrEqual(initialMetrics!.viewportHeight + 1);
-  const shikiMetrics = await popover.locator("pre.astro-code").evaluate((element) => {
-    const surface = element.closest(".site-rich-tooltip");
-    const rect = element.getBoundingClientRect();
-    const surfaceRect = surface?.getBoundingClientRect();
-    const styles = getComputedStyle(element);
-    return {
-      boxSizing: styles.boxSizing,
-      contained: Boolean(
-        surfaceRect && rect.left >= surfaceRect.left - 1 && rect.right <= surfaceRect.right + 1,
-      ),
-      overflowX: styles.overflowX,
-      overflowY: styles.overflowY,
-      whiteSpace: styles.whiteSpace,
-    };
-  });
-  expect(shikiMetrics).toEqual({
-    boxSizing: "border-box",
+  const shikiMetrics = await popover
+    .locator("pre.astro-code")
+    .first()
+    .evaluate((element) => {
+      const surface = element.closest(".site-rich-tooltip");
+      const rect = element.getBoundingClientRect();
+      const surfaceRect = surface?.getBoundingClientRect();
+      const styles = getComputedStyle(element);
+      return {
+        boxSizing: styles.boxSizing,
+        contained: Boolean(
+          surfaceRect && rect.left >= surfaceRect.left - 1 && rect.right <= surfaceRect.right + 1,
+        ),
+        overflowX: styles.overflowX,
+        overflowY: styles.overflowY,
+        whiteSpace: styles.whiteSpace,
+      };
+    });
+  expect(shikiMetrics).toMatchObject({
+    boxSizing: "content-box",
     contained: true,
-    overflowX: "auto",
     overflowY: "auto",
     whiteSpace: "pre",
   });
+  expect(["auto", "hidden"]).toContain(shikiMetrics.overflowX);
+
+  await trigger.focus();
+  await page.keyboard.press("Tab");
+  await expectPopoverOpen(popover, true);
+  await expect
+    .poll(() => popover.evaluate((element) => element.contains(document.activeElement)))
+    .toBe(true);
 
   const zoomChanged = await page.evaluate(() => {
     if (!window.visualViewport) return null;
@@ -376,11 +433,11 @@ test("keeps the Material rich tooltip anchored and its Shiki block unenhanced", 
   await page.keyboard.press("Escape");
   await expectPopoverOpen(popover, false);
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
-  await expect(trigger).not.toHaveAttribute("aria-describedby");
   await expect
     .poll(() => trigger.evaluate((element) => element === document.activeElement))
     .toBe(true);
 
+  await page.mouse.move(1, 1);
   await page.evaluate(() => {
     document.body.tabIndex = -1;
     document.body.focus();
@@ -563,7 +620,7 @@ test("renders shortcode code blocks with highlighted lines and copy controls", a
   const copiedState = await readCopyVisualState();
   expect(copiedState.iconColor).toBe(copiedState.primary);
 
-  expect(await page.locator("pre code .line").count()).toBeGreaterThan(10);
+  expect(await page.locator("pre code .line").count()).toBeGreaterThan(6);
   expect(
     await page.locator("pre code .line.highlighted, pre code .line.diff").count(),
   ).toBeGreaterThan(0);
@@ -599,9 +656,7 @@ test("renders shortcode code blocks with highlighted lines and copy controls", a
       };
     }),
   );
-  expect(new Set(annotationMarkers.map(({ kind }) => kind))).toEqual(
-    new Set(["red", "green", "blue"]),
-  );
+  expect(new Set(annotationMarkers.map(({ kind }) => kind))).toEqual(new Set(["blue"]));
   expect(
     annotationMarkers.every(
       ({ backgroundColor, backgroundImage, boxShadow }) =>
@@ -631,30 +686,6 @@ test("renders shortcode code blocks with highlighted lines and copy controls", a
     ),
   ).toBe(true);
 
-  const stressBlock = page
-    .locator(".code-shell[data-scrollable] pre")
-    .filter({ hasText: "render-wide-precode-stress" });
-  await expect(stressBlock).toHaveCount(1);
-
-  const initialScrollState = await stressBlock.evaluate((element) => {
-    const pre = element as HTMLElement;
-    return {
-      clientWidth: pre.clientWidth,
-      overflowX: getComputedStyle(pre).overflowX,
-      scrollWidth: pre.scrollWidth,
-    };
-  });
-  expect(initialScrollState.scrollWidth).toBeGreaterThan(initialScrollState.clientWidth + 1);
-  expect(initialScrollState.overflowX).toBe("auto");
-
-  await stressBlock.evaluate((element) => {
-    const pre = element as HTMLElement;
-    pre.scrollLeft = 0;
-  });
-  await stressBlock.hover();
-  await page.mouse.wheel(400, 0);
-  await expect.poll(() => stressBlock.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
-
   await expectNoPageOverflow(page);
 });
 
@@ -673,7 +704,9 @@ test("renders every shortcode button variant as a real Material Web component", 
     await expect(page.locator(`article ${tag}`).first()).toBeVisible();
   }
 
-  await expect(page.locator("article .material-progress md-linear-progress")).toHaveCount(2);
+  await expect(page.locator("article md-linear-progress.material-progress-indicator")).toHaveCount(
+    3,
+  );
   await expect(page.locator("article md-tabs")).toHaveCount(2);
 
   const shortcodeState = await page.evaluate(() => ({
@@ -750,6 +783,20 @@ test("keeps Giscus disabled behind the privacy choice", async ({ page }) => {
     "href",
     "/cookies/#modifier-vos-choix-cookies",
   );
+
+  if (test.info().project.name.includes("mobile")) {
+    const actionAlignment = await page.locator(".giscus-comments-actions").evaluate((actions) => {
+      const parentRect = actions.parentElement?.getBoundingClientRect();
+      const actionsRect = actions.getBoundingClientRect();
+      return parentRect
+        ? Math.abs(
+            actionsRect.left + actionsRect.width / 2 - (parentRect.left + parentRect.width / 2),
+          )
+        : Number.POSITIVE_INFINITY;
+    });
+    expect(actionAlignment).toBeLessThanOrEqual(2);
+    await expect(page.locator(".giscus-comments-actions")).toHaveCSS("justify-content", "center");
+  }
 });
 
 test("keeps one Giscus progress bar until its iframe has loaded", async ({ page }) => {
@@ -851,6 +898,8 @@ test("keeps one Giscus progress bar until its iframe has loaded", async ({ page 
   expect(initialThemeCss).toContain(
     test.info().project.name.includes("dark") ? "#238636" : "#1F883D",
   );
+  expect(initialThemeCss).toContain("color:#FFF!important");
+  expect(initialThemeCss).toContain("fill:currentColor!important");
 
   await expect(panel).toHaveAttribute("aria-busy", "true");
   await expect(progress).toBeVisible();

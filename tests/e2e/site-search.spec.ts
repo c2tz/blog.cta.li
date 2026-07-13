@@ -74,6 +74,7 @@ test("keeps every search sort option visible above the dialog surface", async ({
     "visibility",
     "visible",
   );
+  await expect(sortSelect.locator("[data-selected-option]")).toHaveCount(1);
   await page.keyboard.press("Escape");
   await expect
     .poll(() => sortSelect.evaluate((select) => (select as HTMLElement & { open: boolean }).open))
@@ -156,6 +157,11 @@ test("keeps every search sort option visible above the dialog surface", async ({
       menuHeight: menuSurface?.getBoundingClientRect().height ?? 0,
       optionChecks: Array.from(select.querySelectorAll("md-select-option"), (option) => ({
         endIcons: option.querySelectorAll('[slot="end"]').length,
+        inlineIcons: option.querySelectorAll(
+          ".site-material-option-content > .site-material-menu-check",
+        ).length,
+        inlineIconWidth:
+          option.querySelector(".site-material-menu-check")?.getBoundingClientRect().width ?? 0,
         startIcons: option.querySelectorAll('[slot="start"]').length,
       })),
       primaryColor: resolveColor("--md-sys-color-primary"),
@@ -178,9 +184,9 @@ test("keeps every search sort option visible above the dialog surface", async ({
     menuHeight: 160,
     menuRadius: "8px",
     optionChecks: [
-      { endIcons: 1, startIcons: 0 },
-      { endIcons: 1, startIcons: 0 },
-      { endIcons: 1, startIcons: 0 },
+      { endIcons: 0, inlineIcons: 1, inlineIconWidth: 24, startIcons: 0 },
+      { endIcons: 0, inlineIcons: 1, inlineIconWidth: 24, startIcons: 0 },
+      { endIcons: 0, inlineIcons: 1, inlineIconWidth: 24, startIcons: 0 },
     ],
     optionHeight: 48,
     selectWidth: 152,

@@ -186,6 +186,7 @@ html:has(.site-search-dialog[open]) .cookie-consent--privacy {
 }
 
 .site-search-panel-sort-select::part(menu) {
+  min-width: max-content;
   max-height: min(20rem, calc(100dvh - 2rem));
 }
 
@@ -206,7 +207,7 @@ html:has(.site-search-dialog[open]) .cookie-consent--privacy {
   --md-menu-item-selected-container-color: transparent;
   --md-menu-item-selected-label-text-color: var(--site-text);
   --md-menu-item-top-space: 0.375rem;
-  --md-menu-item-trailing-space: 0.75rem;
+  --md-menu-item-trailing-space: 1rem;
 
   min-height: 3rem;
 }
@@ -225,13 +226,11 @@ html:has(.site-search-dialog[open]) .cookie-consent--privacy {
   position: absolute;
   inset: auto 0 0;
   width: 100%;
-  overflow: hidden;
-  border-radius: 9999px;
   --md-linear-progress-active-indicator-color: var(--site-link);
-  --md-linear-progress-active-indicator-height: 0.18rem;
-  --md-linear-progress-track-color: color-mix(in srgb, var(--site-link) 16%, transparent);
-  --md-linear-progress-track-height: 0.18rem;
-  --md-linear-progress-track-shape: 9999px;
+  --md-linear-progress-active-indicator-height: 0.25rem;
+  --md-linear-progress-track-color: var(--md-sys-color-surface-container-highest);
+  --md-linear-progress-track-height: 0.25rem;
+  --md-linear-progress-track-shape: var(--md-sys-shape-corner-none);
 }
 
 .site-search-panel-status {

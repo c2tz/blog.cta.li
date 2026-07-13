@@ -161,7 +161,7 @@ const initialStatus =
             id="tag-posts-page-size"
             name="tag-posts-page-size"
             class="site-material-select site-table-page-size-select"
-            label="Articles par page"
+            aria-label="Articles par page"
             value={PAGE_SIZE_OPTIONS[0].toString()}
             aria-controls={contentId}
             menu-positioning="popover"
@@ -171,12 +171,15 @@ const initialStatus =
               <md-select-option
                 class="site-material-select-option"
                 value={size.toString()}
+                display-text={size.toString()}
                 selected={index === 0 ? true : undefined}
               >
-                <span slot="headline">{size}</span>
-                <md-icon slot="end" class="site-material-menu-check" aria-hidden="true">
-                  &#xE5CA;
-                </md-icon>
+                <span slot="headline" class="site-material-option-content">
+                  <span>{size}</span>
+                  <md-icon class="site-material-menu-check" aria-hidden="true">
+                    &#xE5CA;
+                  </md-icon>
+                </span>
               </md-select-option>
             ))}
           </md-outlined-select>

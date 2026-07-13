@@ -17,9 +17,7 @@ let observedProse = null;
 
 function matchingCodeBlocks(root) {
   const matches = root instanceof Element && root.matches("pre > code") ? [root] : [];
-  return [...matches, ...root.querySelectorAll("pre > code")].filter(
-    (codeBlock) => !codeBlock.closest("[data-site-rich-tooltip]"),
-  );
+  return [...matches, ...root.querySelectorAll("pre > code")];
 }
 
 function setCopyState(control, state) {
@@ -55,7 +53,7 @@ function createCopyControl(codeBlock) {
   setCopyState(control, "idle");
 
   const handleCopy = async () => {
-    document.dispatchEvent(new CustomEvent(TOOLTIP_HIDE_EVENT));
+    document.dispatchEvent(new CustomEvent(TOOLTIP_HIDE_EVENT, { detail: { simpleOnly: true } }));
     const copied = await copyTextToClipboard(codeBlock.innerText, {
       fallbackClassName: "code-copy-fallback-input",
       fallbackSelectionSource: codeBlock,

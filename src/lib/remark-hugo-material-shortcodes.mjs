@@ -11,7 +11,7 @@ function markerFromNode(node) {
   return parseHugoShortcode(value);
 }
 
-function transformInlineShortcodes(node, file) {
+function transformInlineShortcodes(node, file, parents = []) {
   if (node?.type !== "paragraph" || !Array.isArray(node.children)) return;
   const pattern = /\{\{([<%])\s*([\s\S]*?)\s*([>%])\}\}/g;
   const transformed = [];
@@ -33,6 +33,8 @@ function transformInlineShortcodes(node, file) {
           `Le shortcode ${shortcode.name} doit être isolé par une ligne vide. Shortcodes inline autorisés : ${optionList(INLINE_SHORTCODES)}.`,
           node,
         );
+      } else if (parents.includes("rich-tooltip") && shortcode.name === "rich-tooltip-ref") {
+        file.fail("Un rich tooltip ne peut pas invoquer un autre rich tooltip.", node);
       } else {
         transformed.push(renderShortcode(shortcode, [], file));
       }
@@ -59,7 +61,7 @@ function expandAdjacentMarkerParagraphs(children) {
   });
 }
 
-function transformChildren(children, file) {
+function transformChildren(children, file, parents = []) {
   children = expandAdjacentMarkerParagraphs(children);
   const output = [];
 
@@ -68,13 +70,21 @@ function transformChildren(children, file) {
     const marker = markerFromNode(node);
 
     if (!marker) {
-      transformInlineShortcodes(node, file);
-      if (Array.isArray(node.children)) node.children = transformChildren(node.children, file);
+      transformInlineShortcodes(node, file, parents);
+      if (Array.isArray(node.children)) {
+        node.children = transformChildren(node.children, file, parents);
+      }
       output.push(node);
       continue;
     }
 
     if (marker.closing) file.fail(`Shortcode fermant inattendu : ${marker.name}`, node);
+    if (
+      parents.includes("rich-tooltip") &&
+      (marker.name === "rich-tooltip" || marker.name === "rich-tooltip-ref")
+    ) {
+      file.fail("Un rich tooltip ne peut pas invoquer un autre rich tooltip.", node);
+    }
     if (marker.selfClosing) {
       output.push(renderShortcode(marker, [], file));
       continue;
@@ -94,7 +104,10 @@ function transformChildren(children, file) {
     }
 
     if (closingIndex === -1) file.fail(`Shortcode ${marker.name} non fermé.`, node);
-    const inner = transformChildren(children.slice(index + 1, closingIndex), file);
+    const inner = transformChildren(children.slice(index + 1, closingIndex), file, [
+      ...parents,
+      marker.name,
+    ]);
     output.push(renderShortcode(marker, inner, file));
     index = closingIndex;
   }

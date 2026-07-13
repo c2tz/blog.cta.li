@@ -195,6 +195,10 @@ html.consent-visible body {
   margin: 0.25rem -0.5rem 0 -0.5rem;
 }
 
+.cookie-consent-actions--mobile {
+  display: none;
+}
+
 .cookie-consent--explicit-content .cookie-consent-actions {
   flex-wrap: nowrap;
   gap: 0.5rem;
@@ -209,7 +213,8 @@ html.consent-visible body {
   margin-inline-start: auto;
 }
 
-.cookie-consent-actions :is(md-text-button, md-filled-button, md-filled-tonal-button) {
+.cookie-consent-actions
+  :is(md-text-button, md-filled-button, md-filled-tonal-button, md-outlined-button) {
   --md-filled-button-label-text-font: var(--site-font);
   --md-filled-button-label-text-line-height: 1.5rem;
   --md-filled-button-label-text-size: 1rem;
@@ -218,6 +223,10 @@ html.consent-visible body {
   --md-filled-tonal-button-label-text-line-height: 1.5rem;
   --md-filled-tonal-button-label-text-size: 1rem;
   --md-filled-tonal-button-label-text-weight: 700;
+  --md-outlined-button-label-text-font: var(--site-font);
+  --md-outlined-button-label-text-line-height: 1.5rem;
+  --md-outlined-button-label-text-size: 1rem;
+  --md-outlined-button-label-text-weight: 700;
   --md-text-button-label-text-font: var(--site-font);
   --md-text-button-label-text-line-height: 1.5rem;
   --md-text-button-label-text-size: 1rem;
@@ -232,13 +241,42 @@ html.consent-visible body {
 
 .cookie-consent:is(.cookie-consent--privacy, .cookie-consent--explicit-content)
   .cookie-consent-actions
-  :is(md-text-button, md-filled-button, md-filled-tonal-button) {
+  :is(md-text-button, md-filled-button, md-filled-tonal-button, md-outlined-button) {
   --md-filled-button-leading-space: 0.5rem;
   --md-filled-button-trailing-space: 0.5rem;
   --md-filled-tonal-button-leading-space: 0.5rem;
   --md-filled-tonal-button-trailing-space: 0.5rem;
+  --md-outlined-button-leading-space: 0.5rem;
+  --md-outlined-button-trailing-space: 0.5rem;
   --md-text-button-leading-space: 0.5rem;
   --md-text-button-trailing-space: 0.5rem;
 
   min-width: 4rem;
+}
+
+@media (max-width: 430px) {
+  .cookie-consent--privacy {
+    right: max(0.5rem, env(safe-area-inset-right, 0px));
+    bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+    left: max(0.5rem, env(safe-area-inset-left, 0px));
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0.875rem 0.75rem 0.5rem;
+  }
+
+  .cookie-consent--privacy .cookie-consent-actions--desktop {
+    display: none;
+  }
+
+  .cookie-consent--privacy .cookie-consent-actions--mobile {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.625rem;
+    margin-inline: 0;
+  }
+
+  .cookie-consent-actions--mobile :is(md-filled-button, md-filled-tonal-button, md-text-button) {
+    width: 100%;
+  }
 }

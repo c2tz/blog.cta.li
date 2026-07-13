@@ -43,17 +43,8 @@ Itatur? Quiatae cullecum rem ent aut odis in re eossequodi nonsequ idebis ne sap
 
 ![konachan-382339.jpg](./images/konachan-382339.jpg)
 
-{{< admonition type="danger" icon="taunt" >}}
-
-The blockquote element represents content that is quoted from another source, optionally with a citation which must be within a `footer` or `cite` element, and optionally with in-line changes such as annotations and abbreviations.
-
-{{< admonition type="danger" icon="taunt" >}}
-
-The blockquote element represents content that is quoted from another source, optionally with a citation which must be within a `footer` or `cite` element, and optionally with in-line changes such as annotations and abbreviations.
-
-{{< /admonition >}}
-
-{{< /admonition >}}
+> The blockquote element represents content quoted from another source. Use native Markdown for
+> citations and annotations instead of wrapping it in an interface component.
 
 ## Blockquotes
 
@@ -249,8 +240,21 @@ Le contenu reste du **Markdown** et peut contenir des listes, des liens ou du co
 {{< /admonition >}}
 
 Une admonition peut être repliable avec `collapsible=true` et ouverte par défaut avec `open=true`.
-L’icône peut être remplacée par son nom Material Symbol en kebab-case, par exemple
-`icon="children-face"`. Une icône seule s’insère avec `{{< icon "children-face" />}}`.
+L’icône peut être remplacée par son nom Material Symbol.
+
+### Icône
+
+#### Syntax
+
+```markdown
+Un symbole Material inline : {{< icon name="info" label="Information" />}}
+```
+
+#### Output
+
+Un symbole Material inline : {{< icon name="info" label="Information" />}}
+
+Les citations et abréviations restent du Markdown ou du HTML sémantique.
 
 ### Code Tabs
 
@@ -294,7 +298,7 @@ npm install
 {{< /tab >}}
 {{< /tabs >}}
 
-### Angular Material Data Table
+### Material Data Table
 
 #### Syntax
 
@@ -305,7 +309,7 @@ npm install
 | ---------- | ------------------------ | ---------- |
 | MatTable   | Données tabulaires       | Oui        |
 | MatTabs    | Contenu à onglets        | Oui        |
-| Admonition | Information contextuelle | Non        |
+| MatButton  | Action Material          | Oui        |
 
 {{< /material-table >}}
 ```
@@ -318,6 +322,6 @@ npm install
 | ---------- | ------------------------ | ---------- |
 | MatTable   | Données tabulaires       | Oui        |
 | MatTabs    | Contenu à onglets        | Oui        |
-| Admonition | Information contextuelle | Non        |
+| MatButton  | Action Material          | Oui        |
 
 {{< /material-table >}}

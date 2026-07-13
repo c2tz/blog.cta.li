@@ -301,12 +301,12 @@ class SiteCookieConsentBanner extends HTMLElement {
       this.#showNextNotice();
     });
 
-    this.querySelector("[data-cookie-action='reject']")?.addEventListener("click", () => {
-      this.#saveConsent("rejected");
+    this.querySelectorAll("[data-cookie-action='reject']").forEach((button) => {
+      button.addEventListener("click", () => this.#saveConsent("rejected"));
     });
 
-    this.querySelector("[data-cookie-action='accept']")?.addEventListener("click", () => {
-      this.#saveConsent("accepted");
+    this.querySelectorAll("[data-cookie-action='accept']").forEach((button) => {
+      button.addEventListener("click", () => this.#saveConsent("accepted"));
     });
   }
 

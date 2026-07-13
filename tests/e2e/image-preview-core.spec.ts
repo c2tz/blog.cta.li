@@ -5,6 +5,7 @@ import {
   DIALOG_SELECTOR,
   expectFocusWithin,
   expectMaterialAria,
+  expectPopoverOpen,
   waitForLightboxController,
   openLightbox,
   tap,
@@ -80,6 +81,8 @@ test("uses a modal Material dialog with only two accessible, focus-trapped contr
   await expect(toolbar.getByRole("button", { name: "Fermer", exact: true })).toBeVisible();
   await expect(informationButton).toHaveAttribute("type", "button");
   await expect(closeButton).toHaveAttribute("type", "button");
+  await expect(closeButton).toHaveAttribute("data-tooltip-suppress-pointer-focus", "true");
+  await expectPopoverOpen(page.locator("[data-site-tooltip-surface]"), false);
   await expect(
     dialog.locator(
       "[data-image-zoom], [data-image-real-size], [data-image-previous], [data-image-next], md-menu",
@@ -220,20 +223,42 @@ test("fits the complete image with CSS and stays scroll-free through gestures an
   await expect(stage).toHaveCSS("overflow-y", "hidden");
 });
 
-test("contains a small square figure inside the preview stage", async ({ page }) => {
+test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwards", async ({
+  page,
+}) => {
   await page.goto("/posts/hugo-material-shortcodes/", { waitUntil: "domcontentloaded" });
-  const sourceImage = page.locator('img[data-image-dialog][src="/mask.webp"]');
+  const richTooltip = page.locator("#tooltip-http-shiki");
+  const trigger = page.locator('[data-rich-tooltip-trigger="tooltip-http-shiki"]');
+  const sourceImage = richTooltip.locator('img[alt="konachan-382339.jpg"]');
   const dialog = page.locator(DIALOG_SELECTOR);
+  await expect(richTooltip).toHaveAttribute("data-rich-tooltip-enhanced", "true");
+  await trigger.focus();
+  await expectPopoverOpen(richTooltip, true);
   await expect(sourceImage).toBeVisible();
   await waitForLightboxController(dialog);
-  await sourceImage.scrollIntoViewIfNeeded();
+  await expect(sourceImage).toHaveAttribute("role", "button");
+  await expect(sourceImage).toHaveAttribute("tabindex", "0");
   await sourceImage.click();
   await expect(dialog).toHaveJSProperty("open", true);
-  await expectImageContained(dialog.locator("[data-image-dialog-stage]"));
+  await expectPopoverOpen(richTooltip, false);
+  await dialog.locator("[data-image-close]").click();
+  await expect(dialog).toHaveJSProperty("open", false);
+  await expectPopoverOpen(richTooltip, false);
+
+  await trigger.focus();
+  await expectPopoverOpen(richTooltip, true);
+  await sourceImage.focus();
+  await page.keyboard.press("Enter");
+  await expect(dialog).toHaveJSProperty("open", true);
+  await expectPopoverOpen(richTooltip, false);
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveJSProperty("open", false);
+  await expect(trigger).toBeFocused();
+  await expectPopoverOpen(richTooltip, false);
 });
 
 test("closes from the toolbar without waiting for the history fallback", async ({ page }) => {
-  const { dialog, nativeDialog } = await openLightbox(page);
+  const { dialog, nativeDialog, sourceImage } = await openLightbox(page);
   await dialog.evaluate((element) => {
     const testWindow = window as typeof window & {
       __imageCloseTiming?: { clickAt?: number; closeAt?: number };
@@ -259,6 +284,10 @@ test("closes from the toolbar without waiting for the history fallback", async (
   await dialog.locator("[data-image-close]").click();
   await expect(dialog).toHaveJSProperty("open", false);
   await expect(nativeDialog).toBeHidden();
+  await expect(sourceImage).not.toBeFocused();
+  await expect
+    .poll(() => sourceImage.evaluate((image) => image.matches(":focus-visible")))
+    .toBe(false);
   const closeLatency = await page.evaluate(() => {
     const timing = (
       window as typeof window & {
@@ -443,5 +472,5 @@ test("does not commit a decoded gallery image after closing starts", async ({ pa
       })),
     )
     .toEqual({ opacity: "", transform: "" });
-  await expect(sourceImage).toBeFocused();
+  await expect(sourceImage).not.toBeFocused();
 });

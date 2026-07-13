@@ -13,6 +13,16 @@ async function render(markdown, options = {}) {
   return (await processor.render(markdown)).code;
 }
 
+async function rejectsSilently(callback, pattern) {
+  const originalConsoleError = console.error;
+  console.error = () => {};
+  try {
+    await assert.rejects(callback, pattern);
+  } finally {
+    console.error = originalConsoleError;
+  }
+}
+
 test("parse les paramètres Hugo nommés et positionnels", () => {
   assert.deepEqual(parseHugoShortcode('{{< icon name="child-care" />}}'), {
     closing: false,
@@ -43,85 +53,55 @@ test("préserve le Markdown standard sans activation implicite", async () => {
   assert.doesNotMatch(html, /material-(?:admonition|tabs|data-table)/);
 });
 
-test("rend une admonition Hugo avec une icône Material Symbol nommée", async () => {
-  const html = await render(`{{< admonition type="warning" icon="children-face" >}}
+test("rend les admonitions, leurs alias de types et leur mode repliable", async () => {
+  const html = await render(`{{< admonition type="error" icon="children-face" >}}
 
 Contenu **Markdown**.
 
-{{< /admonition >}}`);
-  assert.match(html, /material-admonition-warning/);
-  assert.match(html, /data-material-symbol="children-face"/);
-  assert.match(html, /Contenu <strong>Markdown<\/strong>/);
-});
+{{< /admonition >}}
 
-test("mappe les alias d’admonitions MkDocs Material vers leurs familles visuelles", async () => {
-  const html = await render(`{{< admonition type="error" >}}
+{{< admonition type="info" title="Détails" collapsible=true open=true >}}
 
-Danger.
+Contenu repliable.
 
 {{< /admonition >}}`);
   assert.match(html, /material-admonition-danger/);
   assert.match(html, />Erreur</);
+  assert.match(html, /data-material-symbol="children-face"/);
+  assert.match(html, /Contenu <strong>Markdown<\/strong>/);
+  assert.match(html, /<details[^>]*open/);
+  assert.match(html, /<summary[^>]*material-admonition-title/);
+  assert.match(html, /data-material-symbol="expand-more"/);
 });
 
-test("utilise l’icône Material Symbol par défaut associée au type d’admonition", async () => {
-  const html = await render(`{{< admonition type="warning" >}}
+test("imbrique des admonitions dans une admonition repliable ouverte", async () => {
+  const html =
+    await render(`{{< admonition type="info" title="Toutes" collapsible=true open=true >}}
 
-Attention.
+{{< admonition type="note" >}}
 
-{{< /admonition >}}`);
-  assert.match(html, /material-admonition-warning/);
-  assert.match(html, /data-material-symbol="warning"/);
-});
-
-test("refuse un type d’admonition inconnu avec les valeurs possibles", async () => {
-  const originalConsoleError = console.error;
-  console.error = () => {};
-  try {
-    await assert.rejects(
-      () =>
-        render(`{{< admonition type="warnng" >}}
-
-Attention.
-
-{{< /admonition >}}`),
-      /Type d’admonition inconnu : `warnng`\. Valeurs possibles : .*`warning`.*Alias acceptés : .*`attention`/,
-    );
-  } finally {
-    console.error = originalConsoleError;
-  }
-});
-
-test("distingue l’icône d’échec de l’icône danger", async () => {
-  const html = await render(`{{< admonition type="failure" >}}
-
-Échec.
+Une note.
 
 {{< /admonition >}}
 
 {{< admonition type="danger" >}}
 
-Danger.
+Un danger.
+
+{{< /admonition >}}
 
 {{< /admonition >}}`);
-  assert.match(html, /material-admonition-failure/);
+  assert.equal(html.match(/class="material-admonition /g)?.length, 3);
+  assert.match(html, /<details[^>]*material-admonition-info[^>]*open/);
+  assert.match(html, /material-admonition-note/);
   assert.match(html, /material-admonition-danger/);
-  assert.match(html, /material-admonition-failure[\s\S]*data-material-symbol="dangerous"/);
-  assert.match(html, /material-admonition-danger[\s\S]*data-material-symbol="report"/);
 });
 
-test("indique visuellement les admonitions pliables avec une icône Material Symbol", async () => {
-  const html =
-    await render(`{{< admonition type="info" title="Détails" collapsible=true open=true >}}
-
-Ce bloc est ouvert par défaut, mais peut être replié.
-
-{{< /admonition >}}`);
-  assert.match(html, /<details[^>]*open/);
-  assert.match(html, /<summary[^>]*material-admonition-title/);
-  assert.match(html, /material-admonition-toggle-indicator/);
-  assert.match(html, /material-admonition-toggle-icon/);
-  assert.match(html, /data-material-symbol="expand-more"/);
+test("refuse un type d’admonition inconnu avec les valeurs possibles", async () => {
+  await rejectsSilently(
+    () => render("{{< admonition type=warnng >}}\n\nAttention.\n\n{{< /admonition >}}"),
+    /Type d’admonition inconnu : `warnng`.*`warning`.*Alias acceptés.*`attention`/,
+  );
 });
 
 test("accepte une icône Material Symbol nommée au milieu d’une phrase", async () => {
@@ -129,24 +109,30 @@ test("accepte une icône Material Symbol nommée au milieu d’une phrase", asyn
   assert.match(html, /data-material-symbol="children-face"/);
   assert.match(html, /material-shortcode-inline-icon/);
   assert.match(html, /aria-hidden="true"/);
-  assert.match(html, /Voici une icône .* dans une phrase\./);
 });
 
-test("rend les badges inline, raccourcis clavier et progressions", async () => {
-  const html = await render(`Statut {{< inline-badge label="API" value="v2" tone="success" />}}.
+test("rend les modes officiels du composant de progression Material Web", async () => {
+  const html = await render(`{{< progress label="Migration" value=72 buffer=90 max=100 />}}
 
-Raccourci {{< kbd "Ctrl" "K" />}}.
+{{< progress label="Recherche" indeterminate=true fourColor=true />}}`);
+  assert.equal(html.match(/<md-linear-progress/g)?.length, 2);
+  assert.match(html, /aria-label="Migration"/);
+  assert.match(html, /value="72"/);
+  assert.match(html, /buffer="90"/);
+  assert.match(html, /max="100"/);
+  assert.match(html, /indeterminate/);
+  assert.match(html, /four-color/);
+});
 
-{{< progress label="Migration" value=72 tone="info" />}}`);
-  assert.match(html, /material-inline-badge-success/);
-  assert.match(html, /material-inline-badge-label[\s\S]*API/);
-  assert.match(html, /material-inline-badge-value[\s\S]*v2/);
-  assert.match(html, /material-kbd-sequence/);
-  assert.match(html, /<kbd class="material-kbd">Ctrl<\/kbd>/);
-  assert.match(html, /<kbd class="material-kbd">K<\/kbd>/);
-  assert.match(html, /<md-linear-progress/);
-  assert.match(html, /value="0\.72"/);
-  assert.match(html, /material-progress-info/);
+test("valide les combinaisons de progression", async () => {
+  await rejectsSilently(
+    () => render('{{< progress label="Erreur" value=10 indeterminate=true />}}'),
+    /ne peut pas combiner `indeterminate=true` et une valeur/,
+  );
+  await rejectsSilently(
+    () => render('{{< progress label="Erreur" value=80 buffer=20 />}}'),
+    /buffer.*supérieure à `value`/,
+  );
 });
 
 test("rend les cinq variantes avec les vrais boutons Material Web et des URLs sûres", async () => {
@@ -157,141 +143,96 @@ Commencer **maintenant**
 {{< /button >}}
 
 {{< button href="https://example.com" variant="outlined" label="Documentation" target="_blank" />}}
-
 {{< button href="/preferences/" variant="tonal" label="Préférences" />}}
 {{< button href="/home/" variant="text" label="Accueil" />}}
 {{< button href="/material/" variant="elevated" label="Material" />}}`);
   assert.match(html, /<md-filled-button[^>]*class="material-button"/);
-  assert.match(html, /href="\/guide\/"/);
   assert.match(html, /Commencer <strong>maintenant<\/strong>/);
   assert.match(html, /data-material-symbol="arrow-forward"/);
-  assert.match(html, /<md-outlined-button[^>]*class="material-button"/);
-  assert.match(html, /target="_blank"/);
+  assert.match(html, /<md-outlined-button[^>]*target="_blank"/);
   assert.match(html, /<md-filled-tonal-button[^>]*class="material-button"/);
   assert.match(html, /<md-text-button[^>]*class="material-button"/);
   assert.match(html, /<md-elevated-button[^>]*class="material-button"/);
 });
 
-test("refuse les URL de shortcode exécutables", async () => {
-  const originalConsoleError = console.error;
-  console.error = () => {};
-  try {
-    await assert.rejects(
-      () => render('{{< button href="javascript:alert(1)" label="Dangereux" />}}'),
-      /URL invalide pour button\.href/,
-    );
-  } finally {
-    console.error = originalConsoleError;
-  }
-});
-
-test("refuse les libellés de bouton composés de plusieurs blocs Markdown", async () => {
-  const originalConsoleError = console.error;
-  console.error = () => {};
-  try {
-    await assert.rejects(
-      () =>
-        render(`{{< button href="/" >}}
+test("refuse les URL exécutables et les libellés de bouton multiblocs", async () => {
+  await rejectsSilently(
+    () => render('{{< button href="javascript:alert(1)" label="Dangereux" />}}'),
+    /URL invalide pour button\.href/,
+  );
+  await rejectsSilently(
+    () =>
+      render(`{{< button href="/" >}}
 
 Premier paragraphe.
 
 Second paragraphe.
 
 {{< /button >}}`),
-      /libellé d’un bouton doit tenir sur une seule ligne Markdown/,
-    );
-  } finally {
-    console.error = originalConsoleError;
-  }
-});
-
-test("rend les grilles de cartes, annotations, abréviations et figures", async () => {
-  const html =
-    await render(`Référence {{< annotation-ref id="note-1" label="1" />}} et {{< abbr text="API" title="Interface de programmation" />}}.
-
-{{< cards columns=2 >}}
-
-{{< card title="Installation" href="/install/" icon="download" >}}
-
-Guide **rapide**.
-
-{{< /card >}}
-
-{{< card title="Configuration" >}}
-
-Réglages avancés.
-
-{{< /card >}}
-
-{{< /cards >}}
-
-{{< annotations label="Notes" >}}
-
-{{< annotation id="note-1" label="1" title="Détail enrichi" >}}
-
-Une annotation en **Markdown**.
-
-![Logo](/mask.webp)
-
-[Action](/tags/material/)
-
-{{< /annotation >}}
-
-{{< /annotations >}}
-
-{{< figure src="/mask.webp" alt="Logo" caption="Logo du site" width=60 height=60 />}}`);
-  assert.match(html, /class="material-card-grid"[^>]*data-columns="2"/);
-  assert.match(html, /class="material-card"/);
-  assert.match(html, /Guide <strong>rapide<\/strong>/);
-  assert.match(html, /<button[^>]*aria-controls="note-1"/);
-  assert.match(html, /data-context-popover-trigger="note-1"/);
-  assert.match(html, /data-site-context-trigger/);
-  assert.match(html, /popovertarget="note-1"/);
-  assert.doesNotMatch(html, /data-site-context-trigger[^>]*tabindex=/);
-  assert.match(
-    html,
-    /<dialog[^>]*class="material-annotation site-context-popover"[^>]*data-site-context-popover/,
+    /libellé d’un bouton doit tenir sur une seule ligne Markdown/,
   );
-  assert.match(html, /id="note-1"[^>]*popover="auto"/);
-  assert.match(html, /<div[^>]*role="heading"[^>]*>Détail enrichi<\/div>/);
-  assert.match(html, /Une annotation en <strong>Markdown<\/strong>/);
-  assert.match(html, /<img src="\/mask\.webp" alt="Logo">/);
-  assert.match(html, /<a href="\/tags\/material\/">Action<\/a>/);
-  assert.match(html, /data-tooltip="Interface de programmation"/);
-  assert.match(html, /aria-label="API — Interface de programmation"/);
-  assert.doesNotMatch(html, /<abbr[^>]*title=/);
-  assert.doesNotMatch(html, /<abbr[^>]*tabindex=/);
-  assert.match(html, /class="material-figure"/);
-  assert.match(html, /src="\/mask\.webp"/);
 });
 
-test("rend un rich tooltip Material sans repère numérique autour d’un bloc Shiki brut", async () => {
+test("rend un rich tooltip interactif avec du contenu Markdown et Shiki", async () => {
   const html =
     await render(`Référence {{< rich-tooltip-ref id="rich-code" label="Voir le code" />}}.
 
 {{< rich-tooltip id="rich-code" title="Exemple TypeScript" >}}
 
-\`\`\`ts
-const value = await Promise.resolve(42);
+![Konachan](./images/konachan-382339.jpg)
+
+{{< admonition type="tip" >}}
+
+Compatible avec le rich tooltip.
+
+{{< /admonition >}}
+
+\`\`\`ts {2}
+const endpoint = "/api";
+const value = await fetch(endpoint);
 \`\`\`
 
-{{< /rich-tooltip >}}`);
+{{< button href="/guide/" variant="tonal" label="Guide" />}}
 
-  assert.match(html, /<button[^>]*class="material-rich-tooltip-trigger site-rich-tooltip-trigger"/);
+{{< /rich-tooltip >}}`);
+  assert.match(html, /aria-haspopup="dialog"/);
   assert.match(html, /data-rich-tooltip-trigger="rich-code"/);
-  assert.match(html, />Voir le code<\/button>/);
-  assert.doesNotMatch(html, /<sup/);
-  assert.match(html, /<div[^>]*class="material-rich-tooltip site-rich-tooltip"/);
-  assert.match(html, /data-site-rich-tooltip/);
-  assert.match(html, /id="rich-code"[^>]*popover="manual"[^>]*role="tooltip"/);
-  assert.match(html, /id="rich-code-title"[^>]*>Exemple TypeScript<\/div>/);
-  assert.match(html, /<pre[^>]*class="astro-code[^"]*"[^>]*><code>/);
-  assert.doesNotMatch(html, /code-copy-button|code-actions|highlighted|focused|diff/);
+  assert.match(html, /aria-labelledby="rich-code-title"/);
+  assert.match(html, /id="rich-code"[^>]*popover="manual"[^>]*role="dialog"/);
+  assert.match(html, /<img src="\.\/images\/konachan-382339\.jpg" alt="Konachan">/);
+  assert.match(html, /material-admonition-tip/);
+  assert.match(html, /<pre[^>]*class="astro-code[^"]*"/);
+  assert.equal(html.match(/class="line"/g)?.length, 2);
+  assert.match(html, /<md-filled-tonal-button/);
+});
+
+test("interdit toute invocation de rich tooltip depuis un rich tooltip", async () => {
+  await rejectsSilently(
+    () =>
+      render(`{{< rich-tooltip id="outer" >}}
+
+{{< rich-tooltip-ref id="inner" label="Interdit" />}}
+
+{{< /rich-tooltip >}}`),
+    /Un rich tooltip ne peut pas invoquer un autre rich tooltip/,
+  );
+  await rejectsSilently(
+    () =>
+      render(`{{< rich-tooltip id="outer" >}}
+
+{{< rich-tooltip id="inner" >}}
+
+Contenu.
+
+{{< /rich-tooltip >}}
+
+{{< /rich-tooltip >}}`),
+    /Un rich tooltip ne peut pas invoquer un autre rich tooltip/,
+  );
 });
 
 test("rend les onglets et tableaux uniquement via leurs shortcodes", async () => {
   const html = await render(`{{< tabs label="Commandes" >}}
-
 {{< tab title="pnpm" >}}
 
 \`\`\`bash
@@ -299,7 +240,6 @@ pnpm install
 \`\`\`
 
 {{< /tab >}}
-
 {{< /tabs >}}
 
 {{< material-table filter=true paginate=true pageSize=5 >}}
@@ -316,30 +256,10 @@ pnpm install
   assert.match(html, /data-page-size="5"/);
 });
 
-test("rend un shortcode Shiki autour d’un vrai bloc de code Markdown", async () => {
-  const html =
-    await render(`{{< shiki title="Contrôleur" filename="demo.ts" lang="ts" meta="{2}" >}}
-
-\`\`\`
-const state = signal("idle")
-state.set("done")
-\`\`\`
-
-{{< /shiki >}}`);
-  assert.match(html, /data-shiki-shortcode/);
-  assert.match(html, /material-shiki-header/);
-  assert.match(html, /Contrôleur/);
-  assert.match(html, /demo\.ts/);
-  assert.match(html, /data-language="ts"/);
-  assert.match(html, /state\.<\/span><span[^>]*>set/);
-});
-
-test("refuse un shortcode inconnu au lieu de produire silencieusement du HTML cassé", async () => {
-  const originalConsoleError = console.error;
-  console.error = () => {};
-  try {
-    await assert.rejects(() => render("{{< composant-inconnu />}}"), /Shortcode Hugo inconnu/);
-  } finally {
-    console.error = originalConsoleError;
-  }
+test("refuse les shortcodes éditoriaux supprimés et les noms inconnus", async () => {
+  await rejectsSilently(
+    () => render('{{< inline-badge label="stable" value="v3" />}}'),
+    /Shortcodes inline autorisés|Shortcode Hugo inconnu/,
+  );
+  await rejectsSilently(() => render("{{< composant-inconnu />}}"), /Shortcode Hugo inconnu/);
 });

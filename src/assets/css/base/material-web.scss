@@ -226,21 +226,29 @@ md-filter-chip[selected] {
   cursor: pointer;
 }
 
+.site-material-option-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: max-content;
+}
+
 .site-material-select-option::part(focus-ring) {
   --md-focus-ring-inward-offset: 4px;
   --md-focus-ring-shape: var(--md-sys-shape-corner-extra-small);
 }
 
 .site-material-menu-check {
-  --md-icon-size: 1.25rem;
+  --md-icon-size: 1.5rem;
 
+  flex: 0 0 1.5rem;
   visibility: hidden;
   color: var(--md-sys-color-on-surface-variant);
   opacity: 0;
   pointer-events: none;
 }
 
-.site-material-select-option:is([selected], [data-selected-option]) .site-material-menu-check {
+.site-material-select-option[data-selected-option] .site-material-menu-check {
   visibility: visible;
   opacity: 1;
 }
@@ -259,6 +267,8 @@ md-filter-chip[selected] {
 }
 
 .site-table-page-size-select {
+  width: 5.5rem;
+  min-width: 5.5rem;
   --md-outlined-select-text-field-focus-label-text-color: var(--md-sys-color-primary);
   --md-outlined-select-text-field-focus-outline-color: var(--md-sys-color-primary);
   --md-outlined-select-text-field-focus-trailing-icon-color: var(--md-sys-color-primary);
@@ -267,6 +277,10 @@ md-filter-chip[selected] {
   --md-outlined-select-text-field-label-text-color: var(--md-sys-color-on-surface-variant);
   --md-outlined-select-text-field-outline-color: var(--md-sys-color-outline-variant);
   --md-outlined-select-text-field-trailing-icon-color: var(--md-sys-color-on-surface-variant);
+}
+
+.site-table-page-size-select::part(menu) {
+  min-width: 6.5rem;
 }
 
 @media (forced-colors: active) {

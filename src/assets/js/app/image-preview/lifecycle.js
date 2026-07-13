@@ -75,7 +75,9 @@ export const withImagePreviewLifecycle = (Base) =>
       this.finishInformationClose(false);
       this.setControlsVisible(true);
       this.unlockPageScroll();
-      this.triggerImage?.focus({ preventScroll: true });
+      if (this.restoreTriggerFocus) this.triggerImage?.focus({ preventScroll: true });
+      else this.triggerImage?.blur();
+      this.restoreTriggerFocus = false;
       this.hideTooltip();
       this.restoreLockedScrollPosition();
       this.triggerImage = undefined;
@@ -167,8 +169,8 @@ export const withImagePreviewLifecycle = (Base) =>
       }
     }
 
-    hideTooltip() {
-      document.dispatchEvent(new CustomEvent(SITE_EVENTS.tooltipHide));
+    hideTooltip(detail) {
+      document.dispatchEvent(new CustomEvent(SITE_EVENTS.tooltipHide, { detail }));
     }
 
     destroy() {

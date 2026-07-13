@@ -70,13 +70,16 @@ const limitId = `${idPrefix}-filter-limit`;
             <md-select-option
               class="site-material-select-option site-search-sort-option"
               value={option.value}
+              display-text={option.label}
               aria-label={option.accessibleLabel}
               selected={!deferred && option.value === "relevance" ? true : undefined}
             >
-              <span slot="headline">{option.label}</span>
-              <md-icon slot="end" class="site-material-menu-check" aria-hidden="true">
-                &#xE5CA;
-              </md-icon>
+              <span slot="headline" class="site-material-option-content">
+                <span>{option.label}</span>
+                <md-icon class="site-material-menu-check" aria-hidden="true">
+                  &#xE5CA;
+                </md-icon>
+              </span>
             </md-select-option>
           ))
         }

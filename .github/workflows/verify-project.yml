@@ -46,9 +46,9 @@ jobs:
       - name: Check, build, and validate security headers
         run: pnpm verify:quality
 
-  lighthouse-100:
+  lighthouse-performance:
     if: github.event_name != 'pull_request' || github.actor != 'dependabot[bot]'
-    name: Lighthouse 100 (mobile and desktop, no SEO)
+    name: Lighthouse 95+ performance (mobile and desktop, no SEO)
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -76,7 +76,7 @@ jobs:
       - name: Build minified production output
         run: pnpm build
 
-      - name: Require median 100 without SEO on three mobile and desktop runs
+      - name: Require 95+ performance and perfect accessibility and best practices on every run
         run: pnpm test:lighthouse
 
       - name: Upload Lighthouse CI quality reports

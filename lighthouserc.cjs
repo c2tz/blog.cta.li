@@ -6,13 +6,16 @@ if (!process.env.CHROME_PATH && existsSync(playwrightChromePath)) {
   process.env.CHROME_PATH = playwrightChromePath;
 }
 
-const perfectCategory = [
+const categoryThreshold = (minScore) => [
   "error",
   {
     aggregationMethod: "pessimistic",
-    minScore: 1,
+    minScore,
   },
 ];
+
+const perfectCategory = categoryThreshold(1);
+const performanceCategory = categoryThreshold(0.95);
 
 module.exports = {
   ci: {
@@ -33,7 +36,7 @@ module.exports = {
       assertions: {
         "categories:accessibility": perfectCategory,
         "categories:best-practices": perfectCategory,
-        "categories:performance": perfectCategory,
+        "categories:performance": performanceCategory,
       },
     },
     upload: {

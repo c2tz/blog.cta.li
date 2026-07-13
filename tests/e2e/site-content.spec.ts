@@ -625,7 +625,12 @@ test("renders shortcode code blocks with highlighted lines and copy controls", a
     await page.locator("pre code .line.highlighted, pre code .line.diff").count(),
   ).toBeGreaterThan(0);
 
-  const annotatedLines = page.locator(
+  const richTooltipTrigger = page.locator('[data-rich-tooltip-trigger="tooltip-http-shiki"]');
+  const richTooltip = page.locator("#tooltip-http-shiki");
+  await richTooltipTrigger.click();
+  await expectPopoverOpen(richTooltip, true);
+
+  const annotatedLines = richTooltip.locator(
     "pre code .line.highlighted, pre code .line.focused, pre code .line.diff",
   );
   expect(await annotatedLines.count()).toBeGreaterThan(0);

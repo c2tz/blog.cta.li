@@ -310,18 +310,39 @@ test("supports gallery arrows and touch swipe while taps control the toolbar", a
   await expect
     .poll(() => image.evaluate((element) => getComputedStyle(element).animationName))
     .toBe("site-image-dialog-enter-next");
-  const nextKeyframes = await image.evaluate((element) =>
-    element
-      .getAnimations()
-      .flatMap((animation) =>
-        animation.effect instanceof KeyframeEffect ? animation.effect.getKeyframes() : [],
-      )
-      .map((keyframe) => ({
-        clipPath: keyframe.clipPath,
-        opacity: keyframe.opacity,
-        transform: keyframe.transform,
-      })),
-  );
+  const nextKeyframes = await page.evaluate((animationName) => {
+    const findKeyframes = (rules: CSSRuleList): CSSKeyframesRule | undefined => {
+      for (const rule of rules) {
+        if (rule instanceof CSSKeyframesRule && rule.name === animationName) return rule;
+
+        const nestedRules = (
+          rule as CSSRule & {
+            cssRules?: CSSRuleList;
+          }
+        ).cssRules;
+        if (!nestedRules) continue;
+
+        const keyframes = findKeyframes(nestedRules);
+        if (keyframes) return keyframes;
+      }
+      return undefined;
+    };
+
+    for (const stylesheet of document.styleSheets) {
+      const keyframes = findKeyframes(stylesheet.cssRules);
+      if (!keyframes) continue;
+
+      return [...keyframes.cssRules].map((rule) => {
+        const keyframe = rule as CSSKeyframeRule;
+        return {
+          clipPath: keyframe.style.clipPath || undefined,
+          opacity: keyframe.style.opacity || undefined,
+          transform: keyframe.style.transform || undefined,
+        };
+      });
+    }
+    return [];
+  }, "site-image-dialog-enter-next");
   const outgoingImage = dialog.locator(".site-image-dialog-image--outgoing");
   const outgoingMotion = await page.evaluate(
     () =>

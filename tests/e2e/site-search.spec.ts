@@ -395,8 +395,12 @@ test("delays and aggregates the linear search progress indicator", async ({ page
     };
   });
   await gotoRoute(page, "/");
+  await expect
+    .poll(() => page.locator("[data-site-search-trigger]").getAttribute("data-search-enhanced"))
+    .toBe("true");
   await page.getByRole("button", { name: "Rechercher" }).click();
 
+  await expect(page.getByRole("dialog", { name: "Recherche" })).toBeVisible();
   const searchPanel = page.locator(".site-search-dialog-content");
   const progress = searchPanel.locator("md-linear-progress.site-search-panel-progress");
   await searchPanel.locator("md-filter-chip").first().waitFor();

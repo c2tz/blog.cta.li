@@ -9,7 +9,7 @@ if (!process.env.CHROME_PATH && existsSync(playwrightChromePath)) {
 const perfectCategory = [
   "error",
   {
-    aggregationMethod: "median",
+    aggregationMethod: "pessimistic",
     minScore: 1,
   },
 ];
@@ -23,6 +23,9 @@ module.exports = {
       settings: {
         chromeFlags: "--headless=new --no-sandbox",
         onlyCategories: ["performance", "accessibility", "best-practices"],
+        throttling: {
+          cpuSlowdownMultiplier: 3,
+        },
       },
     },
     assert: {

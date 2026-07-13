@@ -2,6 +2,25 @@ import { schedulePostPaint } from "@/assets/js/app/post-paint";
 
 let baseModulesPromise: Promise<unknown> | undefined;
 let homeUiPromise: Promise<unknown> | undefined;
+let litRuntimePromise: Promise<void> | undefined;
+
+function yieldToBrowser() {
+  return new Promise<void>((resolve) => {
+    window.setTimeout(resolve, 0);
+  });
+}
+
+function loadLitRuntime() {
+  litRuntimePromise ??= (async () => {
+    await import("lit/html.js");
+    await yieldToBrowser();
+    await import("lit/decorators.js");
+    await yieldToBrowser();
+    await import("lit");
+    await yieldToBrowser();
+  })();
+  return litRuntimePromise;
+}
 
 function loadBaseModules() {
   baseModulesPromise ??= Promise.all([
@@ -58,6 +77,7 @@ async function loadHomeEnhancements() {
 }
 
 async function bootstrapInteractivePage() {
+  await loadLitRuntime();
   await Promise.all([loadBaseModules(), loadSearch(), loadHomeUi()]);
 
   const [{ initHomeDetailToggles }, { initPageLoadingIndicators }] = await Promise.all([

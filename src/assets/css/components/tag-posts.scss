@@ -1,0 +1,227 @@
+site-tag-posts {
+  display: block;
+}
+
+site-tag-posts [data-tag-post-item][hidden],
+site-tag-posts [data-empty-row][hidden] {
+  display: none;
+}
+
+.tag-posts-table-tools {
+  margin-block: 0 0.75rem;
+}
+
+.tag-posts-table-filter {
+  width: min(100%, 24rem);
+}
+
+.tag-posts-table-scroll {
+  --tag-posts-date-column-content-width: 16rem;
+
+  position: relative;
+  max-width: 100%;
+  margin-block: 0 1rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tag-posts-table-scroll::-webkit-scrollbar {
+  height: 0.5rem;
+}
+
+.tag-posts-table-scroll::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--site-muted) 42%, transparent);
+}
+
+.tag-posts-table-scroll:focus-visible {
+  border-radius: var(--site-shape-extra-small);
+  outline: 0;
+}
+
+.tag-posts-table {
+  min-width: 42rem;
+  width: max-content;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: transparent;
+  color: var(--site-text);
+  font-family: var(--site-font);
+}
+
+.tag-posts-table th,
+.tag-posts-table td {
+  height: 3rem;
+  padding: 0 2rem 0 1rem;
+  border: 0;
+  border-block-end: 1px solid var(--site-border);
+  background: var(--site-bg);
+  color: var(--site-text);
+  font-family: var(--site-font);
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.5;
+  text-align: start;
+  white-space: nowrap;
+}
+
+.tag-posts-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 0;
+  color: var(--site-muted);
+  font-weight: 600;
+}
+
+.tag-posts-table .tag-posts-created-column {
+  width: var(--tag-posts-date-column-content-width);
+  min-width: var(--tag-posts-date-column-content-width);
+  border-inline-end: 1px solid var(--site-border);
+}
+
+.tag-posts-table .tag-posts-title-column {
+  min-width: 20rem;
+}
+
+.tag-posts-table .tag-posts-title-header {
+  overflow: visible;
+}
+
+.tag-posts-sort-button {
+  --md-ripple-hover-color: var(--site-link);
+  --md-ripple-pressed-color: var(--site-link);
+
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  width: 100%;
+  min-height: 3rem;
+  box-sizing: border-box;
+  padding: 0 2rem 0 1rem;
+  overflow: hidden;
+  border: 0;
+  background: var(--site-bg);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: inherit;
+  text-align: start;
+}
+
+.tag-posts-sort-button md-icon {
+  --md-icon-size: 1.25rem;
+
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-basis: 1.25rem;
+  font-size: 1.25rem;
+}
+
+.tag-posts-sort-active {
+  background: var(--md-sys-color-surface-container-low);
+  color: var(--site-text);
+}
+
+.tag-posts-sort-button:focus-visible {
+  outline-offset: -3px;
+}
+
+.tag-posts-table .tag-posts-table-row.is-last-visible td,
+.tag-posts-table .tag-posts-table-empty td {
+  border-block-end: 0;
+}
+
+.tag-posts-table-empty td {
+  height: 5rem;
+  color: var(--site-muted);
+  text-align: center;
+}
+
+.tag-posts-list-empty {
+  color: var(--site-muted);
+}
+
+.tag-post-title {
+  display: inline;
+  white-space: nowrap;
+}
+
+.tag-posts-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-block-start: 1rem;
+  color: var(--site-text);
+}
+
+.tag-posts-page-size {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--site-muted);
+  font-size: 0.875rem;
+}
+
+.tag-posts-page-size md-outlined-select {
+  width: auto;
+  min-width: 5rem;
+}
+
+.tag-posts-range {
+  min-width: 7.5rem;
+  color: var(--site-muted);
+  font-size: 0.875rem;
+  text-align: end;
+}
+
+.tag-posts-page-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.tag-posts-page-actions md-icon-button {
+  --md-icon-button-icon-color: var(--site-muted);
+  --md-icon-button-hover-icon-color: var(--site-text);
+  --md-icon-button-focus-icon-color: var(--site-text);
+  --md-icon-button-pressed-icon-color: var(--site-text);
+}
+
+@media (max-width: 720px) {
+  .tag-posts-pagination {
+    flex-wrap: wrap;
+  }
+
+  .tag-posts-page-size {
+    margin-inline-end: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .tag-posts-table-scroll {
+    --tag-posts-date-column-content-width: 13rem;
+  }
+
+  .tag-posts-table {
+    min-width: 36rem;
+  }
+
+  .tag-posts-table .tag-posts-title-column {
+    min-width: 20rem;
+  }
+
+  .tag-posts-pagination {
+    justify-content: space-between;
+  }
+
+  .tag-posts-range {
+    order: 3;
+    width: 100%;
+    text-align: center;
+  }
+}

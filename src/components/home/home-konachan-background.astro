@@ -206,17 +206,3 @@ const konachanClientConfigJson = JSON.stringify({
   id="home-konachan-config"
   set:html={konachanClientConfigJson}
 />
-
-<script>
-  import "@/assets/js/material-web/home.js";
-  import { initHomeKonachanBackgroundFromDocument } from "@/assets/js/app/home-konachan-background.js";
-  import { initHomeKonachanControlsFromDocument } from "@/assets/js/app/home-konachan-controls.js";
-
-  const init = () => {
-    void initHomeKonachanControlsFromDocument();
-    initHomeKonachanBackgroundFromDocument();
-  };
-
-  init();
-  document.addEventListener("astro:page-load", init);
-</script>

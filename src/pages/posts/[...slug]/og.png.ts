@@ -1,9 +1,10 @@
 import type { APIRoute } from "astro";
-import { satoriAstroOG } from "satori-astro";
 import { getCollection, type CollectionEntry } from "astro:content";
 import fontEditor from "fonteditor-core";
 import fs from "node:fs/promises";
 import path from "node:path";
+import satori from "satori";
+import sharp from "sharp";
 
 import { PostOgTemplate } from "@/lib/post-og-template";
 
@@ -37,13 +38,20 @@ export const GET: APIRoute = async ({ props }) => {
     }),
   );
 
-  return satoriAstroOG({
-    template: PostOgTemplate({ title: post.data.title }),
-    width: 1200,
-    height: 600,
-  }).toResponse({
-    satori: {
-      fonts,
+  const width = 1200;
+  const height = 600;
+  const svg = await satori(PostOgTemplate({ title: post.data.title }), {
+    fonts,
+    height,
+    width,
+  });
+  const image = await sharp(Buffer.from(svg)).resize(width, height).png().toBuffer();
+
+  return new Response(image, {
+    headers: {
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "Content-Length": image.length.toString(),
+      "Content-Type": "image/png",
     },
   });
 };

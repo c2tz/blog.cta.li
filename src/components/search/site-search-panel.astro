@@ -138,10 +138,3 @@ const limitId = `${idPrefix}-filter-limit`;
 
   <ol id={resultsId} class="site-search-panel-results" aria-live="polite" data-search-results></ol>
 </section>
-
-<script>
-  import { initSiteSearchPanels } from "@/assets/js/app/site-search.js";
-
-  initSiteSearchPanels();
-  document.addEventListener("astro:page-load", initSiteSearchPanels);
-</script>

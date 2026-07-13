@@ -2,6 +2,16 @@ import { isSearchSortMode } from "@/components/search/site-search-model";
 import { loadPagefindModule } from "@/components/search/site-search-pagefind";
 import { SITE_LOADING_INDICATOR_DELAY_MS } from "@/lib/site-contracts";
 import { hideSiteTooltip } from "./site-tooltips.js";
+import { renderSearchResults } from "./site-search-renderer.js";
+import {
+  dateValue,
+  formatDate,
+  highlightTitle,
+  normalizeSelectedTags,
+  parsePriority,
+  parseTags,
+  removeLeadingTitle,
+} from "./site-search-utils.js";
 
 const MIN_QUERY_LENGTH = 2;
 const RESULT_LIMIT = 12;
@@ -218,7 +228,7 @@ class SearchPanelController {
   }
 
   setSelectedTags(value) {
-    const nextTags = this.normalizeSelectedTags(value);
+    const nextTags = normalizeSelectedTags(value, MAX_SELECTED_TAGS);
     if (
       nextTags.length === this.selectedTags.length &&
       nextTags.every((tag, index) => tag === this.selectedTags[index])
@@ -283,80 +293,7 @@ class SearchPanelController {
   }
 
   renderResults() {
-    this.resultsElement.replaceChildren();
-
-    for (const result of this.results) {
-      const item = document.createElement("li");
-      item.className = "site-search-panel-result";
-
-      const body = document.createElement("div");
-      body.className = "site-search-panel-result-body";
-
-      const title = document.createElement("a");
-      title.className = "site-search-panel-result-title";
-      title.href = result.url;
-      title.innerHTML = result.titleHtml;
-      body.append(title);
-
-      if (result.createdLabel || result.modifiedLabel) {
-        body.append(this.renderResultMeta(result));
-      }
-
-      if (result.excerpt) {
-        const excerpt = document.createElement("p");
-        excerpt.className = "site-search-panel-result-excerpt";
-        excerpt.innerHTML = result.excerpt;
-        body.append(excerpt);
-      }
-
-      item.append(body);
-      this.resultsElement.append(item);
-    }
-  }
-
-  renderResultMeta(result) {
-    const meta = document.createElement("div");
-    meta.className = "site-search-panel-result-meta";
-
-    if (result.createdLabel) {
-      meta.append(
-        this.renderDateMeta("\uE89C", "Création du post", result.createdAt, result.createdLabel),
-      );
-    }
-
-    if (result.createdLabel && result.modifiedLabel) {
-      const separator = document.createElement("span");
-      separator.className = "site-search-panel-result-meta-separator";
-      separator.setAttribute("aria-hidden", "true");
-      separator.textContent = "·";
-      meta.append(separator);
-    }
-
-    if (result.modifiedLabel) {
-      meta.append(
-        this.renderDateMeta(
-          "\uF88C",
-          "Dernière modification du post",
-          result.modifiedAt,
-          result.modifiedLabel,
-        ),
-      );
-    }
-
-    return meta;
-  }
-
-  renderDateMeta(iconValue, tooltip, dateTime, label) {
-    const wrapper = document.createElement("span");
-    const icon = document.createElement("md-icon");
-    icon.textContent = iconValue;
-    icon.dataset.tooltip = tooltip;
-    icon.setAttribute("aria-label", tooltip);
-    const time = document.createElement("time");
-    if (dateTime) time.dateTime = dateTime;
-    time.textContent = label;
-    wrapper.append(icon, time);
-    return wrapper;
+    renderSearchResults(this.resultsElement, this.results);
   }
 
   syncSortOptions() {
@@ -477,15 +414,15 @@ class SearchPanelController {
 
         return {
           createdAt,
-          createdLabel: this.formatDate(createdAt),
-          excerpt: this.removeLeadingTitle(result.data.excerpt ?? "", title),
+          createdLabel: formatDate(createdAt, this.dateFormatter),
+          excerpt: removeLeadingTitle(result.data.excerpt ?? "", title),
           modifiedAt,
-          modifiedLabel: this.formatDate(modifiedAt),
-          priority: this.parsePriority(result.data.meta?.priority),
+          modifiedLabel: formatDate(modifiedAt, this.dateFormatter),
+          priority: parsePriority(result.data.meta?.priority, MAX_PRIORITY),
           score: result.score,
-          tags: this.parseTags(result.data.meta?.tags),
+          tags: parseTags(result.data.meta?.tags),
           title,
-          titleHtml: this.highlightTitle(title, query),
+          titleHtml: highlightTitle(title, query),
           url: result.data.url,
         };
       });
@@ -575,8 +512,8 @@ class SearchPanelController {
     }
 
     return [...results].sort((left, right) => {
-      const leftTime = this.dateValue(left.createdAt);
-      const rightTime = this.dateValue(right.createdAt);
+      const leftTime = dateValue(left.createdAt);
+      const rightTime = dateValue(right.createdAt);
       if (leftTime === rightTime) return 0;
       if (!Number.isFinite(leftTime)) return 1;
       if (!Number.isFinite(rightTime)) return -1;
@@ -615,132 +552,6 @@ class SearchPanelController {
     } finally {
       window.clearTimeout(timeoutId);
     }
-  }
-
-  normalizeSelectedTags(value) {
-    const tags = Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
-    return [...new Set(tags.filter((tag) => typeof tag === "string"))].slice(0, MAX_SELECTED_TAGS);
-  }
-
-  dateValue(value) {
-    const date = Date.parse(value ?? "");
-    return Number.isNaN(date) ? Number.POSITIVE_INFINITY : date;
-  }
-
-  formatDate(value) {
-    if (!value) return undefined;
-    const date = new Date(value);
-    return Number.isNaN(date.valueOf()) ? undefined : this.dateFormatter.format(date);
-  }
-
-  parseTags(value) {
-    return (value ?? "")
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter(Boolean);
-  }
-
-  parsePriority(value) {
-    const priority = Number.parseInt(value ?? "0", 10);
-    return Number.isNaN(priority) ? 0 : Math.min(MAX_PRIORITY, Math.max(0, priority));
-  }
-
-  escapeHtml(value) {
-    return value.replace(/[&<>"']/g, (character) => {
-      if (character === "&") return "&amp;";
-      if (character === "<") return "&lt;";
-      if (character === ">") return "&gt;";
-      if (character === '"') return "&quot;";
-      return "&#39;";
-    });
-  }
-
-  escapeRegExp(value) {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  }
-
-  highlightTitle(title, query) {
-    const trimmedQuery = query.trim();
-    if (!trimmedQuery) return this.escapeHtml(title);
-    const escapedTitle = this.escapeHtml(title);
-    const escapedQuery = this.escapeHtml(trimmedQuery);
-    const pattern = new RegExp(this.escapeRegExp(escapedQuery), "gi");
-    return escapedTitle.replace(pattern, (match) => `<mark>${match}</mark>`);
-  }
-
-  removeLeadingTitle(excerpt, title) {
-    if (!excerpt) return excerpt;
-    const template = document.createElement("template");
-    template.innerHTML = excerpt;
-    const text = template.content.textContent ?? "";
-    const prefixEnd = this.findTitlePrefixEnd(text, title);
-    if (prefixEnd < 0) return excerpt;
-    this.removeLeadingText(template.content, prefixEnd);
-    this.trimLeadingText(template.content);
-    return template.innerHTML.trim();
-  }
-
-  findTitlePrefixEnd(text, title) {
-    const normalizedTitle = title.trim().replace(/\s+/g, " ");
-    let textIndex = 0;
-    let titleIndex = 0;
-    while (textIndex < text.length && /\s/.test(text[textIndex] ?? "")) textIndex++;
-
-    while (textIndex < text.length && titleIndex < normalizedTitle.length) {
-      const titleCharacter = normalizedTitle[titleIndex] ?? "";
-      const textCharacter = text[textIndex] ?? "";
-      if (/\s/.test(titleCharacter)) {
-        if (!/\s/.test(textCharacter)) return -1;
-        while (textIndex < text.length && /\s/.test(text[textIndex] ?? "")) textIndex++;
-        while (
-          titleIndex < normalizedTitle.length &&
-          /\s/.test(normalizedTitle[titleIndex] ?? "")
-        ) {
-          titleIndex++;
-        }
-        continue;
-      }
-      if (textCharacter.toLocaleLowerCase() !== titleCharacter.toLocaleLowerCase()) return -1;
-      textIndex++;
-      titleIndex++;
-    }
-
-    return titleIndex === normalizedTitle.length ? textIndex : -1;
-  }
-
-  removeLeadingText(root, count) {
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    const nodes = [];
-    while (walker.nextNode()) nodes.push(walker.currentNode);
-    let remaining = count;
-
-    for (const node of nodes) {
-      const value = node.nodeValue ?? "";
-      if (remaining >= value.length) {
-        node.nodeValue = "";
-        remaining -= value.length;
-        continue;
-      }
-      node.nodeValue = value.slice(remaining);
-      break;
-    }
-  }
-
-  trimLeadingText(root) {
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    while (walker.nextNode()) {
-      const node = walker.currentNode;
-      const trimmed = (node.nodeValue ?? "").replace(/^\s+/, "");
-      if (!trimmed) {
-        node.nodeValue = "";
-        continue;
-      }
-      node.nodeValue = trimmed;
-      break;
-    }
-    root.querySelectorAll("*").forEach((element) => {
-      if (!element.textContent?.trim() && element.children.length === 0) element.remove();
-    });
   }
 }
 

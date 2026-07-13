@@ -32,8 +32,6 @@ export function sourceColorFromImageBytesInWorker(
 
   return new Promise((resolve, reject) => {
     let settled = false;
-    let timeoutId;
-
     const settle = (callback, value) => {
       if (settled) return;
       settled = true;
@@ -69,7 +67,7 @@ export function sourceColorFromImageBytesInWorker(
       { once: true },
     );
 
-    timeoutId = setTimeout(
+    const timeoutId = setTimeout(
       () => settle(reject, workerError("material_source_color_worker_timeout")),
       timeoutMs,
     );

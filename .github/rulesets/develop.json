@@ -44,6 +44,9 @@
             "context": "Check Astro, Material Web, and security headers"
           },
           {
+            "context": "Lighthouse 100 (mobile and desktop, no SEO)"
+          },
+          {
             "context": "Validate pull request title"
           },
           {

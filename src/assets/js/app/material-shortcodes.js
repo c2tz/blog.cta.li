@@ -230,6 +230,7 @@ function enhanceTable(host) {
       const check = document.createElement("md-icon");
       option.className = "site-material-select-option";
       option.value = String(size);
+      option.toggleAttribute("selected", size === state.pageSize);
       headline.slot = "headline";
       headline.textContent = String(size);
       check.slot = "end";
@@ -315,11 +316,12 @@ function enhanceTable(host) {
       const active = state.sortColumn === column.key;
       button.classList.toggle("material-shortcode-sort-active", active);
       heading.removeAttribute("aria-sort");
-      if (active)
+      if (active) {
         heading.setAttribute(
           "aria-sort",
           state.sortDirection === "asc" ? "ascending" : "descending",
         );
+      }
       icon.textContent = active
         ? state.sortDirection === "asc"
           ? SORT_ASCENDING_ICON

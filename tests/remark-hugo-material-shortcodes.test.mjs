@@ -285,7 +285,7 @@ const value = await Promise.resolve(42);
   assert.match(html, /data-site-rich-tooltip/);
   assert.match(html, /id="rich-code"[^>]*popover="manual"[^>]*role="tooltip"/);
   assert.match(html, /id="rich-code-title"[^>]*>Exemple TypeScript<\/div>/);
-  assert.match(html, /<pre[^>]*class="astro-code[^\"]*"[^>]*><code>/);
+  assert.match(html, /<pre[^>]*class="astro-code[^"]*"[^>]*><code>/);
   assert.doesNotMatch(html, /code-copy-button|code-actions|highlighted|focused|diff/);
 });
 

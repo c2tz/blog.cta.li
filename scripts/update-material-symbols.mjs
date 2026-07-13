@@ -217,8 +217,9 @@ async function checkGeneratedSubset(codePoints) {
   await syncFontCacheVersion(subset, { write: false });
 
   console.log(
-    `Material Symbols subset contains all ${codePoints.length} required codepoints.` +
-      (extra.length ? ` ${extra.length} extra codepoint(s) are retained by fonteditor-core.` : ""),
+    `Material Symbols subset contains all ${codePoints.length} required codepoints.${
+      extra.length ? ` ${extra.length} extra codepoint(s) are retained by fonteditor-core.` : ""
+    }`,
   );
 }
 

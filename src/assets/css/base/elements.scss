@@ -28,6 +28,10 @@
     overscroll-behavior-y: auto;
   }
 
+  :where(h1, h2, h3) {
+    font-family: var(--site-heading-font);
+  }
+
   @supports (overflow: clip) {
     html,
     body {

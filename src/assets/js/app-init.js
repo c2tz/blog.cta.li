@@ -1,5 +1,4 @@
 import { initScrollProgressBar, removeReadingProgress } from "./app/reading-progress.js";
-import { initConsoleArt } from "./app/console-art.js";
 import { initSiteTooltips } from "./app/site-tooltips.js";
 import { initSiteRichTooltips } from "./app/site-rich-tooltips.js";
 import { initSiteContextPopovers } from "./app/site-context-popovers.js";
@@ -23,7 +22,6 @@ async function initProseImageEnhancements() {
 }
 
 function initApp() {
-  initConsoleArt();
   syncDetailViewBodyState();
   initSiteTooltips();
   initSiteRichTooltips();

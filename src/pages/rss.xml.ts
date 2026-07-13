@@ -3,8 +3,7 @@ import rss from "@astrojs/rss";
 import { getCollection, type CollectionEntry } from "astro:content";
 
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/site-config";
-import { getContentEntryGitDates } from "@/lib/git-dates.mjs";
-import type { GitDates } from "@/lib/git-dates.mjs";
+import { getContentEntryGitDates, type GitDates } from "@/lib/git-dates.mjs";
 
 interface RssPost {
   data: CollectionEntry<"blog">["data"];

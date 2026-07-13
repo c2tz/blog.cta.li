@@ -79,21 +79,20 @@ function makeBlock(selector: string, isDark: boolean) {
   return `${selector} {\n${declarations.join("\n")}\n}`;
 }
 
-const css =
+const css = `${[
+  "/* This file is generated. Run `pnpm theme:generate` after changing the source color. */",
+  `/* Material Color Utilities 0.4.0, SchemeTonalSpot ${SPEC_VERSION}, contrast ${CONTRAST_LEVEL}, source ${SOURCE_COLOR}. */`,
+  ":root {\n  --md-source-color: #1565C0;\n}",
+  makeBlock(':root,\n:root[data-theme="light"]', false),
+  makeBlock(':root[data-theme="dark"]', true),
   [
-    "/* This file is generated. Run `pnpm theme:generate` after changing the source color. */",
-    `/* Material Color Utilities 0.4.0, SchemeTonalSpot ${SPEC_VERSION}, contrast ${CONTRAST_LEVEL}, source ${SOURCE_COLOR}. */`,
-    ":root {\n  --md-source-color: #1565C0;\n}",
-    makeBlock(':root,\n:root[data-theme="light"]', false),
-    makeBlock(':root[data-theme="dark"]', true),
-    [
-      ':root[data-theme="dark"] {',
-      "  color-scheme: dark;",
-      "  /* Deliberate brand exception: only the page canvas is pure black. */",
-      "  --md-sys-color-background: #000000;",
-      "}",
-    ].join("\n"),
-  ].join("\n\n") + "\n";
+    ':root[data-theme="dark"] {',
+    "  color-scheme: dark;",
+    "  /* Deliberate brand exception: only the page canvas is pure black. */",
+    "  --md-sys-color-background: #000000;",
+    "}",
+  ].join("\n"),
+].join("\n\n")}\n`;
 
 const outputPath = fileURLToPath(OUTPUT_URL);
 

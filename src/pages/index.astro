@@ -7,6 +7,7 @@ import HomeSectionDivider from "@/components/home/home-section-divider.astro";
 import HomeTagsTree from "@/components/home/home-tags-tree.astro";
 import Layout from "@/layouts/site-layout.astro";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/site-config";
+import type { InfoData } from "@/lib/content-schemas";
 import { formatFrenchDate, formatFrenchDateTime, toDate } from "@/lib/date-format.mjs";
 import { getContentEntryGitDates } from "@/lib/git-dates.mjs";
 
@@ -36,28 +37,9 @@ const contentTags = [
 ].sort();
 const uniqueTags = ["all", ...contentTags];
 const intro = await getEntry("info", "intro");
-const introData = intro?.data ?? {};
-const homeCopy = {
-  heroTitle: typeof introData.heroTitle === "string" ? introData.heroTitle : SITE_TITLE,
-  heroLede: typeof introData.heroLede === "string" ? introData.heroLede : "Simple blog-note.",
-  primaryActionHref:
-    typeof introData.primaryActionHref === "string" ? introData.primaryActionHref : "/tags/all/",
-  primaryActionLabel:
-    typeof introData.primaryActionLabel === "string" ? introData.primaryActionLabel : "Voir plus",
-  secondaryActionHref:
-    typeof introData.secondaryActionHref === "string"
-      ? introData.secondaryActionHref
-      : "https://www.cta.li",
-  secondaryActionLabel:
-    typeof introData.secondaryActionLabel === "string"
-      ? introData.secondaryActionLabel
-      : "À propos",
-  latestPostsTitle:
-    typeof introData.latestPostsTitle === "string"
-      ? introData.latestPostsTitle
-      : "Derniers articles",
-  tagsTitle: typeof introData.tagsTitle === "string" ? introData.tagsTitle : "Tags",
-};
+if (!intro) throw new Error("Missing required info/intro content entry");
+// Astro validates this data with infoSchema before exposing the content entry.
+const homeCopy = intro.data as InfoData;
 const homeUrl = new URL("/", Astro.site).toString();
 const homeStructuredData = {
   "@context": "https://schema.org",

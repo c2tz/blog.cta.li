@@ -5,7 +5,7 @@ export const ROUTES = [
   "/",
   "/cookies/",
   "/posts/hugo-material-shortcodes/",
-  "/posts/markdown-style-guide/",
+  "/posts/mdx-smoke-test/",
 ];
 
 export const pageRuntimeErrors = new WeakMap<Page, string[]>();

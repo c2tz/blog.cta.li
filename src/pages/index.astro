@@ -8,10 +8,12 @@ import HomeTagsTree from "@/components/home/home-tags-tree.astro";
 import Layout from "@/layouts/site-layout.astro";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/site-config";
 import type { InfoData } from "@/lib/content-schemas";
+import { isListedBlogPost } from "@/lib/blog-posts";
 import { formatFrenchDate, formatFrenchDateTime, toDate } from "@/lib/date-format.mjs";
 import { getContentEntryGitDates } from "@/lib/git-dates.mjs";
 
 const posts = (await getCollection("blog"))
+  .filter(isListedBlogPost)
   .map((post) => ({
     ...post,
     gitDates: getContentEntryGitDates("blog", post),

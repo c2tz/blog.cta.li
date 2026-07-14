@@ -1,6 +1,8 @@
 import { getCollection, type CollectionEntry } from "astro:content";
 import type { APIRoute } from "astro";
 
+import { isListedBlogPost } from "@/lib/blog-posts";
+
 const STATIC_PATHS = ["/", "/cookies/"] as const;
 
 function escapeXml(value: string) {
@@ -13,7 +15,7 @@ function escapeXml(value: string) {
 }
 
 export const GET: APIRoute = async ({ site }) => {
-  const posts = await getCollection("blog");
+  const posts = (await getCollection("blog")).filter(isListedBlogPost);
   const rawTags: unknown[] = posts.flatMap((post: CollectionEntry<"blog">) => post.data.tags ?? []);
   const contentTags = rawTags.filter(
     (tag: unknown): tag is string => typeof tag === "string" && tag !== "all",

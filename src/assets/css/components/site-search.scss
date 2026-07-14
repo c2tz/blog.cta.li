@@ -233,6 +233,10 @@ html:has(.site-search-dialog[open]) .cookie-consent--privacy {
   --md-linear-progress-track-shape: var(--md-sys-shape-corner-none);
 }
 
+.site-search-panel-progress:not([data-loading-active]) {
+  visibility: hidden;
+}
+
 .site-search-panel-status {
   margin: 0;
   color: var(--site-muted);

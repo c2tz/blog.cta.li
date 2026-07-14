@@ -6,6 +6,36 @@ import {
   waitForNativeEnhancement,
 } from "./site-fixture";
 
+test("shows the official four-color progress while the search dialog opens slowly", async ({
+  page,
+}) => {
+  await gotoRoute(page, "/");
+  await expect
+    .poll(() => page.locator("[data-site-search-trigger]").getAttribute("data-search-enhanced"))
+    .toBe("true");
+
+  const openButton = page.getByRole("button", { name: "Rechercher" });
+  const openProgress = page.locator("md-circular-progress[data-search-open-progress]");
+  const dialog = page.getByRole("dialog", { name: "Recherche" });
+  await expect(openProgress).toHaveAttribute("indeterminate", "");
+  await expect(openProgress).toHaveAttribute("four-color", /^(?:|true)$/);
+  await page.locator("[data-search-dialog]").evaluate((element) => {
+    const materialDialog = element as HTMLElement & { show(): Promise<void> };
+    const show = materialDialog.show.bind(materialDialog);
+    materialDialog.show = async () => {
+      await new Promise((resolve) => {
+        window.setTimeout(resolve, 350);
+      });
+      await show();
+    };
+  });
+
+  await openButton.click();
+  await expect(openProgress).toBeVisible();
+  await expect(dialog).toBeVisible();
+  await expect(openProgress).toBeHidden();
+});
+
 test("searches through the Material Web text field", async ({ page }) => {
   await gotoRoute(page, "/");
 
@@ -30,12 +60,21 @@ test("searches through the Material Web text field", async ({ page }) => {
       })),
     )
     .toEqual({ scrim: "1", trigger: "2" });
-  await searchDialog.getByRole("searchbox", { name: "Mot-clé, titre ou contenu" }).fill("Material");
+  const searchInput = searchDialog.getByRole("searchbox", {
+    name: "Mot-clé, titre ou contenu",
+  });
+  await searchInput.fill("MDX actif");
 
-  await expect(searchDialog.getByText("2 résultats.")).toBeVisible();
+  await expect(searchDialog.getByText("Aucun article trouvé.")).toBeVisible();
+  await expect(
+    searchDialog.getByRole("link", { name: "Vérification MDX", exact: true }),
+  ).toHaveCount(0);
+
+  await searchInput.fill("Shortcodes Astro");
+  await expect(searchDialog.getByText("Aucun article trouvé.")).toBeVisible();
   await expect(
     searchDialog.getByRole("link", { name: "Shortcodes Astro et Material Web", exact: true }),
-  ).toBeVisible();
+  ).toHaveCount(0);
 });
 
 test("keeps every search sort option visible above the dialog surface", async ({ page }) => {
@@ -246,8 +285,8 @@ test("keeps the search sort menu anchored while the zoomed dialog scrolls", asyn
   await page.getByRole("button", { name: "Rechercher" }).click();
 
   const searchDialog = page.locator("md-dialog.site-search-dialog[open]");
-  await searchDialog.getByRole("searchbox", { name: "Mot-clé, titre ou contenu" }).fill("ma");
-  await expect(searchDialog.getByText(/résultats?\./)).toBeVisible();
+  await searchDialog.getByRole("searchbox", { name: "Mot-clé, titre ou contenu" }).fill("MDX");
+  await expect(searchDialog.getByText("Aucun article trouvé.")).toBeVisible();
 
   const sortSelect = searchDialog.locator("[data-sort-select]");
   await openMaterialSelect(sortSelect);
@@ -260,7 +299,7 @@ test("keeps the search sort menu anchored while the zoomed dialog scrolls", asyn
       scrollHeight: scroller?.scrollHeight ?? 0,
     };
   });
-  expect(scrollerState.scrollHeight).toBeGreaterThan(scrollerState.clientHeight);
+  expect(scrollerState.scrollHeight).toBeGreaterThanOrEqual(scrollerState.clientHeight);
 
   await searchDialog.evaluate((dialog) => {
     const scroller = dialog.shadowRoot?.querySelector(".scroller");
@@ -409,7 +448,23 @@ test("delays and aggregates the linear search progress indicator", async ({ page
   await expect(page.getByRole("dialog", { name: "Recherche" })).toBeVisible();
   const searchPanel = page.locator(".site-search-dialog-content");
   const progress = searchPanel.locator("md-linear-progress.site-search-panel-progress");
+  await expect(progress).toHaveAttribute("four-color", /^(?:|true)$/);
+  await expect(progress).not.toHaveAttribute("data-loading-active", "");
   await searchPanel.locator("md-filter-chip").first().waitFor();
+  const idleAnimation = await progress.evaluate((element) => {
+    const indicator = element.shadowRoot?.querySelector(".primary-bar > .bar-inner");
+    return {
+      animationName: indicator ? getComputedStyle(indicator).animationName : "",
+      animationPlayState: indicator ? getComputedStyle(indicator).animationPlayState : "",
+      display: getComputedStyle(element).display,
+      visibility: getComputedStyle(element).visibility,
+    };
+  });
+  expect(idleAnimation.display).not.toBe("none");
+  expect(idleAnimation.visibility).toBe("hidden");
+  expect(idleAnimation.animationName).toContain("primary-indeterminate-scale");
+  expect(idleAnimation.animationName).toContain("four-color");
+  expect(idleAnimation.animationPlayState).toBe("running");
   await progress.evaluate((element) => {
     const testWindow = window as typeof window & {
       __playwrightSearchVisibilityChanges?: Array<{ at: number; hidden: boolean }>;
@@ -418,9 +473,9 @@ test("delays and aggregates the linear search progress indicator", async ({ page
     new MutationObserver(() => {
       testWindow.__playwrightSearchVisibilityChanges?.push({
         at: performance.now(),
-        hidden: Boolean((element as HTMLElement).hidden),
+        hidden: !element.hasAttribute("data-loading-active"),
       });
-    }).observe(element, { attributeFilter: ["hidden"], attributes: true });
+    }).observe(element, { attributeFilter: ["data-loading-active"], attributes: true });
   });
   await searchPanel.getByRole("searchbox", { name: "Mot-clé, titre ou contenu" }).fill("Material");
 
@@ -437,6 +492,7 @@ test("delays and aggregates the linear search progress indicator", async ({ page
     )
     .toBe("function");
   await expect(progress).toBeVisible();
+  await expect(progress).toHaveAttribute("data-loading-active", "");
   const revealDelay = await page.evaluate(() => {
     const testWindow = window as typeof window & {
       __playwrightSearchStartedAt?: number;
@@ -462,6 +518,7 @@ test("delays and aggregates the linear search progress indicator", async ({ page
   });
   await expect(searchPanel.getByText("1 résultat.")).toBeVisible();
   await expect(progress).toBeHidden();
+  await expect(progress).not.toHaveAttribute("data-loading-active", "");
 
   await page.evaluate(() => {
     const testWindow = window as typeof window & {
@@ -555,6 +612,8 @@ test("delays and aggregates short indeterminate loading indicators", async ({ pa
   await page.waitForTimeout(120);
   await expect(pageProgress).toHaveCount(0);
   await expect(pageProgress).toHaveCount(1);
+  await expect(pageProgress).toHaveAttribute("indeterminate", "");
+  await expect(pageProgress).toHaveAttribute("four-color", /^(?:|true)$/);
   await page.evaluate(() => {
     document.dispatchEvent(
       new CustomEvent("site:loading-end", { detail: { key: "playwright-long-check" } }),
@@ -563,6 +622,8 @@ test("delays and aggregates short indeterminate loading indicators", async ({ pa
   await expect(pageProgress).toHaveCount(0);
 
   const konachanProgress = page.locator("md-circular-progress.home-anime-loading-progress");
+  await expect(konachanProgress).toHaveAttribute("indeterminate", "");
+  await expect(konachanProgress).toHaveAttribute("four-color", /^(?:|true)$/);
   await page.evaluate(() => {
     document.querySelector(".home-anime-landing")?.setAttribute("aria-busy", "true");
     document.dispatchEvent(

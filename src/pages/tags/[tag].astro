@@ -1,12 +1,14 @@
 ---
 import TagPosts from "@/components/tags/tag-posts.astro";
 import Layout from "@/layouts/site-layout.astro";
+import { isListedBlogPost } from "@/lib/blog-posts";
 import { formatFrenchDate, formatFrenchDateTime, toDate } from "@/lib/date-format.mjs";
 import { getContentEntryGitDates } from "@/lib/git-dates.mjs";
 import { getCollection } from "astro:content";
 
 export async function getStaticPaths() {
   const allPosts = (await getCollection("blog"))
+    .filter(isListedBlogPost)
     .map((post) => ({
       ...post,
       gitDates: getContentEntryGitDates("blog", post),

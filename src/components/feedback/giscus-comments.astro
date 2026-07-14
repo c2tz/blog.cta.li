@@ -95,8 +95,9 @@ const configured = Boolean(repo.trim() && repoId.trim() && category.trim() && ca
       class="giscus-comments-progress"
       data-giscus-progress
       indeterminate
+      four-color
       aria-label="Chargement des commentaires"
-      hidden></md-linear-progress>
+      aria-hidden="true"></md-linear-progress>
     <p class="giscus-comments-error" data-giscus-error hidden>
       Les commentaires ne sont pas disponibles pour le moment.
     </p>
@@ -174,8 +175,8 @@ const configured = Boolean(repo.trim() && repoId.trim() && category.trim() && ca
     --md-linear-progress-track-shape: var(--md-sys-shape-corner-none);
   }
 
-  .giscus-comments-progress[hidden] {
-    display: none;
+  .giscus-comments-progress:not([data-loading-active]) {
+    visibility: hidden;
   }
 
   .giscus-comments-frame {

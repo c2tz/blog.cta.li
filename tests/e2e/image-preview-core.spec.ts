@@ -14,7 +14,7 @@ import {
 } from "./image-preview-fixture";
 
 test("keeps native lazy loading without an artificial image blur", async ({ page }) => {
-  await page.goto("/posts/markdown-style-guide/", { waitUntil: "domcontentloaded" });
+  await page.goto("/posts/mdx-smoke-test/", { waitUntil: "domcontentloaded" });
 
   const images = page.locator(".site-prose img");
   await expect(images).toHaveCount(2);

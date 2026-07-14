@@ -10,14 +10,19 @@ import {
   expectPopoverOpen,
 } from "./site-fixture";
 
-test("keeps latest posts visible on the home page", async ({ page }) => {
+test("keeps unlisted posts out of the home page", async ({ page }) => {
   await gotoRoute(page, "/");
   await waitForAppReady(page);
 
   await expect(page.getByRole("heading", { name: "Derniers articles" })).toBeVisible();
-  await expect(page.locator(".home-post-title").first()).toBeVisible();
-  expect(await page.locator(".home-post-title").count()).toBeGreaterThan(0);
-  await expect(page.getByText("Aucun article à afficher.")).toHaveCount(0);
+  await expect(page.locator(".home-post-title")).toHaveCount(0);
+  await expect(page.getByText("Aucun article à afficher.")).toBeVisible();
+  const tableProgress = page.locator("md-linear-progress.home-posts-table-progress");
+  await expect(tableProgress).toHaveAttribute("indeterminate", "");
+  await expect(tableProgress).toHaveAttribute("four-color", /^(?:|true)$/);
+  await expect(tableProgress).not.toHaveAttribute("data-loading-active", "");
+  await expect(tableProgress).toHaveCSS("visibility", "hidden");
+  await expect(tableProgress).not.toHaveCSS("display", "none");
 
   if ((page.viewportSize()?.width ?? 0) >= 720) {
     const tableOverflow = await page
@@ -506,7 +511,7 @@ test("applies and persists the Konachan Material palette across the site", async
     )
     .toEqual({ active: "true", source: activePalette.source });
 
-  await gotoRoute(page, "/posts/markdown-style-guide/");
+  await gotoRoute(page, "/posts/mdx-smoke-test/");
   await expectResolvedTheme(page);
   await expect
     .poll(() => page.evaluate(() => document.documentElement.dataset.materialDynamicColor))

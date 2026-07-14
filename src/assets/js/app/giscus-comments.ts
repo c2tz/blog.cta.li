@@ -91,7 +91,8 @@ function enhanceGiscus(root: HTMLElement) {
     panel.setAttribute("aria-busy", "false");
     if (revealTimer) clearTimeout(revealTimer);
     revealTimer = 0;
-    progress.hidden = true;
+    progress.removeAttribute("data-loading-active");
+    progress.setAttribute("aria-hidden", "true");
   };
   const postTheme = () => {
     themeAnimationFrame = 0;
@@ -151,7 +152,10 @@ function enhanceGiscus(root: HTMLElement) {
     beginFrameWatch();
     revealTimer = window.setTimeout(() => {
       revealTimer = 0;
-      if (loading) progress.hidden = false;
+      if (loading) {
+        progress.setAttribute("aria-hidden", "false");
+        progress.setAttribute("data-loading-active", "");
+      }
     }, SITE_LOADING_INDICATOR_DELAY_MS);
 
     const script = document.createElement("script");

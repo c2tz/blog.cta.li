@@ -1,6 +1,7 @@
 ---
 title: "Shortcodes Astro et Material Web"
 description: "Les shortcodes du site qui invoquent de vrais composants Material 3 et leurs réglages utiles."
+listed: false
 tags:
   - documentation
   - shortcodes

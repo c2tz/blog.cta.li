@@ -11,7 +11,7 @@ import {
 test("tracks reading progress fractionally without a delayed indicator transition", async ({
   page,
 }) => {
-  await gotoRoute(page, "/posts/markdown-style-guide/");
+  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
   const progress = page.locator("md-linear-progress.site-scroll-progress");
   await expect(progress).toBeVisible();
 
@@ -147,7 +147,7 @@ test("shows animated button contours only after keyboard input", async ({ page }
 });
 
 test("keeps tab panels and href links free of focus contours", async ({ page }) => {
-  await gotoRoute(page, "/posts/markdown-style-guide/");
+  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
 
   const tab = page.locator("md-primary-tab").first();
   const panel = page.locator(".material-shortcode-tab-panel").first();
@@ -450,10 +450,12 @@ test("distinguishes touch selection from keyboard focus on coarse screens", asyn
 
 test("uses the Material Web pagination menu with keyboard selection", async ({ page }) => {
   test.skip(test.info().project.name.includes("mobile"), "The pagination control is desktop-only.");
-  await gotoRoute(page, "/posts/markdown-style-guide/");
+  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
   await waitForAppReady(page);
 
-  const table = page.locator('[data-material-table][data-material-enhanced="true"]').first();
+  const table = page.locator(
+    '[data-material-table][data-material-enhanced="true"][data-paginate="true"]',
+  );
   await expect(table).toBeVisible();
 
   const tableFilter = table.locator("md-outlined-text-field");

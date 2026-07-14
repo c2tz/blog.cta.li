@@ -26,9 +26,10 @@ const initialPosts = posts.slice(0, 3);
     <md-linear-progress
       class="home-posts-table-progress"
       indeterminate
+      four-color
       aria-label="Chargement des articles"
-      data-loading-progress
-      hidden></md-linear-progress>
+      aria-hidden="true"
+      data-loading-progress></md-linear-progress>
 
     <table
       id="home-latest-posts-table"
@@ -203,8 +204,8 @@ const initialPosts = posts.slice(0, 3);
     min-width: 100%;
   }
 
-  site-home-latest-posts-table .home-posts-table-progress[hidden] {
-    display: none;
+  site-home-latest-posts-table .home-posts-table-progress:not([data-loading-active]) {
+    visibility: hidden;
   }
 
   site-home-latest-posts-table .home-posts-table-empty {

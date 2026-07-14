@@ -189,7 +189,7 @@ export async function expectImageContained(stage: Locator) {
 export const test = base.extend({
   page: async ({ page }, use) => {
     await seedLocalPreferences(page);
-    await page.goto("/posts/markdown-style-guide/", { waitUntil: "domcontentloaded" });
+    await page.goto("/posts/mdx-smoke-test/", { waitUntil: "domcontentloaded" });
     await use(page);
   },
 });

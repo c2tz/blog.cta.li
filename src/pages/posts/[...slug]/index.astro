@@ -5,6 +5,7 @@ import GiscusComments from "@/components/feedback/giscus-comments.astro";
 import PostGitDates from "@/components/post/post-git-dates.astro";
 import Prose from "@/components/post/prose.astro";
 import Layout from "@/layouts/site-layout.astro";
+import { isListedBlogPost } from "@/lib/blog-posts";
 import { getContentEntryGitDates } from "@/lib/git-dates.mjs";
 import { SITE_GISCUS_CONFIG } from "@/site-config";
 
@@ -21,6 +22,7 @@ type Props = CollectionEntry<"blog">;
 const post = Astro.props;
 const { Content } = await render(post);
 const gitDates = getContentEntryGitDates("blog", post);
+const isListed = isListedBlogPost(post);
 const { createdAt, lastModified } = gitDates;
 const postPriority = post.data.priority ?? 0;
 const visiblePostTags = [...(post.data.tags ?? [])].filter((tag) => tag !== "all");
@@ -65,7 +67,11 @@ const postStructuredData = {
   }}
 >
   <Fragment slot="content">
-    <article class="post" data-pagefind-body>
+    <article
+      class="post"
+      data-pagefind-body={isListed ? true : undefined}
+      data-pagefind-ignore={isListed ? undefined : "all"}
+    >
       <header class="post-header">
         <h1 id="post-title" class="post-title-anchor" data-anchor-reset>
           {post.data.title}

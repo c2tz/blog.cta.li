@@ -36,3 +36,14 @@
   border-radius: var(--site-shape-extra-small);
   font-weight: 500;
 }
+
+/* The Markdown source stays available without JavaScript and when printing. */
+.site-prose .footnotes[data-footnotes-enhanced="true"] {
+  display: none;
+}
+
+@media print {
+  .site-prose .footnotes[data-footnotes-enhanced="true"] {
+    display: block;
+  }
+}

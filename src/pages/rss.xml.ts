@@ -3,6 +3,7 @@ import rss from "@astrojs/rss";
 import { getCollection, type CollectionEntry } from "astro:content";
 
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/site-config";
+import { isListedBlogPost } from "@/lib/blog-posts";
 import { getContentEntryGitDates, type GitDates } from "@/lib/git-dates.mjs";
 
 interface RssPost {
@@ -12,7 +13,9 @@ interface RssPost {
 }
 
 export const GET: APIRoute = async (context) => {
-  const collection = (await getCollection("blog")) as CollectionEntry<"blog">[];
+  const collection = ((await getCollection("blog")) as CollectionEntry<"blog">[]).filter(
+    isListedBlogPost,
+  );
   const posts: RssPost[] = collection.map((post) => ({
     ...post,
     gitDates: getContentEntryGitDates("blog", post),

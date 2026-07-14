@@ -1,0 +1,22 @@
+---
+title: "Vérification MDX"
+description: "Fixture MDX non listée qui couvre le rendu Markdown et les aperçus d’images."
+listed: false
+tags:
+  - test
+---
+
+export const smokeMarker = "MDX actif";
+
+## Rendu MDX
+
+Cette page de contrôle rend explicitement **{smokeMarker}** avec le même pipeline qu’un article
+normal, tout en restant absente des surfaces de découverte.
+
+![konachan-382339.jpg](./images/konachan-382339.jpg)
+
+![konachan-382339.jpg](./images/konachan-382339.jpg)
+
+> Ce contenu reste accessible par son URL directe, mais n’est ni indexé ni listé.[^1]
+
+[^1]: La fixture confirme aussi le parcours des notes de bas de page Markdown dans un fichier MDX.

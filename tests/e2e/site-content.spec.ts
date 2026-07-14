@@ -8,7 +8,9 @@ import {
   expectPopoverOpen,
 } from "./site-fixture";
 
-test("uses full-cell semantic sort controls with Material ripple", async ({ page }) => {
+test("keeps an empty latest-posts table interactive when every post is unlisted", async ({
+  page,
+}) => {
   await gotoRoute(page, "/");
   await waitForNativeEnhancement(page, "site-home-latest-posts-table");
 
@@ -34,7 +36,8 @@ test("uses full-cell semantic sort controls with Material ripple", async ({ page
     "aria-sort",
     "ascending",
   );
-  await expect(page.locator(".home-post-title").first()).toHaveText("Markdown Style Guide");
+  await expect(page.locator(".home-post-title")).toHaveCount(0);
+  await expect(page.getByText("Aucun article à afficher.")).toBeVisible();
 });
 
 test("renders the cookie preferences controls", async ({ page }) => {
@@ -458,29 +461,30 @@ test("keeps the Material rich tooltip anchored and enhances all of its rich cont
   });
 });
 
-test("previews a Markdown footnote without duplicating ids or its backreference", async ({
-  page,
-}) => {
-  await gotoRoute(page, "/posts/markdown-style-guide/");
+test("keeps only the enhanced Markdown footnote preview in the page", async ({ page }) => {
+  await gotoRoute(page, "/posts/mdx-smoke-test/");
   await waitForAppReady(page);
 
   const reference = page.locator("a[data-footnote-ref]").first();
+  const footnotes = page.locator(".site-prose .footnotes");
   await expect(reference).toHaveAttribute("href", "#user-content-fn-1");
   await expect(reference).not.toHaveAttribute("tabindex");
+  await expect(footnotes).toHaveAttribute("data-footnotes-enhanced", "true");
+  await expect(footnotes).toBeHidden();
   await reference.focus();
 
   const popoverId = await reference.getAttribute("aria-controls");
   expect(popoverId).toBeTruthy();
   const popover = page.locator(`#${popoverId}`);
   await expectPopoverOpen(popover, true);
-  await expect(popover.getByText(/The above quote is excerpted from Rob Pike/)).toBeVisible();
-  await expect(popover.getByRole("link", { name: "talk" })).toHaveAttribute(
-    "href",
-    "https://www.youtube.com/watch?v=PAAkCSZUG1c",
-  );
+  await expect(
+    popover.getByText(
+      "La fixture confirme aussi le parcours des notes de bas de page Markdown dans un fichier MDX.",
+    ),
+  ).toBeVisible();
   await expect(popover.locator("[data-footnote-backref]")).toHaveCount(0);
   await expect(popover.locator("#user-content-fn-1")).toHaveCount(0);
-  await expect(page.locator("#user-content-fn-1")).toHaveCount(1);
+  await expect(footnotes.locator("#user-content-fn-1")).toHaveCount(1);
 
   await page.keyboard.press("Escape");
   await expectPopoverOpen(popover, false);
@@ -747,7 +751,7 @@ test("switches the real Material Web tabs and their semantic panels", async ({ p
   await expect(page.getByRole("tabpanel").filter({ hasText: "pnpm install" })).toBeHidden();
 });
 
-test("filters the semantic tag table through a Material Web text field", async ({ page }) => {
+test("keeps unlisted posts out of the semantic tag table", async ({ page }) => {
   await gotoRoute(page, "/tags/all/");
 
   const filter = page.locator("md-outlined-text-field.tag-posts-table-filter");
@@ -766,8 +770,9 @@ test("filters the semantic tag table through a Material Web text field", async (
   expect(filterStyle.radius).toBe("28px");
   expect(filterStyle.focusOutline).toBe(filterStyle.primary);
 
-  await page.getByRole("searchbox", { name: "Filtrer les articles" }).fill("Markdown");
-  await expect(page.getByRole("link", { name: "Markdown Style Guide" })).toBeVisible();
+  await page.getByRole("searchbox", { name: "Filtrer les articles" }).fill("MDX");
+  await expect(page.getByText("Aucun article ne correspond au filtre.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Vérification MDX" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Shortcodes Astro et Material Web" })).toHaveCount(0);
 });
 
@@ -856,12 +861,12 @@ test("keeps one Giscus progress bar until its iframe has loaded", async ({ page 
       if (panel?.getAttribute("aria-busy") === "true" && timing.busyAt === undefined) {
         timing.busyAt = performance.now();
       }
-      if (progress && !progress.hidden && timing.visibleAt === undefined) {
+      if (progress?.hasAttribute("data-loading-active") && timing.visibleAt === undefined) {
         timing.visibleAt = performance.now();
       }
     };
     new MutationObserver(recordProgress).observe(document, {
-      attributeFilter: ["aria-busy", "hidden"],
+      attributeFilter: ["aria-busy", "data-loading-active", "hidden"],
       attributes: true,
       childList: true,
       subtree: true,
@@ -885,6 +890,7 @@ test("keeps one Giscus progress bar until its iframe has loaded", async ({ page 
   const panel = page.locator("[data-giscus-panel]");
   const progress = panel.locator("md-linear-progress[data-giscus-progress]");
   await expect(progress).toHaveCount(1);
+  await expect(progress).toHaveAttribute("four-color", /^(?:|true)$/);
   await expect(panel).toBeVisible();
   await expect(panel).toHaveAttribute("aria-busy", "true");
   const iframe = panel.locator("iframe.giscus-frame");
@@ -908,6 +914,7 @@ test("keeps one Giscus progress bar until its iframe has loaded", async ({ page 
 
   await expect(panel).toHaveAttribute("aria-busy", "true");
   await expect(progress).toBeVisible();
+  await expect(progress).toHaveAttribute("data-loading-active", "");
   const progressDelay = await page.evaluate(() => {
     const timing = (
       window as typeof window & {
@@ -921,6 +928,7 @@ test("keeps one Giscus progress bar until its iframe has loaded", async ({ page 
   releaseFrameResponse();
   await expect(panel).toHaveAttribute("aria-busy", "false");
   await expect(progress).toBeHidden();
+  await expect(progress).not.toHaveAttribute("data-loading-active", "");
 
   const giscusFrame = page.frameLocator("iframe.giscus-frame");
   await expect(giscusFrame.locator("body")).toHaveAttribute(

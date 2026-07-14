@@ -316,7 +316,10 @@ class HomeLatestPostsTableElement extends HTMLElement {
     this.cancelLoadingIndicatorTimer();
     this.loadingIndicatorTimer = window.setTimeout(() => {
       this.loadingIndicatorTimer = 0;
-      if (this.loading && this.loadingProgress) this.loadingProgress.hidden = false;
+      if (this.loading && this.loadingProgress) {
+        this.loadingProgress.setAttribute("aria-hidden", "false");
+        this.loadingProgress.setAttribute("data-loading-active", "");
+      }
     }, SITE_LOADING_INDICATOR_DELAY_MS);
   }
 
@@ -324,7 +327,8 @@ class HomeLatestPostsTableElement extends HTMLElement {
     this.loading = false;
     this.table?.removeAttribute("aria-busy");
     this.cancelLoadingIndicatorTimer();
-    if (this.loadingProgress) this.loadingProgress.hidden = true;
+    this.loadingProgress?.removeAttribute("data-loading-active");
+    this.loadingProgress?.setAttribute("aria-hidden", "true");
   }
 
   private cancelLoadingIndicatorTimer() {

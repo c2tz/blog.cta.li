@@ -5,9 +5,7 @@ publicHoistPattern:
   - tslib
 
 overrides:
-  "@babel/core": 7.29.7
   esbuild: 0.28.1
-  piscina: 5.2.0
   tmp: 0.2.7
   uuid: 11.1.1
 

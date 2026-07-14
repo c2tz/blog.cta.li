@@ -45,6 +45,7 @@ function stripCloneIds(root) {
 
 function enhanceFootnotePreviews() {
   const pageKey = location.pathname;
+  const footnoteSources = new Map();
   document
     .querySelectorAll("[data-generated-footnote-popover]")
     .forEach((surface) => surface.getAttribute("data-page-key") === pageKey || surface.remove());
@@ -54,7 +55,6 @@ function enhanceFootnotePreviews() {
     .forEach((reference, index) => {
       if (!(reference instanceof HTMLElement)) return;
       const existingId = reference.dataset.contextPopoverTrigger;
-      if (existingId && document.getElementById(existingId)) return;
 
       const hash = reference.getAttribute("href");
       if (!hash) return;
@@ -67,6 +67,16 @@ function enhanceFootnotePreviews() {
       const note = document.getElementById(targetId);
       if (!note) return;
 
+      const source = note.closest(".footnotes");
+      const sourceState =
+        source instanceof HTMLElement
+          ? (footnoteSources.get(source) ?? { enhanced: 0, references: 0 })
+          : null;
+      if (sourceState) {
+        sourceState.references += 1;
+        footnoteSources.set(source, sourceState);
+      }
+
       const suffix = targetId.replace(/[^a-z0-9_-]+/gi, "-");
       const id = `site-footnote-popover-${suffix}-${index + 1}`;
       const titleId = `${id}-title`;
@@ -74,6 +84,12 @@ function enhanceFootnotePreviews() {
       const dialog = document.createElement("dialog");
       const title = document.createElement("h2");
       const content = document.createElement("div");
+
+      if (existingId && document.getElementById(existingId)) {
+        if (sourceState) sourceState.enhanced += 1;
+        return;
+      }
+
       const clone = note.cloneNode(true);
 
       if (!(clone instanceof HTMLElement)) return;
@@ -107,7 +123,12 @@ function enhanceFootnotePreviews() {
       reference.removeAttribute("title");
       reference.classList.remove("site-tooltip");
       reference.classList.add("site-context-popover-trigger", "footnote-ref-tooltip");
+      if (sourceState) sourceState.enhanced += 1;
     });
+
+  footnoteSources.forEach(({ enhanced, references }, source) => {
+    if (references && enhanced === references) source.dataset.footnotesEnhanced = "true";
+  });
 }
 
 class SiteContextPopoverController {

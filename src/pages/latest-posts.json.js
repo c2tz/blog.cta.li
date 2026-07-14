@@ -1,11 +1,12 @@
 import { getCollection } from "astro:content";
 
+import { isListedBlogPost } from "@/lib/blog-posts";
 import { formatFrenchDate, formatFrenchDateTime, toDate } from "@/lib/date-format.mjs";
 import { getContentEntryGitDates } from "@/lib/git-dates.mjs";
 
 export const GET = async () => {
   const collection = await getCollection("blog");
-  const posts = collection.map((post) => ({
+  const posts = collection.filter(isListedBlogPost).map((post) => ({
     ...post,
     gitDates: getContentEntryGitDates("blog", post),
   }));

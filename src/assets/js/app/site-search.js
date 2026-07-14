@@ -469,13 +469,17 @@ class SearchPanelController {
     this.cancelLoadingIndicatorTimer();
     this.loadingIndicatorTimer = window.setTimeout(() => {
       this.loadingIndicatorTimer = 0;
-      if (this.loadingOperations.size > 0) this.progress.hidden = false;
+      if (this.loadingOperations.size > 0) {
+        this.progress.setAttribute("aria-hidden", "false");
+        this.progress.setAttribute("data-loading-active", "");
+      }
     }, SITE_LOADING_INDICATOR_DELAY_MS);
   }
 
   hideLoadingIndicator() {
     this.cancelLoadingIndicatorTimer();
-    this.progress.hidden = true;
+    this.progress.removeAttribute("data-loading-active");
+    this.progress.setAttribute("aria-hidden", "true");
   }
 
   cancelLoadingIndicatorTimer() {
@@ -628,7 +632,6 @@ export function initSiteSearchTriggers() {
         // The Material dialog becomes visible before its opening animation
         // resolves. Connect the deferred panel first so early input is never lost.
         initSiteSearchPanel(panel, { includeDeferred: true });
-        stopOpeningIndicator();
         await dialog.show();
         window.setTimeout(() => focusSiteSearchPanel(panel));
       } finally {

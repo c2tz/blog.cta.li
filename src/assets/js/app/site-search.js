@@ -25,9 +25,21 @@ const RELEVANCE_PRIORITY_WEIGHT = 0.01;
 
 const panelControllers = new WeakMap();
 let filterChipModule;
+let searchMaterialModule;
+
+function loadSearchMaterialModule() {
+  searchMaterialModule ??= import("@/assets/js/material-web/search.js").catch((error) => {
+    searchMaterialModule = undefined;
+    throw error;
+  });
+  return searchMaterialModule;
+}
 
 function loadFilterChipModule() {
-  filterChipModule ??= import("@material/web/chips/filter-chip.js");
+  filterChipModule ??= import("@material/web/chips/filter-chip.js").catch((error) => {
+    filterChipModule = undefined;
+    throw error;
+  });
   return filterChipModule;
 }
 
@@ -75,9 +87,11 @@ class SearchPanelController {
     this.loadingIndicatorTimer = 0;
     this.queryDebounceTimer = 0;
     this.inputControl = undefined;
+    this.sortControlMedia = window.matchMedia("(max-width: 720px), (pointer: coarse)");
     this.filterChipReady = loadFilterChipModule();
 
     this.handleInput = this.handleInput.bind(this);
+    this.handleSortControlMediaChange = this.handleSortControlMediaChange.bind(this);
     this.connect();
   }
 
@@ -88,9 +102,12 @@ class SearchPanelController {
       this.query = this.input.value;
     }
 
-    this.input.value = this.query;
-    this.sortSelect.value = this.sortMode;
-    this.syncSortOptions();
+    // The deferred panel is connected while its Material dialog is still
+    // hidden. Avoid asking Material Web to animate an unchanged empty label
+    // against zero-sized geometry (0 / 0 produces invalid NaN keyframes in
+    // Chromium). Autofill and pre-connect input are already mirrored above.
+    if (this.input.value !== this.query) this.input.value = this.query;
+    this.syncSortControl();
     this.render();
 
     this.form.addEventListener("submit", (event) => {
@@ -103,6 +120,14 @@ class SearchPanelController {
     this.clearSearchButton.addEventListener("click", () => this.clearSearch());
     this.clearFiltersButton.addEventListener("click", () => this.clearFilters());
     this.sortSelect.addEventListener("change", (event) => this.setSortMode(controlValue(event)));
+    this.sortControlMedia.addEventListener("change", this.handleSortControlMediaChange);
+    document.addEventListener(
+      "astro:before-swap",
+      () => {
+        this.sortControlMedia.removeEventListener("change", this.handleSortControlMediaChange);
+      },
+      { once: true },
+    );
 
     void this.connectMaterialTextField();
     void this.connectSortMenuRepositioning();
@@ -222,9 +247,24 @@ class SearchPanelController {
     if (this.sortMode === nextSort) return;
 
     this.sortMode = nextSort;
-    this.sortSelect.value = nextSort;
-    this.syncSortOptions();
+    this.syncSortControl();
     void this.search(this.query.trim());
+  }
+
+  handleSortControlMediaChange() {
+    this.syncSortControl();
+  }
+
+  syncSortControl() {
+    // The sort control is intentionally absent from the compact/coarse layout.
+    // It is also display:none while its deferred dialog is closed. Updating
+    // its floating label in either state makes Material Web measure 0 / 0 and
+    // Chromium rejects the generated NaN animation keyframes.
+    const dialog = this.root.closest("md-dialog");
+    if (this.sortControlMedia.matches || (dialog && !dialog.open)) return;
+
+    if (this.sortSelect.value !== this.sortMode) this.sortSelect.value = this.sortMode;
+    this.syncSortOptions();
   }
 
   setSelectedTags(value) {
@@ -573,7 +613,8 @@ function initSiteSearchPanel(root, { includeDeferred = false } = {}) {
 
 export function initSiteSearchPanels() {
   document.querySelectorAll("[data-site-search-panel]").forEach((root) => {
-    initSiteSearchPanel(root);
+    if (root.dataset.deferred === "true" && !root.closest("md-dialog[open]")) return;
+    void loadSearchMaterialModule().then(() => initSiteSearchPanel(root));
   });
 }
 
@@ -625,14 +666,45 @@ export function initSiteSearchTriggers() {
 
       try {
         await Promise.all([
+          loadSearchMaterialModule(),
           customElements.whenDefined("md-dialog"),
           customElements.whenDefined("md-filled-text-field"),
           customElements.whenDefined("md-icon-button"),
         ]);
-        // The Material dialog becomes visible before its opening animation
-        // resolves. Connect the deferred panel first so early input is never lost.
-        initSiteSearchPanel(panel, { includeDeferred: true });
-        await dialog.show();
+        // Opening the deferred select while its dialog is display:none makes
+        // Material Web animate its floating label from zero-sized geometry and
+        // Chromium rejects the resulting NaN keyframes. Wait only until the
+        // native modal surface exists, then connect during (not after) the open
+        // animation so the panel is ready before the trigger is re-enabled.
+        const showPromise = dialog.show();
+        let openFrame = 0;
+        const openSurfacePromise = new Promise((resolve) => {
+          const checkOpen = () => {
+            if (dialog.open) {
+              resolve();
+              return;
+            }
+            openFrame = window.requestAnimationFrame(checkOpen);
+          };
+          checkOpen();
+        });
+        try {
+          await Promise.race([showPromise, openSurfacePromise]);
+        } finally {
+          window.cancelAnimationFrame(openFrame);
+        }
+        if (dialog.open) {
+          await dialog.updateComplete;
+          await new Promise((resolve) => {
+            window.requestAnimationFrame(resolve);
+          });
+          const controller = initSiteSearchPanel(panel, { includeDeferred: true });
+          // A controller may already exist when the dialog is reopened after a
+          // compact-to-wide resize. Synchronize only now that Material can
+          // measure the visible select safely.
+          controller?.syncSortControl();
+        }
+        await showPromise;
         window.setTimeout(() => focusSiteSearchPanel(panel));
       } finally {
         endOpening();

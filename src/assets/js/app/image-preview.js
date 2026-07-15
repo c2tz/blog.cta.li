@@ -1,3 +1,4 @@
+import "@/assets/js/material-web/image-preview.js";
 import {
   IMAGE_DIALOG_OPEN_ANIMATION,
   IMAGE_DIALOG_CLOSE_ANIMATION,
@@ -82,6 +83,8 @@ class ImagePreviewController extends ImagePreviewControllerBase {
     this.zoomPanY = 0;
     this.zoomPanGesture = undefined;
     this.renderRequest = 0;
+    this.focusRequest = 0;
+    this.pendingTabFocus = undefined;
     this.motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     this.dialog.getOpenAnimation = () => IMAGE_DIALOG_OPEN_ANIMATION;
@@ -98,7 +101,14 @@ class ImagePreviewController extends ImagePreviewControllerBase {
     const options = { signal: this.abortController.signal };
 
     document.addEventListener("click", this.handleDocumentClick, { ...options, capture: true });
-    document.addEventListener("keydown", this.handleDocumentKeydown, { ...options, capture: true });
+    // Capture before Material Dialog's document-level focus trap so WebKit
+    // cannot consume Tab before the two explicit toolbars have cycled it.
+    window.addEventListener("keydown", this.handleDocumentKeydown, { ...options, capture: true });
+    window.addEventListener("keyup", this.handleDocumentKeyup, { ...options, capture: true });
+    window.addEventListener("pointerdown", this.handlePointerFocusIntent, {
+      ...options,
+      capture: true,
+    });
     document.addEventListener("gesturestart", this.handleNativeGestureStart, {
       ...options,
       passive: true,
@@ -191,7 +201,25 @@ class ImagePreviewController extends ImagePreviewControllerBase {
   };
 
   handleDocumentKeydown = (event) => {
-    if (this.isOpen || (event.key !== "Enter" && event.key !== " ")) return;
+    if (this.isOpen) {
+      if (event.key === "Tab" && !this.isClosing) {
+        if (!this.informationOpen && !this.controlsVisible) this.setControlsVisible(true);
+        this.cycleKeyboardFocus(
+          event,
+          this.informationOpen
+            ? [
+                this.informationCloseButton,
+                this.downloadButton,
+                this.shareButton,
+                this.fullscreenButton,
+              ]
+            : [this.informationButton, this.closeButton],
+        );
+      }
+      return;
+    }
+
+    if (event.key !== "Enter" && event.key !== " ") return;
 
     const image = this.getDialogImage(event);
     if (!image) return;
@@ -199,6 +227,22 @@ class ImagePreviewController extends ImagePreviewControllerBase {
     event.preventDefault();
     event.stopPropagation();
     void this.open(image, { restoreFocus: true });
+  };
+
+  handleDocumentKeyup = (event) => {
+    if (event.key !== "Tab") return;
+
+    const control = this.pendingTabFocus;
+    this.pendingTabFocus = undefined;
+    if (!control || !this.isOpen || this.isClosing || !control.isConnected) return;
+
+    event.preventDefault();
+    this.focusControl(control);
+  };
+
+  handlePointerFocusIntent = () => {
+    this.focusRequest += 1;
+    this.pendingTabFocus = undefined;
   };
 
   handleDialogCancel = (event) => {
@@ -263,6 +307,73 @@ class ImagePreviewController extends ImagePreviewControllerBase {
       this.next();
     }
   };
+
+  focusControl(control) {
+    const request = ++this.focusRequest;
+    let settled = false;
+    const apply = () => {
+      const nativeControl = control.shadowRoot?.querySelector("button:not([disabled])");
+      const target = nativeControl instanceof HTMLElement ? nativeControl : control;
+      target.focus({ preventScroll: true });
+      settled = this.controlHasFocus(control);
+    };
+    const retry = () => {
+      if (
+        settled ||
+        request !== this.focusRequest ||
+        !control.isConnected ||
+        this.controlHasFocus(control)
+      ) {
+        return;
+      }
+      apply();
+    };
+
+    apply();
+    queueMicrotask(retry);
+    requestAnimationFrame(retry);
+    window.setTimeout(retry);
+    window.setTimeout(retry, 40);
+  }
+
+  controlHasFocus(control) {
+    return (
+      document.activeElement === control ||
+      Boolean(control.shadowRoot?.activeElement) ||
+      control.matches(":focus-within")
+    );
+  }
+
+  cycleKeyboardFocus(event, candidates) {
+    const controls = candidates.filter(
+      (control) =>
+        control.isConnected &&
+        !control.hidden &&
+        !control.hasAttribute("hidden") &&
+        !control.hasAttribute("disabled") &&
+        !control.closest('[inert], [aria-hidden="true"]'),
+    );
+    if (!controls.length) return;
+
+    const path = event.composedPath();
+    const currentIndex = controls.findIndex(
+      (control) => path.includes(control) || this.controlHasFocus(control),
+    );
+    const nextIndex = event.shiftKey
+      ? currentIndex <= 0
+        ? controls.length - 1
+        : currentIndex - 1
+      : currentIndex < 0 || currentIndex >= controls.length - 1
+        ? 0
+        : currentIndex + 1;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    this.pendingTabFocus = controls[nextIndex];
+    // Material Dialog and WebKit both finish their native Tab processing after
+    // keydown. Applying our explicit toolbar cycle on keyup avoids a second,
+    // browser-driven focus move racing the shadow-root button focus.
+  }
 }
 
 async function initImagePreviewDialog() {
@@ -273,7 +384,8 @@ async function initImagePreviewDialog() {
     activeController = undefined;
     return;
   }
-  if (activeController?.dialog === dialog || pendingDialog === dialog) return;
+  if (activeController?.dialog === dialog) return activeController;
+  if (pendingDialog === dialog) return undefined;
 
   pendingDialog = dialog;
   await customElements.whenDefined("md-dialog");
@@ -282,12 +394,19 @@ async function initImagePreviewDialog() {
   activeController?.destroy();
   activeController = new ImagePreviewController(dialog);
   pendingDialog = undefined;
+  return activeController;
 }
 
 export function installImagePreviewDialog() {
-  void initImagePreviewDialog();
-  if (pageLoadListenerInstalled) return;
+  const ready = initImagePreviewDialog();
+  if (pageLoadListenerInstalled) return ready;
 
   pageLoadListenerInstalled = true;
   document.addEventListener("astro:page-load", () => void initImagePreviewDialog());
+  return ready;
+}
+
+export async function openImagePreviewDialog(image, options) {
+  await installImagePreviewDialog();
+  return activeController?.open(image, options);
 }

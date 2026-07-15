@@ -75,6 +75,21 @@ const removeCodeBlockTabindex = {
 
 const SHIKI_NOTATION_OPTIONS = { matchAlgorithm: "v3" };
 
+// Intent listeners already warm deferred entry points. Vite's dependency
+// preloader otherwise adds links for modules evaluated by the base graph;
+// WebKit flags those duplicates as unused and the requests carry no value.
+const disableRedundantClientModulePreloads = {
+  name: "disable-redundant-client-module-preloads",
+  generateBundle: {
+    order: "pre",
+    handler() {
+      if (this.environment.name === "client") {
+        this.environment.config.build.modulePreload = false;
+      }
+    },
+  },
+};
+
 export default defineConfig({
   site: "https://ct-blog.cta.li/",
   server: {
@@ -90,6 +105,7 @@ export default defineConfig({
   integrations: [mdx()],
   vite: {
     customLogger: viteLogger,
+    plugins: [disableRedundantClientModulePreloads],
     optimizeDeps: {
       include: [
         "@floating-ui/dom",
@@ -120,9 +136,6 @@ export default defineConfig({
         "@material/web/tabs/tabs.js",
         "@material/web/textfield/filled-text-field.js",
         "@material/web/textfield/outlined-text-field.js",
-        "lit",
-        "lit/decorators.js",
-        "lit/html.js",
       ],
     },
     server: {

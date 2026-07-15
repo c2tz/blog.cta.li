@@ -49,8 +49,17 @@ export const withImagePreviewGallery = (Base) =>
       );
 
       try {
+        const focusRequestBeforeShow = this.focusRequest;
         await this.dialog.show();
-        if (this.isOpen && !this.isClosing && this.dialog.open) this.pushHistoryEntry();
+        if (this.isOpen && !this.isClosing && this.dialog.open) {
+          // Do not overwrite a Tab move made while the opening animation was
+          // still resolving. The Material dialog's autofocus already covers
+          // the default close-button target during that interval.
+          if (this.focusRequest === focusRequestBeforeShow) {
+            this.focusControl(this.closeButton);
+          }
+          this.pushHistoryEntry();
+        }
       } catch {
         this.finishClose();
       }
@@ -129,6 +138,7 @@ export const withImagePreviewGallery = (Base) =>
       this.pendingIndex = undefined;
       this.image.src = item.src;
       this.image.alt = item.alt || item.label;
+      void this.prepareShareFile(item);
       this.dialog.setAttribute("aria-label", `Aperçu de l’image : ${item.label}`);
       this.setOptionalNumericAttribute(this.image, "width", item.width);
       this.setOptionalNumericAttribute(this.image, "height", item.height);

@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches:
+      - develop
       - main
 
 permissions:
@@ -15,7 +16,6 @@ concurrency:
 
 jobs:
   check-build-and-headers:
-    if: github.event_name != 'pull_request' || github.actor != 'dependabot[bot]'
     name: Check Astro, Material Web, and security headers
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -40,14 +40,22 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Playwright Chromium
-        run: pnpm exec playwright install --with-deps chromium
+      - name: Install Playwright Chromium and WebKit
+        run: pnpm exec playwright install --with-deps chromium webkit
 
       - name: Check, build, and validate security headers
         run: pnpm verify:quality
 
+      - name: Upload Playwright failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: playwright-failure-artifacts
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
   lighthouse-performance:
-    if: github.event_name != 'pull_request' || github.actor != 'dependabot[bot]'
     name: Lighthouse 95+ performance (mobile and desktop, no SEO)
     runs-on: ubuntu-latest
     timeout-minutes: 20

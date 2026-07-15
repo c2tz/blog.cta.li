@@ -3,6 +3,7 @@ import {
   test,
   expectNoPageOverflow,
   gotoRoute,
+  prepareClipboardWrite,
   waitForAppReady,
   waitForNativeEnhancement,
   expectPopoverOpen,
@@ -611,7 +612,10 @@ test("renders shortcode code blocks with highlighted lines and copy controls", a
     pointerType: "mouse",
   });
 
-  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  const isWebKit = await prepareClipboardWrite(page);
+  const expectedCopiedCode = await copyButton.evaluate(
+    (button) => button.closest(".code-shell")?.querySelector("pre code")?.textContent ?? "",
+  );
   await copyButton.click();
   await expect(copyButton).toHaveClass(/code-copy-button-copied/);
   await expect(copyButton).toHaveAttribute("data-tooltip", "Code copié");
@@ -623,6 +627,11 @@ test("renders shortcode code blocks with highlighted lines and copy controls", a
   }
   const copiedState = await readCopyVisualState();
   expect(copiedState.iconColor).toBe(copiedState.primary);
+  if (isWebKit) {
+    await expect
+      .poll(() => page.evaluate(() => Reflect.get(window, "__copiedCode")))
+      .toBe(expectedCopiedCode);
+  }
 
   expect(await page.locator("pre code .line").count()).toBeGreaterThan(6);
   expect(

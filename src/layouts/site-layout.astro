@@ -333,16 +333,7 @@ const speedInsightsVersion = speedInsightsPackage.version;
     {!barePage && <SiteTooltip />}
     {!barePage && shouldEnhanceContent && <ImagePreview />}
     {!barePage && readingProgress && <ScrollTopButton />}
-    <script>
-      import "@/assets/js/app-bootstrap";
-    </script>
-    {
-      shouldEnhanceContent && (
-        <script>
-          import "@/assets/js/material-web/content.js"; import
-          "@/assets/js/app/material-shortcodes.js"; import "@/assets/js/app/code-block-enhancer.js";
-        </script>
-      )
-    }
+    {!barePage && <script>import "@/assets/js/app-bootstrap";</script>}
+    {shouldEnhanceContent && <script>import "@/assets/js/content-enhancements.js";</script>}
   </body>
 </html>

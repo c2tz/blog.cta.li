@@ -5,29 +5,60 @@ import {
   openMaterialSelect,
   waitForNativeEnhancement,
 } from "./site-fixture";
+import type { Page } from "@playwright/test";
+
+const searchTriggerSelector = "[data-site-search-trigger]";
+
+async function warmSearch(page: Page) {
+  const trigger = page.locator(searchTriggerSelector);
+  const openButton = page.getByRole("button", { name: "Rechercher" });
+
+  await expect(trigger).not.toHaveAttribute("data-search-enhanced", "true");
+  await openButton.focus();
+  await expect(trigger).toHaveAttribute("data-search-enhanced", "true");
+
+  return { openButton, trigger };
+}
+
+async function openSearch(page: Page) {
+  const trigger = page.locator(searchTriggerSelector);
+  const openButton = page.getByRole("button", { name: "Rechercher" });
+  const dialog = page.getByRole("dialog", { name: "Recherche" });
+
+  await expect(trigger).not.toHaveAttribute("data-search-enhanced", "true");
+  // Dispatch without pointer movement so pointerenter cannot prewarm the chunk.
+  await openButton.dispatchEvent("click");
+  await expect(trigger).toHaveAttribute("data-search-enhanced", "true");
+  await expect(dialog).toBeVisible();
+  // `md-dialog` is visible before its opening animation and `show()` promise
+  // have settled. Wait for the trigger state restored by the runtime so a
+  // very fast WebKit test cannot click a still-inert select inside the dialog.
+  await expect(openButton).toBeEnabled();
+  await expect(openButton).not.toHaveAttribute("aria-busy", "true");
+
+  return { dialog, openButton, trigger };
+}
 
 test("shows the official four-color progress while the search dialog opens slowly", async ({
   page,
 }) => {
   await gotoRoute(page, "/");
-  await expect
-    .poll(() => page.locator("[data-site-search-trigger]").getAttribute("data-search-enhanced"))
-    .toBe("true");
-
-  const openButton = page.getByRole("button", { name: "Rechercher" });
+  const { openButton } = await warmSearch(page);
   const openProgress = page.locator("md-circular-progress[data-search-open-progress]");
   const dialog = page.getByRole("dialog", { name: "Recherche" });
   await expect(openProgress).toHaveAttribute("indeterminate", "");
   await expect(openProgress).toHaveAttribute("four-color", /^(?:|true)$/);
   await page.locator("[data-search-dialog]").evaluate((element) => {
-    const materialDialog = element as HTMLElement & { show(): Promise<void> };
-    const show = materialDialog.show.bind(materialDialog);
-    materialDialog.show = async () => {
-      await new Promise((resolve) => {
-        window.setTimeout(resolve, 350);
-      });
-      await show();
-    };
+    void customElements.whenDefined("md-dialog").then(() => {
+      const materialDialog = element as HTMLElement & { show(): Promise<void> };
+      const show = materialDialog.show.bind(materialDialog);
+      materialDialog.show = async () => {
+        await new Promise((resolve) => {
+          window.setTimeout(resolve, 350);
+        });
+        await show();
+      };
+    });
   });
 
   await openButton.click();
@@ -39,11 +70,7 @@ test("shows the official four-color progress while the search dialog opens slowl
 test("searches through the Material Web text field", async ({ page }) => {
   await gotoRoute(page, "/");
 
-  await expect
-    .poll(() => page.locator("[data-site-search-trigger]").getAttribute("data-search-enhanced"))
-    .toBe("true");
-  await page.getByRole("button", { name: "Rechercher" }).click();
-  await expect(page.getByRole("dialog", { name: "Recherche" })).toBeVisible();
+  await openSearch(page);
   const searchDialog = page.locator("md-dialog.site-search-dialog[open]");
   await expect
     .poll(() => searchDialog.evaluate((element) => Boolean(element.shadowRoot)))
@@ -81,13 +108,7 @@ test("keeps every search sort option visible above the dialog surface", async ({
   test.skip(test.info().project.name.includes("mobile"), "The sort select is hidden on mobile.");
 
   await gotoRoute(page, "/");
-
-  await expect
-    .poll(() => page.locator("[data-site-search-trigger]").getAttribute("data-search-enhanced"))
-    .toBe("true");
-  await page.getByRole("button", { name: "Rechercher" }).click();
-
-  await expect(page.getByRole("dialog", { name: "Recherche" })).toBeVisible();
+  await openSearch(page);
   const searchDialog = page.locator("md-dialog.site-search-dialog[open]");
   await expect(searchDialog).toHaveCount(1);
 
@@ -274,15 +295,36 @@ test("keeps every search sort option visible above the dialog surface", async ({
     .toBe(true);
 });
 
+test("reconnects the desktop sort after a closed compact resize without console warnings", async ({
+  page,
+}) => {
+  test.skip(test.info().project.name.includes("mobile"), "This exercises a desktop resize.");
+
+  await page.setViewportSize({ width: 700, height: 720 });
+  await gotoRoute(page, "/");
+  await openSearch(page);
+  const dialog = page.locator("[data-search-dialog]");
+  const sortSelect = page.locator("[data-search-dialog] [data-sort-select]");
+  await expect(sortSelect).toBeHidden();
+
+  await page.getByRole("button", { name: "Fermer la recherche" }).click();
+  await expect(dialog).toBeHidden();
+
+  await page.setViewportSize({ width: 900, height: 720 });
+  await page.getByRole("button", { name: "Rechercher" }).dispatchEvent("click");
+  await expect(dialog).toBeVisible();
+  await expect(page.getByRole("button", { name: "Rechercher" })).toBeEnabled();
+  await expect(sortSelect).toBeVisible();
+  await expect
+    .poll(() => sortSelect.evaluate((select) => (select as HTMLInputElement).value))
+    .toBe("relevance");
+});
+
 test("keeps the search sort menu anchored while the zoomed dialog scrolls", async ({ page }) => {
   test.skip(test.info().project.name.includes("mobile"), "The sort select is hidden on mobile.");
   await page.setViewportSize({ width: 1000, height: 420 });
   await gotoRoute(page, "/");
-
-  await expect
-    .poll(() => page.locator("[data-site-search-trigger]").getAttribute("data-search-enhanced"))
-    .toBe("true");
-  await page.getByRole("button", { name: "Rechercher" }).click();
+  await openSearch(page);
 
   const searchDialog = page.locator("md-dialog.site-search-dialog[open]");
   await searchDialog.getByRole("searchbox", { name: "Mot-clé, titre ou contenu" }).fill("MDX");
@@ -337,11 +379,7 @@ test("restores the complete search sort menu after browser dezoom", async ({ pag
   test.skip(test.info().project.name.includes("mobile"), "The sort select is hidden on mobile.");
   await page.setViewportSize({ width: 1000, height: 300 });
   await gotoRoute(page, "/");
-
-  await expect
-    .poll(() => page.locator("[data-site-search-trigger]").getAttribute("data-search-enhanced"))
-    .toBe("true");
-  await page.getByRole("button", { name: "Rechercher" }).click();
+  await openSearch(page);
 
   const searchDialog = page.locator("md-dialog.site-search-dialog[open]");
   const sortSelect = searchDialog.locator("[data-sort-select]");
@@ -440,12 +478,7 @@ test("delays and aggregates the linear search progress indicator", async ({ page
     };
   });
   await gotoRoute(page, "/");
-  await expect
-    .poll(() => page.locator("[data-site-search-trigger]").getAttribute("data-search-enhanced"))
-    .toBe("true");
-  await page.getByRole("button", { name: "Rechercher" }).click();
-
-  await expect(page.getByRole("dialog", { name: "Recherche" })).toBeVisible();
+  await openSearch(page);
   const searchPanel = page.locator(".site-search-dialog-content");
   const progress = searchPanel.locator("md-linear-progress.site-search-panel-progress");
   await expect(progress).toHaveAttribute("four-color", /^(?:|true)$/);

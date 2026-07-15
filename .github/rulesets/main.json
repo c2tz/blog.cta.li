@@ -17,22 +17,22 @@
       "type": "non_fast_forward"
     },
     {
-      "type": "required_linear_history"
-    },
-    {
       "type": "pull_request",
       "parameters": {
         "dismiss_stale_reviews_on_push": true,
-        "require_code_owner_review": false,
+        "require_code_owner_review": true,
         "require_last_push_approval": true,
-        "required_approving_review_count": 0,
-        "required_review_thread_resolution": false
+        "required_approving_review_count": 1,
+        "required_review_thread_resolution": false,
+        "required_reviewers": [],
+        "allowed_merge_methods": ["merge"]
       }
     },
     {
       "type": "required_status_checks",
       "parameters": {
         "strict_required_status_checks_policy": true,
+        "do_not_enforce_on_create": false,
         "required_status_checks": [
           {
             "context": "Analyze (javascript-typescript)"
@@ -44,17 +44,26 @@
             "context": "Check Astro, Material Web, and security headers"
           },
           {
-            "context": "Lighthouse 100 (mobile and desktop, no SEO)"
+            "context": "Lighthouse 95+ performance (mobile and desktop, no SEO)"
           },
           {
             "context": "Validate pull request title"
-          },
-          {
-            "context": "Vercel"
           }
         ]
       }
+    },
+    {
+      "type": "creation"
+    },
+    {
+      "type": "update"
     }
   ],
-  "bypass_actors": []
+  "bypass_actors": [
+    {
+      "actor_id": 95414249,
+      "actor_type": "User",
+      "bypass_mode": "always"
+    }
+  ]
 }

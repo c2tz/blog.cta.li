@@ -4,6 +4,7 @@ import {
   SOURCE_IMAGE_SELECTOR,
   DIALOG_SELECTOR,
   expectFocusWithin,
+  pressTabAndExpectFocus,
   expectPopoverOpen,
   expectMaterialAria,
   waitForLightboxController,
@@ -11,21 +12,104 @@ import {
   swipe,
   mouseDrag,
   trackpadSwipe,
+  trackpadWheel,
 } from "./image-preview-fixture";
 
-test("keeps gallery gestures at 100% and pans a browser-zoomed image with the mouse hand", async ({
+test("keeps gallery gestures at 100% and pans a browser-zoomed image with mouse or trackpad", async ({
   page,
+  browserName,
 }) => {
   const { dialog } = await openLightbox(page);
   const image = dialog.locator("[data-image-dialog-image]");
   const stage = dialog.locator("[data-image-dialog-stage]");
   const status = dialog.locator("[data-image-status]");
+  const toolbar = dialog.locator("[data-image-dialog-toolbar]");
 
   await mouseDrag(page, stage, -180, 0);
   await expect(status).toHaveText("Image 2 sur 2 : konachan-382339.jpg");
 
   await trackpadSwipe(stage, -100);
   await expect(status).toHaveText("Image 1 sur 2 : konachan-382339.jpg");
+
+  if (browserName !== "chromium") {
+    const originalDpr = await stage.evaluate(() => {
+      const current = window.devicePixelRatio;
+      try {
+        Object.defineProperty(window, "devicePixelRatio", {
+          configurable: true,
+          value: current * 2,
+        });
+        window.dispatchEvent(new Event("resize"));
+        document.dispatchEvent(new Event("gesturestart"));
+        return current;
+      } catch {
+        return null;
+      }
+    });
+    expect(originalDpr).not.toBeNull();
+    await expect(stage).toHaveAttribute("data-browser-zoomed", "");
+    await expect(stage).toHaveCSS("cursor", "grab");
+    await expect
+      .poll(() => stage.evaluate((element) => getComputedStyle(element).touchAction))
+      .toBe("pan-x pan-y pinch-zoom");
+
+    const nativeTouchAllowed = await stage.evaluate((element) => {
+      const dispatch = (type: string, pointerId: number, clientX: number, clientY: number) =>
+        element.dispatchEvent(
+          new PointerEvent(type, {
+            bubbles: true,
+            cancelable: true,
+            clientX,
+            clientY,
+            pointerId,
+            pointerType: "touch",
+          }),
+        );
+      const results = [
+        dispatch("pointerdown", 701, 120, 180),
+        dispatch("pointerdown", 702, 200, 180),
+        dispatch("pointermove", 701, 150, 210),
+        dispatch("pointermove", 702, 230, 210),
+        dispatch("pointerup", 701, 150, 210),
+        dispatch("pointerup", 702, 230, 210),
+      ];
+      return results.every(Boolean);
+    });
+    expect(nativeTouchAllowed).toBe(true);
+
+    const wheelPrevented = await trackpadWheel(stage, 80, 60);
+    expect(wheelPrevented).toBe(true);
+    await expect
+      .poll(() => image.evaluate((element) => (element as HTMLElement).style.transform))
+      .toMatch(/^translate3d\((?!0px, 0px)/);
+    await trackpadWheel(stage, 100_000, -100_000);
+    const boundedPan = await stage.evaluate((element) => {
+      const image = element.querySelector<HTMLElement>("[data-image-dialog-image]");
+      if (!image) return null;
+      const rect = element.getBoundingClientRect();
+      const matrix = new DOMMatrixReadOnly(image.style.transform);
+      return {
+        bounds: { x: rect.width / 4, y: rect.height / 4 },
+        pan: { x: matrix.m41, y: matrix.m42 },
+      };
+    });
+    expect(boundedPan?.pan.x).toBeCloseTo(-(boundedPan?.bounds.x ?? 0), 1);
+    expect(boundedPan?.pan.y).toBeCloseTo(boundedPan?.bounds.y ?? 0, 1);
+
+    await stage.evaluate((_, dpr) => {
+      Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: dpr });
+      document.dispatchEvent(new Event("gestureend"));
+      window.dispatchEvent(new Event("resize"));
+    }, originalDpr);
+    await expect(stage).not.toHaveAttribute("data-browser-zoomed");
+    await expect
+      .poll(() => image.evaluate((element) => (element as HTMLElement).style.transform))
+      .toBe("");
+    await page.waitForTimeout(260);
+    await trackpadSwipe(stage, 100);
+    await expect(status).toHaveText("Image 2 sur 2 : konachan-382339.jpg");
+    return;
+  }
 
   const cdp = await page.context().newCDPSession(page);
   const browserZoomAvailable = await cdp
@@ -34,6 +118,21 @@ test("keeps gallery gestures at 100% and pans a browser-zoomed image with the mo
     .catch(() => false);
   expect(browserZoomAvailable).toBe(true);
   await expect(stage).toHaveAttribute("data-browser-zoomed", "");
+  await expect
+    .poll(() =>
+      toolbar.evaluate((element) => {
+        const viewport = window.visualViewport;
+        if (!viewport) return false;
+        const rect = element.getBoundingClientRect();
+        return (
+          rect.left >= viewport.offsetLeft - 1 &&
+          rect.right <= viewport.offsetLeft + viewport.width + 1 &&
+          rect.top >= viewport.offsetTop - 1 &&
+          rect.bottom <= viewport.offsetTop + viewport.height + 1
+        );
+      }),
+    )
+    .toBe(true);
   await expect(stage).toHaveCSS("cursor", "grab");
   await expect
     .poll(async () => {
@@ -62,25 +161,46 @@ test("keeps gallery gestures at 100% and pans a browser-zoomed image with the mo
     )
     .toEqual({ opacity: "", transform: zoomPanTransform });
 
-  const beforeWheelTransform = await image.evaluate(
-    (element) => (element as HTMLElement).style.transform,
-  );
-  const wheelPrevented = await stage.evaluate((element) => {
-    const event = new WheelEvent("wheel", {
-      bubbles: true,
-      cancelable: true,
-      deltaMode: WheelEvent.DOM_DELTA_PIXEL,
-      deltaX: 80,
-      deltaY: 60,
+  const readImageTranslation = () =>
+    image.evaluate((element) => {
+      const transform = (element as HTMLElement).style.transform;
+      const matrix = transform ? new DOMMatrixReadOnly(transform) : new DOMMatrixReadOnly();
+      return { x: matrix.m41, y: matrix.m42 };
     });
-    element.dispatchEvent(event);
-    return event.defaultPrevented;
-  });
+  const beforeWheelTransform = await readImageTranslation();
+  const wheelPrevented = await trackpadWheel(stage, 80, 60);
   expect(wheelPrevented).toBe(true);
   await expect(status).toHaveText("Image 1 sur 2 : konachan-382339.jpg");
-  await expect
-    .poll(() => image.evaluate((element) => (element as HTMLElement).style.transform))
-    .toBe(beforeWheelTransform);
+  await expect.poll(readImageTranslation).toEqual({
+    x: beforeWheelTransform.x - 80,
+    y: beforeWheelTransform.y - 60,
+  });
+
+  const beforeNativePinch = await readImageTranslation();
+  const nativePinchPrevented = await trackpadWheel(stage, 50, 40, true);
+  expect(nativePinchPrevented).toBe(false);
+  await expect.poll(readImageTranslation).toEqual(beforeNativePinch);
+
+  await trackpadWheel(stage, 100_000, -100_000);
+  const boundedPan = await stage.evaluate((element) => {
+    const image = element.querySelector<HTMLElement>("[data-image-dialog-image]");
+    if (!image) return null;
+
+    const scale = Math.max(1, window.visualViewport?.scale ?? 1);
+    const hiddenRatio = 1 - 1 / scale;
+    const rect = element.getBoundingClientRect();
+    const matrix = new DOMMatrixReadOnly(image.style.transform);
+    return {
+      bounds: {
+        x: Math.max(0, (rect.width * hiddenRatio) / 2),
+        y: Math.max(0, (rect.height * hiddenRatio) / 2),
+      },
+      pan: { x: matrix.m41, y: matrix.m42 },
+    };
+  });
+  expect(boundedPan).not.toBeNull();
+  expect(boundedPan?.pan.x).toBeCloseTo(-(boundedPan?.bounds.x ?? 0), 1);
+  expect(boundedPan?.pan.y).toBeCloseTo(boundedPan?.bounds.y ?? 0, 1);
 
   await cdp.send("Emulation.setPageScaleFactor", { pageScaleFactor: 1 });
   await expect(stage).not.toHaveAttribute("data-browser-zoomed");
@@ -240,7 +360,6 @@ test("opens a second information dialog, then restores history, scroll and focus
   ).toBeVisible();
   await expect(downloadControl).toHaveAccessibleName("Télécharger");
   await expect(shareControl).toHaveAccessibleName("Partager");
-  await expect(fullscreenControl).toHaveAccessibleName(/Plein écran|Quitter le plein écran/);
   await expect(
     informationDialog.locator("[data-image-zoom], [data-image-real-size], md-menu"),
   ).toHaveCount(0);
@@ -269,16 +388,21 @@ test("opens a second information dialog, then restores history, scroll and focus
             .webkitRequestFullscreen)),
     );
   });
-  if (fullscreenSupported) await expect(fullscreenButton).toBeVisible();
-  else await expect(fullscreenButton).toBeHidden();
+  if (fullscreenSupported) {
+    await expect(fullscreenButton).toBeVisible();
+    await expect(fullscreenControl).toHaveAccessibleName(/Plein écran|Quitter le plein écran/);
+  } else {
+    await expect(fullscreenButton).toBeHidden();
+  }
 
   await expectFocusWithin(informationCloseButton);
   const informationFocusOrder = fullscreenSupported
     ? [downloadButton, shareButton, fullscreenButton, informationCloseButton, downloadButton]
     : [downloadButton, shareButton, informationCloseButton, downloadButton, shareButton];
+  let currentFocus = informationCloseButton;
   for (const control of informationFocusOrder) {
-    await page.keyboard.press("Tab");
-    await expectFocusWithin(control);
+    await pressTabAndExpectFocus(currentFocus, control);
+    currentFocus = control;
   }
 
   const image = dialog.locator("[data-image-dialog-image]");
@@ -311,6 +435,329 @@ test("opens a second information dialog, then restores history, scroll and focus
       page.evaluate(() => !document.documentElement.classList.contains("site-image-dialog-open")),
     )
     .toBe(true);
+});
+
+test("requests native fullscreen in the originating Material button activation", async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    const shell = document.querySelector<HTMLElement>("[data-image-dialog-shell]");
+    if (!shell) throw new Error("Missing image preview shell");
+    const state = { calls: [] as Array<{ informationOpen: boolean; userActivation: boolean }> };
+    Object.defineProperty(window, "__imageFullscreenTestState", {
+      configurable: true,
+      value: state,
+    });
+    Object.defineProperty(document, "fullscreenEnabled", {
+      configurable: true,
+      value: true,
+    });
+    Object.defineProperty(shell, "requestFullscreen", {
+      configurable: true,
+      value: async () => {
+        const informationDialog = document.querySelector<HTMLElement & { open?: boolean }>(
+          "[data-image-information-dialog]",
+        );
+        state.calls.push({
+          informationOpen: Boolean(informationDialog?.open),
+          userActivation: navigator.userActivation?.isActive ?? false,
+        });
+      },
+    });
+  });
+
+  const { dialog } = await openLightbox(page);
+  const informationDialog = page.locator("[data-image-information-dialog]");
+  await dialog.locator("[data-image-information]").click();
+  await expect(informationDialog).toHaveJSProperty("open", true);
+
+  const fullscreenButton = informationDialog.locator("[data-image-fullscreen]");
+  await expect(fullscreenButton).toBeVisible();
+  await fullscreenButton.click();
+
+  await expect(informationDialog).toHaveJSProperty("open", false);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            window as Window & {
+              __imageFullscreenTestState?: {
+                calls: Array<{ informationOpen: boolean; userActivation: boolean }>;
+              };
+            }
+          ).__imageFullscreenTestState?.calls ?? [],
+      ),
+    )
+    .toEqual([{ informationOpen: true, userActivation: true }]);
+  await expect(dialog.locator("[data-image-dialog-shell]")).toHaveClass(/is-fullscreen-mode/);
+});
+
+test("shares the fetched image as a native File when Safari-style file sharing is supported", async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    const state = {
+      canShareFile: null as null | { name: string; size: number; type: string },
+      userActivationAtShare: [] as boolean[],
+      shareCalls: [] as Array<{
+        file?: { name: string; size: number; type: string };
+        title?: string;
+        url?: string;
+      }>,
+    };
+    Object.defineProperty(window, "__imageShareTestState", {
+      configurable: true,
+      value: state,
+    });
+    Object.defineProperty(navigator, "canShare", {
+      configurable: true,
+      value: (data: ShareData) => {
+        const file = data.files?.[0];
+        state.canShareFile = file ? { name: file.name, size: file.size, type: file.type } : null;
+        return Boolean(file);
+      },
+    });
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: async (data: ShareData) => {
+        state.userActivationAtShare.push(navigator.userActivation?.isActive ?? false);
+        const file = data.files?.[0];
+        state.shareCalls.push({
+          file: file ? { name: file.name, size: file.size, type: file.type } : undefined,
+          title: data.title,
+          url: data.url,
+        });
+      },
+    });
+  });
+
+  const { dialog } = await openLightbox(page);
+  const informationDialog = page.locator("[data-image-information-dialog]");
+  const shareButton = informationDialog.locator("[data-image-share]");
+  const expectedFileName = await dialog
+    .locator("[data-image-dialog-image]")
+    .evaluate((image) =>
+      decodeURIComponent(new URL((image as HTMLImageElement).src).pathname.split("/").at(-1) ?? ""),
+    );
+
+  await dialog.locator("[data-image-information]").click();
+  await expect(informationDialog).toHaveJSProperty("open", true);
+  await expect(shareButton).toHaveAttribute("data-share-file-ready", "true");
+  await shareButton.click();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            window as Window & {
+              __imageShareTestState?: { shareCalls: unknown[] };
+            }
+          ).__imageShareTestState?.shareCalls.length ?? 0,
+      ),
+    )
+    .toBe(1);
+
+  const state = await page.evaluate(
+    () =>
+      (
+        window as Window & {
+          __imageShareTestState?: {
+            canShareFile: { name: string; size: number; type: string } | null;
+            userActivationAtShare: boolean[];
+            shareCalls: Array<{
+              file?: { name: string; size: number; type: string };
+              title?: string;
+              url?: string;
+            }>;
+          };
+        }
+      ).__imageShareTestState,
+  );
+  expect(state?.canShareFile?.name).toBe(expectedFileName);
+  expect(state?.canShareFile?.size).toBeGreaterThan(0);
+  expect(state?.canShareFile?.type).toMatch(/^image\//);
+  expect(state?.shareCalls).toHaveLength(1);
+  expect(state?.shareCalls[0]?.file).toEqual(state?.canShareFile);
+  expect(state?.shareCalls[0]?.url).toBeUndefined();
+  expect(state?.userActivationAtShare).toEqual([true]);
+  await expect(shareButton.locator("[data-image-share-label]")).toHaveText("Image partagée");
+});
+
+test("shares the image URL immediately while the native File is still loading", async ({
+  page,
+}) => {
+  let releaseImageFetch = () => {};
+  const imageFetchGate = new Promise<void>((resolve) => {
+    releaseImageFetch = resolve;
+  });
+  await page.route("**/*konachan-382339*", async (route) => {
+    if (route.request().method() === "GET" && route.request().resourceType() === "fetch") {
+      await imageFetchGate;
+    }
+    await route.continue();
+  });
+  await page.evaluate(() => {
+    const state = {
+      calls: [] as Array<{ files: number; url?: string; userActivation: boolean }>,
+    };
+    Object.defineProperty(window, "__imageShareTestState", {
+      configurable: true,
+      value: state,
+    });
+    Object.defineProperty(navigator, "canShare", {
+      configurable: true,
+      value: () => true,
+    });
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: async (data: ShareData) => {
+        state.calls.push({
+          files: data.files?.length ?? 0,
+          url: data.url,
+          userActivation: navigator.userActivation?.isActive ?? false,
+        });
+      },
+    });
+  });
+
+  const { dialog } = await openLightbox(page);
+  const informationDialog = page.locator("[data-image-information-dialog]");
+  const shareButton = informationDialog.locator("[data-image-share]");
+  const imageUrl = await dialog.locator("[data-image-dialog-image]").getAttribute("src");
+  await dialog.locator("[data-image-information]").click();
+  await expect(informationDialog).toHaveJSProperty("open", true);
+  await expect(shareButton).not.toHaveAttribute("data-share-file-ready", "true");
+
+  await shareButton.click();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            window as Window & {
+              __imageShareTestState?: {
+                calls: Array<{ files: number; url?: string; userActivation: boolean }>;
+              };
+            }
+          ).__imageShareTestState?.calls ?? [],
+      ),
+    )
+    .toEqual([{ files: 0, url: imageUrl, userActivation: true }]);
+  releaseImageFetch();
+});
+
+test("falls back from the selected native share directly to the clipboard", async ({ page }) => {
+  await page.evaluate(() => {
+    const state = { calls: [] as string[], copiedText: "" };
+    Object.defineProperty(window, "__imageShareTestState", {
+      configurable: true,
+      value: state,
+    });
+    Object.defineProperty(navigator, "canShare", {
+      configurable: true,
+      value: (data: ShareData) => {
+        state.calls.push(data.files?.length ? "can-share-file" : "can-share-url");
+        return Boolean(data.files?.length);
+      },
+    });
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: async (data: ShareData) => {
+        state.calls.push(data.files?.length ? "share-file" : "share-url");
+        throw new DOMException("Native share unavailable", "NotAllowedError");
+      },
+    });
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async (text: string) => {
+          state.calls.push("clipboard");
+          state.copiedText = text;
+        },
+      },
+    });
+  });
+
+  const { dialog } = await openLightbox(page);
+  const informationDialog = page.locator("[data-image-information-dialog]");
+  const shareButton = informationDialog.locator("[data-image-share]");
+  const imageUrl = await dialog.locator("[data-image-dialog-image]").getAttribute("src");
+
+  await dialog.locator("[data-image-information]").click();
+  await expect(informationDialog).toHaveJSProperty("open", true);
+  await shareButton.click();
+
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            window as Window & {
+              __imageShareTestState?: { calls: string[]; copiedText: string };
+            }
+          ).__imageShareTestState,
+      ),
+    )
+    .toEqual({
+      calls: ["can-share-file", "share-file", "clipboard"],
+      copiedText: imageUrl,
+    });
+  await expect(shareButton.locator("[data-image-share-label]")).toHaveText("Lien copié");
+});
+
+test("stops the share fallback chain cleanly when the native sheet is cancelled", async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    const state = { calls: [] as string[] };
+    Object.defineProperty(window, "__imageShareTestState", {
+      configurable: true,
+      value: state,
+    });
+    Object.defineProperty(navigator, "canShare", {
+      configurable: true,
+      value: () => true,
+    });
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: async (data: ShareData) => {
+        state.calls.push(data.files?.length ? "share-file" : "share-url");
+        throw new DOMException("Share cancelled", "AbortError");
+      },
+    });
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async () => {
+          state.calls.push("clipboard");
+        },
+      },
+    });
+  });
+
+  const { dialog } = await openLightbox(page);
+  const informationDialog = page.locator("[data-image-information-dialog]");
+  const shareButton = informationDialog.locator("[data-image-share]");
+
+  await dialog.locator("[data-image-information]").click();
+  await expect(informationDialog).toHaveJSProperty("open", true);
+  await expect(shareButton).toHaveAttribute("data-share-file-ready", "true");
+  await shareButton.click();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            window as Window & {
+              __imageShareTestState?: { calls: string[] };
+            }
+          ).__imageShareTestState?.calls ?? [],
+      ),
+    )
+    .toEqual(["share-file"]);
+  await page.waitForTimeout(100);
+  await expect(shareButton.locator("[data-image-share-label]")).toHaveText("Partager");
 });
 
 test("falls back to copying the image link when native sharing is unavailable", async ({

@@ -27,12 +27,17 @@ the connected GitHub project:
 
 1. Open the Vercel project.
 2. Go to `Settings` -> `Deployment Checks`.
-3. Add a GitHub check.
-4. Select the GitHub Actions check named `verify`.
-5. Keep production automatic aliasing enabled.
+3. Remove any obsolete GitHub check named `verify` and any PR-only check.
+4. Select the push checks `Check Astro, Material Web, and security headers` and
+   `Lighthouse 95+ performance (mobile and desktop, no SEO)`.
+5. Keep production automatic aliasing enabled, then redeploy the affected commit:
+   Vercel does not retroactively recompute a deployment already waiting on a
+   deleted or renamed check.
 
 With this setup, Vercel may still create a production deployment, but it will not
-promote it to the production domain until the selected GitHub check passes.
+promote it to the production domain until both selected GitHub checks pass. Do not
+select the external `Vercel` status itself: making an alias wait on its own status
+creates a circular deployment gate.
 
 For the stricter model where Vercel does not start any Git deployment before CI,
 disable Vercel's automatic Git deployments and deploy from GitHub Actions after

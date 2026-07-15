@@ -18,6 +18,7 @@ interface Props {
 const PAGE_SIZE_OPTIONS = [10, 20, 50] as const;
 const { posts, tag, view = "list" } = Astro.props;
 const isTable = view === "table";
+const hasPagination = posts.length > PAGE_SIZE_OPTIONS[0];
 const contentId = isTable ? "tag-posts-table" : "tag-posts-list";
 const initialEnd = Math.min(PAGE_SIZE_OPTIONS[0], posts.length);
 const initialRange = posts.length === 0 ? "0 sur 0" : `1 - ${initialEnd} sur ${posts.length}`;
@@ -153,7 +154,7 @@ const initialStatus =
   }
 
   {
-    posts.length > PAGE_SIZE_OPTIONS[0] && (
+    hasPagination && (
       <nav class="tag-posts-pagination" aria-label={`Pagination des articles du tag ${tag}`}>
         <div class="tag-posts-page-size">
           <span>Articles par page</span>
@@ -232,7 +233,7 @@ const initialStatus =
   }
 </site-tag-posts>
 
-{isTable && <script>import "@/assets/js/material-web/tags.js";</script>}
+{(isTable || hasPagination) && <script>import "@/assets/js/material-web/tags.js";</script>}
 
 <script>
   import "@/assets/js/app/tag-posts";

@@ -13,6 +13,25 @@ import {
   loadedResourceSize,
 } from "./support.js";
 
+function isAbortError(error) {
+  return Boolean(error && typeof error === "object" && error.name === "AbortError");
+}
+
+async function getShareFile(url) {
+  const parsed = new URL(url, document.baseURI);
+  const response = await fetch(parsed.href, {
+    cache: "force-cache",
+    credentials: parsed.origin === location.origin ? "same-origin" : "omit",
+    mode: "cors",
+  });
+  if (!response.ok) throw new Error(`image_share_${response.status}`);
+
+  const blob = await response.blob();
+  return new File([blob], fileNameFromURL(parsed.href), {
+    type: blob.type || "image/jpeg",
+  });
+}
+
 export const withImagePreviewInformation = (Base) =>
   class extends Base {
     async openInformation() {
@@ -23,7 +42,13 @@ export const withImagePreviewInformation = (Base) =>
       this.informationButton.setAttribute("aria-expanded", "true");
       this.updateInformation();
       try {
+        const focusRequestBeforeShow = this.focusRequest;
         await this.informationDialog.show();
+        if (this.informationOpen && this.informationDialog.open) {
+          if (this.focusRequest === focusRequestBeforeShow) {
+            this.focusControl(this.informationCloseButton);
+          }
+        }
       } catch {
         this.finishInformationClose(false);
       }
@@ -58,7 +83,7 @@ export const withImagePreviewInformation = (Base) =>
       this.resetShareFeedback();
       if (restoreFocus && this.isOpen && this.dialog.open) {
         requestAnimationFrame(() => {
-          this.informationButton.focus({ preventScroll: true });
+          this.focusControl(this.informationButton);
           this.hideTooltip();
         });
       }
@@ -67,6 +92,8 @@ export const withImagePreviewInformation = (Base) =>
     updateInformation() {
       const item = this.items[this.currentIndex];
       if (!item || !this.informationOpen) return;
+
+      void this.prepareShareFile(item);
 
       const width = this.image.naturalWidth || item.width;
       const height = this.image.naturalHeight || item.height;
@@ -90,9 +117,38 @@ export const withImagePreviewInformation = (Base) =>
       void this.resolveFileInformation(item, request);
     }
 
+    prepareShareFile(item) {
+      if (!item) return Promise.resolve();
+
+      const url = new URL(item.src, document.baseURI).href;
+      if (this.shareFileUrl === url && this.shareFilePromise) return this.shareFilePromise;
+
+      this.shareFileUrl = url;
+      this.shareFile = undefined;
+      this.shareButton.removeAttribute("data-share-file-ready");
+      const pending = getShareFile(url)
+        .then((file) => {
+          if (this.shareFileUrl !== url || this.shareFilePromise !== pending) return;
+          this.shareFile = file;
+          this.shareButton.setAttribute("data-share-file-ready", "true");
+        })
+        .catch(() => undefined);
+      this.shareFilePromise = pending;
+      return pending;
+    }
+
     async resolveFileInformation(item, request) {
       const resourceUrl = new URL(item.src, document.baseURI).href;
       let bytes = loadedResourceSize(resourceUrl);
+
+      if (!bytes && this.shareFileUrl === resourceUrl && this.shareFilePromise) {
+        await this.shareFilePromise;
+        if (request !== this.informationRequest) return;
+        if (this.shareFileUrl === resourceUrl && this.shareFile) {
+          bytes = this.shareFile.size;
+          this.infoFields.type.textContent = imageTypeLabel(resourceUrl, this.shareFile.type);
+        }
+      }
 
       if (!bytes) {
         try {
@@ -152,16 +208,35 @@ export const withImagePreviewInformation = (Base) =>
       if (!item) return;
 
       const url = new URL(item.src, document.baseURI).href;
+      const title = item.label || document.title;
       if (navigator.share) {
+        let nativeShareData = { title, url };
+        const file = this.shareFileUrl === url ? this.shareFile : undefined;
+        if (file) {
+          const fileShareData = { files: [file], title };
+          try {
+            if (navigator.canShare?.({ files: fileShareData.files })) {
+              nativeShareData = fileShareData;
+            }
+          } catch {}
+        }
+
         try {
-          await navigator.share({ title: item.label || document.title, url });
+          // Web Share consumes transient activation on the first invocation.
+          // Select the best payload up front instead of attempting an
+          // unreliable second native share after a rejection.
+          await navigator.share(nativeShareData);
           this.setShareFeedback("Image partagée", true);
           return;
         } catch (error) {
-          if (error instanceof DOMException && error.name === "AbortError") return;
+          if (isAbortError(error)) return;
         }
       }
 
+      return this.copyShareUrl(url);
+    }
+
+    async copyShareUrl(url) {
       try {
         const copied = await copyTextToClipboard(url);
         if (!copied) throw new Error("copy_failed");
@@ -193,9 +268,11 @@ export const withImagePreviewInformation = (Base) =>
     }
 
     async handleFullscreenAction() {
-      // Keep the fullscreen request in the originating user-activation task.
-      await this.closeInformation(false, true);
-      await this.toggleFullscreen();
+      // requestFullscreen() must run before the first await so Safari keeps the
+      // transient activation created by the Material button click.
+      const fullscreen = this.toggleFullscreen();
+      const closeInformation = this.closeInformation(false, true);
+      await Promise.all([fullscreen, closeInformation]);
     }
 
     async toggleFullscreen() {

@@ -56,5 +56,25 @@ export default defineConfig({
         colorScheme: "dark",
       },
     },
+    {
+      name: "webkit-desktop-light",
+      testMatch:
+        /(?:image-preview-(?:core|interactions)|site-(?:consent|content|giscus|search))\.spec\.ts/,
+      use: {
+        ...devices["Desktop Safari"],
+        colorScheme: "light",
+        viewport: { width: 1440, height: 1100 },
+      },
+    },
+    {
+      name: "webkit-mobile-light",
+      testMatch:
+        /(?:image-preview-(?:core|interactions)|site-(?:consent|content|giscus|search))\.spec\.ts/,
+      use: {
+        ...devices["iPhone 14"],
+        browserName: "webkit",
+        colorScheme: "light",
+      },
+    },
   ],
 });

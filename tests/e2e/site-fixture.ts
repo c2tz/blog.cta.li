@@ -95,6 +95,26 @@ export async function waitForAppReady(page: Page) {
     .toBe("true");
 }
 
+export async function prepareClipboardWrite(page: Page) {
+  if (!test.info().project.name.startsWith("webkit")) {
+    await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+    return false;
+  }
+
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: (text: string) => {
+          Reflect.set(window, "__copiedCode", text);
+          return Promise.resolve();
+        },
+      },
+    });
+  });
+  return true;
+}
+
 export async function openMaterialSelect(select: Locator) {
   const field = select.getByRole("combobox");
 
@@ -139,7 +159,9 @@ export const test = base.extend({
     geoRequestCounts.set(page, geoRequests);
     page.on("pageerror", (error) => runtimeErrors.push(error.message));
     page.on("console", (message) => {
-      if (message.type() === "error") runtimeErrors.push(message.text());
+      if (message.type() === "error" || message.type() === "warning") {
+        runtimeErrors.push(message.text());
+      }
     });
 
     await page.route("https://api.ipapi.is/**", (route) => {
@@ -158,6 +180,6 @@ export const test = base.extend({
 
     await seedLocalPreferences(page);
     await use(page);
-    expect(pageRuntimeErrors.get(page) ?? []).toEqual([]);
+    expect(pageRuntimeErrors.get(page) ?? [], "browser console warnings and errors").toEqual([]);
   },
 });

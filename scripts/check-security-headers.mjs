@@ -18,7 +18,14 @@ const DOCUMENT_REQUIRED_HEADERS = new Map([
   ],
   [
     "Permissions-Policy",
-    ["geolocation=()", "camera=()", "microphone=()", "clipboard-write=(self)", "fullscreen=(self)"],
+    [
+      "geolocation=()",
+      "camera=()",
+      "microphone=()",
+      "clipboard-write=(self)",
+      "fullscreen=(self)",
+      "web-share=(self)",
+    ],
   ],
   ["X-Frame-Options", ["DENY"]],
   ["X-DNS-Prefetch-Control", ["off"]],
@@ -34,6 +41,7 @@ const OPTIONAL_HARDENING_HEADERS = [
 ];
 
 const GISCUS_ORIGIN = new URL("https://giscus.app");
+const IP_GEOLOCATION_ORIGIN = new URL("https://api.ipapi.is");
 
 function cspDirective(csp, directiveName) {
   return csp
@@ -123,6 +131,12 @@ for (const [headerName, requiredTokens] of DOCUMENT_REQUIRED_HEADERS) {
 const contentSecurityPolicy = documentHeaders.get("Content-Security-Policy");
 
 if (contentSecurityPolicy) {
+  for (const directiveName of ["script-src", "connect-src"]) {
+    if (!cspDirectiveTokens(contentSecurityPolicy, directiveName).includes("'self'")) {
+      problems.push(`${directiveName} must allow 'self'.`);
+    }
+  }
+
   const scriptSrc = cspDirective(contentSecurityPolicy, "script-src");
 
   if (!scriptSrc) {
@@ -160,6 +174,21 @@ if (contentSecurityPolicy) {
 
   if (!cspDirectiveAllowsUrlOrigin(contentSecurityPolicy, "frame-src", GISCUS_ORIGIN)) {
     problems.push("frame-src is missing https://giscus.app for Giscus iframe.");
+  }
+
+  if (!cspDirectiveAllowsUrlOrigin(contentSecurityPolicy, "connect-src", GISCUS_ORIGIN)) {
+    problems.push("connect-src is missing https://giscus.app for Giscus requests.");
+  }
+
+  if (!cspDirectiveAllowsUrlOrigin(contentSecurityPolicy, "connect-src", IP_GEOLOCATION_ORIGIN)) {
+    problems.push("connect-src is missing https://api.ipapi.is for IP geolocation.");
+  }
+
+  const workerSources = cspDirectiveTokens(contentSecurityPolicy, "worker-src");
+  for (const requiredWorkerSource of ["'self'", "blob:"]) {
+    if (!workerSources.includes(requiredWorkerSource)) {
+      problems.push(`worker-src is missing ${requiredWorkerSource} for Pagefind workers.`);
+    }
   }
 }
 

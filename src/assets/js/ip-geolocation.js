@@ -166,7 +166,7 @@ async function refreshLocation() {
   }
 }
 
-function updateLocation() {
+export function updateLocation() {
   if (!getElements().wrapper) return;
 
   if (!hasConsent()) {

@@ -20,8 +20,29 @@ async function seedLocalPreferences(page: Page) {
 
 export async function expectFocusWithin(locator: Locator) {
   await expect
-    .poll(() => locator.evaluate((element) => element.matches(":focus-within")))
+    .poll(() =>
+      locator.evaluate(
+        (element) =>
+          document.activeElement === element ||
+          Boolean(element.shadowRoot?.activeElement) ||
+          element.matches(":focus-within"),
+      ),
+    )
     .toBe(true);
+}
+
+export async function pressTabAndExpectFocus(
+  current: Locator,
+  expected: Locator,
+  key: "Tab" | "Shift+Tab" = "Tab",
+) {
+  await expectFocusWithin(current);
+  await current.page().keyboard.press(key);
+  await expectFocusWithin(expected);
+  // Material's show() resolves after its opening motion. Reassert after that
+  // boundary so a late autofocus cannot silently undo the keyboard move.
+  await current.page().waitForTimeout(360);
+  await expectFocusWithin(expected);
 }
 
 export async function expectPopoverOpen(locator: Locator, open: boolean) {
@@ -46,10 +67,16 @@ export async function expectMaterialAria(locator: Locator, name: string, value: 
     .toBe(value);
 }
 
-export async function waitForLightboxController(dialog: Locator) {
+export async function waitForLightboxController(dialog: Locator, { warm = true } = {}) {
+  const sourceImage = dialog.page().locator(SOURCE_IMAGE_SELECTOR).first();
+  if (warm) {
+    await expect(sourceImage).toBeAttached();
+  }
+
   await expect
-    .poll(() =>
-      dialog.evaluate((element) => {
+    .poll(async () => {
+      if (warm) await sourceImage.dispatchEvent("pointerover");
+      return dialog.evaluate((element) => {
         const materialDialog = element as HTMLElement & {
           close?: (returnValue?: string) => Promise<void>;
           getOpenAnimation?: () => { dialog?: unknown[] };
@@ -62,8 +89,8 @@ export async function waitForLightboxController(dialog: Locator) {
           typeof materialDialog.close === "function" &&
           Boolean(animation?.dialog?.length)
         );
-      }),
-    )
+      });
+    })
     .toBe(true);
 }
 
@@ -74,10 +101,10 @@ export async function openLightbox(page: Page) {
   await expect(sourceImage).toBeVisible();
   await expect(page.locator(SOURCE_IMAGE_SELECTOR)).toHaveCount(2);
   await expect(dialog).toHaveCount(1);
-  await waitForLightboxController(dialog);
 
   await sourceImage.scrollIntoViewIfNeeded();
   await sourceImage.click();
+  await waitForLightboxController(dialog, { warm: false });
 
   await expect(dialog).toHaveJSProperty("open", true);
   const nativeDialog = dialog.locator("dialog");
@@ -145,22 +172,31 @@ export async function mouseDrag(page: Page, stage: Locator, deltaX: number, delt
 }
 
 export async function trackpadSwipe(stage: Locator, deltaX: number) {
-  const box = await stage.boundingBox();
-  expect(box).not.toBeNull();
-  if (!box) return;
+  await trackpadWheel(stage, deltaX / 2, 0);
+  await trackpadWheel(stage, deltaX / 2, 0);
+}
 
-  await stage.dispatchEvent("wheel", {
-    clientX: box.x + box.width / 2,
-    clientY: box.y + box.height / 2,
-    deltaX: deltaX / 2,
-    deltaY: 0,
-  });
-  await stage.dispatchEvent("wheel", {
-    clientX: box.x + box.width / 2,
-    clientY: box.y + box.height / 2,
-    deltaX: deltaX / 2,
-    deltaY: 0,
-  });
+export async function trackpadWheel(
+  stage: Locator,
+  deltaX: number,
+  deltaY: number,
+  ctrlKey = false,
+) {
+  return stage.evaluate(
+    (element, init) => {
+      const event = new WheelEvent("wheel", {
+        bubbles: true,
+        cancelable: true,
+        ctrlKey: init.ctrlKey,
+        deltaMode: WheelEvent.DOM_DELTA_PIXEL,
+        deltaX: init.deltaX,
+        deltaY: init.deltaY,
+      });
+      element.dispatchEvent(event);
+      return event.defaultPrevented;
+    },
+    { ctrlKey, deltaX, deltaY },
+  );
 }
 
 export async function expectImageContained(stage: Locator) {
@@ -188,8 +224,16 @@ export async function expectImageContained(stage: Locator) {
 
 export const test = base.extend({
   page: async ({ page }, use) => {
+    const runtimeMessages: string[] = [];
+    page.on("pageerror", (error) => runtimeMessages.push(error.message));
+    page.on("console", (message) => {
+      if (message.type() === "error" || message.type() === "warning") {
+        runtimeMessages.push(message.text());
+      }
+    });
     await seedLocalPreferences(page);
     await page.goto("/posts/mdx-smoke-test/", { waitUntil: "domcontentloaded" });
     await use(page);
+    expect(runtimeMessages, "browser console warnings and errors").toEqual([]);
   },
 });

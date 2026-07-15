@@ -75,6 +75,8 @@ function enhanceGiscus(root: HTMLElement) {
   let revealTimer = 0;
   let frameLoadTimer = 0;
   let themeAnimationFrame = 0;
+  let loadGeneration = 0;
+  let reloadRequested = false;
   let frameObserver: MutationObserver | null = null;
   let observedIframe: HTMLIFrameElement | null = null;
 
@@ -96,6 +98,7 @@ function enhanceGiscus(root: HTMLElement) {
   };
   const postTheme = () => {
     themeAnimationFrame = 0;
+    if (!loaded) return;
     const iframe = frame.querySelector<HTMLIFrameElement>("iframe.giscus-frame");
     if (!iframe?.src) return;
     try {
@@ -111,6 +114,27 @@ function enhanceGiscus(root: HTMLElement) {
   const scheduleThemeUpdate = () => {
     if (themeAnimationFrame) cancelAnimationFrame(themeAnimationFrame);
     themeAnimationFrame = requestAnimationFrame(postTheme);
+  };
+  const unload = () => {
+    const hadThirdPartyRuntime =
+      loading || loaded || Boolean(frame.querySelector("script, iframe"));
+    loadGeneration += 1;
+    if (hadThirdPartyRuntime) window.stop();
+    stopFrameWatch();
+    if (themeAnimationFrame) cancelAnimationFrame(themeAnimationFrame);
+    themeAnimationFrame = 0;
+    endLoading();
+    loaded = false;
+    error.hidden = true;
+    frame.replaceChildren();
+    panel.hidden = true;
+    // Detaching an external script cannot revoke code that already ran and
+    // Chromium may still evaluate an in-flight response. Reload into the
+    // consent-free bootstrap state whenever Giscus reached the document.
+    if (hadThirdPartyRuntime && !reloadRequested) {
+      reloadRequested = true;
+      window.location.reload();
+    }
   };
   function handleFrameLoaded() {
     if (!loading) return;
@@ -143,7 +167,8 @@ function enhanceGiscus(root: HTMLElement) {
     }, GISCUS_LOAD_TIMEOUT_MS);
   };
   const load = () => {
-    if (!configured || !accepted || !allowed || loaded || loading) return;
+    if (!configured || !accepted || !allowed || loaded || loading || reloadRequested) return;
+    const generation = ++loadGeneration;
     panel.hidden = false;
     error.hidden = true;
     loading = true;
@@ -177,7 +202,17 @@ function enhanceGiscus(root: HTMLElement) {
       script.setAttribute(`data-${name}`, value ?? "");
     }
     script.setAttribute("data-theme", createGiscusThemeUrl());
+    script.addEventListener(
+      "load",
+      () => {
+        if (generation === loadGeneration && !reloadRequested) {
+          script.dataset.siteServiceLoaded = "true";
+        }
+      },
+      { once: true },
+    );
     script.addEventListener("error", () => {
+      if (generation !== loadGeneration || reloadRequested) return;
       loaded = false;
       error.hidden = false;
       stopFrameWatch();
@@ -189,7 +224,11 @@ function enhanceGiscus(root: HTMLElement) {
     allowed = optionalServicesAllowed();
     privacy.hidden = allowed;
     accept.disabled = !configured || accepted || !allowed;
-    if (accepted && allowed) setTimeout(load);
+    if (!allowed) {
+      unload();
+    } else if (accepted) {
+      setTimeout(load);
+    }
   };
 
   accept.addEventListener("click", () => {

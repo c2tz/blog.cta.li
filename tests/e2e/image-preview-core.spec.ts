@@ -4,6 +4,7 @@ import {
   SOURCE_IMAGE_SELECTOR,
   DIALOG_SELECTOR,
   expectFocusWithin,
+  pressTabAndExpectFocus,
   expectMaterialAria,
   expectPopoverOpen,
   waitForLightboxController,
@@ -61,6 +62,33 @@ test("keeps lightbox source images in the keyboard order", async ({ page }) => {
   await expect(image).toBeFocused();
 });
 
+test("opens once from the cold loader without replaying the activation event", async ({ page }) => {
+  const image = page.locator(SOURCE_IMAGE_SELECTOR).first();
+  const dialog = page.locator(DIALOG_SELECTOR);
+  await page.evaluate(() => {
+    Reflect.set(window, "__imageActivationCount", 0);
+    document.addEventListener(
+      "click",
+      (event) => {
+        if (event.composedPath().some((node) => node instanceof HTMLImageElement)) {
+          Reflect.set(
+            window,
+            "__imageActivationCount",
+            Reflect.get(window, "__imageActivationCount") + 1,
+          );
+        }
+      },
+      { capture: true },
+    );
+  });
+
+  await image.dispatchEvent("click");
+  await expect(dialog).toHaveJSProperty("open", true);
+  await expect
+    .poll(() => page.evaluate(() => Reflect.get(window, "__imageActivationCount")))
+    .toBe(1);
+});
+
 test("uses a modal Material dialog with only two accessible, focus-trapped controls", async ({
   page,
 }) => {
@@ -90,11 +118,14 @@ test("uses a modal Material dialog with only two accessible, focus-trapped contr
   ).toHaveCount(0);
 
   await expectFocusWithin(closeButton);
-  await page.keyboard.press("Tab");
-  await expectFocusWithin(informationButton);
+  await pressTabAndExpectFocus(closeButton, informationButton);
+  await pressTabAndExpectFocus(informationButton, closeButton);
+  await pressTabAndExpectFocus(closeButton, informationButton, "Shift+Tab");
   await page.keyboard.press("Tab");
   await expectFocusWithin(closeButton);
-  await page.keyboard.press("Shift+Tab");
+  await informationButton.dispatchEvent("pointerdown", { button: 0, pointerType: "mouse" });
+  await informationButton.locator("button").focus();
+  await page.waitForTimeout(60);
   await expectFocusWithin(informationButton);
 
   const initialAlt = await image.getAttribute("alt");
@@ -307,6 +338,12 @@ test("supports gallery arrows and touch swipe while taps control the toolbar", a
   const stage = dialog.locator("[data-image-dialog-stage]");
   const status = dialog.locator("[data-image-status]");
   const toolbar = dialog.locator("[data-image-dialog-toolbar]");
+  const informationButton = toolbar.locator("[data-image-information]");
+
+  await expect(toolbar).toHaveCSS("border-radius", "16px");
+  await expect
+    .poll(() => toolbar.evaluate((element) => getComputedStyle(element).transitionProperty))
+    .toContain("border-radius");
 
   await dialog.evaluate((element) => {
     const testWindow = window as typeof window & {
@@ -411,16 +448,34 @@ test("supports gallery arrows and touch swipe while taps control the toolbar", a
   await expect(toolbar).toHaveClass(/is-hidden/);
   await expect(toolbar).toHaveAttribute("aria-hidden", "true");
   await expect(toolbar).toHaveAttribute("inert", "");
+  await expect
+    .poll(() =>
+      toolbar.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return Math.abs(Number.parseFloat(style.borderRadius) * 2 - element.clientHeight) < 0.5;
+      }),
+    )
+    .toBe(true);
+
+  await page.keyboard.press("Tab");
+  await expect(toolbar).not.toHaveClass(/is-hidden/);
+  await expect(toolbar).not.toHaveAttribute("aria-hidden");
+  await expect(toolbar).not.toHaveAttribute("inert");
+  await expect(toolbar).toHaveCSS("border-radius", "16px");
+  await expectFocusWithin(informationButton);
 
   await page.waitForTimeout(320);
   await tap(stage, 52);
+  await expect(toolbar).toHaveClass(/is-hidden/);
+  await page.waitForTimeout(320);
+  await tap(stage, 53);
   await expect(toolbar).not.toHaveClass(/is-hidden/);
   await expect(toolbar).not.toHaveAttribute("aria-hidden");
   await expect(toolbar).not.toHaveAttribute("inert");
 
   await page.waitForTimeout(320);
-  await tap(stage, 53);
   await tap(stage, 54);
+  await tap(stage, 55);
   await expect(toolbar).not.toHaveClass(/is-hidden/);
   await expect(toolbar).not.toHaveAttribute("aria-hidden");
   await expect(toolbar).not.toHaveAttribute("inert");

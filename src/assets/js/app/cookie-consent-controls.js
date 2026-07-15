@@ -94,6 +94,29 @@ function readStoredChoice() {
   return cookie === "accepted" || cookie === "rejected" ? cookie : "unset";
 }
 
+function functionalityConsentAccepted() {
+  const consent = readConsent();
+  if (consent) return Boolean(consent.functionality);
+
+  const cookie =
+    readCookie(SITE_COOKIE_NAMES.cookieConsent) ??
+    readCookie(SITE_LEGACY_COOKIE_NAMES.cookieConsent);
+  return cookie === "accepted";
+}
+
+function migrateLegacyConsentCookie() {
+  const current = readCookie(SITE_COOKIE_NAMES.cookieConsent);
+  const legacy = readCookie(SITE_LEGACY_COOKIE_NAMES.cookieConsent);
+  if (
+    current !== "accepted" &&
+    current !== "rejected" &&
+    (legacy === "accepted" || legacy === "rejected")
+  ) {
+    writeCookie(SITE_COOKIE_NAMES.cookieConsent, legacy);
+  }
+  expireCookie(SITE_LEGACY_COOKIE_NAMES.cookieConsent);
+}
+
 function writeConsent(choice) {
   const functionality = choice === "accepted";
   const state = {
@@ -159,10 +182,9 @@ function exposeConsentApi() {
     acceptedService: (service, category) =>
       category === "functionality" &&
       ["giscus", "ipgeo", "speed-insights"].includes(service) &&
-      Boolean(readConsent()?.functionality),
+      functionalityConsentAccepted(),
     isCategoryAccepted: (category) =>
-      category === "necessary" ||
-      (category === "functionality" && Boolean(readConsent()?.functionality)),
+      category === "necessary" || (category === "functionality" && functionalityConsentAccepted()),
   };
 }
 
@@ -191,7 +213,7 @@ class SiteCookieConsentBanner extends HTMLElement {
   #focusFrame = 0;
 
   #handleConsentChange = () => {
-    const pending = readConsent() === null;
+    const pending = readStoredChoice() === "unset";
     if (pending === this.#cookieConsentPending) return;
 
     this.#cookieConsentPending = pending;
@@ -224,12 +246,12 @@ class SiteCookieConsentBanner extends HTMLElement {
     if (this.dataset.cookieConsentReady === "true") return;
 
     this.dataset.cookieConsentReady = "true";
+    migrateLegacyConsentCookie();
     exposeConsentApi();
-    expireCookie(SITE_LEGACY_COOKIE_NAMES.cookieConsent);
     document.dispatchEvent(new Event(SITE_EVENTS.consentChange));
 
     this.#explicitContentPending = readExplicitContentAcknowledgement() === null;
-    this.#cookieConsentPending = readConsent() === null;
+    this.#cookieConsentPending = readStoredChoice() === "unset";
     document.addEventListener(SITE_EVENTS.consentChange, this.#handleConsentChange);
     window.addEventListener("focusin", this.#handleFocusIn, true);
     window.addEventListener("keydown", this.#handleKeydown, true);

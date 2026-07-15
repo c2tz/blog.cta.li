@@ -263,6 +263,7 @@ export const withImagePreviewGestures = (Base) =>
       if (this.isBrowserZoomed()) {
         if (event.cancelable) event.preventDefault();
         this.trackpadSwipeDelta = 0;
+        this.setZoomPan(this.zoomPanX - event.deltaX, this.zoomPanY - event.deltaY);
         return;
       }
 
@@ -337,6 +338,16 @@ export const withImagePreviewGestures = (Base) =>
     };
 
     syncBrowserZoomState() {
+      const viewport = window.visualViewport;
+      const viewportRight = viewport
+        ? Math.max(0, window.innerWidth - viewport.offsetLeft - viewport.width)
+        : 0;
+      this.toolbar.style.setProperty(
+        "--site-image-dialog-visual-top",
+        `${Math.max(0, viewport?.offsetTop ?? 0)}px`,
+      );
+      this.toolbar.style.setProperty("--site-image-dialog-visual-right", `${viewportRight}px`);
+
       const pageZoomScale = (window.devicePixelRatio || 1) / this.browserZoomBaselineDpr;
       this.browserZoomScale = Math.max(1, window.visualViewport?.scale ?? 1, pageZoomScale);
       const zoomed = this.isBrowserZoomed();
@@ -556,6 +567,10 @@ export const withImagePreviewGestures = (Base) =>
     }
 
     setControlsVisible(visible, closing = false) {
+      if (!visible) {
+        this.focusRequest += 1;
+        this.pendingTabFocus = undefined;
+      }
       this.controlsVisible = visible;
       this.toolbar.classList.toggle("is-hidden", !visible);
       this.toolbar.classList.toggle("is-closing", closing);

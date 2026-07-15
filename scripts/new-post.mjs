@@ -55,7 +55,7 @@ export async function createPost({
     });
   } catch (error) {
     if (error && typeof error === "object" && "code" in error && error.code === "EEXIST") {
-      throw new Error(`Un article existe déjà : ${filePath}`);
+      throw new Error(`Un article existe déjà : ${filePath}`, { cause: error });
     }
     throw error;
   }

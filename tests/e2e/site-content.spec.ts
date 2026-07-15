@@ -14,6 +14,7 @@ test("keeps an empty latest-posts table interactive when every post is unlisted"
 }) => {
   await gotoRoute(page, "/");
   await waitForNativeEnhancement(page, "site-home-latest-posts-table");
+  await waitForAppReady(page);
 
   const sortButtons = page.locator(".home-posts-sort-button");
   await expect(sortButtons).toHaveCount(2);

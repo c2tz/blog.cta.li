@@ -290,26 +290,54 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
 
 test("closes from the toolbar without waiting for the history fallback", async ({ page }) => {
   const { dialog, nativeDialog, sourceImage } = await openLightbox(page);
+  await expect
+    .poll(() => page.evaluate(() => Boolean(history.state?.__siteImageDialog)))
+    .toBe(true);
   await dialog.evaluate((element) => {
     const testWindow = window as typeof window & {
-      __imageCloseTiming?: { clickAt?: number; closeAt?: number };
+      __imageCloseOrder?: {
+        clickDispatchActive: boolean;
+        closeDuringClick: boolean;
+        events: string[];
+      };
     };
     const materialDialog = element as HTMLElement & {
       close(returnValue?: string): Promise<void>;
     };
     const closeButton = element.querySelector("[data-image-close]");
     const originalClose = materialDialog.close.bind(materialDialog);
-    testWindow.__imageCloseTiming = {};
+    const closeOrder = {
+      clickDispatchActive: false,
+      closeDuringClick: false,
+      events: [] as string[],
+    };
+    let firstCloseRecorded = false;
+    testWindow.__imageCloseOrder = closeOrder;
     materialDialog.close = (returnValue?: string) => {
-      testWindow.__imageCloseTiming!.closeAt = performance.now();
+      // Material's open=false finalizer re-enters close(). The regression
+      // boundary is the first invocation, which must precede popstate.
+      if (!firstCloseRecorded) {
+        firstCloseRecorded = true;
+        closeOrder.closeDuringClick = closeOrder.clickDispatchActive;
+        closeOrder.events.push("close");
+      }
       return originalClose(returnValue);
     };
+    window.addEventListener("popstate", () => closeOrder.events.push("popstate"), { once: true });
     closeButton?.addEventListener(
       "click",
       () => {
-        testWindow.__imageCloseTiming!.clickAt = performance.now();
+        closeOrder.clickDispatchActive = true;
+        closeOrder.events.push("click");
       },
       { capture: true, once: true },
+    );
+    closeButton?.addEventListener(
+      "click",
+      () => {
+        closeOrder.clickDispatchActive = false;
+      },
+      { once: true },
     );
   });
   await dialog.locator("[data-image-close]").click();
@@ -319,17 +347,22 @@ test("closes from the toolbar without waiting for the history fallback", async (
   await expect
     .poll(() => sourceImage.evaluate((image) => image.matches(":focus-visible")))
     .toBe(false);
-  const closeLatency = await page.evaluate(() => {
-    const timing = (
+  const closeOrder = await page.evaluate(() => {
+    return (
       window as typeof window & {
-        __imageCloseTiming?: { clickAt?: number; closeAt?: number };
+        __imageCloseOrder?: {
+          clickDispatchActive: boolean;
+          closeDuringClick: boolean;
+          events: string[];
+        };
       }
-    ).__imageCloseTiming;
-    return timing?.clickAt !== undefined && timing.closeAt !== undefined
-      ? timing.closeAt - timing.clickAt
-      : Number.POSITIVE_INFINITY;
+    ).__imageCloseOrder;
   });
-  expect(closeLatency).toBeLessThan(450);
+  expect(closeOrder).toEqual({
+    clickDispatchActive: false,
+    closeDuringClick: true,
+    events: ["click", "close", "popstate"],
+  });
 });
 
 test("supports gallery arrows and touch swipe while taps control the toolbar", async ({ page }) => {

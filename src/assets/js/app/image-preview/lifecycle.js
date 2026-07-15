@@ -22,10 +22,7 @@ export const withImagePreviewLifecycle = (Base) =>
       this.hideTooltip();
       if (this.historyEntryActive && isHistoryMarker(history.state, this.historyToken)) {
         history.back();
-        this.historyCloseFallbackTimer = window.setTimeout(() => {
-          this.historyEntryActive = false;
-          void this.closeDialog(reason);
-        }, 500);
+        void this.closeDialog(reason);
         return;
       }
 
@@ -49,10 +46,6 @@ export const withImagePreviewLifecycle = (Base) =>
     finishClose() {
       if (!this.isOpen && !this.lockedScroll) return;
 
-      if (this.historyCloseFallbackTimer) {
-        window.clearTimeout(this.historyCloseFallbackTimer);
-        this.historyCloseFallbackTimer = undefined;
-      }
       this.historyEntryActive = false;
       this.historyToken = null;
       this.renderRequest += 1;

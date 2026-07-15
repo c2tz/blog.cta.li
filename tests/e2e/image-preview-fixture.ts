@@ -233,6 +233,9 @@ export const test = base.extend({
     });
     await seedLocalPreferences(page);
     await page.goto("/posts/mdx-smoke-test/", { waitUntil: "domcontentloaded" });
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.dataset.appReady))
+      .toBe("true");
     await use(page);
     expect(runtimeMessages, "browser console warnings and errors").toEqual([]);
   },

@@ -800,7 +800,9 @@ test("keeps Giscus disabled behind the privacy choice", async ({ page }) => {
     "#commentaires",
   );
   await expect(
-    page.getByText("Les commentaires sont masqués, car les services optionnels sont désactivés."),
+    page.getByText(
+      "Les commentaires sont masqués, car les services optionnels n'ont pas été acceptés.",
+    ),
   ).toBeVisible();
   await expect(page.getByRole("link", { name: "Modifier mes préférences" })).toHaveAttribute(
     "href",

@@ -54,6 +54,22 @@ test("renders the inverse-theme 404 artwork without site chrome", async ({ page 
   expect(artwork.viewportCovered).toBe(true);
   await expectNoPageOverflow(page);
 
+  const nextTheme = test.info().project.name.includes("dark") ? "light" : "dark";
+  const nextArtwork =
+    nextTheme === "dark" ? "/images/404-screen-light.webp" : "/images/404-screen-dark.webp";
+  await page.emulateMedia({ colorScheme: nextTheme });
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.dataset.theme))
+    .toBe(nextTheme);
+  await expect
+    .poll(() =>
+      page
+        .locator(".not-found-artwork")
+        .evaluate((element) => getComputedStyle(element).backgroundImage),
+    )
+    .toContain(nextArtwork);
+  await expect(page.locator("body")).toHaveClass(/not-found-page/);
+
   const homeHotspot = page.getByRole("link", { name: "Revenir à l’accueil" });
   await expect(homeHotspot).toBeVisible();
   const hotspotBounds = await homeHotspot.boundingBox();

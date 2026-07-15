@@ -92,6 +92,7 @@ const speedInsightsVersion = speedInsightsPackage.version;
       (() => {
         const root = document.documentElement;
         const colorPattern = /^#[0-9a-f]{6}$/i;
+        const systemTheme = matchMedia("(prefers-color-scheme: dark)");
 
         const syncThemePreference = () => {
           try {
@@ -112,11 +113,7 @@ const speedInsightsVersion = speedInsightsPackage.version;
             }
 
             const resolved =
-              preference === "system"
-                ? matchMedia("(prefers-color-scheme: dark)").matches
-                  ? "dark"
-                  : "light"
-                : preference;
+              preference === "system" ? (systemTheme.matches ? "dark" : "light") : preference;
 
             root.dataset.theme = resolved;
             root.dataset.themePreference = preference;
@@ -236,6 +233,18 @@ const speedInsightsVersion = speedInsightsPackage.version;
 
         syncPageAppearance();
         addEventListener("pageshow", syncPageAppearance);
+        systemTheme.addEventListener("change", () => {
+          if (root.dataset.themePreference === "system") syncPageAppearance();
+        });
+        addEventListener("storage", (event) => {
+          if (
+            event.key === null ||
+            event.key === themeStorageKey ||
+            event.key === legacyThemeStorageKey
+          ) {
+            syncPageAppearance();
+          }
+        });
       })();
     </script>
     <meta name="viewport" content="width=device-width,initial-scale=1" />

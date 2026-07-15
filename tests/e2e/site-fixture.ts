@@ -141,6 +141,19 @@ export async function openMaterialSelect(select: Locator) {
     .toBe(true);
 }
 
+export async function openMaterialMenu(trigger: Locator, menu: Locator) {
+  await Promise.all([
+    menu.evaluate(
+      (element) =>
+        new Promise<void>((resolve) => {
+          element.addEventListener("opened", () => resolve(), { once: true });
+        }),
+    ),
+    trigger.click(),
+  ]);
+  await expect(menu).toBeVisible();
+}
+
 export async function waitForNativeEnhancement(page: Page, selector: string) {
   await expect.poll(() => page.locator(selector).getAttribute("data-enhanced")).toBe("true");
 }

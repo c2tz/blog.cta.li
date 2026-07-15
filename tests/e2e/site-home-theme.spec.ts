@@ -5,6 +5,7 @@ import {
   expectStoredSourceColor,
   expectResolvedTheme,
   gotoRoute,
+  openMaterialMenu,
   waitForAppReady,
   waitForNativeEnhancement,
   expectPopoverOpen,
@@ -162,6 +163,7 @@ test("only exposes image colors after detailed mode is selected", async ({ page 
   const detailToggle = page.locator("md-icon-button.home-detail-trigger");
   const dynamicColorRow = page.locator("[data-dynamic-color-option]");
   const themeTrigger = page.locator("md-icon-button.site-theme-trigger");
+  const themeMenu = page.locator("md-menu.site-theme-menu");
 
   await expect(detailToggle).not.toHaveAttribute("aria-label-selected");
   await expect
@@ -208,7 +210,7 @@ test("only exposes image colors after detailed mode is selected", async ({ page 
     .poll(() => dynamicColorRow.evaluate((element) => (element as HTMLElement).hidden))
     .toBe(false);
 
-  await themeTrigger.click();
+  await openMaterialMenu(themeTrigger, themeMenu);
   await expect(dynamicColorRow).toBeVisible();
   await page.keyboard.press("Escape");
 
@@ -427,20 +429,22 @@ test("applies and persists the Konachan Material palette across the site", async
   await waitForNativeEnhancement(page, "[data-home-detail-toggle]");
 
   await page.locator("md-icon-button.home-detail-trigger").click();
-  await page.locator("md-icon-button.site-theme-trigger").click();
+  const themeTrigger = page.locator("md-icon-button.site-theme-trigger");
+  const themeMenu = page.locator("md-menu.site-theme-menu");
+  await openMaterialMenu(themeTrigger, themeMenu);
   const dynamicColorRow = page.locator("[data-dynamic-color-option]");
   const dynamicColorSwitch = page.locator("md-switch.site-theme-dynamic-color-switch");
   await expect(dynamicColorRow).toBeVisible();
   await expect(dynamicColorSwitch).toBeEnabled();
 
   await dynamicColorRow.getByText("Couleur dynamique", { exact: true }).click();
-  await expect(page.locator("md-menu.site-theme-menu")).toBeVisible();
+  await expect(themeMenu).toBeVisible();
   await expect
     .poll(() => page.evaluate(() => document.documentElement.dataset.materialDynamicColor ?? null))
     .toBeNull();
 
   await dynamicColorSwitch.click();
-  await expect(page.locator("md-menu.site-theme-menu")).toBeVisible();
+  await expect(themeMenu).toBeVisible();
   await expect(dynamicColorSwitch).toHaveAttribute("selected", "");
 
   const activePalette = await page.evaluate(() => {
@@ -467,8 +471,8 @@ test("applies and persists the Konachan Material palette across the site", async
     .poll(() => page.evaluate(() => document.documentElement.dataset.materialDynamicColor))
     .toBe("true");
 
-  await page.locator("md-icon-button.site-theme-trigger").click();
-  await expect(page.locator("md-menu.site-theme-menu")).not.toBeVisible();
+  await themeTrigger.click();
+  await expect(themeMenu).not.toBeVisible();
   await page.waitForTimeout(50);
   const searchTrigger = page.locator("md-icon-button.site-search-trigger-button");
   const tooltip = page.locator("[data-site-tooltip-surface]");
@@ -553,12 +557,12 @@ test("applies and persists the Konachan Material palette across the site", async
     });
 
   await waitForNativeEnhancement(page, "[data-theme-switcher]");
-  await page.locator("md-icon-button.site-theme-trigger").click();
+  await openMaterialMenu(themeTrigger, themeMenu);
   const activeDynamicColorSwitch = page.locator("md-switch.site-theme-dynamic-color-switch");
   await expect(activeDynamicColorSwitch).toBeVisible();
   await expect(activeDynamicColorSwitch).toHaveAttribute("selected", "");
   await activeDynamicColorSwitch.click();
-  await expect(page.locator("md-menu.site-theme-menu")).toBeVisible();
+  await expect(themeMenu).toBeVisible();
   await expect(activeDynamicColorSwitch).not.toHaveAttribute("selected", "");
   await expect
     .poll(() =>

@@ -222,16 +222,13 @@ async function enhanceThemeSwitcher(root: HTMLElement) {
   dynamicColorSwitch?.addEventListener("click", (event) => {
     if (dynamicColorSwitch.disabled) return;
     event.preventDefault();
-    const enabled = !readMaterialDynamicColorEnabled();
-    window.setTimeout(() => {
-      const state = setMaterialDynamicColorEnabled(enabled);
-      renderDynamicColor();
-      if (status) {
-        status.textContent = state.active
-          ? "Couleur dynamique activée"
-          : "Couleur dynamique désactivée";
-      }
-    }, 0);
+    const state = setMaterialDynamicColorEnabled(!readMaterialDynamicColorEnabled());
+    renderDynamicColor();
+    if (status) {
+      status.textContent = state.active
+        ? "Couleur dynamique activée"
+        : "Couleur dynamique désactivée";
+    }
   });
   systemTheme.addEventListener("change", () => {
     if (preference === "system") apply(false);

@@ -2,6 +2,7 @@ import {
   expect,
   test,
   gotoRoute,
+  openMaterialMenu,
   openMaterialSelect,
   waitForAppReady,
   waitForNativeEnhancement,
@@ -403,7 +404,9 @@ test("distinguishes touch selection from keyboard focus on coarse screens", asyn
   await gotoRoute(page, "/");
   await waitForNativeEnhancement(page, "[data-theme-switcher]");
 
-  await page.locator("md-icon-button.site-theme-trigger").click();
+  const themeTrigger = page.locator("md-icon-button.site-theme-trigger");
+  const themeMenu = page.locator("md-menu.site-theme-menu");
+  await openMaterialMenu(themeTrigger, themeMenu);
   const systemItem = page.locator('md-menu-item[data-theme-option="system"]');
   await expect(systemItem).toBeVisible();
   await expect(systemItem).not.toHaveAttribute("data-menu-focus-indicator", "");

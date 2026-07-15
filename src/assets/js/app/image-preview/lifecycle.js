@@ -20,13 +20,11 @@ export const withImagePreviewLifecycle = (Base) =>
       this.isClosing = true;
       this.setControlsVisible(false, true);
       this.hideTooltip();
-      if (this.historyEntryActive && isHistoryMarker(history.state, this.historyToken)) {
-        history.back();
-        void this.closeDialog(reason);
-        return;
-      }
-
-      void this.closeDialog(reason);
+      const shouldRestoreHistory =
+        this.historyEntryActive && isHistoryMarker(history.state, this.historyToken);
+      const closing = this.closeDialog(reason);
+      if (shouldRestoreHistory) history.back();
+      void closing;
     }
 
     async closeDialog(reason) {
@@ -34,7 +32,11 @@ export const withImagePreviewLifecycle = (Base) =>
       if (this.informationOpen || this.informationDialog.open) {
         await this.closeInformation(false, true);
       }
-      await this.exitFullscreen();
+      if (this.getFullscreenElement() || this.fullscreenFallback) {
+        await this.exitFullscreen();
+      } else {
+        this.setFullscreenLayout(false);
+      }
       if (!this.dialog.open) {
         this.finishClose();
         return;

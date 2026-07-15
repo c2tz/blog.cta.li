@@ -312,6 +312,10 @@ Pagefind, Giscus or image-preview interactions, so those paths remain Playwright
   production-like fixture would give stronger regression coverage.
 - The Konachan set dominates `dist` (300 WebP files, 23,727,528 B, or 22.6 MiB), but the manifest,
   Worker and chosen images are outside the fresh initial path.
+- Dependabot temporarily ignores only semver-major TypeScript updates: `@astrojs/check@0.9.9`
+  supports TypeScript 5 and 6, while its current language server crashes during `astro check` on
+  TypeScript 7. Patch/minor 6.x and security updates remain enabled; remove the exception once
+  Astro's declared peer range and check runtime support TypeScript 7.
 - The Vercel GitHub status already stuck on `Waiting for checks to complete` cannot be repaired by
   repository code alone. The obsolete check must be removed in the authenticated Vercel project,
   then the deployment must be recreated.

@@ -211,6 +211,7 @@ class SiteCookieConsentBanner extends HTMLElement {
   #cookieConsentPending = false;
   #explicitContentPending = false;
   #focusFrame = 0;
+  #focusRequest = 0;
 
   #handleConsentChange = () => {
     const pending = readStoredChoice() === "unset";
@@ -229,6 +230,10 @@ class SiteCookieConsentBanner extends HTMLElement {
     }
 
     if (event.key === "Tab" && this.#activeNotice === "explicit-content") {
+      // A backdrop pointerdown may still have an initial-focus frame queued.
+      // Once the user presses Tab, keyboard navigation is authoritative: do
+      // not let that older frame move focus back to the first action.
+      this.#cancelFocusRequest();
       this.#trapFocus(event);
     }
   };
@@ -262,7 +267,7 @@ class SiteCookieConsentBanner extends HTMLElement {
     document.removeEventListener(SITE_EVENTS.consentChange, this.#handleConsentChange);
     window.removeEventListener("focusin", this.#handleFocusIn, true);
     window.removeEventListener("keydown", this.#handleKeydown, true);
-    if (this.#focusFrame) cancelAnimationFrame(this.#focusFrame);
+    this.#cancelFocusRequest();
     this.#unlockPage();
     delete this.dataset.cookieConsentReady;
   }
@@ -356,16 +361,38 @@ class SiteCookieConsentBanner extends HTMLElement {
   }
 
   #focusInitialAction() {
-    if (this.#focusFrame) cancelAnimationFrame(this.#focusFrame);
+    this.#cancelFocusRequest();
+    const focusRequest = this.#focusRequest;
 
     customElements.whenDefined("md-text-button").then(() => {
-      if (this.#activeNotice !== "explicit-content") return;
+      if (
+        focusRequest !== this.#focusRequest ||
+        !this.isConnected ||
+        this.#activeNotice !== "explicit-content"
+      ) {
+        return;
+      }
 
       this.#focusFrame = requestAnimationFrame(() => {
         this.#focusFrame = 0;
+        if (
+          focusRequest !== this.#focusRequest ||
+          !this.isConnected ||
+          this.#activeNotice !== "explicit-content"
+        ) {
+          return;
+        }
         this.#getFocusableDialogElements()[0]?.focus();
       });
     });
+  }
+
+  #cancelFocusRequest() {
+    this.#focusRequest += 1;
+    if (!this.#focusFrame) return;
+
+    cancelAnimationFrame(this.#focusFrame);
+    this.#focusFrame = 0;
   }
 
   #trapFocus(event) {

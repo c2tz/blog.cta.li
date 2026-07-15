@@ -172,8 +172,21 @@ export async function mouseDrag(page: Page, stage: Locator, deltaX: number, delt
 }
 
 export async function trackpadSwipe(stage: Locator, deltaX: number) {
-  await trackpadWheel(stage, deltaX / 2, 0);
-  await trackpadWheel(stage, deltaX / 2, 0);
+  await stage.evaluate((element, wheelDeltaX) => {
+    // A physical trackpad emits one burst on the browser thread. Keeping both
+    // halves in the same task prevents an overloaded test runner from adding
+    // more than TRACKPAD_SWIPE_RESET_MS between otherwise contiguous events.
+    for (let index = 0; index < 2; index += 1) {
+      element.dispatchEvent(
+        new WheelEvent("wheel", {
+          bubbles: true,
+          cancelable: true,
+          deltaMode: WheelEvent.DOM_DELTA_PIXEL,
+          deltaX: wheelDeltaX / 2,
+        }),
+      );
+    }
+  }, deltaX);
 }
 
 export async function trackpadWheel(

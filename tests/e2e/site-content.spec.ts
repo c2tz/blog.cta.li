@@ -7,6 +7,7 @@ import {
   waitForAppReady,
   waitForNativeEnhancement,
   expectPopoverOpen,
+  expectKeyboardFocusOverridesPendingPointerFrame,
 } from "./site-fixture";
 
 test("keeps an empty latest-posts table interactive when every post is unlisted", async ({
@@ -171,6 +172,8 @@ test("keeps consent actions uppercase and the privacy banner below the search sc
       }),
     )
     .toBe("none");
+
+  await expectKeyboardFocusOverridesPendingPointerFrame(explicitConsent);
 
   await page.locator(".cookie-consent-backdrop").click({ position: { x: 8, y: 8 } });
   await expectFocused(leaveButton);

@@ -164,6 +164,46 @@ export async function expectPopoverOpen(locator: Locator, open: boolean) {
     .toBe(open);
 }
 
+export async function expectKeyboardFocusOverridesPendingPointerFrame(dialog: Locator) {
+  const focusState = await dialog.evaluate(async (element) => {
+    const backdrop = element.parentElement?.querySelector(".cookie-consent-backdrop");
+    const leave = element.querySelector("[data-cookie-action='leave']");
+    const acknowledge = element.querySelector("[data-cookie-action='acknowledge']");
+    if (!(backdrop instanceof HTMLElement) || !(leave instanceof HTMLElement)) return null;
+    if (!(acknowledge instanceof HTMLElement)) return null;
+
+    const pointerdownCanceled = !backdrop.dispatchEvent(
+      new PointerEvent("pointerdown", {
+        bubbles: true,
+        cancelable: true,
+        pointerType: "mouse",
+      }),
+    );
+    leave.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        bubbles: true,
+        cancelable: true,
+        key: "Tab",
+      }),
+    );
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    });
+
+    return {
+      acknowledge: acknowledge.matches(":focus-within"),
+      leave: leave.matches(":focus-within"),
+      pointerdownCanceled,
+    };
+  });
+
+  expect(focusState).toEqual({
+    acknowledge: true,
+    leave: false,
+    pointerdownCanceled: true,
+  });
+}
+
 export const test = base.extend({
   page: async ({ page }, use) => {
     const runtimeErrors: string[] = [];

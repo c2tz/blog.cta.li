@@ -467,11 +467,77 @@ test("supports gallery arrows and touch swipe while taps control the toolbar", a
   expect(nextKeyframes.every((keyframe) => keyframe.opacity === undefined)).toBe(true);
   await expect(outgoingImage).toHaveCount(0, { timeout: 500 });
 
+  await image.evaluate((element) => {
+    const testWindow = window as typeof window & {
+      __imagePreviousMotion?: {
+        animationName: string;
+        enteringClassPreserved: boolean;
+        sameDirectionEventIgnored: boolean;
+        outgoingImagePreserved: boolean;
+      };
+    };
+    const observer = new MutationObserver(() => {
+      if (!element.classList.contains("is-entering-previous")) return;
+
+      const animationName = getComputedStyle(element).animationName;
+      const stateIsPreserved = () =>
+        element.classList.contains("is-entering-previous") &&
+        Boolean(
+          element.parentElement?.querySelector(
+            ".site-image-dialog-image--outgoing.is-leaving-previous",
+          ),
+        );
+      element.dispatchEvent(
+        new AnimationEvent("animationend", {
+          animationName: "site-image-dialog-enter-previous",
+          bubbles: true,
+        }),
+      );
+      const sameDirectionEventIgnored = stateIsPreserved();
+      element.dispatchEvent(
+        new AnimationEvent("animationend", {
+          animationName: "site-image-dialog-enter-next",
+          bubbles: true,
+        }),
+      );
+      testWindow.__imagePreviousMotion = {
+        animationName,
+        enteringClassPreserved: element.classList.contains("is-entering-previous"),
+        sameDirectionEventIgnored,
+        outgoingImagePreserved: Boolean(
+          element.parentElement?.querySelector(
+            ".site-image-dialog-image--outgoing.is-leaving-previous",
+          ),
+        ),
+      };
+      observer.disconnect();
+    });
+    observer.observe(element, { attributeFilter: ["class"], attributes: true });
+  });
   await page.keyboard.press("ArrowLeft");
   await expect(status).toHaveText("Image 1 sur 2 : konachan-382339.jpg");
   await expect
-    .poll(() => image.evaluate((element) => getComputedStyle(element).animationName))
-    .toBe("site-image-dialog-enter-previous");
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            window as typeof window & {
+              __imagePreviousMotion?: {
+                animationName: string;
+                enteringClassPreserved: boolean;
+                sameDirectionEventIgnored: boolean;
+                outgoingImagePreserved: boolean;
+              };
+            }
+          ).__imagePreviousMotion,
+      ),
+    )
+    .toEqual({
+      animationName: "site-image-dialog-enter-previous",
+      enteringClassPreserved: true,
+      sameDirectionEventIgnored: true,
+      outgoingImagePreserved: true,
+    });
   await swipe(stage, "left");
   await expect(status).toHaveText("Image 2 sur 2 : konachan-382339.jpg");
   await swipe(stage, "right");

@@ -147,11 +147,17 @@ export const withImagePreviewGallery = (Base) =>
 
       if (motion) {
         this.outgoingImage = outgoingImage;
+        const expectedAnimationName = `site-image-dialog-enter-${motion}`;
+        let startMotionTimer;
+        let motionStarted = false;
+        let motionStartedAt;
         const finishMotion = () => {
           if (this.imageMotionCleanup !== finishMotion) return;
           if (this.imageMotionFrame) cancelAnimationFrame(this.imageMotionFrame);
           this.imageMotionFrame = undefined;
-          this.image.removeEventListener("animationend", finishMotion);
+          if (startMotionTimer) window.clearTimeout(startMotionTimer);
+          startMotionTimer = undefined;
+          this.image.removeEventListener("animationend", handleAnimationEnd);
           if (this.imageMotionTimer) window.clearTimeout(this.imageMotionTimer);
           this.image.classList.remove(`is-entering-${motion}`);
           this.outgoingImage?.remove();
@@ -159,17 +165,41 @@ export const withImagePreviewGallery = (Base) =>
           this.imageMotionTimer = undefined;
           this.imageMotionCleanup = undefined;
         };
-        this.imageMotionCleanup = finishMotion;
-        this.image.addEventListener("animationend", finishMotion);
-        // WebKit may starve requestAnimationFrame while the runner or Safari UI
-        // thread is busy. Own the cleanup before asking for a frame so an
-        // outgoing clone can never remain attached without a fallback timer.
-        this.imageMotionTimer = window.setTimeout(finishMotion, GALLERY_MOTION_DURATION_MS + 100);
-        this.imageMotionFrame = requestAnimationFrame(() => {
-          if (this.imageMotionCleanup !== finishMotion) return;
+        const handleAnimationEnd = (event) => {
+          // A delayed event from the previous gallery motion can arrive after
+          // the next listener is installed on the same image in WebKit. The
+          // name alone is not generation-specific when two consecutive
+          // motions use the same direction, so never let an old event shorten
+          // the current 320 ms transition.
+          if (
+            event.target !== this.image ||
+            event.animationName !== expectedAnimationName ||
+            motionStartedAt === undefined ||
+            performance.now() - motionStartedAt < GALLERY_MOTION_DURATION_MS
+          ) {
+            return;
+          }
+          finishMotion();
+        };
+        const startMotion = () => {
+          if (this.imageMotionCleanup !== finishMotion || motionStarted) return;
+          motionStarted = true;
+          if (this.imageMotionFrame) cancelAnimationFrame(this.imageMotionFrame);
           this.imageMotionFrame = undefined;
+          if (startMotionTimer) window.clearTimeout(startMotionTimer);
+          startMotionTimer = undefined;
+          motionStartedAt = performance.now();
           this.image.classList.add(`is-entering-${motion}`);
-        });
+          // Count cleanup from the actual animation start. A delayed WebKit
+          // frame must not shorten the 320 ms transition.
+          this.imageMotionTimer = window.setTimeout(finishMotion, GALLERY_MOTION_DURATION_MS + 100);
+        };
+        this.imageMotionCleanup = finishMotion;
+        this.image.addEventListener("animationend", handleAnimationEnd);
+        // WebKit can starve requestAnimationFrame while the Safari UI thread
+        // is busy. Whichever callback runs first starts the same motion once.
+        this.imageMotionFrame = requestAnimationFrame(startMotion);
+        startMotionTimer = window.setTimeout(startMotion, 100);
       }
 
       this.preloadAdjacentImages();

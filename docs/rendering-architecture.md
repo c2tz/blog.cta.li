@@ -315,10 +315,14 @@ Pagefind, Giscus or image-preview interactions, so those paths remain Playwright
 - Dependabot applies a one-day version cooldown to match pnpm 11's 1,440-minute minimum release
   age. Without it, a fresh automated version PR can be impossible for CI and Vercel to install
   until the package matures; Dependabot security updates remain outside the cooldown.
-- Dependabot temporarily ignores only semver-major TypeScript updates: `@astrojs/check@0.9.9`
+- Dependabot temporarily ignores semver-major TypeScript updates: `@astrojs/check@0.9.9`
   supports TypeScript 5 and 6, while its current language server crashes during `astro check` on
   TypeScript 7. Patch/minor 6.x and security updates remain enabled; remove the exception once
   Astro's declared peer range and check runtime support TypeScript 7.
+- Dependabot also defers the semver-major `@types/node` line until the runtime baseline moves from
+  Node 22 to Node 26. The ESLint 10 majors (`eslint`, `@eslint/js` and `eslint-plugin-astro`) stay
+  deferred until the project can migrate them together and `eslint-plugin-jsx-a11y` supports
+  ESLint 10. Their patch, minor and security update lanes remain enabled.
 - The Vercel GitHub status already stuck on `Waiting for checks to complete` cannot be repaired by
   repository code alone. The obsolete check must be removed in the authenticated Vercel project,
   then the deployment must be recreated.

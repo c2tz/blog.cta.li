@@ -312,6 +312,9 @@ Pagefind, Giscus or image-preview interactions, so those paths remain Playwright
   production-like fixture would give stronger regression coverage.
 - The Konachan set dominates `dist` (300 WebP files, 23,727,528 B, or 22.6 MiB), but the manifest,
   Worker and chosen images are outside the fresh initial path.
+- Dependabot applies a one-day version cooldown to match pnpm 11's 1,440-minute minimum release
+  age. Without it, a fresh automated version PR can be impossible for CI and Vercel to install
+  until the package matures; Dependabot security updates remain outside the cooldown.
 - Dependabot temporarily ignores only semver-major TypeScript updates: `@astrojs/check@0.9.9`
   supports TypeScript 5 and 6, while its current language server crashes during `astro check` on
   TypeScript 7. Patch/minor 6.x and security updates remain enabled; remove the exception once

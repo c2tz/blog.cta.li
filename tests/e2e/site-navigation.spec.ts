@@ -60,9 +60,19 @@ test("opens the Material Web theme menu from its icon button", async ({ page }) 
   }
   await themeTrigger.click();
   await expectPopoverOpen(tooltip, false);
-  await expect(page.getByRole("menuitem", { name: "Sombre" })).toBeVisible();
-  await page.getByRole("menuitem", { name: "Sombre" }).click();
-  await page.waitForTimeout(250);
+  const systemItem = page.locator('md-menu-item[data-theme-option="system"]');
+  const darkItem = page.locator('md-menu-item[data-theme-option="dark"]');
+  const themeMenu = page.locator("md-menu.site-theme-menu");
+  await expect(darkItem).toBeVisible();
+  await expect.poll(() => systemItem.evaluate((item) => item.matches(":focus-within"))).toBe(true);
+  await darkItem.click();
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.dataset.themePreference))
+    .toBe("dark");
+  await expect
+    .poll(() => themeMenu.evaluate((menu) => !(menu as HTMLElement & { open: boolean }).open))
+    .toBe(true);
+  await expect(darkItem).toBeHidden();
   await expectPopoverOpen(tooltip, false);
 
   await expect.poll(() => page.evaluate(() => document.documentElement.dataset.theme)).toBe("dark");

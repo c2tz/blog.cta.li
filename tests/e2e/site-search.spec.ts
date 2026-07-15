@@ -622,34 +622,76 @@ test("delays and aggregates short indeterminate loading indicators", async ({ pa
   await expect.poll(() => landing.getAttribute("aria-busy")).toBe("false");
 
   const pageProgress = page.locator("md-circular-progress.site-page-loading-progress");
-  await page.evaluate(() => {
+  const pageProgressRevealedDuringShortOperation = await page.evaluate(async () => {
+    const root = document.querySelector("[data-page-loading-root]");
+    if (!(root instanceof HTMLElement)) throw new Error("Missing page loading root");
+
+    let revealed = Boolean(root.querySelector(".site-page-loading-progress"));
+    const observer = new MutationObserver(() => {
+      revealed ||= Boolean(root.querySelector(".site-page-loading-progress"));
+    });
+    observer.observe(root, { childList: true, subtree: true });
+
     document.dispatchEvent(
       new CustomEvent("site:loading-start", { detail: { key: "playwright-guideline-check" } }),
     );
-  });
-  await page.waitForTimeout(120);
-  await expect(pageProgress).toHaveCount(0);
-  await page.evaluate(() => {
+    await new Promise<void>((resolve) => {
+      window.setTimeout(resolve, 120);
+    });
     document.dispatchEvent(
       new CustomEvent("site:loading-end", { detail: { key: "playwright-guideline-check" } }),
     );
+    await new Promise<void>((resolve) => {
+      window.setTimeout(resolve, 140);
+    });
+
+    observer.disconnect();
+    return revealed;
   });
-  await page.waitForTimeout(140);
+  expect(pageProgressRevealedDuringShortOperation).toBe(false);
   await expect(pageProgress).toHaveCount(0);
 
-  await page.evaluate(() => {
-    document.dispatchEvent(
-      new CustomEvent("site:loading-start", { detail: { key: "playwright-long-check" } }),
-    );
+  const pageProgressRevealDelay = await page.evaluate(() => {
+    const root = document.querySelector("[data-page-loading-root]");
+    if (!(root instanceof HTMLElement)) throw new Error("Missing page loading root");
+
+    return new Promise<number | null>((resolve) => {
+      const startedAt = performance.now();
+      let timeout = 0;
+      const finish = (delay: number | null) => {
+        observer.disconnect();
+        if (timeout) window.clearTimeout(timeout);
+        resolve(delay);
+      };
+      const sample = () => {
+        if (root.querySelector(".site-page-loading-progress")) {
+          finish(performance.now() - startedAt);
+        }
+      };
+      const observer = new MutationObserver(sample);
+      observer.observe(root, { childList: true, subtree: true });
+      timeout = window.setTimeout(() => finish(null), 3000);
+
+      for (const key of ["playwright-long-check-a", "playwright-long-check-b"]) {
+        document.dispatchEvent(new CustomEvent("site:loading-start", { detail: { key } }));
+      }
+      sample();
+    });
   });
-  await page.waitForTimeout(120);
-  await expect(pageProgress).toHaveCount(0);
+  expect(pageProgressRevealDelay).not.toBeNull();
+  expect(pageProgressRevealDelay ?? 0).toBeGreaterThanOrEqual(180);
   await expect(pageProgress).toHaveCount(1);
   await expect(pageProgress).toHaveAttribute("indeterminate", "");
   await expect(pageProgress).toHaveAttribute("four-color", /^(?:|true)$/);
   await page.evaluate(() => {
     document.dispatchEvent(
-      new CustomEvent("site:loading-end", { detail: { key: "playwright-long-check" } }),
+      new CustomEvent("site:loading-end", { detail: { key: "playwright-long-check-a" } }),
+    );
+  });
+  await expect(pageProgress).toHaveCount(1);
+  await page.evaluate(() => {
+    document.dispatchEvent(
+      new CustomEvent("site:loading-end", { detail: { key: "playwright-long-check-b" } }),
     );
   });
   await expect(pageProgress).toHaveCount(0);
@@ -657,33 +699,76 @@ test("delays and aggregates short indeterminate loading indicators", async ({ pa
   const konachanProgress = page.locator("md-circular-progress.home-anime-loading-progress");
   await expect(konachanProgress).toHaveAttribute("indeterminate", "");
   await expect(konachanProgress).toHaveAttribute("four-color", /^(?:|true)$/);
-  await page.evaluate(() => {
-    document.querySelector(".home-anime-landing")?.setAttribute("aria-busy", "true");
+  await expect(konachanProgress).toBeHidden();
+  const konachanProgressRevealedDuringShortOperation = await page.evaluate(async () => {
+    const landing = document.querySelector(".home-anime-landing");
+    const loader = document.querySelector("[data-konachan-loading]");
+    if (!(landing instanceof HTMLElement) || !(loader instanceof HTMLElement)) {
+      throw new Error("Missing Konachan loading elements");
+    }
+
+    let revealed = !loader.hidden;
+    const observer = new MutationObserver(() => {
+      revealed ||= !loader.hidden;
+    });
+    observer.observe(loader, { attributeFilter: ["hidden"], attributes: true });
+
+    landing.setAttribute("aria-busy", "true");
     document.dispatchEvent(
       new CustomEvent("konachan:refresh-state", { detail: { busy: true, status: "Test" } }),
     );
-  });
-  await page.waitForTimeout(120);
-  await expect(konachanProgress).toBeHidden();
-  await page.evaluate(() => {
-    document.querySelector(".home-anime-landing")?.setAttribute("aria-busy", "false");
+    await new Promise<void>((resolve) => {
+      window.setTimeout(resolve, 120);
+    });
+    landing.setAttribute("aria-busy", "false");
     document.dispatchEvent(
       new CustomEvent("konachan:refresh-state", {
         detail: { busy: false, status: "Test court terminé" },
       }),
     );
+    await new Promise<void>((resolve) => {
+      window.setTimeout(resolve, 140);
+    });
+
+    observer.disconnect();
+    return revealed;
   });
-  await page.waitForTimeout(140);
+  expect(konachanProgressRevealedDuringShortOperation).toBe(false);
   await expect(konachanProgress).toBeHidden();
 
-  await page.evaluate(() => {
-    document.querySelector(".home-anime-landing")?.setAttribute("aria-busy", "true");
-    document.dispatchEvent(
-      new CustomEvent("konachan:refresh-state", { detail: { busy: true, status: "Test long" } }),
-    );
+  const konachanProgressRevealDelay = await page.evaluate(() => {
+    const landing = document.querySelector(".home-anime-landing");
+    const loader = document.querySelector("[data-konachan-loading]");
+    if (!(landing instanceof HTMLElement) || !(loader instanceof HTMLElement)) {
+      throw new Error("Missing Konachan loading elements");
+    }
+
+    return new Promise<number | null>((resolve) => {
+      const startedAt = performance.now();
+      let timeout = 0;
+      const finish = (delay: number | null) => {
+        observer.disconnect();
+        if (timeout) window.clearTimeout(timeout);
+        resolve(delay);
+      };
+      const sample = () => {
+        if (!loader.hidden) finish(performance.now() - startedAt);
+      };
+      const observer = new MutationObserver(sample);
+      observer.observe(loader, { attributeFilter: ["hidden"], attributes: true });
+      timeout = window.setTimeout(() => finish(null), 3000);
+
+      landing.setAttribute("aria-busy", "true");
+      document.dispatchEvent(
+        new CustomEvent("konachan:refresh-state", {
+          detail: { busy: true, status: "Test long" },
+        }),
+      );
+      sample();
+    });
   });
-  await page.waitForTimeout(120);
-  await expect(konachanProgress).toBeHidden();
+  expect(konachanProgressRevealDelay).not.toBeNull();
+  expect(konachanProgressRevealDelay ?? 0).toBeGreaterThanOrEqual(180);
   await expect(konachanProgress).toBeVisible();
   await expect(page.locator("md-icon-button.home-anime-refresh md-circular-progress")).toHaveCount(
     0,

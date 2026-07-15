@@ -147,22 +147,28 @@ export const withImagePreviewGallery = (Base) =>
 
       if (motion) {
         this.outgoingImage = outgoingImage;
+        const finishMotion = () => {
+          if (this.imageMotionCleanup !== finishMotion) return;
+          if (this.imageMotionFrame) cancelAnimationFrame(this.imageMotionFrame);
+          this.imageMotionFrame = undefined;
+          this.image.removeEventListener("animationend", finishMotion);
+          if (this.imageMotionTimer) window.clearTimeout(this.imageMotionTimer);
+          this.image.classList.remove(`is-entering-${motion}`);
+          this.outgoingImage?.remove();
+          this.outgoingImage = undefined;
+          this.imageMotionTimer = undefined;
+          this.imageMotionCleanup = undefined;
+        };
+        this.imageMotionCleanup = finishMotion;
+        this.image.addEventListener("animationend", finishMotion);
+        // WebKit may starve requestAnimationFrame while the runner or Safari UI
+        // thread is busy. Own the cleanup before asking for a frame so an
+        // outgoing clone can never remain attached without a fallback timer.
+        this.imageMotionTimer = window.setTimeout(finishMotion, GALLERY_MOTION_DURATION_MS + 100);
         this.imageMotionFrame = requestAnimationFrame(() => {
+          if (this.imageMotionCleanup !== finishMotion) return;
           this.imageMotionFrame = undefined;
           this.image.classList.add(`is-entering-${motion}`);
-          const finishMotion = () => {
-            if (this.imageMotionCleanup !== finishMotion) return;
-            this.image.removeEventListener("animationend", finishMotion);
-            if (this.imageMotionTimer) window.clearTimeout(this.imageMotionTimer);
-            this.image.classList.remove(`is-entering-${motion}`);
-            this.outgoingImage?.remove();
-            this.outgoingImage = undefined;
-            this.imageMotionTimer = undefined;
-            this.imageMotionCleanup = undefined;
-          };
-          this.imageMotionCleanup = finishMotion;
-          this.image.addEventListener("animationend", finishMotion);
-          this.imageMotionTimer = window.setTimeout(finishMotion, GALLERY_MOTION_DURATION_MS + 100);
         });
       }
 

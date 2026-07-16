@@ -144,7 +144,6 @@
     :where([class~="not-prose"], [class~="not-prose"] *)
   ) {
   color: var(--site-link);
-  outline-offset: 4px;
 }
 
 .site-prose :where(pre):not(:where([class~="not-prose"], [class~="not-prose"] *)) {

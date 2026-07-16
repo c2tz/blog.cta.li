@@ -2,6 +2,7 @@ import {
   Hct,
   MaterialDynamicColors,
   SchemeTonalSpot,
+  argbFromHex,
   hexFromArgb,
   sourceColorFromImageBytes,
 } from "@material/material-color-utilities";
@@ -151,6 +152,10 @@ export function createHomeKonachanThemeController({
   async function createHomeDynamicTheme(image) {
     const sourceColor = await deterministicMaterialSourceColor(image);
 
+    return createHomeDynamicThemeFromSourceColor(sourceColor);
+  }
+
+  function createHomeDynamicThemeFromSourceColor(sourceColor) {
     return {
       dark: createHomeDynamicScheme(sourceColor, { dark: true }),
       light: createHomeDynamicScheme(sourceColor, { dark: false }),
@@ -221,6 +226,19 @@ export function createHomeKonachanThemeController({
   }
 
   async function resolveHomeDynamicTheme(image, loadedImage, loadedUrl) {
+    const precomputedSourceColor =
+      typeof image === "object" && /^#[0-9a-f]{6}$/i.test(image?.sourceColor)
+        ? image.sourceColor
+        : null;
+    const precomputedCacheKey = imageThemeCacheKey(image, loadedUrl);
+    const precomputedCachedTheme = state.dynamicThemeCache.get(precomputedCacheKey);
+    if (precomputedCachedTheme) return precomputedCachedTheme;
+    if (precomputedSourceColor) {
+      const theme = createHomeDynamicThemeFromSourceColor(argbFromHex(precomputedSourceColor));
+      state.dynamicThemeCache.set(precomputedCacheKey, theme);
+      return theme;
+    }
+
     const candidates = imageThemeCandidates(image, loadedUrl);
 
     for (const candidate of candidates) {

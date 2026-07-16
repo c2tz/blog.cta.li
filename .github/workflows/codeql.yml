@@ -42,3 +42,8 @@ jobs:
 
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0
+        with:
+          # Private repositories without GitHub Code Security can run the
+          # analysis, but GitHub rejects the SARIF upload. Restore uploads
+          # automatically if the repository becomes public again.
+          upload: ${{ github.event.repository.private && 'never' || 'always' }}

@@ -1,7 +1,46 @@
 import { initScrollProgressBar, removeReadingProgress } from "./app/reading-progress.js";
 import { initSiteTooltips } from "./app/site-tooltips.js";
-import { initSiteRichTooltips } from "./app/site-rich-tooltips.js";
-import { initSiteContextPopovers } from "./app/site-context-popovers.js";
+
+const RICH_TOOLTIP_SELECTOR = "[data-rich-tooltip-trigger]";
+const CONTEXT_POPOVER_SELECTOR = [
+  "[data-context-popover-trigger]",
+  ".site-prose a[href^='#user-content-fn-']:not([data-footnote-backref])",
+].join(",");
+
+let richTooltipsPromise;
+let contextPopoversPromise;
+
+async function initRichTooltipsWhenNeeded() {
+  if (!document.querySelector(RICH_TOOLTIP_SELECTOR)) return;
+
+  richTooltipsPromise ??= import("./app/site-rich-tooltips.js").catch((error) => {
+    richTooltipsPromise = undefined;
+    throw error;
+  });
+  const { initSiteRichTooltips } = await richTooltipsPromise;
+  initSiteRichTooltips();
+}
+
+async function initContextPopoversWhenNeeded() {
+  if (!document.querySelector(CONTEXT_POPOVER_SELECTOR)) return;
+
+  contextPopoversPromise ??= import("./app/site-context-popovers.js").catch((error) => {
+    contextPopoversPromise = undefined;
+    throw error;
+  });
+  const { initSiteContextPopovers } = await contextPopoversPromise;
+  initSiteContextPopovers();
+}
+
+function initConditionalEnhancements() {
+  void Promise.all([initRichTooltipsWhenNeeded(), initContextPopoversWhenNeeded()]).catch(
+    (error) => {
+      queueMicrotask(() => {
+        throw error;
+      });
+    },
+  );
+}
 
 function syncDetailViewBodyState() {
   if (!document.body) return;
@@ -24,8 +63,7 @@ async function initProseImageEnhancements() {
 function initApp() {
   syncDetailViewBodyState();
   initSiteTooltips();
-  initSiteRichTooltips();
-  initSiteContextPopovers();
+  initConditionalEnhancements();
   void initProseImageEnhancements();
   if (document.body?.dataset.readingProgress === "off") {
     removeReadingProgress();

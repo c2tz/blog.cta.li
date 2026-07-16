@@ -59,6 +59,23 @@ test("refuse le CSS inline et les feuilles non versionnées", async (t) => {
   assert.ok(issues.some((issue) => issue.includes("CSS non versionnée")));
 });
 
+test("refuse les protocoles URL exécutables ou embarqués dans toutes les références", async (t) => {
+  const distDirectory = await mkdtemp(join(tmpdir(), "ct-blog-protocol-check-"));
+  t.after(() => rm(distDirectory, { force: true, recursive: true }));
+
+  await writeFixture(
+    distDirectory,
+    "index.html",
+    '<!doctype html><html><head><link rel="canonical" href="https://ct-blog.cta.li/"></head><body><h1>Accueil</h1><a href="javascript:alert(1)">JavaScript</a><a href="vbscript:msgbox(1)">VBScript</a><img src="data:image/svg+xml,danger" srcset="data:image/svg+xml,srcset-danger 1x" alt=""></body></html>',
+  );
+
+  const { issues } = await collectBuiltContentIssues({ distDirectory });
+  assert.ok(issues.some((issue) => issue.includes("protocole URL interdit javascript:")));
+  assert.ok(issues.some((issue) => issue.includes("protocole URL interdit vbscript:")));
+  assert.ok(issues.some((issue) => issue.includes("protocole URL interdit data:")));
+  assert.ok(issues.some((issue) => issue.includes("srcset-danger")));
+});
+
 test("signale les liens, ancres, H1, canonical et marqueurs Pagefind invalides", async (t) => {
   const distDirectory = await mkdtemp(join(tmpdir(), "ct-blog-broken-content-"));
   t.after(() => rm(distDirectory, { force: true, recursive: true }));
@@ -120,4 +137,29 @@ test("compare les routes RSS et sitemap exactement, sans collision de préfixe",
   assert.ok(!issues.includes("/posts/foo/: article non listé présent dans le sitemap"));
   assert.ok(!issues.includes("/posts/foo/bar/: article listé absent du flux RSS"));
   assert.ok(!issues.includes("/posts/foo/bar/: article listé absent du sitemap"));
+});
+
+test("ne décode les entités XML qu’une seule fois", async (t) => {
+  const distDirectory = await mkdtemp(join(tmpdir(), "ct-blog-xml-decode-check-"));
+  t.after(() => rm(distDirectory, { force: true, recursive: true }));
+
+  await writeFixture(
+    distDirectory,
+    "posts/%3Csafe%3E/index.html",
+    '<!doctype html><html><head><link rel="canonical" href="https://ct-blog.cta.li/posts/%3Csafe%3E/"></head><body><h1>Article</h1><article class="post" data-pagefind-body></article></body></html>',
+  );
+  await writeFixture(
+    distDirectory,
+    "rss.xml",
+    "<rss><channel><link>https://ct-blog.cta.li/</link><item><link>https://ct-blog.cta.li/posts/&amp;lt;safe&amp;gt;/</link></item></channel></rss>",
+  );
+  await writeFixture(
+    distDirectory,
+    "sitemap.xml",
+    "<urlset><url><loc>https://ct-blog.cta.li/posts/&amp;lt;safe&amp;gt;/</loc></url></urlset>",
+  );
+
+  const { issues } = await collectBuiltContentIssues({ distDirectory });
+  assert.ok(issues.includes("/posts/%3Csafe%3E/: article listé absent du flux RSS"));
+  assert.ok(issues.includes("/posts/%3Csafe%3E/: article listé absent du sitemap"));
 });

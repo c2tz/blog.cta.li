@@ -157,59 +157,13 @@ html:has(.site-search-dialog[open]) .cookie-consent--privacy {
 .site-search-panel-sort-select {
   grid-column: 3;
   display: flex;
-  min-width: 0;
+  min-width: 9.5rem;
   width: 100%;
-  cursor: pointer;
-  --md-menu-container-shape: var(--md-sys-shape-corner-small);
-  --md-filled-select-text-field-active-indicator-height: 0px;
-  --md-filled-select-text-field-container-color: transparent;
-  --md-filled-select-text-field-container-shape: 0;
-  --md-filled-select-text-field-focus-active-indicator-height: 0px;
-  --md-filled-select-text-field-focus-input-text-color: var(--site-text);
-  --md-filled-select-text-field-focus-label-text-color: var(--site-muted);
-  --md-filled-select-text-field-focus-trailing-icon-color: var(--site-muted);
-  --md-filled-select-text-field-hover-active-indicator-height: 0px;
-  --md-filled-select-text-field-hover-state-layer-opacity: 0;
-  --md-filled-select-text-field-hover-trailing-icon-color: var(--site-muted);
-  --md-filled-select-text-field-input-text-color: var(--site-text);
-  --md-filled-select-text-field-input-text-font: var(--site-font);
-  --md-filled-select-text-field-input-text-size: 0.9rem;
-  --md-filled-select-text-field-label-text-color: var(--site-muted);
-  --md-filled-select-text-field-label-text-font: var(--site-font);
-  --md-filled-select-text-field-trailing-icon-color: var(--site-muted);
-  --md-filled-field-content-space: 0.5rem;
-  --md-filled-field-with-trailing-content-trailing-space: 0.5rem;
-}
-
-.site-search-panel-sort-select::part(field) {
-  cursor: pointer;
 }
 
 .site-search-panel-sort-select::part(menu) {
   min-width: max-content;
   max-height: min(20rem, calc(100dvh - 2rem));
-}
-
-.site-search-sort-chevron {
-  --md-icon-size: 1.25rem;
-
-  transition: transform 160ms cubic-bezier(0.2, 0, 0, 1);
-}
-
-.site-search-panel-sort-select[data-menu-open] .site-search-sort-chevron {
-  transform: rotate(180deg);
-}
-
-.site-material-select-option.site-search-sort-option {
-  --md-menu-item-bottom-space: 0.375rem;
-  --md-menu-item-leading-space: 0.75rem;
-  --md-menu-item-one-line-container-height: 2.75rem;
-  --md-menu-item-selected-container-color: transparent;
-  --md-menu-item-selected-label-text-color: var(--site-text);
-  --md-menu-item-top-space: 0.375rem;
-  --md-menu-item-trailing-space: 1rem;
-
-  min-height: 3rem;
 }
 
 .site-search-panel-state {

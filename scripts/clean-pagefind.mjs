@@ -9,5 +9,5 @@ const placeholderPath = resolve("dist/posts/pagefind-index-placeholder/index.htm
 await mkdir(dirname(placeholderPath), { recursive: true });
 await writeFile(
   placeholderPath,
-  '<!doctype html><html lang="fr"><head><title></title></head><body><main data-pagefind-body>pagefind-internal-placeholder-4d6af32b</main></body></html>',
+  '<!doctype html><html lang="fr"><head><title></title></head><body><main data-pagefind-body><span data-pagefind-filter="internal:placeholder">pagefind-internal-placeholder-4d6af32b</span></main></body></html>',
 );

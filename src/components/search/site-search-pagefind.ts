@@ -13,14 +13,16 @@ interface PagefindResultData {
 
 interface PagefindResultRef {
   data: () => Promise<PagefindResultData>;
+  raw_url?: string;
   score: number;
 }
 
 type PagefindFilterCounts = Record<string, Record<string, number>>;
 type PagefindSortDirection = "asc" | "desc";
+type PagefindFilterValue = string | string[] | Record<string, string | string[]>;
 
 interface PagefindSearchOptions {
-  filters?: Record<string, string | string[] | { all: string[] } | { any: string[] }>;
+  filters?: Record<string, PagefindFilterValue>;
   sort?: Record<string, PagefindSortDirection>;
 }
 

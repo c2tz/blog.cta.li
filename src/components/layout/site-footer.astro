@@ -1,7 +1,7 @@
 ---
 import { SITE_TITLE } from "@/site-config";
 
-const currentYear = new Date().getFullYear();
+const COPYRIGHT_YEAR = 2025;
 const STATIC_ASSET_VERSION = "20260704";
 ---
 
@@ -83,7 +83,7 @@ const STATIC_ASSET_VERSION = "20260704";
   <p class="site-footer-meta">
     <a class="site-footer-link" href="/LICENSE">MIT License</a>
     {" "}
-    {currentYear}
+    {COPYRIGHT_YEAR}
     <span class="site-footer-separator" aria-hidden="true">•</span>
     <a class="site-footer-link" href={`https://${SITE_TITLE}/`}>{SITE_TITLE}</a>
     <span class="site-footer-separator" aria-hidden="true">•</span>

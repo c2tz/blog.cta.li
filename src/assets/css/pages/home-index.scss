@@ -1,4 +1,26 @@
 body.home-page {
+  --home-image-filter: brightness(0.86) saturate(0.92) contrast(1.02);
+  --home-media-surface: var(--m3-surface-container-lowest);
+  background-color: var(--site-bg);
+}
+
+body.home-page::before,
+body.home-page::after {
+  display: none;
+}
+
+:root[data-theme="dark"] .home-anime-background::after {
+  background:
+    linear-gradient(to bottom, rgb(0 0 0 / 0.18), rgb(0 0 0 / 0.42)),
+    linear-gradient(90deg, rgb(0 0 0 / 0.48), rgb(0 0 0 / 0.08) 70%);
+}
+
+:root[data-theme="dark"] body.home-page {
+  --home-image-filter: brightness(0.72) saturate(0.88) contrast(1);
+  --home-media-surface: var(--m3-surface-container-lowest);
+}
+
+body.home-page {
   --site-bg: var(--md-sys-color-background);
   --site-text: var(--m3-on-surface);
   --site-border: var(--m3-outline-variant);

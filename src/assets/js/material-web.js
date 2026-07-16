@@ -12,8 +12,8 @@ import "@material/web/progress/linear-progress.js";
 import "@material/web/switch/switch.js";
 
 import { initFocusModality } from "@/assets/js/app/focus-modality";
-import { initMaterialMenuFocusIndicators } from "@/assets/js/app/material-menu";
+import { initMaterialMenuEnhancements } from "@/assets/js/app/material-menu";
 
 initFocusModality();
-initMaterialMenuFocusIndicators();
-document.addEventListener("astro:page-load", () => initMaterialMenuFocusIndicators());
+initMaterialMenuEnhancements();
+document.addEventListener("astro:page-load", () => initMaterialMenuEnhancements());

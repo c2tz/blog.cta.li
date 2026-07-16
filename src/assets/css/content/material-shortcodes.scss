@@ -191,11 +191,6 @@ summary.material-admonition-title::-webkit-details-marker {
   text-decoration-style: solid;
 }
 
-.material-rich-tooltip-trigger:focus-visible {
-  outline: 2px solid var(--md-sys-color-primary);
-  outline-offset: 2px;
-}
-
 .material-rich-tooltip {
   text-align: start;
 }
@@ -231,11 +226,6 @@ summary.material-admonition-title::-webkit-details-marker {
   --md-primary-tab-label-text-color: var(--md-sys-color-on-surface-variant);
   --md-primary-tab-hover-label-text-color: var(--md-sys-color-on-surface);
   --md-primary-tab-focus-label-text-color: var(--md-sys-color-on-surface);
-}
-
-.material-shortcode-tab-panel:focus-visible {
-  border-radius: var(--md-sys-shape-corner-extra-small);
-  outline: 0;
 }
 
 .material-shortcode-tab-content {
@@ -274,10 +264,6 @@ summary.material-admonition-title::-webkit-details-marker {
 .material-shortcode-table-scroll::-webkit-scrollbar-thumb {
   border-radius: 9999px;
   background: color-mix(in srgb, var(--site-muted) 42%, transparent);
-}
-
-.material-shortcode-table-scroll:focus-visible {
-  outline: 0;
 }
 
 .material-shortcode-table {
@@ -349,10 +335,6 @@ summary.material-admonition-title::-webkit-details-marker {
 .material-shortcode-sort-active {
   background: var(--md-sys-color-surface-container-low);
   color: var(--site-text);
-}
-
-.material-shortcode-sort-button:focus-visible {
-  outline-offset: -3px;
 }
 
 .material-shortcode-table tr:last-child td,

@@ -10,9 +10,7 @@ import {
   expectKeyboardFocusOverridesPendingPointerFrame,
 } from "./site-fixture";
 
-test("keeps an empty latest-posts table interactive when every post is unlisted", async ({
-  page,
-}) => {
+test("keeps the latest-posts table interactive without exposing hidden posts", async ({ page }) => {
   await gotoRoute(page, "/");
   await waitForNativeEnhancement(page, "site-home-latest-posts-table");
   await waitForAppReady(page);
@@ -39,8 +37,8 @@ test("keeps an empty latest-posts table interactive when every post is unlisted"
     "aria-sort",
     "ascending",
   );
-  await expect(page.locator(".home-post-title")).toHaveCount(0);
-  await expect(page.getByText("Aucun article à afficher.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Vérification MDX" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Shortcodes Astro et Material Web" })).toHaveCount(0);
 });
 
 test("renders the cookie preferences controls", async ({ page }) => {
@@ -171,7 +169,7 @@ test("keeps consent actions uppercase and the privacy banner below the search sc
         return focusRing ? getComputedStyle(focusRing).display : "missing";
       }),
     )
-    .toBe("none");
+    .toBe("flex");
 
   await expectKeyboardFocusOverridesPendingPointerFrame(explicitConsent);
 

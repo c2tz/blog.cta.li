@@ -27,63 +27,174 @@ on:
         type: boolean
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: normalize-commit-messages-${{ inputs.branch }}
   cancel-in-progress: false
 
 jobs:
-  normalize-commit-messages:
-    name: Rewrite branch commit messages
-    if: inputs.branch != 'develop' && inputs.branch != 'main'
+  normalize:
+    name: Rewrite branch commit messages from trusted automation code
+    if: >-
+      github.ref == 'refs/heads/develop' &&
+      inputs.branch != 'develop' &&
+      inputs.branch != 'main'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      branch: ${{ steps.prepare_target.outputs.branch }}
+      original_tip: ${{ steps.prepare_target.outputs.original_tip }}
 
     steps:
-      - name: Checkout target branch
-        uses: actions/checkout@v7
+      - name: Checkout trusted automation code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.sha }}
+          path: trusted
+          persist-credentials: false
+
+      - name: Checkout target branch as data without stored credentials
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ inputs.branch }}
+          path: target
           fetch-depth: 0
-
-      - name: Fetch base branch
-        run: git fetch origin ${{ inputs.base }}:refs/remotes/origin/${{ inputs.base }}
+          persist-credentials: false
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6.0.9
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
           version: 11.1.3
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: 22.22.3
           cache: pnpm
+          cache-dependency-path: trusted/pnpm-lock.yaml
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Install trusted commit-message dependencies
+        run: pnpm --dir trusted install --frozen-lockfile --ignore-scripts
 
-      - name: Install Codex CLI
-        run: npm install --global @openai/codex@0.142.4
-
-      - name: Normalize branch commit messages
+      - name: Validate target and fetch the base as read-only data
+        id: prepare_target
+        working-directory: target
         env:
+          BASE_BRANCH: ${{ inputs.base }}
+          TARGET_BRANCH: ${{ inputs.branch }}
+        run: |
+          git check-ref-format --branch "$TARGET_BRANCH"
+
+          case "$TARGET_BRANCH" in
+            develop|main)
+              echo "::error::Refusing to rewrite protected branch '$TARGET_BRANCH'."
+              exit 1
+              ;;
+          esac
+
+          actual_branch="$(git symbolic-ref --short HEAD)"
+          if [ "$actual_branch" != "$TARGET_BRANCH" ]; then
+            echo "::error::Checked out '$actual_branch' instead of requested branch '$TARGET_BRANCH'."
+            exit 1
+          fi
+
+          git fetch --no-tags "https://github.com/${GITHUB_REPOSITORY}.git" \
+            "refs/heads/${BASE_BRANCH}:refs/remotes/origin/${BASE_BRANCH}"
+          echo "branch=$actual_branch" >> "$GITHUB_OUTPUT"
+          echo "original_tip=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Normalize with trusted code and no repository write token
+        working-directory: target
+        env:
+          BASE_BRANCH: ${{ inputs.base }}
           CODEX_API_KEY: ${{ secrets.CODEX_API_KEY || secrets.OPENAI_API_KEY }}
+          CODEX_CLI_PATH: ${{ github.workspace }}/trusted/node_modules/.bin/codex
+          CODEX_COMMITLINT_ROOT: ${{ github.workspace }}/trusted
+          CODEX_HOME: ${{ runner.temp }}/codex-home
+          REWRITE_ALL: ${{ inputs.rewrite_all }}
         run: |
           if [ -z "${CODEX_API_KEY:-}" ]; then
             echo "::error::Set CODEX_API_KEY or OPENAI_API_KEY in repository secrets."
             exit 1
           fi
 
-          args=(--base "origin/${{ inputs.base }}" --yes)
+          install -d -m 700 "$CODEX_HOME"
+          args=(--base "origin/${BASE_BRANCH}" --yes)
 
-          if [ "${{ inputs.rewrite_all }}" = "true" ]; then
+          if [ "$REWRITE_ALL" = "true" ]; then
             args+=(--all)
           fi
 
-          if [ "${{ inputs.push }}" = "true" ]; then
-            args+=(--push)
+          node ../trusted/scripts/normalize-commit-messages.mjs "${args[@]}"
+
+      - name: Package rewritten Git objects for the isolated push job
+        if: inputs.push
+        working-directory: target
+        env:
+          TARGET_BRANCH: ${{ steps.prepare_target.outputs.branch }}
+        run: |
+          actual_branch="$(git symbolic-ref --short HEAD)"
+          if [ "$actual_branch" != "$TARGET_BRANCH" ]; then
+            echo "::error::Normalized branch '$actual_branch' does not match '$TARGET_BRANCH'."
+            exit 1
           fi
 
-          pnpm commit:normalize -- "${args[@]}"
+          git bundle create ../normalized-commits.bundle "refs/heads/${TARGET_BRANCH}"
+          git bundle verify ../normalized-commits.bundle
+
+      - name: Upload rewritten Git bundle
+        if: inputs.push
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: normalized-commit-history
+          path: normalized-commits.bundle
+          if-no-files-found: error
+          retention-days: 1
+
+  push-normalized-history:
+    name: Push normalized history without the Codex secret
+    if: inputs.push && needs.normalize.result == 'success'
+    needs: normalize
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # Push the rewritten ref; this job never receives the Codex secret.
+
+    steps:
+      - name: Checkout trusted destination without stored credentials
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Download rewritten Git bundle
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: normalized-commit-history
+          path: normalized-history
+
+      - name: Import rewritten history as Git objects only
+        env:
+          TARGET_BRANCH: ${{ needs.normalize.outputs.branch }}
+        run: |
+          git check-ref-format --branch "$TARGET_BRANCH"
+          git fetch normalized-history/normalized-commits.bundle \
+            "refs/heads/${TARGET_BRANCH}:refs/remotes/normalized/${TARGET_BRANCH}"
+
+      - name: Force-push with an exact lease
+        env:
+          EXPECTED_TIP: ${{ needs.normalize.outputs.original_tip }}
+          GH_TOKEN: ${{ github.token }}
+          TARGET_BRANCH: ${{ needs.normalize.outputs.branch }}
+        run: |
+          if ! printf '%s' "$EXPECTED_TIP" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::error::Invalid original branch tip."
+            exit 1
+          fi
+
+          gh auth setup-git
+          git push \
+            --force-with-lease="refs/heads/${TARGET_BRANCH}:${EXPECTED_TIP}" \
+            origin \
+            "refs/remotes/normalized/${TARGET_BRANCH}:refs/heads/${TARGET_BRANCH}"

@@ -10,7 +10,7 @@ const DEFAULT_SITE_ORIGIN = "https://ct-blog.cta.li";
 const PAGEFIND_PLACEHOLDER_PATH = "/posts/pagefind-index-placeholder/";
 const PAGEFIND_PLACEHOLDER_TOKEN = "pagefind-internal-placeholder-4d6af32b";
 const URL_ATTRIBUTES = new Set(["action", "data", "href", "poster", "src"]);
-const IGNORED_PROTOCOLS = new Set(["blob:", "data:", "mailto:", "tel:"]);
+const IGNORED_PROTOCOLS = new Set(["blob:", "mailto:", "tel:"]);
 
 async function listFiles(directory, root = directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -82,7 +82,7 @@ function outputCandidates(pathname) {
 }
 
 function srcsetUrls(value) {
-  if (value.trim().startsWith("data:")) return [];
+  if (value.trim().startsWith("data:")) return [value.trim()];
   return value
     .split(",")
     .map((candidate) => candidate.trim().split(/\s+/, 1)[0])
@@ -104,11 +104,11 @@ function addIssue(issues, message) {
 
 function decodeXmlText(value) {
   return value
-    .replaceAll("&amp;", "&")
     .replaceAll("&lt;", "<")
     .replaceAll("&gt;", ">")
     .replaceAll("&quot;", '"')
-    .replaceAll("&apos;", "'");
+    .replaceAll("&apos;", "'")
+    .replaceAll("&amp;", "&");
 }
 
 function xmlRoutes(source, elementName, siteOrigin) {
@@ -279,8 +279,15 @@ export async function collectBuiltContentIssues({
           continue;
         }
 
-        if (target.protocol === "javascript:") {
-          addIssue(issues, `${page.route}: URL javascript interdite ${JSON.stringify(value)}`);
+        if (
+          target.protocol === "javascript:" ||
+          target.protocol === "vbscript:" ||
+          target.protocol === "data:"
+        ) {
+          addIssue(
+            issues,
+            `${page.route}: protocole URL interdit ${target.protocol} ${JSON.stringify(value)}`,
+          );
           continue;
         }
         if (IGNORED_PROTOCOLS.has(target.protocol) || target.origin !== normalizedSiteOrigin) {

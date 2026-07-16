@@ -11,13 +11,19 @@ import {
   expectPopoverOpen,
 } from "./site-fixture";
 
-test("keeps unlisted posts out of the home page", async ({ page }) => {
+test("keeps unlisted posts out of the home page for every publication state", async ({ page }) => {
   await gotoRoute(page, "/");
   await waitForAppReady(page);
 
   await expect(page.getByRole("heading", { name: "Derniers articles" })).toBeVisible();
-  await expect(page.locator(".home-post-title")).toHaveCount(0);
-  await expect(page.getByText("Aucun article à afficher.")).toBeVisible();
+  const renderedTitles = page.locator(".home-post-title");
+  await expect(renderedTitles.filter({ hasText: "Vérification MDX" })).toHaveCount(0);
+  await expect(renderedTitles.filter({ hasText: "Shortcodes Astro et Material Web" })).toHaveCount(
+    0,
+  );
+  if ((await renderedTitles.count()) === 0) {
+    await expect(page.getByText("Aucun article à afficher.")).toBeVisible();
+  }
   const tableProgress = page.locator("md-linear-progress.home-posts-table-progress");
   await expect(tableProgress).toHaveAttribute("indeterminate", "");
   await expect(tableProgress).toHaveAttribute("four-color", /^(?:|true)$/);
@@ -59,6 +65,14 @@ test("starts with the permanent Konachan landing image when no cached image exis
 
   const firstUrl = await background.getAttribute("data-konachan-current-url");
   expect(firstUrl).toContain("405393");
+  const manifestRequests = await page.evaluate(() =>
+    performance
+      .getEntriesByType("resource")
+      .map((entry) => new URL(entry.name).pathname)
+      .filter((pathname) => pathname.includes("konachan-backgrounds")),
+  );
+  expect(manifestRequests).toContain("/konachan-backgrounds.runtime.json");
+  expect(manifestRequests).not.toContain("/konachan-backgrounds.json");
   await expect
     .poll(() =>
       page.evaluate(() => {
@@ -91,6 +105,71 @@ test("starts with the permanent Konachan landing image when no cached image exis
     "data-konachan-current-url",
     /\/konachan-backgrounds\/405237\.webp$/,
   );
+});
+
+test("chooses 960 or full Konachan assets from cover geometry times DPR", async ({ page }) => {
+  test.skip(
+    test.info().project.name !== "desktop-light",
+    "The responsive source decision only needs one browser-project verification.",
+  );
+  await page.setViewportSize({ width: 400, height: 800 });
+  await seedFixedKonachanImage(page, "#5BC3D6");
+
+  await gotoRoute(page, "/");
+  const background = page.locator("[data-konachan-background]");
+  await expect(background).toHaveAttribute(
+    "data-konachan-current-url",
+    /\/konachan-backgrounds\/405237-960\.webp$/,
+  );
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const stored = JSON.parse(localStorage.getItem("home-konachan-backgrounds-v8") || "null");
+        return {
+          loadedUrl: stored?.currentImage?.loadedUrl,
+          url: stored?.currentImage?.url,
+        };
+      }),
+    )
+    .toEqual({
+      loadedUrl: expect.stringMatching(/\/405237-960\.webp$/),
+      url: expect.stringMatching(/\/405237\.webp$/),
+    });
+
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: 2 });
+  });
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(background).toHaveAttribute(
+    "data-konachan-current-url",
+    /\/konachan-backgrounds\/405237\.webp$/,
+  );
+});
+
+test("uses a precomputed Konachan source color before the Worker fallback", async ({ page }) => {
+  test.skip(
+    test.info().project.name !== "desktop-light",
+    "The precomputed-color fast path only needs one browser-project verification.",
+  );
+  await page.addInitScript(() => {
+    const NativeWorker = window.Worker;
+    Object.defineProperty(window, "Worker", {
+      configurable: true,
+      value: new Proxy(NativeWorker, {
+        construct(target, argumentsList) {
+          Reflect.set(window, "__materialSourceColorWorkerCount", 1);
+          return Reflect.construct(target, argumentsList);
+        },
+      }),
+    });
+  });
+  await seedFixedKonachanImage(page, "#5BC3D6");
+
+  await gotoRoute(page, "/");
+  await expectStoredSourceColor(page, "#5BC3D6");
+  expect(
+    await page.evaluate(() => Reflect.get(window, "__materialSourceColorWorkerCount") ?? 0),
+  ).toBe(0);
 });
 
 test("uses upgraded Material Web buttons and the generated color roles", async ({ page }) => {

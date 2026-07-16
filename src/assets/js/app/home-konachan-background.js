@@ -1,4 +1,6 @@
 import { createHomeKonachanThemeController } from "./home-konachan-theme.js";
+import { parseJsonValue, parseVersionedState, readCookieValue } from "./site-persistence.js";
+import { expandKonachanRuntimeManifest } from "@/lib/konachan-runtime-manifest.mjs";
 import {
   isSameOriginUrl,
   normalizeUrl,
@@ -12,11 +14,7 @@ function readHomeKonachanConfig() {
   const element = document.getElementById("home-konachan-config");
   if (!element?.textContent) return null;
 
-  try {
-    return JSON.parse(element.textContent);
-  } catch {
-    return null;
-  }
+  return parseJsonValue(element.textContent);
 }
 
 export function initHomeKonachanBackgroundFromDocument() {
@@ -32,7 +30,10 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
   const CREDIT_LINK_SELECTOR = "[data-konachan-credit-link]";
   const LANDING_SELECTOR = ".home-anime-landing";
   const STATUS_SELECTOR = "[data-konachan-status]";
-  const MANIFEST_URL = new URL("/konachan-backgrounds.json?v=5", window.location.href).toString();
+  const MANIFEST_URL = new URL(
+    "/konachan-backgrounds.runtime.json?v=1",
+    window.location.href,
+  ).toString();
   const EXPLICIT_CONTENT_CHANGE_EVENT = konachanClientConfig.events.explicitContentChange;
   const EXPLICIT_CONTENT_COOKIE = konachanClientConfig.explicitContentCookieName;
   const EXPLICIT_CONTENT_KEY = konachanClientConfig.explicitContentStorageKey;
@@ -121,7 +122,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
         ? normalizeUrl(loadedUrl) || normalizedImage
         : {
             ...normalizedImage,
-            url: normalizeUrl(loadedUrl) || normalizedImage.url,
+            loadedUrl: normalizeUrl(loadedUrl) || normalizedImage.loadedUrl,
           };
     writeStoredImages(mergeImages(rememberedImage, cachedImages), rememberedImage);
   }
@@ -179,7 +180,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     }
 
     await cacheJsonResponse(MANIFEST_URL, text);
-    return Array.isArray(manifest.images) ? manifest.images : [];
+    return expandKonachanRuntimeManifest(manifest);
   }
 
   async function readManifest({ cache = "no-cache" } = {}) {
@@ -200,7 +201,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
         error instanceof Error ? error.message : error,
       );
       const cached = await readCachedJson(MANIFEST_URL);
-      return Array.isArray(cached?.images) ? cached.images : [];
+      return expandKonachanRuntimeManifest(cached);
     }
   }
 
@@ -210,14 +211,27 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
 
     const url = normalizeUrl(image.url);
     const originalUrl = normalizeUrl(image.originalUrl || image.remoteUrl);
+    const loadedUrl = normalizeUrl(image.loadedUrl);
     const rating = normalizeRating(image.rating);
     if (!url && !originalUrl) return null;
+
+    const variants = Array.isArray(image.variants)
+      ? image.variants
+          .map((variant) => ({
+            ...variant,
+            url: normalizeUrl(variant?.url),
+            width: Number(variant?.width) || 0,
+          }))
+          .filter((variant) => variant.url && isSameOriginUrl(variant.url))
+      : [];
 
     return {
       ...image,
       rating,
       url: url || originalUrl,
       originalUrl,
+      loadedUrl,
+      variants,
     };
   }
 
@@ -235,24 +249,6 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     return rating in RATING_RANK ? rating : "safe";
   }
 
-  function readCookie(name) {
-    if (!name) return null;
-
-    const encodedName = `${encodeURIComponent(name)}=`;
-    const cookie = document.cookie
-      .split(";")
-      .map((part) => part.trim())
-      .find((part) => part.startsWith(encodedName));
-
-    if (!cookie) return null;
-
-    try {
-      return decodeURIComponent(cookie.slice(encodedName.length));
-    } catch {
-      return null;
-    }
-  }
-
   function readRatingPreference() {
     const restorePreference = (value) => {
       const preference = normalizeRatingPreference(value);
@@ -263,23 +259,24 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
       return restorePreference(
         localStorage.getItem(KONACHAN_RATING_KEY) ||
           localStorage.getItem(KONACHAN_LEGACY_RATING_KEY) ||
-          readCookie(KONACHAN_RATING_COOKIE) ||
-          readCookie(KONACHAN_LEGACY_RATING_COOKIE),
+          readCookieValue(document.cookie, KONACHAN_RATING_COOKIE) ||
+          readCookieValue(document.cookie, KONACHAN_LEGACY_RATING_COOKIE),
       );
     } catch {
       return restorePreference(
-        readCookie(KONACHAN_RATING_COOKIE) || readCookie(KONACHAN_LEGACY_RATING_COOKIE),
+        readCookieValue(document.cookie, KONACHAN_RATING_COOKIE) ||
+          readCookieValue(document.cookie, KONACHAN_LEGACY_RATING_COOKIE),
       );
     }
   }
 
   function explicitContentAcknowledged() {
     try {
-      const stored = JSON.parse(localStorage.getItem(EXPLICIT_CONTENT_KEY) || "null");
-      if (stored?.version === 1 && stored.acknowledged === true) return true;
+      const stored = parseVersionedState(localStorage.getItem(EXPLICIT_CONTENT_KEY));
+      if (stored?.acknowledged === true) return true;
     } catch {}
 
-    return readCookie(EXPLICIT_CONTENT_COOKIE) === "acknowledged";
+    return readCookieValue(document.cookie, EXPLICIT_CONTENT_COOKIE) === "acknowledged";
   }
 
   function mergeImages(...groups) {
@@ -323,12 +320,56 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     link.hidden = false;
   }
 
-  function imageCandidates(image) {
+  function imageSources(image) {
     if (typeof image === "string") {
-      return unique([normalizeUrl(image)]).filter(isSameOriginUrl);
+      return [{ url: normalizeUrl(image), width: 0 }].filter(({ url }) => isSameOriginUrl(url));
     }
 
-    return unique([image?.url].map(normalizeUrl)).filter(isSameOriginUrl);
+    const sources = [
+      ...(Array.isArray(image?.variants) ? image.variants : []),
+      { url: image?.url, width: Number(image?.width) || 0 },
+    ]
+      .map((source) => ({
+        url: normalizeUrl(source?.url),
+        width: Number(source?.width) || 0,
+      }))
+      .filter(({ url }) => isSameOriginUrl(url));
+    const byUrl = new Map();
+    for (const source of sources) {
+      if (!byUrl.has(source.url)) byUrl.set(source.url, source);
+    }
+    return [...byUrl.values()];
+  }
+
+  function requiredImageWidth(target, image) {
+    const bounds = target?.getBoundingClientRect?.();
+    const cssWidth = bounds?.width || target?.clientWidth || window.innerWidth || 0;
+    const cssHeight = bounds?.height || target?.clientHeight || window.innerHeight || 0;
+    const sourceWidth = Number(typeof image === "object" && image?.width) || 1920;
+    const sourceHeight = Number(typeof image === "object" && image?.height) || 1080;
+    const sourceAspectRatio = sourceWidth / sourceHeight;
+    const coveredCssWidth = Math.max(cssWidth, cssHeight * sourceAspectRatio);
+    return Math.ceil(coveredCssWidth * Math.max(0.1, window.devicePixelRatio || 1));
+  }
+
+  function imageCandidates(image, target) {
+    const requiredWidth = requiredImageWidth(target, image);
+    const sources = imageSources(image).sort((left, right) => left.width - right.width);
+    const preferred = sources.find((source) => source.width >= requiredWidth) ?? sources.at(-1);
+    const fallbacks = [...sources].sort(
+      (left, right) =>
+        Math.abs(left.width - requiredWidth) - Math.abs(right.width - requiredWidth) ||
+        right.width - left.width,
+    );
+
+    return unique([preferred?.url, ...fallbacks.map(({ url }) => url)]).filter(Boolean);
+  }
+
+  function imageUrls(image) {
+    if (typeof image === "string") return imageCandidates(image);
+    return unique([image?.loadedUrl, ...imageSources(image).map(({ url }) => url)])
+      .map(normalizeUrl)
+      .filter(isSameOriginUrl);
   }
 
   function imageThemeCandidates(image, loadedUrl) {
@@ -394,7 +435,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
   function currentImage() {
     if (state.currentImage) return state.currentImage;
 
-    const match = state.images.find((image) => imageCandidates(image).includes(state.currentUrl));
+    const match = state.images.find((image) => imageUrls(image).includes(state.currentUrl));
     state.currentImage = match || null;
     return state.currentImage;
   }
@@ -459,7 +500,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
   }
 
   async function setBackground(target, image) {
-    const candidates = imageCandidates(image);
+    const candidates = imageCandidates(image, target);
     if (candidates.length === 0) return false;
 
     let loadedUrl = "";
@@ -490,7 +531,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
 
   async function rotate(target) {
     const pool = refreshCandidates(state.images);
-    const candidates = pool.filter((image) => !imageCandidates(image).includes(state.currentUrl));
+    const candidates = pool.filter((image) => !imageUrls(image).includes(state.currentUrl));
     const selected = pickRandom(candidates.length > 0 ? candidates : pool);
     if (!selected) return false;
 
@@ -584,9 +625,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
       try {
         readLocalImagePool();
         const pool = refreshCandidates(state.images);
-        const candidates = pool.filter(
-          (image) => !imageCandidates(image).includes(state.currentUrl),
-        );
+        const candidates = pool.filter((image) => !imageUrls(image).includes(state.currentUrl));
         const selected = pickRandom(candidates.length > 0 ? candidates : pool);
         message = selected && (await setBackground(target, selected)) ? "Image autorisée" : message;
       } catch {

@@ -1,4 +1,15 @@
-export const KONACHAN_API_ORIGINS = ["https://konachan.com", "https://konachan.net"];
+import {
+  KONACHAN_API_CONCURRENCY,
+  KONACHAN_API_ORIGINS,
+  KONACHAN_MAX_API_RESPONSE_BYTES,
+  assertKonachanJsonMimeType,
+  fetchKonachanResource,
+  mapWithConcurrency,
+  readResponseBodyLimited,
+  validateKonachanUrl,
+} from "./konachan-network.mjs";
+
+export { KONACHAN_API_ORIGINS };
 const KONACHAN_API_URLS = KONACHAN_API_ORIGINS.map((origin) => `${origin}/post.json`);
 export const KONACHAN_TAGS = "rating:safe width:>=1920 height:>=1080";
 export const KONACHAN_SAFE_TAG_QUERIES = [
@@ -59,9 +70,13 @@ let cachedPosts;
 
 function normalizeUrl(url, origin = KONACHAN_API_ORIGINS[0]) {
   if (!url) return undefined;
-  if (url.startsWith("//")) return `https:${url}`;
-  if (url.startsWith("/")) return new URL(url, origin).toString();
-  return url;
+
+  try {
+    const candidate = url.startsWith("//") ? `https:${url}` : new URL(url, origin);
+    return validateKonachanUrl(candidate, "image").toString();
+  } catch {
+    return undefined;
+  }
 }
 
 function normalizeRating(rating) {
@@ -73,6 +88,7 @@ function normalizeRating(rating) {
 }
 
 function mapPost(post, origin = KONACHAN_API_ORIGINS[0]) {
+  const id = Number(post.id);
   const width = Number(post.jpeg_width || post.width || 0);
   const height = Number(post.jpeg_height || post.height || 0);
   const remoteUrl = normalizeUrl(post.jpeg_url || post.file_url, origin);
@@ -84,9 +100,13 @@ function mapPost(post, origin = KONACHAN_API_ORIGINS[0]) {
 
   if (
     !remoteUrl ||
+    !Number.isSafeInteger(width) ||
+    !Number.isSafeInteger(height) ||
     width < KONACHAN_OUTPUT_WIDTH ||
     height < KONACHAN_OUTPUT_HEIGHT ||
     width / height < KONACHAN_MIN_ASPECT_RATIO ||
+    !Number.isSafeInteger(id) ||
+    id <= 0 ||
     !rating ||
     hasBlockedSensitiveTag
   ) {
@@ -94,12 +114,12 @@ function mapPost(post, origin = KONACHAN_API_ORIGINS[0]) {
   }
 
   return {
-    id: post.id,
+    id,
     remoteUrl,
     width,
     height,
     rating,
-    source: `${origin}/post/show/${post.id}`,
+    source: `${origin}/post/show/${id}`,
     author: post.author || "",
     tags,
   };
@@ -114,26 +134,21 @@ async function fetchKonachanPosts(apiUrl, tags, page) {
   const origin = new URL(apiUrl).origin;
   const url = `${apiUrl}?${params}`;
 
-  for (let attempt = 1; attempt <= 2; attempt += 1) {
-    try {
-      const response = await fetch(url, {
-        headers: {
-          accept: "application/json",
-          "user-agent": "ct-blog-konachan-updater/1.0",
-        },
-        signal: AbortSignal.timeout(30_000),
-      });
+  try {
+    const response = await fetchKonachanResource(url, {
+      resource: "api",
+      accept: "application/json",
+    });
 
-      if (!response.ok) continue;
+    if (!response.ok) return [];
 
-      const posts = await response.json();
-      return Array.isArray(posts) ? posts.map((post) => ({ origin, post })) : [];
-    } catch {
-      if (attempt === 2) return [];
-    }
+    assertKonachanJsonMimeType(response);
+    const bytes = await readResponseBodyLimited(response, KONACHAN_MAX_API_RESPONSE_BYTES);
+    const posts = JSON.parse(new TextDecoder().decode(bytes));
+    return Array.isArray(posts) ? posts.map((post) => ({ origin, post })) : [];
+  } catch {
+    return [];
   }
-
-  return [];
 }
 
 function selectCandidatePosts(posts) {
@@ -153,17 +168,20 @@ export async function getKonachanBackgroundPosts() {
   if (cachedPosts) return cachedPosts;
 
   try {
-    const responses = await Promise.allSettled(
-      KONACHAN_API_URLS.flatMap((apiUrl) =>
-        KONACHAN_TAG_QUERIES.flatMap((tags) =>
-          KONACHAN_FETCH_PAGES.map((page) => fetchKonachanPosts(apiUrl, tags, page)),
-        ),
+    const requests = KONACHAN_API_URLS.flatMap((apiUrl) =>
+      KONACHAN_TAG_QUERIES.flatMap((tags) =>
+        KONACHAN_FETCH_PAGES.map((page) => ({ apiUrl, tags, page })),
       ),
+    );
+    const responses = await mapWithConcurrency(
+      requests,
+      KONACHAN_API_CONCURRENCY,
+      ({ apiUrl, tags, page }) => fetchKonachanPosts(apiUrl, tags, page),
     );
     const uniquePosts = new Map();
 
     responses
-      .flatMap((result) => (result.status === "fulfilled" ? result.value : []))
+      .flatMap((result) => result)
       .map(({ origin, post }) => mapPost(post, origin))
       .filter(Boolean)
       .forEach((post) => {

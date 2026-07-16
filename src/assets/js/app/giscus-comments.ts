@@ -1,5 +1,10 @@
 import { createGiscusThemeUrl } from "@/assets/js/app/giscus-theme.js";
 import {
+  parseVersionedState,
+  readCookieValue,
+  serializeCookie,
+} from "@/assets/js/app/site-persistence.js";
+import {
   SITE_COOKIE_NAMES,
   SITE_EVENTS,
   SITE_LOADING_INDICATOR_DELAY_MS,
@@ -16,34 +21,21 @@ type CookieConsentWindow = Window & {
 const GISCUS_ORIGIN = "https://giscus.app";
 const GISCUS_LOAD_TIMEOUT_MS = 30_000;
 
-const readCookie = (name: string) => {
-  const prefix = `${encodeURIComponent(name)}=`;
-  const cookie = document.cookie
-    .split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(prefix));
-  if (!cookie) return null;
-  try {
-    return decodeURIComponent(cookie.slice(prefix.length));
-  } catch {
-    return null;
-  }
-};
 const acceptedPreviously = () => {
   try {
     const value = localStorage.getItem(SITE_STORAGE_KEYS.giscusCommentsEnabled);
-    const parsed = JSON.parse(value || "null");
-    if (parsed?.version === 1 && parsed.accepted === true) return true;
+    const parsed = parseVersionedState(value);
+    if (parsed?.accepted === true) return true;
     if (value === "true" || value === "accepted") return true;
   } catch {}
-  return readCookie(SITE_COOKIE_NAMES.giscusCommentsEnabled) === "accepted";
+  return readCookieValue(document.cookie, SITE_COOKIE_NAMES.giscusCommentsEnabled) === "accepted";
 };
 const rememberAcceptance = () => {
   const state = { accepted: true, updatedAt: new Date().toISOString(), version: 1 };
   try {
     localStorage.setItem(SITE_STORAGE_KEYS.giscusCommentsEnabled, JSON.stringify(state));
   } catch {}
-  document.cookie = `${SITE_COOKIE_NAMES.giscusCommentsEnabled}=accepted; Max-Age=31536000; Path=/; SameSite=Lax`;
+  document.cookie = serializeCookie(SITE_COOKIE_NAMES.giscusCommentsEnabled, "accepted");
 };
 const optionalServicesAllowed = () => {
   try {

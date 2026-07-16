@@ -1,4 +1,5 @@
 import { SITE_LOADING_INDICATOR_DELAY_MS } from "@/lib/site-contracts";
+import { parseJsonValue, readCookieValue, serializeCookie } from "./site-persistence.js";
 
 const RATING_OPTIONS = {
   safe: { icon: "\uEF80", label: "Safe" },
@@ -9,25 +10,7 @@ const RATING_OPTIONS = {
 function readConfig() {
   const element = document.getElementById("home-konachan-config");
   if (!element?.textContent) return null;
-  try {
-    return JSON.parse(element.textContent).konachanClientConfig ?? null;
-  } catch {
-    return null;
-  }
-}
-
-function readCookie(name) {
-  const prefix = `${encodeURIComponent(name)}=`;
-  const cookie = document.cookie
-    .split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(prefix));
-  if (!cookie) return null;
-  try {
-    return decodeURIComponent(cookie.slice(prefix.length));
-  } catch {
-    return null;
-  }
+  return parseJsonValue(element.textContent)?.konachanClientConfig ?? null;
 }
 
 function normalizeRating(value) {
@@ -72,7 +55,9 @@ export async function initHomeKonachanControlsFromDocument() {
         localStorage.getItem(config.ratingStorageKey) ??
         localStorage.getItem(config.legacyRatingStorageKey);
     } catch {}
-    value ??= readCookie(config.ratingCookieName) ?? readCookie(config.legacyRatingCookieName);
+    value ??=
+      readCookieValue(document.cookie, config.ratingCookieName) ??
+      readCookieValue(document.cookie, config.legacyRatingCookieName);
     const normalized = normalizeRating(value);
     return normalized === "explicit" ? "safe" : (normalized ?? "safe");
   };
@@ -84,8 +69,8 @@ export async function initHomeKonachanControlsFromDocument() {
       localStorage.setItem(config.ratingStorageKey, stored);
       localStorage.removeItem(config.legacyRatingStorageKey);
     } catch {}
-    document.cookie = `${encodeURIComponent(config.ratingCookieName)}=${stored}; Max-Age=31536000; Path=/; SameSite=Lax`;
-    document.cookie = `${encodeURIComponent(config.legacyRatingCookieName)}=; Max-Age=0; Path=/; SameSite=Lax`;
+    document.cookie = serializeCookie(config.ratingCookieName, stored);
+    document.cookie = serializeCookie(config.legacyRatingCookieName, "", { maxAgeSeconds: 0 });
   };
 
   const renderRating = () => {

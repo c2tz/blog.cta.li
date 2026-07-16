@@ -1,8 +1,12 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 const MAX_CONTEXT_LENGTH = 60000;
+
+function codexCliExecutable() {
+  return process.env.CODEX_CLI_PATH?.trim() || "codex";
+}
 
 export const commitTypes = [
   "build",
@@ -58,11 +62,11 @@ export function gitCommandSucceeds(args) {
 }
 
 export function requireCodexCli() {
-  const result = spawnSync("codex", ["--version"], { encoding: "utf8" });
+  const result = spawnSync(codexCliExecutable(), ["--version"], { encoding: "utf8" });
 
   if (result.error?.code === "ENOENT") {
     throw new Error(
-      "Codex CLI is not installed. Install it locally or run the GitHub workflow that installs @openai/codex.",
+      "Codex CLI is not installed. Run pnpm install or set CODEX_CLI_PATH to the locked @openai/codex binary.",
     );
   }
 
@@ -73,7 +77,7 @@ export function requireCodexCli() {
 
 export function getGitMessagePath(filename) {
   const gitDir = runGit(["rev-parse", "--git-dir"]).trim();
-  return join(gitDir, filename);
+  return resolve(join(gitDir, filename));
 }
 
 export function writeCommitMessageFile(message, filename = "CODEX_COMMIT_EDITMSG") {
@@ -88,7 +92,20 @@ export function validateCommitMessage(
   stdio = "inherit",
 ) {
   const file = writeCommitMessageFile(message, filename);
-  const result = spawnSync("pnpm", ["exec", "commitlint", "--edit", file], {
+  const trustedRoot = process.env.CODEX_COMMITLINT_ROOT?.trim();
+  const commitlintArgs = trustedRoot
+    ? [
+        "--dir",
+        resolve(trustedRoot),
+        "exec",
+        "commitlint",
+        "--config",
+        join(resolve(trustedRoot), "commitlint.config.mjs"),
+        "--edit",
+        file,
+      ]
+    : ["exec", "commitlint", "--edit", file];
+  const result = spawnSync("pnpm", commitlintArgs, {
     encoding: "utf8",
     stdio,
   });
@@ -172,10 +189,24 @@ export function generateCommitMessage(context) {
   requireCodexCli();
 
   const prompt = buildCommitMessagePrompt(context);
+  const trustedRoot = process.env.CODEX_COMMITLINT_ROOT?.trim();
   const result = spawnSync(
-    "codex",
-    ["exec", "--ephemeral", "--sandbox", "read-only", "--ask-for-approval", "never", "-"],
+    codexCliExecutable(),
+    [
+      "exec",
+      "--ephemeral",
+      "--ignore-user-config",
+      "--ignore-rules",
+      "--sandbox",
+      "read-only",
+      "--config",
+      'approval_policy="never"',
+      "--config",
+      'shell_environment_policy.inherit="none"',
+      "-",
+    ],
     {
+      cwd: trustedRoot ? resolve(trustedRoot) : undefined,
       input: prompt,
       encoding: "utf8",
       maxBuffer: 20 * 1024 * 1024,

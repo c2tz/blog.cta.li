@@ -22,8 +22,8 @@
     "tests/**/*.{mjs,ts}"
   ],
   "ignore": [".astro/**", "dist/**", "public/pagefind/**"],
-  "ignoreBinaries": ["codex"],
   "ignoreDependencies": [
+    "@openai/codex",
     "@types/node",
     "material-symbols",
     "prettier-plugin-astro",

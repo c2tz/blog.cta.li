@@ -18,6 +18,8 @@ test("keeps technical posts reachable but out of every discovery feed", async ({
     await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
     await expect(page.locator("article.post")).toHaveAttribute("data-pagefind-ignore", "all");
     await expect(page.locator("article.post")).not.toHaveAttribute("data-pagefind-body");
+    await expect(page.locator(".post-tags-section a")).toHaveCount(0);
+    await expect(page.locator(".post-tags-section [data-post-tag-static]")).not.toHaveCount(0);
   }
 
   const discovery = await page.evaluate(async () =>
@@ -31,8 +33,10 @@ test("keeps technical posts reachable but out of every discovery feed", async ({
     ),
   );
 
-  expect(JSON.parse(discovery["/latest-posts.json"])).toEqual({ posts: [] });
+  const latestPosts = JSON.parse(discovery["/latest-posts.json"]).posts;
+  expect(Array.isArray(latestPosts)).toBe(true);
   for (const { slug, title } of hiddenPosts) {
+    expect(latestPosts).not.toContainEqual(expect.objectContaining({ href: `/posts/${slug}/` }));
     for (const path of ["/", "/tags/all/", "/rss.xml", "/sitemap.xml"]) {
       expect(discovery[path]).not.toContain(slug);
       expect(discovery[path]).not.toContain(title);

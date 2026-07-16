@@ -9,6 +9,52 @@
 - Browser scripts in `src/assets/js/app` own progressive enhancement shared across pages.
 - Shared public names live in `src/lib/site-contracts.ts`.
 
+## MD/MDX publishing contract
+
+Articles live exclusively in `src/content/blog` as `.md` or `.mdx` files. Astro owns the article
+route and renders its H1, dates, metadata, comments, and discovery attributes. An article body must
+therefore start below H1 (normally at `##`) and must not repeat the title as a Markdown H1. Creation
+and modification dates come from Git; they are not frontmatter fields.
+
+The frontmatter contract is validated by `src/content.config.ts`:
+
+- `title` is required, trimmed, and contains between 1 and 160 characters.
+- `description` is a trimmed string between 1 and 320 characters. It may be omitted while
+  `listed: false`, but is required before publication.
+- `listed` is a boolean. The schema keeps `true` as its compatibility default, so new files should
+  always write it explicitly; the generator safely writes `false` unless `--publish` is passed.
+- `tags` defaults to `[]` and accepts at most 12 unique tags. Each tag contains 1 to 48 URL-safe
+  characters, starts with a letter or number, then uses only letters, numbers, dots, underscores,
+  plus signs, or hyphens. `all` is reserved and added by the site.
+- `priority` is optional and, when present, is an integer from 0 to 100 used as search metadata.
+
+Create a private draft with:
+
+```sh
+pnpm new:post "Titre de l’article"
+```
+
+The command refuses filename collisions and creates a non-listed `.md` file without a duplicate
+H1 or an empty description. A draft remains reachable at `/posts/<slug>/` for direct review, but is
+absent from the home page, tag routes, latest-posts JSON, RSS, sitemap, and Pagefind. Its displayed
+tags are labels rather than links to routes that do not exist.
+
+To publish directly, provide the summary explicitly:
+
+```sh
+pnpm new:post "Titre de l’article" --description "Résumé utile et autonome." --publish
+```
+
+For an existing draft, finish the body and description, then change `listed` to `true`. The next
+build exposes it through every discovery surface. No Astro page or component edit is required.
+
+`pnpm check:content` inspects the generated site after Pagefind indexing and before HTML
+minification. It fails on missing internal routes or assets, missing anchors, unsafe JavaScript
+URLs, a missing or duplicate H1/canonical, a canonical that does not match its route, a mismatch
+between `listed` and RSS/sitemap/Pagefind, a leaked/misconfigured Pagefind placeholder, inline
+`<style>` blocks, or a stylesheet that is not emitted as a versioned `/_astro/*.css` asset. Both
+`pnpm build` and `pnpm build:debug` run this check automatically.
+
 ## Material Web boundary
 
 - `src/assets/js/material-web.js` is the explicit registry of imported Material Web components.
@@ -39,16 +85,16 @@
 
 ## Persisted Browser Data
 
-Version suffixes such as `v1`, `v2`, or `v6` belong to browser-persisted data formats.
+Version suffixes such as `v1`, `v3`, or `v8` belong to browser-persisted data formats.
 They are incremented when the stored JSON, cache content, or meaning changes enough that old data should not be trusted as current data.
 
 Examples:
 
 - `ct-cookie-consent-v1`: consent payload version.
 - `ct-explicit-content-ack-v1`: explicit image warning acknowledgement.
-- `site-ip-geolocation-v2`: IP geolocation cache format.
-- `home-konachan-backgrounds-v6`: selected home background manifest cache format.
-- `home-konachan-backgrounds-v2`: Cache Storage bucket for fetched Konachan JSON responses.
+- `site-ip-geolocation-v3`: IP geolocation cache format.
+- `home-konachan-backgrounds-v8`: selected home background manifest cache format.
+- `home-konachan-backgrounds-v4`: Cache Storage bucket for fetched Konachan JSON responses.
 
 When renaming a persisted key, keep a legacy key and migrate on read before deleting the old value.
 
@@ -66,6 +112,10 @@ script stay decoupled.
 
 - `konachan:refresh-request`: emitted by the refresh button.
 - `konachan:refresh-state`: emitted by the home background script with `{ busy, status }`.
+
+The full JSON manifest is an authoring artifact; the browser downloads the compact runtime
+manifest. Every normal production build runs `pnpm check:konachan-runtime` first and fails if both
+checked-in manifests are not byte-for-byte synchronized or if the runtime file exceeds 40 KiB.
 
 ## Checks
 

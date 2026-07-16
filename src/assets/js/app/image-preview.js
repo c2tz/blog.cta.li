@@ -79,9 +79,6 @@ class ImagePreviewController extends ImagePreviewControllerBase {
     this.trackpadSwipeLockedUntil = 0;
     this.nativeGestureActive = false;
     this.zoomGestureCooldownUntil = 0;
-    this.zoomPanX = 0;
-    this.zoomPanY = 0;
-    this.zoomPanGesture = undefined;
     this.renderRequest = 0;
     this.focusRequest = 0;
     this.pendingTabFocus = undefined;
@@ -130,11 +127,11 @@ class ImagePreviewController extends ImagePreviewControllerBase {
     this.stage.addEventListener("pointerup", this.handlePointerUp, options);
     this.stage.addEventListener("pointercancel", this.handlePointerCancel, options);
     this.stage.addEventListener("lostpointercapture", this.handlePointerCancel, options);
+    this.stage.addEventListener("dblclick", this.handleDoubleClick, { ...options, passive: true });
     this.stage.addEventListener("wheel", this.handleWheel, { ...options, passive: false });
     this.image.addEventListener("load", this.handleImageLoad, options);
     window.addEventListener("resize", this.handleViewportChange, options);
     window.visualViewport?.addEventListener("resize", this.handleViewportChange, options);
-    window.visualViewport?.addEventListener("scroll", this.handleViewportChange, options);
 
     this.informationDialog.addEventListener("cancel", this.handleInformationCancel, options);
     this.informationDialog.addEventListener("closed", this.handleInformationClosed, options);

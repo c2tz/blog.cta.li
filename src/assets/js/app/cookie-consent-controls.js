@@ -5,8 +5,8 @@ import {
   SITE_LEGACY_STORAGE_KEYS,
   SITE_STORAGE_KEYS,
 } from "@/lib/site-contracts";
+import { parseVersionedState, readCookieValue, serializeCookie } from "./site-persistence.js";
 
-const CONSENT_MAX_AGE_SECONDS = 31_536_000;
 const BACKGROUND_INTERACTION_SELECTORS = [".site-header", ".site-main", ".site-footer"];
 const DIALOG_FOCUSABLE_SELECTOR = [
   "a[href]",
@@ -35,32 +35,15 @@ const STATUS_LABELS = {
 };
 
 function readCookie(name) {
-  const encodedName = `${encodeURIComponent(name)}=`;
-  const cookie = document.cookie
-    .split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(encodedName));
-
-  if (!cookie) return null;
-
-  try {
-    return decodeURIComponent(cookie.slice(encodedName.length));
-  } catch {
-    return null;
-  }
+  return readCookieValue(document.cookie, name);
 }
 
 function writeCookie(name, value) {
-  document.cookie = [
-    `${encodeURIComponent(name)}=${encodeURIComponent(value)}`,
-    `Max-Age=${CONSENT_MAX_AGE_SECONDS}`,
-    "Path=/",
-    "SameSite=Lax",
-  ].join("; ");
+  document.cookie = serializeCookie(name, value);
 }
 
 function expireCookie(name) {
-  document.cookie = `${encodeURIComponent(name)}=; Max-Age=0; Path=/; SameSite=Lax`;
+  document.cookie = serializeCookie(name, "", { maxAgeSeconds: 0 });
 }
 
 function readConsent() {
@@ -70,8 +53,8 @@ function readConsent() {
     const raw = current ?? legacy;
     if (!raw) return null;
 
-    const parsed = JSON.parse(raw);
-    if (parsed?.version !== 1) return null;
+    const parsed = parseVersionedState(raw);
+    if (!parsed) return null;
 
     if (current === null && legacy !== null) {
       localStorage.setItem(SITE_STORAGE_KEYS.cookieConsent, legacy);
@@ -146,10 +129,10 @@ function resetConsent() {
 
 function readExplicitContentAcknowledgement() {
   try {
-    const parsed = JSON.parse(
-      localStorage.getItem(SITE_STORAGE_KEYS.explicitContentAcknowledgement) || "null",
+    const parsed = parseVersionedState(
+      localStorage.getItem(SITE_STORAGE_KEYS.explicitContentAcknowledgement),
     );
-    if (parsed?.version === 1 && parsed.acknowledged === true) return parsed;
+    if (parsed?.acknowledged === true) return parsed;
   } catch {}
 
   if (readCookie(SITE_COOKIE_NAMES.explicitContentAcknowledgement) === "acknowledged") {

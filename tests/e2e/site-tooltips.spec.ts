@@ -1,5 +1,36 @@
 import { expect, test, gotoRoute, waitForAppReady, expectPopoverOpen } from "./site-fixture";
 
+test("loads rich and context tooltip controllers only for matching DOM", async ({ page }) => {
+  test.skip(test.info().project.name !== "desktop-light", "One production-chunk probe is enough.");
+
+  const conditionalRequests: string[] = [];
+  page.on("request", (request) => {
+    const pathname = new URL(request.url()).pathname;
+    if (/\/_astro\/site-(?:context-popovers|rich-tooltips)\.[^/]+\.js$/.test(pathname)) {
+      conditionalRequests.push(pathname);
+    }
+  });
+
+  await gotoRoute(page, "/");
+  await waitForAppReady(page);
+  expect(conditionalRequests).toEqual([]);
+
+  await gotoRoute(page, "/posts/mdx-smoke-test/");
+  await expect(page.locator(".site-prose .footnotes")).toHaveAttribute(
+    "data-footnotes-enhanced",
+    "true",
+  );
+  expect(conditionalRequests.some((url) => url.includes("site-context-popovers."))).toBe(true);
+  expect(conditionalRequests.some((url) => url.includes("site-rich-tooltips."))).toBe(false);
+
+  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
+  await expect(page.locator("[data-site-rich-tooltip]").first()).toHaveAttribute(
+    "data-rich-tooltip-enhanced",
+    "true",
+  );
+  expect(conditionalRequests.some((url) => url.includes("site-rich-tooltips."))).toBe(true);
+});
+
 test("shows one accessible simple tooltip without creating keyboard stops", async ({ page }) => {
   await gotoRoute(page, "/");
   await waitForAppReady(page);

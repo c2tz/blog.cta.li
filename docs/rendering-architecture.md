@@ -26,7 +26,7 @@ state and tests the equivalent image-preview behavior on the replacement fixture
 | Search                  | Closed dialog and trigger are static                                              | A small trigger loader only                                                           | Search controller and search Material controls on focus/hover/first click; Pagefind Worker/WASM and index on opening/query                                      | None                                                               |
 | Markdown and shortcodes | Shiki HTML, prose and shortcode source markup                                     | A selector gate inspects the rendered prose                                           | Copy controls only for code blocks; shortcode Material runtime only when complex controls exist                                                                 | None                                                               |
 | Image preview           | Two Material dialog hosts and the source images                                   | A small capture-phase loader only                                                     | Full controller, dialogs and buttons on focus/hover/first click; share-file fetch after preview intent                                                          | None                                                               |
-| Konachan home           | Hero structure and local manifest URL                                             | Lightweight home table and controls required for the visible shell                    | Background controller, color Worker, manifest and selected images after explicit-content acknowledgement                                                        | Explicit-content acknowledgement                                   |
+| Konachan home           | Hero structure and local manifest URL                                             | Lightweight home table and controls required for the visible shell                    | Background controller, compact manifest and selected images after explicit-content acknowledgement; precomputed source colors avoid a Worker on the normal path | Explicit-content acknowledgement                                   |
 | Giscus                  | Local consent UI and placeholder                                                  | Local controller on post routes                                                       | `giscus.app/client.js` and iframe only after functionality consent plus the separate comments opt-in                                                            | Functionality consent and comments opt-in                          |
 | Optional services       | Static IP placeholder and Vercel metadata                                         | No optional service module before consent                                             | IP geolocation and Speed Insights modules/services only after functionality consent; any inserted third-party script is purged by one consent-revocation reload | Functionality consent                                              |
 | CSP/Vercel              | CSP hashes and headers are generated from the built HTML                          | No runtime policy relaxation                                                          | Pagefind Worker/WASM and approved external Giscus/IP origins                                                                                                    | Deployment checks gate alias promotion                             |
@@ -49,10 +49,10 @@ state and tests the equivalent image-preview behavior on the replacement fixture
    reloads once if a Speed Insights or Giscus script was inserted, so neither an executed nor an
    in-flight third-party runtime can survive the opt-out. `pageshow` and consent-storage changes
    resynchronize restored BFCache pages and other open tabs.
-6. The image preview owns zoomed-image panning and scroll restoration. Browser `ctrl+wheel`/pinch
-   remains native, while two-axis trackpad movement pans the preview image inside its bounds. The
-   document stays locked during native two-touch visual-viewport panning, and the toolbar follows
-   that visual viewport instead of disappearing into the layout viewport.
+6. The browser owns page zoom and the resulting two-axis visual-viewport panning. The image
+   preview observes that zoom state only to suspend gallery navigation until the scale returns to
+   100%; it does not cancel zoomed wheel/pointer/double-click events or translate the image. The
+   toolbar keeps one static safe-area anchor instead of adding visual-viewport offsets.
 7. Keyboard focus is cycled explicitly inside both preview dialogs so Safari does not depend on
    the user's full-keyboard-access preference. A focus move made during Material's opening motion
    wins over the later resolution of `show()` instead of being overwritten by autofocus.
@@ -88,7 +88,9 @@ state and tests the equivalent image-preview behavior on the replacement fixture
 
 ### 3. Harden the image preview
 
-- Added trackpad X/Y panning while browser zoom is active without intercepting native pinch zoom.
+- Removed custom trackpad/mouse panning while browser zoom is active. Native pinch, pan and smart
+  zoom remain authoritative; gallery swipe and baseline horizontal trackpad navigation resume only
+  after returning to 100%.
 - Made initial and information-dialog focus deterministic, added an explicit Safari-safe Tab
   cycle, and guarded it against the asynchronous completion of Material's opening animation.
 - Kept real Material icon/text buttons and local icons; unsupported fullscreen remains genuinely
@@ -119,13 +121,33 @@ requests. The accepted-consent scenario deterministically fulfills the single `i
 with the same fixture as Playwright; no external response time or byte count is included in the
 local JavaScript totals.
 
+### Cacheable CSS delivery
+
+The July 15 follow-up changed Astro from `inlineStylesheets: "always"` to `"never"` and moved
+home, post, cookies and 404 styles out of the shared entry. This preserves render-blocking CSS but
+lets hashed `/_astro/*` files use the existing one-year immutable cache.
+
+| Production output across six HTML pages |    Before |     After | Change |
+| --------------------------------------- | --------: | --------: | -----: |
+| HTML bytes                              | 742,801 B | 175,460 B | −76.4% |
+| Six-route traversal with CSS cache      | 742,801 B | 278,927 B | −62.5% |
+| Shared CSS                              |  93,495 B |  45,533 B | −51.3% |
+
+There are seven hashed stylesheets. `inlineStylesheets: "never"` controls Astro's bundled CSS
+delivery; it is not a blanket assertion that component markup or runtime code never uses an
+inline style attribute. Initial CSS is 61,164 B on home, 46,648 B on 404, 52,598 B on cookies,
+79,764 B on a post and 49,243 B on tags. A standalone `pnpm test:e2e` still builds its own
+production output; `verify:quality` sets
+`PLAYWRIGHT_REUSE_BUILD=1` after its explicit build so Playwright serves the validated `dist`
+instead of compiling it a second time.
+
 ### Initial-route comparison
 
 | Route/state                         | Baseline requests / JS / JS gzip | Migrated requests / JS / JS gzip |                               Change |
 | ----------------------------------- | -------------------------------: | -------------------------------: | -----------------------------------: |
-| Home, fresh explicit-content notice |              43 / 38 / 127,860 B |               35 / 30 / 72,646 B |      −8 requests, −8 JS, −43.2% gzip |
-| Cookies, functionality refused      |               41 / 35 / 92,346 B |               33 / 27 / 64,163 B |      −8 requests, −8 JS, −30.5% gzip |
-| Technical MDX post, Giscus refused  |              46 / 40 / 119,025 B |               36 / 30 / 68,960 B |    −10 requests, −10 JS, −42.1% gzip |
+| Home, fresh explicit-content notice |              43 / 38 / 127,860 B |               38 / 31 / 69,181 B |      −5 requests, −7 JS, −45.9% gzip |
+| Cookies, functionality refused      |               41 / 35 / 92,346 B |               37 / 28 / 60,698 B |      −4 requests, −7 JS, −34.3% gzip |
+| Technical MDX post, Giscus refused  |              46 / 40 / 119,025 B |               41 / 32 / 68,087 B |      −5 requests, −8 JS, −42.8% gzip |
 | Bare 404                            |               35 / 31 / 85,046 B |                      4 / 0 / 0 B | −31 requests, no external JavaScript |
 
 The baseline tags route was 40 requests, 35 scripts and 96,938 B gzip. It was not captured in
@@ -137,34 +159,34 @@ snippets still travel inside `404.html`.
 
 The fresh-home reduction is the primary initial-load result:
 
-| Fresh home      | JavaScript modules |            Raw |          Gzip |        Brotli |
-| --------------- | -----------------: | -------------: | ------------: | ------------: |
-| Baseline        |                 38 |      499,695 B |     127,860 B |     110,311 B |
-| Migrated        |                 30 |      258,797 B |      72,646 B |      63,740 B |
-| Absolute change |             **−8** | **−240,898 B** | **−55,214 B** | **−46,571 B** |
-| Relative change |         **−21.1%** |     **−48.2%** |    **−43.2%** |    **−42.2%** |
+| Fresh home      | JavaScript modules |            Raw |          Gzip |
+| --------------- | -----------------: | -------------: | ------------: |
+| Baseline        |                 38 |      499,695 B |     127,860 B |
+| Migrated        |                 31 |      241,560 B |      69,181 B |
+| Absolute change |             **−7** | **−258,135 B** | **−58,679 B** |
+| Relative change |         **−18.4%** |     **−51.7%** |    **−45.9%** |
 
 ### Final route and consent states
 
-| Scenario                                                 | Requests |  JS |    Raw JS |   Gzip JS | Brotli JS |
-| -------------------------------------------------------- | -------: | --: | --------: | --------: | --------: |
-| Home, fresh explicit-content notice                      |       35 |  30 | 258,797 B |  72,646 B |  63,740 B |
-| Home, explicit content acknowledged and cookies refused  |       42 |  33 | 484,289 B | 123,875 B | 106,743 B |
-| Home, explicit content acknowledged and cookies accepted |       44 |  34 | 487,275 B | 125,248 B | 107,938 B |
-| `/cookies/`, functionality refused                       |       33 |  27 | 219,673 B |  64,163 B |  56,451 B |
-| MDX article, functionality refused                       |       36 |  30 | 232,408 B |  68,960 B |  60,557 B |
-| Shortcode article, functionality refused                 |       42 |  36 | 362,309 B |  94,333 B |  82,813 B |
-| `404.html`                                               |        4 |   0 |       0 B |       0 B |       0 B |
+| Scenario                                                | Requests |  JS |    Raw JS |  Gzip JS |
+| ------------------------------------------------------- | -------: | --: | --------: | -------: |
+| Home, fresh explicit-content notice                     |       38 |  31 | 241,560 B | 69,181 B |
+| Home, explicit content acknowledged and cookies refused |       42 |  33 | 354,753 B | 98,465 B |
+| `/cookies/`, functionality refused                      |       37 |  28 | 202,436 B | 60,698 B |
+| MDX article, functionality refused                      |       41 |  32 | 223,955 B | 68,087 B |
+| Shortcode article, functionality refused                |       47 |  38 | 351,802 B | 92,617 B |
+| `404.html`                                              |        4 |   0 |       0 B |      0 B |
 
-Moving from the fresh home notice to acknowledged explicit content adds exactly the three
-Konachan bundles (background controller, controls and Material Color Utilities worker): 225,492
-B raw, 51,229 B gzip and 43,003 B Brotli. The manifest and three image request events (two unique
-image URLs) account for the other four requests. This proves that the pre-acknowledgement boundary
-blocks both code and image network work, rather than merely hiding the result.
+Moving from the fresh home notice to acknowledged explicit content adds four request events, two
+JavaScript modules, 113,193 B raw and 29,284 B gzip. The compact runtime manifest carries the
+precomputed Material source color, so this normal path does not start the Konachan color Worker;
+that extraction path remains only as a fallback when a usable precomputed color is unavailable.
+The pre-acknowledgement boundary still blocks both the controller and image network work rather
+than merely hiding the result.
 
-Accepting functionality adds only the local `ip-geolocation` module (2,986 B raw, 1,373 B gzip,
-1,195 B Brotli) and one successful `https://api.ipapi.is/` request in this preview. Speed
-Insights remains absent because a local build does not have Vercel's production marker.
+The functionality-accepted home path was not part of this refreshed route snapshot. Its contract
+remains unchanged: IP geolocation and Speed Insights stay behind functionality consent, and a
+local preview does not activate Speed Insights without Vercel's production marker.
 
 ### Pagefind first-use path
 
@@ -223,8 +245,8 @@ native file sharing remains explicit debt.
 | Change                     |        +4 |  +3,977 B |  +2,587 B |  +3,079 B |
 
 Code splitting therefore slightly increases total deployable JavaScript while removing it from
-unrelated initial routes. The fresh home requests 30 artifacts representing 33.4% of total raw
-weight and 39.2% of total gzip weight.
+unrelated initial routes. The refreshed fresh-home trace requests 31 JavaScript modules; the
+route table above is authoritative for its current raw and gzip weight.
 
 ### Lighthouse mobile snapshot
 
@@ -257,12 +279,21 @@ Pagefind, Giscus or image-preview interactions, so those paths remain Playwright
   CSP/headers, all Playwright projects, then three mobile and three desktop Lighthouse runs.
 - `pnpm build:vercel`: full Git history, Astro SSG, Pagefind, minification and final CSP/header
   validation.
+- `Nightly cross-browser QA`: eight conditional desktop/mobile and light/dark profiles, but not
+  eight complete-suite runs. The four Firefox profiles target image-preview and resilience specs;
+  the four WebKit profiles run the complete suite. The gate allows one retry maximum with
+  `--fail-on-flaky-tests`, retains traces/screenshots/videos and adds a single-worker repeated
+  WebKit pass over image preview, consent, Giscus and search.
+- Nightly resilience checks also fail on runtime/console/CSP/unhandled-rejection/request failures
+  and exercise corrupt storage, offline recovery, deterministic slow network, BFCache restore and
+  portrait/landscape transitions.
 - Image preview: Chromium light/dark desktop/mobile plus targeted light WebKit desktop/mobile;
   first activation, toolbar visible/hidden/visible, mouse/touch/trackpad gestures, history,
   scroll, post-animation focus, 16 px/pill/16 px radius motion, native file share,
   URL/clipboard fallback, transient fullscreen/share activation and console cleanliness. WebKit
-  additionally simulates DPR changes and `gesturestart`/`gestureend`, verifies native two-touch
-  handoff, and checks that pan is bounded then reset.
+  additionally simulates DPR changes and `gesturestart`/`gestureend`, verifies that zoomed pointer,
+  wheel and double-click events remain native, and checks that inter-image navigation is suspended
+  then restored.
 - In-app browser inspection: desktop 1280 px rendering, physical keyboard flow and first-click
   lazy loading. Mobile rendering and interactions use the Chromium/WebKit device profiles above.
 
@@ -275,8 +306,9 @@ Pagefind, Giscus or image-preview interactions, so those paths remain Playwright
   snapshots. They protect the rendered contract across desktop/mobile profiles, but exact
   device-pixel parity on macOS and iPhone Safari still belongs in that physical release smoke.
 - Browser-zoom automation uses Chromium CDP. WebKit simulates the DPR/gesture signal and verifies
-  the native touch handoff and resulting pan/reset contract, but Playwright cannot drive Safari's
-  actual zoom UI, physical pinch gesture or system share sheet.
+  the native touch handoff plus the absence of custom transforms or canceled events, but Playwright
+  cannot drive Safari's actual zoom UI, physical pinch gesture, smart-zoom reset or system share
+  sheet.
 - The cold preview trace records two WebP image request events and a separate share-file fetch.
   Some image events can be cache-backed, but the share prefetch can still transfer the full file.
   It is the current cost of keeping Safari's native file share inside transient user activation
@@ -298,20 +330,25 @@ Pagefind, Giscus or image-preview interactions, so those paths remain Playwright
   adds 9 requests and 27,623 B gzip over the older opening-only trace. The benefit is the complete
   removal of this work from routes where search stays closed.
 - Splitting raises the deployable JavaScript total by four artifacts and 2,587 B gzip even though
-  the fresh-home initial gzip falls by 43.2%.
+  the refreshed fresh-home initial gzip is 45.9% below the baseline.
 - All three final mobile Lighthouse runs scored 100, but their LCP remained 74–77 ms slower than
   the baseline range. A perfect aggregate score therefore does not erase the timing regression.
-- `inlineStylesheets: "always"` avoids a render-blocking stylesheet request but repeats about
-  600 KiB of raw CSS (614,322 B, or 599.9 KiB) across the six generated HTML documents. Moving
-  shared CSS to cached files is a separate visual/FOUC experiment, not hidden inside this
-  migration.
+- Extracted, hashed CSS adds render-blocking stylesheet requests on a cold route. The trade-off is
+  deliberate: route-specific styles no longer inflate every document, and shared styles are
+  reused from the immutable browser cache on subsequent navigation. Keep the per-route imports and
+  verify the generated external stylesheet links when changing Astro or Vite; the configuration
+  value alone is not a general no-inline-style assertion.
 - The current build contains only two unlisted technical posts, so the Pagefind index is nearly
   empty and its search measurements are not representative of a production corpus.
 - The same small corpus does not exercise list-view tag pagination above ten posts in a rendered
   browser route. Its Material import is tied to the shared `hasPagination` condition, but a larger
   production-like fixture would give stronger regression coverage.
-- The Konachan set dominates `dist` (300 WebP files, 23,727,528 B, or 22.6 MiB), but the manifest,
-  Worker and chosen images are outside the fresh initial path.
+- The Konachan set dominates `dist` (300 WebP files, 23,727,528 B, or 22.6 MiB), but its runtime
+  manifest, controller and chosen images are outside the fresh initial path. The browser reads the
+  compact runtime manifest rather than the authoring manifest; source colors are precomputed at
+  refresh time, so the normal acknowledged path starts no color Worker, and the 960/1920 variant
+  is selected against the full `background-size: cover` geometry (width, height and source aspect
+  ratio) multiplied by DPR.
 - Dependabot applies a one-day version cooldown to match pnpm 11's 1,440-minute minimum release
   age. Without it, a fresh automated version PR can be impossible for CI and Vercel to install
   until the package matures; Dependabot security updates remain outside the cooldown.

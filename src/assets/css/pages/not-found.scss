@@ -52,7 +52,6 @@ body.not-found-page .site-content,
 }
 
 .not-found-home-hotspot:is(:hover, :focus, :focus-visible, :active) {
-  outline: 0;
   background: transparent;
   text-decoration: none;
 }

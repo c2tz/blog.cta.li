@@ -15,15 +15,24 @@ import {
   trackpadWheel,
 } from "./image-preview-fixture";
 
-test("keeps gallery gestures at 100% and pans a browser-zoomed image with mouse or trackpad", async ({
+test("keeps gallery gestures at 100% and leaves browser-zoomed pan to the browser", async ({
   page,
   browserName,
 }) => {
   const { dialog } = await openLightbox(page);
   const image = dialog.locator("[data-image-dialog-image]");
+  const shell = dialog.locator("[data-image-dialog-shell]");
   const stage = dialog.locator("[data-image-dialog-stage]");
   const status = dialog.locator("[data-image-status]");
   const toolbar = dialog.locator("[data-image-dialog-toolbar]");
+
+  await expect(shell).toHaveCSS("touch-action", "pinch-zoom");
+  await expect(stage).toHaveCSS("touch-action", "pinch-zoom");
+  await expect(image).toHaveCSS("touch-action", "pinch-zoom");
+  const toolbarAnchor = await toolbar.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { right: style.right, top: style.top };
+  });
 
   await mouseDrag(page, stage, -180, 0);
   await expect(status).toHaveText("Image 2 sur 2 : konachan-382339.jpg");
@@ -31,6 +40,7 @@ test("keeps gallery gestures at 100% and pans a browser-zoomed image with mouse 
   await trackpadSwipe(stage, -100);
   await expect(status).toHaveText("Image 1 sur 2 : konachan-382339.jpg");
 
+  let restoreBrowserZoom: () => Promise<void>;
   if (browserName !== "chromium") {
     const originalDpr = await stage.evaluate(() => {
       const current = window.devicePixelRatio;
@@ -47,202 +57,68 @@ test("keeps gallery gestures at 100% and pans a browser-zoomed image with mouse 
       }
     });
     expect(originalDpr).not.toBeNull();
-    await expect(stage).toHaveAttribute("data-browser-zoomed", "");
-    await expect(stage).toHaveCSS("cursor", "grab");
-    await expect
-      .poll(() => stage.evaluate((element) => getComputedStyle(element).touchAction))
-      .toBe("pan-x pan-y pinch-zoom");
-
-    const nativeTouchAllowed = await stage.evaluate((element) => {
-      const dispatch = (type: string, pointerId: number, clientX: number, clientY: number) =>
-        element.dispatchEvent(
-          new PointerEvent(type, {
-            bubbles: true,
-            cancelable: true,
-            clientX,
-            clientY,
-            pointerId,
-            pointerType: "touch",
-          }),
-        );
-      const results = [
-        dispatch("pointerdown", 701, 120, 180),
-        dispatch("pointerdown", 702, 200, 180),
-        dispatch("pointermove", 701, 150, 210),
-        dispatch("pointermove", 702, 230, 210),
-        dispatch("pointerup", 701, 150, 210),
-        dispatch("pointerup", 702, 230, 210),
-      ];
-      return results.every(Boolean);
-    });
-    expect(nativeTouchAllowed).toBe(true);
-
-    const wheelPrevented = await trackpadWheel(stage, 80, 60);
-    expect(wheelPrevented).toBe(true);
-    await expect
-      .poll(() => image.evaluate((element) => (element as HTMLElement).style.transform))
-      .toMatch(/^translate3d\((?!0px, 0px)/);
-    await trackpadWheel(stage, 100_000, -100_000);
-    const boundedPan = await stage.evaluate((element) => {
-      const image = element.querySelector<HTMLElement>("[data-image-dialog-image]");
-      if (!image) return null;
-      const rect = element.getBoundingClientRect();
-      const matrix = new DOMMatrixReadOnly(image.style.transform);
-      return {
-        bounds: { x: rect.width / 4, y: rect.height / 4 },
-        pan: { x: matrix.m41, y: matrix.m42 },
-      };
-    });
-    expect(boundedPan?.pan.x).toBeCloseTo(-(boundedPan?.bounds.x ?? 0), 1);
-    expect(boundedPan?.pan.y).toBeCloseTo(boundedPan?.bounds.y ?? 0, 1);
-
-    await stage.evaluate((_, dpr) => {
-      Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: dpr });
-      document.dispatchEvent(new Event("gestureend"));
-      window.dispatchEvent(new Event("resize"));
-    }, originalDpr);
-    await expect(stage).not.toHaveAttribute("data-browser-zoomed");
-    await expect
-      .poll(() => image.evaluate((element) => (element as HTMLElement).style.transform))
-      .toBe("");
-    await page.waitForTimeout(260);
-    await trackpadSwipe(stage, 100);
-    await expect(status).toHaveText("Image 2 sur 2 : konachan-382339.jpg");
-    return;
+    restoreBrowserZoom = async () => {
+      await stage.evaluate((_, dpr) => {
+        Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: dpr });
+        document.dispatchEvent(new Event("gestureend"));
+        window.dispatchEvent(new Event("resize"));
+      }, originalDpr);
+    };
+  } else {
+    const cdp = await page.context().newCDPSession(page);
+    const browserZoomAvailable = await cdp
+      .send("Emulation.setPageScaleFactor", { pageScaleFactor: 2 })
+      .then(() => true)
+      .catch(() => false);
+    expect(browserZoomAvailable).toBe(true);
+    restoreBrowserZoom = async () => {
+      await cdp.send("Emulation.setPageScaleFactor", { pageScaleFactor: 1 });
+    };
   }
 
-  const cdp = await page.context().newCDPSession(page);
-  const browserZoomAvailable = await cdp
-    .send("Emulation.setPageScaleFactor", { pageScaleFactor: 2 })
-    .then(() => true)
-    .catch(() => false);
-  expect(browserZoomAvailable).toBe(true);
+  await expect(shell).toHaveAttribute("data-browser-zoomed", "");
   await expect(stage).toHaveAttribute("data-browser-zoomed", "");
+  await expect(shell).toHaveCSS("touch-action", "auto");
+  await expect(stage).toHaveCSS("touch-action", "auto");
+  await expect(image).toHaveCSS("touch-action", "auto");
+
+  const toolbarOffsets = await toolbar.evaluate((element) => ({
+    right: (element as HTMLElement).style.getPropertyValue("--site-image-dialog-visual-right"),
+    top: (element as HTMLElement).style.getPropertyValue("--site-image-dialog-visual-top"),
+  }));
+  expect(toolbarOffsets).toEqual({ right: "", top: "" });
   await expect
     .poll(() =>
       toolbar.evaluate((element) => {
-        const viewport = window.visualViewport;
-        if (!viewport) return false;
-        const rect = element.getBoundingClientRect();
-        return (
-          rect.left >= viewport.offsetLeft - 1 &&
-          rect.right <= viewport.offsetLeft + viewport.width + 1 &&
-          rect.top >= viewport.offsetTop - 1 &&
-          rect.bottom <= viewport.offsetTop + viewport.height + 1
-        );
+        const style = getComputedStyle(element);
+        return { right: style.right, top: style.top };
       }),
     )
-    .toBe(true);
-  await expect(stage).toHaveCSS("cursor", "grab");
-  await expect
-    .poll(async () => {
-      const value = await stage.evaluate((element) => getComputedStyle(element).touchAction);
-      return value === "manipulation" || value === "pan-x pan-y pinch-zoom";
-    })
-    .toBe(true);
+    .toEqual(toolbarAnchor);
 
-  // Safari and some touchpads can omit gestureend after native zoom. The hand
-  // must remain usable, and dezoom must still release gallery navigation.
-  await page.evaluate(() => document.dispatchEvent(new Event("gesturestart")));
-  await mouseDrag(page, stage, 120, 0);
-  const zoomPanTransform = await image.evaluate(
-    (element) => (element as HTMLElement).style.transform,
-  );
-  expect(zoomPanTransform).toMatch(/^translate3d\((?!0px)/);
-  await swipe(stage, "left");
-  await expect(stage).toHaveCSS("cursor", "grab");
-  await expect(status).toHaveText("Image 1 sur 2 : konachan-382339.jpg");
-  await expect
-    .poll(() =>
-      image.evaluate((element) => ({
-        opacity: (element as HTMLElement).style.opacity,
-        transform: (element as HTMLElement).style.transform,
-      })),
-    )
-    .toEqual({ opacity: "", transform: zoomPanTransform });
-
-  const readImageTranslation = () =>
-    image.evaluate((element) => {
-      const transform = (element as HTMLElement).style.transform;
-      const matrix = transform ? new DOMMatrixReadOnly(transform) : new DOMMatrixReadOnly();
-      return { x: matrix.m41, y: matrix.m42 };
-    });
-  const beforeWheelTransform = await readImageTranslation();
   const wheelPrevented = await trackpadWheel(stage, 80, 60);
-  expect(wheelPrevented).toBe(true);
+  expect(wheelPrevented).toBe(false);
+  await expect(image).not.toHaveAttribute("style", /translate3d/);
+
+  await mouseDrag(page, stage, 120, 0);
+  await swipe(stage, "left");
   await expect(status).toHaveText("Image 1 sur 2 : konachan-382339.jpg");
-  await expect.poll(readImageTranslation).toEqual({
-    x: beforeWheelTransform.x - 80,
-    y: beforeWheelTransform.y - 60,
+  await expect(image).not.toHaveAttribute("style", /translate3d/);
+
+  await stage.evaluate((element) => {
+    element.addEventListener(
+      "dblclick",
+      (event) =>
+        element.setAttribute("data-test-double-click-prevented", String(event.defaultPrevented)),
+      { once: true },
+    );
   });
+  await stage.dblclick();
+  await expect(stage).toHaveAttribute("data-test-double-click-prevented", "false");
+  await expect(toolbar).not.toHaveClass(/is-hidden/);
 
-  const beforeNativePinch = await readImageTranslation();
-  const nativePinchPrevented = await trackpadWheel(stage, 50, 40, true);
-  expect(nativePinchPrevented).toBe(false);
-  await expect.poll(readImageTranslation).toEqual(beforeNativePinch);
-
-  await trackpadWheel(stage, 100_000, -100_000);
-  const boundedPan = await stage.evaluate((element) => {
-    const image = element.querySelector<HTMLElement>("[data-image-dialog-image]");
-    if (!image) return null;
-
-    const scale = Math.max(1, window.visualViewport?.scale ?? 1);
-    const hiddenRatio = 1 - 1 / scale;
-    const rect = element.getBoundingClientRect();
-    const matrix = new DOMMatrixReadOnly(image.style.transform);
-    return {
-      bounds: {
-        x: Math.max(0, (rect.width * hiddenRatio) / 2),
-        y: Math.max(0, (rect.height * hiddenRatio) / 2),
-      },
-      pan: { x: matrix.m41, y: matrix.m42 },
-    };
-  });
-  expect(boundedPan).not.toBeNull();
-  expect(boundedPan?.pan.x).toBeCloseTo(-(boundedPan?.bounds.x ?? 0), 1);
-  expect(boundedPan?.pan.y).toBeCloseTo(boundedPan?.bounds.y ?? 0, 1);
-
-  await cdp.send("Emulation.setPageScaleFactor", { pageScaleFactor: 1 });
-  await expect(stage).not.toHaveAttribute("data-browser-zoomed");
-  await page.waitForTimeout(260);
-  await expect(dialog.locator(".site-image-dialog-image--outgoing")).toHaveCount(0);
-  await expect
-    .poll(() =>
-      image.evaluate((element) => ({
-        opacity: (element as HTMLElement).style.opacity,
-        transform: (element as HTMLElement).style.transform,
-      })),
-    )
-    .toEqual({ opacity: "", transform: "" });
-
-  const pageZoomAvailable = await stage.evaluate(() => {
-    const current = window.devicePixelRatio;
-    try {
-      Object.defineProperty(window, "devicePixelRatio", {
-        configurable: true,
-        value: current * 1.25,
-      });
-      window.dispatchEvent(new Event("resize"));
-      return current;
-    } catch {
-      return null;
-    }
-  });
-  expect(pageZoomAvailable).not.toBeNull();
-  await expect(stage).toHaveAttribute("data-browser-zoomed", "");
-  await mouseDrag(page, stage, -90, 60);
-  await expect(status).toHaveText("Image 1 sur 2 : konachan-382339.jpg");
-  await expect
-    .poll(() => image.evaluate((element) => (element as HTMLElement).style.transform))
-    .toMatch(/^translate3d\((?!0px, 0px)/);
-
-  await stage.evaluate((_, originalDpr) => {
-    Object.defineProperty(window, "devicePixelRatio", {
-      configurable: true,
-      value: originalDpr,
-    });
-    window.dispatchEvent(new Event("resize"));
-  }, pageZoomAvailable);
+  await restoreBrowserZoom();
+  await expect(shell).not.toHaveAttribute("data-browser-zoomed");
   await expect(stage).not.toHaveAttribute("data-browser-zoomed");
   await page.waitForTimeout(260);
   await expect

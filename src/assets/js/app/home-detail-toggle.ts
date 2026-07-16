@@ -5,20 +5,11 @@ import {
   SITE_LEGACY_STORAGE_KEYS,
   SITE_STORAGE_KEYS,
 } from "@/lib/site-contracts";
-
-const readCookie = (name: string) => {
-  const encodedName = `${encodeURIComponent(name)}=`;
-  const cookie = document.cookie
-    .split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(encodedName));
-  if (!cookie) return null;
-  try {
-    return decodeURIComponent(cookie.slice(encodedName.length));
-  } catch {
-    return null;
-  }
-};
+import {
+  firstNormalizedValue,
+  readCookieValue,
+  serializeCookie,
+} from "@/assets/js/app/site-persistence.js";
 
 const normalize = (value: string | null) => {
   if (value === "true" || value === "detailed") return true;
@@ -47,10 +38,10 @@ function enhanceDetailToggle(root: HTMLElement) {
         return null;
       }
     })(),
-    readCookie(SITE_COOKIE_NAMES.homeDetailView),
-    readCookie(SITE_LEGACY_COOKIE_NAMES.homeDetailView),
+    readCookieValue(document.cookie, SITE_COOKIE_NAMES.homeDetailView),
+    readCookieValue(document.cookie, SITE_LEGACY_COOKIE_NAMES.homeDetailView),
   ];
-  let detailed = candidates.map(normalize).find((value) => value !== null) ?? false;
+  let detailed = firstNormalizedValue(candidates, normalize) ?? false;
 
   const persist = () => {
     const value = detailed ? "true" : "false";
@@ -58,8 +49,10 @@ function enhanceDetailToggle(root: HTMLElement) {
       localStorage.setItem(SITE_STORAGE_KEYS.homeDetailView, value);
       localStorage.removeItem(SITE_LEGACY_STORAGE_KEYS.homeDetailView);
     } catch {}
-    document.cookie = `${encodeURIComponent(SITE_COOKIE_NAMES.homeDetailView)}=${value}; Max-Age=31536000; Path=/; SameSite=Lax`;
-    document.cookie = `${encodeURIComponent(SITE_LEGACY_COOKIE_NAMES.homeDetailView)}=; Max-Age=0; Path=/; SameSite=Lax`;
+    document.cookie = serializeCookie(SITE_COOKIE_NAMES.homeDetailView, value);
+    document.cookie = serializeCookie(SITE_LEGACY_COOKIE_NAMES.homeDetailView, "", {
+      maxAgeSeconds: 0,
+    });
   };
 
   const apply = () => {

@@ -1,4 +1,5 @@
 import { expect, test as base, type Locator, type Page } from "@playwright/test";
+import { observePageRuntime } from "./runtime-observer";
 export { expect };
 
 export const ROUTES = [
@@ -99,7 +100,8 @@ export async function waitForAppReady(page: Page) {
 }
 
 export async function prepareClipboardWrite(page: Page) {
-  if (!test.info().project.name.startsWith("webkit")) {
+  const projectName = test.info().project.name;
+  if (!projectName.startsWith("webkit") && !projectName.startsWith("firefox")) {
     await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
     return false;
   }
@@ -213,12 +215,7 @@ export const test = base.extend({
     const geoRequests = { count: 0 };
     pageRuntimeErrors.set(page, runtimeErrors);
     geoRequestCounts.set(page, geoRequests);
-    page.on("pageerror", (error) => runtimeErrors.push(error.message));
-    page.on("console", (message) => {
-      if (message.type() === "error" || message.type() === "warning") {
-        runtimeErrors.push(message.text());
-      }
-    });
+    await observePageRuntime(page, runtimeErrors);
 
     await page.route("https://api.ipapi.is/**", (route) => {
       geoRequests.count += 1;

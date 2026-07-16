@@ -104,7 +104,7 @@ test("searches through the Material Web text field", async ({ page }) => {
   ).toHaveCount(0);
 });
 
-test("keeps every search sort option visible above the dialog surface", async ({ page }) => {
+test("keeps the official Material filled select and its complete sort menu", async ({ page }) => {
   test.skip(test.info().project.name.includes("mobile"), "The sort select is hidden on mobile.");
 
   await gotoRoute(page, "/");
@@ -117,6 +117,9 @@ test("keeps every search sort option visible above the dialog surface", async ({
   await expect(searchDialog.locator("[data-search-input]")).toHaveAttribute("name", "query");
   await expect(sortSelect).toHaveAttribute("id", /-sort$/);
   await expect(sortSelect).toHaveAttribute("name", "sort");
+  await expect(sortSelect).toHaveJSProperty("localName", "md-filled-select");
+  await expect(sortSelect.locator('[slot="trailing-icon"]')).toHaveCount(0);
+  await expect(sortSelect.locator(".site-material-menu-check")).toHaveCount(0);
   await expect.poll(() => sortSelect.evaluate((select) => Boolean(select.shadowRoot))).toBe(true);
   await expect
     .poll(() => sortSelect.evaluate((select) => (select as HTMLInputElement).value))
@@ -127,14 +130,29 @@ test("keeps every search sort option visible above the dialog surface", async ({
   await expect(sortOptions).toHaveCount(3);
 
   const relevanceOption = sortSelect.locator('md-select-option[value="relevance"]');
+  const newestOption = sortSelect.locator('md-select-option[value="created-desc"]');
   const nameOption = sortSelect.locator('md-select-option[value="title-asc"]');
   await expect(relevanceOption).toBeVisible();
-  await expect(relevanceOption).toHaveAttribute("data-selected-option", "");
-  await expect(relevanceOption.locator(".site-material-menu-check")).toHaveCSS(
-    "visibility",
-    "visible",
-  );
-  await expect(sortSelect.locator("[data-selected-option]")).toHaveCount(1);
+  await expect(relevanceOption).toHaveJSProperty("localName", "md-select-option");
+  await expect(relevanceOption).toHaveJSProperty("selected", true);
+  await expect(newestOption).toHaveJSProperty("selected", false);
+  await expect(nameOption).toHaveJSProperty("selected", false);
+
+  const officialStructure = await sortSelect.evaluate((select) => {
+    const menu = select.shadowRoot?.querySelector("md-menu");
+    const field = select.shadowRoot?.querySelector('[part="field"]');
+    return {
+      fieldPart: field?.getAttribute("part"),
+      menuName: menu?.localName,
+      optionNames: Array.from(select.children, (option) => option.localName),
+    };
+  });
+  expect(officialStructure).toEqual({
+    fieldPart: "field",
+    menuName: "md-menu",
+    optionNames: ["md-select-option", "md-select-option", "md-select-option"],
+  });
+
   await page.keyboard.press("Escape");
   await expect
     .poll(() => sortSelect.evaluate((select) => (select as HTMLElement & { open: boolean }).open))
@@ -145,116 +163,20 @@ test("keeps every search sort option visible above the dialog surface", async ({
   await expect
     .poll(() => sortSelect.evaluate((select) => select.matches(":focus-within")))
     .toBe(true);
+  await expect(sortSelect).not.toHaveAttribute("data-menu-open", "");
   await openMaterialSelect(sortSelect);
   await expect(relevanceOption).toBeVisible();
-  const expectOptionFocus = async (option: typeof relevanceOption) => {
-    await expect
-      .poll(() => option.evaluate((element) => element.matches(":focus-within")))
-      .toBe(true);
-    await expect
-      .poll(() =>
-        option.evaluate((element) => {
-          const focusRing = element.shadowRoot?.querySelector("md-focus-ring");
-          return focusRing ? getComputedStyle(focusRing).display : "missing";
-        }),
-      )
-      .toBe("flex");
-    await expect
-      .poll(() =>
-        option.evaluate((element) => {
-          const focusRing = element.shadowRoot?.querySelector("md-focus-ring");
-          return focusRing ? getComputedStyle(focusRing).color : "rgba(0, 0, 0, 0)";
-        }),
-      )
-      .not.toBe("rgba(0, 0, 0, 0)");
-    await expect
-      .poll(() =>
-        option.evaluate((element) => {
-          const focusRing = element.shadowRoot?.querySelector("md-focus-ring");
-          return {
-            running: Boolean(
-              focusRing
-                ?.getAnimations({ subtree: true })
-                .some((animation) => ["pending", "running"].includes(animation.playState)),
-            ),
-            width: focusRing ? getComputedStyle(focusRing).borderTopWidth : "missing",
-          };
-        }),
-      )
-      .toEqual({ running: false, width: "2px" });
-  };
-
-  await expectOptionFocus(relevanceOption);
-  const sortVisualState = await sortSelect.evaluate((select) => {
-    const field = select.shadowRoot?.querySelector('[part="field"]');
-    const trailingIcon = select.shadowRoot?.querySelector(".icon.trailing");
-    const menuSurface = select.shadowRoot
-      ?.querySelector("md-menu")
-      ?.shadowRoot?.querySelector(".menu");
-    const focusRing = select
-      .querySelector('md-select-option[value="relevance"]')
-      ?.shadowRoot?.querySelector("md-focus-ring");
-    const customChevron = select.querySelector(".site-search-sort-chevron");
-    const firstOption = select.querySelector("md-select-option");
-    const wrapper = select.closest(".site-search-panel-field");
-    const probe = document.createElement("span");
-    probe.style.position = "fixed";
-    probe.style.visibility = "hidden";
-    document.body.append(probe);
-    const resolveColor = (token: string) => {
-      probe.style.color = `var(${token})`;
-      return getComputedStyle(probe).color;
-    };
-
-    const result = {
-      chevronColor: trailingIcon ? getComputedStyle(trailingIcon).color : "missing",
-      chevronWidth: customChevron?.getBoundingClientRect().width ?? 0,
-      cursor: field ? getComputedStyle(field).cursor : "missing",
-      focusColor: focusRing ? getComputedStyle(focusRing).color : "missing",
-      focusInset: focusRing ? getComputedStyle(focusRing).top : "missing",
-      focusWidth: focusRing ? getComputedStyle(focusRing).borderTopWidth : "missing",
-      menuRadius: menuSurface ? getComputedStyle(menuSurface).borderTopLeftRadius : "missing",
-      menuHeight: menuSurface?.getBoundingClientRect().height ?? 0,
-      optionChecks: Array.from(select.querySelectorAll("md-select-option"), (option) => ({
-        endIcons: option.querySelectorAll('[slot="end"]').length,
-        inlineIcons: option.querySelectorAll(
-          ".site-material-option-content > .site-material-menu-check",
-        ).length,
-        inlineIconWidth:
-          option.querySelector(".site-material-menu-check")?.getBoundingClientRect().width ?? 0,
-        startIcons: option.querySelectorAll('[slot="start"]').length,
-      })),
-      primaryColor: resolveColor("--md-sys-color-primary"),
-      secondaryColor: resolveColor("--md-sys-color-secondary"),
-      selectedContainer: getComputedStyle(firstOption as Element)
-        .getPropertyValue("--md-menu-item-selected-container-color")
-        .trim(),
-      optionHeight: firstOption?.getBoundingClientRect().height ?? 0,
-      selectWidth: select.getBoundingClientRect().width,
-      wrapperRadius: wrapper ? getComputedStyle(wrapper).borderTopLeftRadius : "missing",
-    };
-    probe.remove();
-    return result;
-  });
-  expect(sortVisualState).toMatchObject({
-    cursor: "pointer",
-    chevronWidth: 24,
-    focusInset: "4px",
-    focusWidth: "2px",
-    menuHeight: 160,
-    menuRadius: "8px",
-    optionChecks: [
-      { endIcons: 0, inlineIcons: 1, inlineIconWidth: 24, startIcons: 0 },
-      { endIcons: 0, inlineIcons: 1, inlineIconWidth: 24, startIcons: 0 },
-      { endIcons: 0, inlineIcons: 1, inlineIconWidth: 24, startIcons: 0 },
-    ],
-    optionHeight: 48,
-    selectWidth: 152,
-    wrapperRadius: "28px",
-  });
-  expect(sortVisualState.focusColor).toBe(sortVisualState.secondaryColor);
-  expect(sortVisualState.focusColor).not.toBe(sortVisualState.primaryColor);
-  expect(sortVisualState.selectedContainer).toBe("transparent");
+  await expect
+    .poll(() => relevanceOption.evaluate((element) => element.matches(":focus-within")))
+    .toBe(true);
+  await expect
+    .poll(() =>
+      relevanceOption.evaluate((element) => {
+        const focusRing = element.shadowRoot?.querySelector("md-focus-ring");
+        return focusRing ? getComputedStyle(focusRing).display : "missing";
+      }),
+    )
+    .toBe("flex");
   await expect(nameOption).toBeVisible();
   await expect
     .poll(() =>
@@ -274,11 +196,25 @@ test("keeps every search sort option visible above the dialog surface", async ({
 
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("ArrowDown");
-  await expectOptionFocus(nameOption);
+  await expect
+    .poll(() => nameOption.evaluate((element) => element.matches(":focus-within")))
+    .toBe(true);
   await page.keyboard.press("ArrowDown");
-  await expectOptionFocus(relevanceOption);
+  await expect
+    .poll(() => nameOption.evaluate((element) => element.matches(":focus-within")))
+    .toBe(true);
   await page.keyboard.press("ArrowUp");
-  await expectOptionFocus(nameOption);
+  await expect
+    .poll(() => newestOption.evaluate((element) => element.matches(":focus-within")))
+    .toBe(true);
+  await page.keyboard.press("Home");
+  await expect
+    .poll(() => relevanceOption.evaluate((element) => element.matches(":focus-within")))
+    .toBe(true);
+  await page.keyboard.press("End");
+  await expect
+    .poll(() => nameOption.evaluate((element) => element.matches(":focus-within")))
+    .toBe(true);
   await page.keyboard.press("Enter");
 
   await expect
@@ -293,6 +229,88 @@ test("keeps every search sort option visible above the dialog surface", async ({
   await expect
     .poll(() => sortSelect.evaluate((select) => select.matches(":focus-within")))
     .toBe(true);
+});
+
+test("never exposes the internal Pagefind placeholder", async ({ page }) => {
+  test.skip(test.info().project.name.includes("mobile"), "The sort select is hidden on mobile.");
+
+  await gotoRoute(page, "/");
+  await openSearch(page);
+  const dialog = page.locator("md-dialog.site-search-dialog[open]");
+  const sortSelect = dialog.locator("[data-sort-select]");
+  await sortSelect.evaluate((select) => {
+    const control = select as HTMLElement & { value: string };
+    control.value = "created-desc";
+    control.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+
+  await expect(dialog.getByText("Aucun article trouvé.")).toBeVisible();
+  await expect(dialog.locator('a[href="/posts/pagefind-index-placeholder/"]')).toHaveCount(0);
+
+  await dialog
+    .getByRole("searchbox", { name: "Mot-clé, titre ou contenu" })
+    .fill("pagefind-internal-placeholder-4d6af32b");
+  await expect(dialog.getByText("Aucun article trouvé.")).toBeVisible();
+  await expect(dialog.locator('a[href="/posts/pagefind-index-placeholder/"]')).toHaveCount(0);
+});
+
+test("renders only safe Pagefind markup and same-origin result links", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__pagefindModule = {
+      filters: async () => ({ tag: {} }),
+      search: async () => ({
+        results: [
+          {
+            raw_url: "javascript:alert(1)",
+            score: 2,
+            data: async () => ({
+              excerpt: "Résultat dangereux",
+              title: "Lien dangereux",
+              url: "javascript:alert(1)",
+            }),
+          },
+          {
+            raw_url: "/safe-result/",
+            score: 1,
+            data: async () => ({
+              excerpt:
+                'Extrait <mark data-unsafe="true">sûr</mark><img src=x onerror="window.__searchXss=true"><script>window.__searchXss=true</script>',
+              title: "Résultat sûr",
+              url: "/safe-result/",
+            }),
+          },
+        ],
+      }),
+    };
+  });
+
+  await gotoRoute(page, "/");
+  await openSearch(page);
+  const dialog = page.locator("md-dialog.site-search-dialog[open]");
+  await dialog.getByRole("searchbox", { name: "Mot-clé, titre ou contenu" }).fill("résultat sûr");
+
+  const results = dialog.locator("[data-search-results]");
+  await expect(results.locator("li")).toHaveCount(1);
+  await expect(results.getByRole("link", { name: "Résultat sûr" })).toHaveAttribute(
+    "href",
+    "/safe-result/",
+  );
+  const highlightedTerms = results.locator("mark");
+  await expect(highlightedTerms).toHaveCount(2);
+  await expect(results.getByText("sûr", { exact: true })).toHaveText("sûr");
+  await expect
+    .poll(() =>
+      highlightedTerms.evaluateAll((marks) => marks.every((mark) => !mark.hasAttributes())),
+    )
+    .toBe(true);
+  await expect(results.locator("img, script, style, template")).toHaveCount(0);
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        Boolean((window as typeof window & { __searchXss?: boolean }).__searchXss),
+      ),
+    )
+    .toBe(false);
 });
 
 test("reconnects the desktop sort after a closed compact resize without console warnings", async ({

@@ -19,24 +19,43 @@ const SATORI_FONTS = [
   },
 ] as const;
 
+type SatoriFont = {
+  data: Buffer;
+  name: string;
+  style: "normal";
+  weight: (typeof SATORI_FONTS)[number]["weight"];
+};
+
+let satoriFontsPromise: Promise<SatoriFont[]> | undefined;
+
+function loadSatoriFonts() {
+  satoriFontsPromise ??= (async () => {
+    await fontEditor.woff2.init();
+
+    return Promise.all(
+      SATORI_FONTS.map(async ({ file, weight }) => {
+        const fontWoff2Data = await fs.readFile(path.join(process.cwd(), "public/fonts", file));
+        const data = Buffer.from(fontEditor.woff2tottf(fontEditor.toArrayBuffer(fontWoff2Data)));
+
+        return {
+          name: "Roboto",
+          data,
+          weight,
+          style: "normal" as const,
+        };
+      }),
+    );
+  })().catch((error) => {
+    satoriFontsPromise = undefined;
+    throw error;
+  });
+
+  return satoriFontsPromise;
+}
+
 export const GET: APIRoute = async ({ props }) => {
   const post = props as CollectionEntry<"blog">;
-
-  await fontEditor.woff2.init();
-
-  const fonts = await Promise.all(
-    SATORI_FONTS.map(async ({ file, weight }) => {
-      const fontWoff2Data = await fs.readFile(path.join(process.cwd(), "public/fonts", file));
-      const data = Buffer.from(fontEditor.woff2tottf(fontEditor.toArrayBuffer(fontWoff2Data)));
-
-      return {
-        name: "Roboto",
-        data,
-        weight,
-        style: "normal" as const,
-      };
-    }),
-  );
+  const fonts = await loadSatoriFonts();
 
   const width = 1200;
   const height = 600;

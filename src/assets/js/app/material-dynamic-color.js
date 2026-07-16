@@ -1,4 +1,5 @@
 import { MATERIAL_DYNAMIC_COLOR_ROLES, SITE_EVENTS, SITE_STORAGE_KEYS } from "@/lib/site-contracts";
+import { parseJsonValue } from "./site-persistence.js";
 
 const PALETTE_VERSION = 1;
 const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
@@ -23,11 +24,7 @@ function normalizeScheme(value) {
 function normalizeMaterialDynamicColorPalette(value) {
   let candidate = value;
   if (typeof candidate === "string") {
-    try {
-      candidate = JSON.parse(candidate);
-    } catch {
-      return null;
-    }
+    candidate = parseJsonValue(candidate);
   }
 
   if (!candidate || typeof candidate !== "object" || candidate.version !== PALETTE_VERSION) {

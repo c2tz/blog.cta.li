@@ -1,4 +1,4 @@
-name: Sync security header hashes
+name: Validate security header hashes
 
 on:
   pull_request:
@@ -12,33 +12,32 @@ on:
       - ready_for_review
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: sync-security-header-hashes-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
-  sync-header-hashes:
+  validate-header-hashes:
+    # Keep this exact name in sync with both protected-branch rulesets.
     name: Build and sync security header hashes
-    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
-      - name: Checkout pull request branch
-        uses: actions/checkout@v7
+      - name: Checkout pull request merge commit without stored credentials
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          ref: ${{ github.head_ref }}
-          fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6.0.9
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
           version: 11.1.3
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 22.22.3
           cache: pnpm
@@ -49,21 +48,17 @@ jobs:
       - name: Build static output
         run: pnpm build
 
-      - name: Sync security header hashes
+      - name: Derive expected security header hashes locally
         run: pnpm sync:headers
 
       - name: Validate security headers
         run: pnpm check:headers
 
-      - name: Commit updated header hashes
+      - name: Require generated hashes to be committed
         run: |
-          if git diff --quiet -- vercel.json; then
-            echo "Security header hashes are already committed."
-            exit 0
+          if ! git diff --exit-code -- vercel.json; then
+            echo "::error file=vercel.json::Security header hashes are stale. Run 'pnpm build && pnpm sync:headers', then commit vercel.json."
+            exit 1
           fi
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add vercel.json
-          git commit -m "chore(ci): update security header hashes"
-          git push
+          echo "Security header hashes are committed and up to date."

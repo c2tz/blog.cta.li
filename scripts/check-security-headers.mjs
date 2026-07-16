@@ -42,6 +42,11 @@ const OPTIONAL_HARDENING_HEADERS = [
 
 const GISCUS_ORIGIN = new URL("https://giscus.app");
 const IP_GEOLOCATION_ORIGIN = new URL("https://api.ipapi.is");
+const REQUIRED_CACHE_RULES = new Map([
+  ["/_astro/(.*)", ["public", "max-age=31536000", "immutable"]],
+  ["/konachan-backgrounds.runtime.json", ["public", "max-age=0"]],
+  ["/konachan-backgrounds/(.*).webp", ["public", "max-age=31536000", "immutable"]],
+]);
 
 function cspDirective(csp, directiveName) {
   return csp
@@ -97,6 +102,20 @@ const documentHeaders = new Map(
 );
 
 const problems = [];
+
+for (const [source, requiredTokens] of REQUIRED_CACHE_RULES) {
+  const rule = vercelConfig.headers?.find((candidate) => candidate.source === source);
+  const cacheControl = rule?.headers?.find((header) => header.key === "Cache-Control")?.value;
+  if (!cacheControl) {
+    problems.push(`Missing Cache-Control rule for ${source}.`);
+    continue;
+  }
+  for (const token of requiredTokens) {
+    if (!cacheControl.includes(token)) {
+      problems.push(`Cache-Control for ${source} is missing "${token}".`);
+    }
+  }
+}
 
 for (const [headerName, requiredTokens] of GLOBAL_REQUIRED_HEADERS) {
   const value = globalHeaders.get(headerName);

@@ -27,13 +27,15 @@ async function seedLocalPreferences(page: Page) {
   });
 }
 
-export async function seedFixedKonachanImage(page: Page) {
-  await page.addInitScript(() => {
+export async function seedFixedKonachanImage(page: Page, sourceColor?: string) {
+  await page.addInitScript((seededSourceColor) => {
     const image = {
       id: 405237,
       url: "/konachan-backgrounds/405237.webp",
       originalUrl: "https://konachan.com/post/show/405237",
       rating: "safe",
+      width: 1920,
+      height: 1080,
       variants: [
         {
           bytes: 54_484,
@@ -42,13 +44,14 @@ export async function seedFixedKonachanImage(page: Page) {
           width: 960,
         },
       ],
+      ...(seededSourceColor ? { sourceColor: seededSourceColor } : {}),
     };
 
     localStorage.setItem(
       "home-konachan-backgrounds-v8",
       JSON.stringify({ currentImage: image, images: [image], storedAt: Date.now() }),
     );
-  });
+  }, sourceColor);
 }
 
 export async function expectStoredSourceColor(page: Page, sourceColor: string) {

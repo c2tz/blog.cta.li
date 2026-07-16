@@ -23,6 +23,18 @@ import {
   KONACHAN_TAGS,
   getKonachanBackgroundPosts,
 } from "../src/lib/konachan-backgrounds.mjs";
+import {
+  KONACHAN_MAX_IMAGE_INPUT_BYTES,
+  KONACHAN_MAX_INPUT_PIXELS,
+  assertKonachanImageMimeType,
+  fetchKonachanResource,
+  readResponseBodyLimited,
+} from "../src/lib/konachan-network.mjs";
+import { serializeKonachanRuntimeManifest } from "../src/lib/konachan-runtime-manifest.mjs";
+import {
+  enrichKonachanManifestSourceColors,
+  materialSourceColorFromImageBuffer,
+} from "./lib/konachan-material-source-color.mjs";
 
 const ROOT_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PUBLIC_DIR = resolve(ROOT_DIR, "public");
@@ -30,6 +42,8 @@ const OUTPUT_DIR = resolve(PUBLIC_DIR, "konachan-backgrounds");
 const TEMP_DIR = resolve(PUBLIC_DIR, ".konachan-backgrounds-tmp");
 const MANIFEST_PATH = resolve(PUBLIC_DIR, "konachan-backgrounds.json");
 const MANIFEST_TEMP_PATH = `${MANIFEST_PATH}.tmp`;
+const RUNTIME_MANIFEST_PATH = resolve(PUBLIC_DIR, "konachan-backgrounds.runtime.json");
+const RUNTIME_MANIFEST_TEMP_PATH = `${RUNTIME_MANIFEST_PATH}.tmp`;
 const QUALITIES = [72, 64, 56, 48, 40, 32, 24, 18, 12, 8, 6];
 const RESPONSIVE_VARIANT_WIDTHS = [960];
 const RATING_ORDER = Object.keys(KONACHAN_RATING_TARGETS);
@@ -148,8 +162,16 @@ async function outputMatchesManifest(manifest) {
 }
 
 async function writeManifest(manifest) {
-  await writeFile(MANIFEST_TEMP_PATH, `${JSON.stringify(manifest, null, 2)}\n`);
+  await writeManifestTemps(manifest);
   await rename(MANIFEST_TEMP_PATH, MANIFEST_PATH);
+  await rename(RUNTIME_MANIFEST_TEMP_PATH, RUNTIME_MANIFEST_PATH);
+}
+
+async function writeManifestTemps(manifest) {
+  await Promise.all([
+    writeFile(MANIFEST_TEMP_PATH, `${JSON.stringify(manifest, null, 2)}\n`),
+    writeFile(RUNTIME_MANIFEST_TEMP_PATH, serializeKonachanRuntimeManifest(manifest)),
+  ]);
 }
 
 async function repairMissingPreservedImages(manifest) {
@@ -200,10 +222,12 @@ async function repairMissingPreservedImages(manifest) {
 
 async function preserveExistingAssets(message, manifest) {
   const repairedManifest = await repairMissingPreservedImages(manifest);
-
-  if (repairedManifest !== manifest) await writeManifest(repairedManifest);
-
   await prunePreservedOutput(repairedManifest);
+  const enriched = await enrichKonachanManifestSourceColors(repairedManifest, OUTPUT_DIR);
+  await writeManifest(enriched.manifest);
+  if (enriched.updatedCount > 0) {
+    console.warn(`Precomputed ${enriched.updatedCount} missing Konachan source color(s).`);
+  }
   logPreservedAssets(message);
 }
 
@@ -217,20 +241,42 @@ function hasMinimumIdDistance(postId, selectedIds) {
 }
 
 async function fetchImage(url) {
-  const response = await fetch(url, {
-    headers: { accept: "image/*" },
-    signal: AbortSignal.timeout(30_000),
+  const response = await fetchKonachanResource(url, {
+    resource: "image",
+    accept: "image/jpeg, image/png, image/webp",
   });
 
   if (!response.ok) throw new Error(`image_${response.status}`);
-  return Buffer.from(await response.arrayBuffer());
+  assertKonachanImageMimeType(response);
+  const bytes = await readResponseBodyLimited(response, KONACHAN_MAX_IMAGE_INPUT_BYTES);
+  return Buffer.from(bytes);
+}
+
+function sharpInput(input) {
+  return sharp(input, {
+    failOn: "error",
+    limitInputPixels: KONACHAN_MAX_INPUT_PIXELS,
+    sequentialRead: true,
+  });
 }
 
 async function compressBackground(input) {
+  const metadata = await sharpInput(input).metadata();
+  if (
+    !["jpeg", "png", "webp"].includes(metadata.format) ||
+    !Number.isSafeInteger(metadata.width) ||
+    !Number.isSafeInteger(metadata.height) ||
+    metadata.width <= 0 ||
+    metadata.height <= 0 ||
+    metadata.width * metadata.height > KONACHAN_MAX_INPUT_PIXELS
+  ) {
+    throw new Error("invalid_source_image");
+  }
+
   let smallest;
 
   for (const quality of QUALITIES) {
-    const buffer = await sharp(input, { failOnError: false })
+    const buffer = await sharpInput(input)
       .rotate()
       .resize(KONACHAN_OUTPUT_WIDTH, KONACHAN_OUTPUT_HEIGHT, {
         fit: "cover",
@@ -248,6 +294,9 @@ async function compressBackground(input) {
 }
 
 async function generateImage(post) {
+  const id = Number(post.id);
+  if (!Number.isSafeInteger(id) || id <= 0) throw new Error("invalid_post_id");
+
   const input = await fetchImage(post.remoteUrl);
   const result = await compressBackground(input);
 
@@ -255,17 +304,21 @@ async function generateImage(post) {
     throw new Error("compressed_image_too_large");
   }
 
-  const filename = `${post.id}.webp`;
+  const filename = `${id}.webp`;
   await writeFile(resolve(TEMP_DIR, filename), result.buffer);
   const variants = [];
+  let sourceColor = null;
 
   for (const width of RESPONSIVE_VARIANT_WIDTHS) {
-    const variantBuffer = await sharp(result.buffer, { failOnError: false })
+    const variantBuffer = await sharpInput(result.buffer)
       .resize({ width, withoutEnlargement: true })
       .webp({ quality: result.quality, effort: 6 })
       .toBuffer();
-    const variantFilename = `${post.id}-${width}.webp`;
+    const variantFilename = `${id}-${width}.webp`;
     await writeFile(resolve(TEMP_DIR, variantFilename), variantBuffer);
+    if (width === 960) {
+      sourceColor = await materialSourceColorFromImageBuffer(variantBuffer);
+    }
     variants.push({
       url: `/konachan-backgrounds/${variantFilename}`,
       width,
@@ -274,8 +327,10 @@ async function generateImage(post) {
     });
   }
 
+  if (!sourceColor) throw new Error("konachan_source_color_unavailable");
+
   return {
-    id: post.id,
+    id,
     url: `/konachan-backgrounds/${filename}`,
     originalUrl: post.remoteUrl,
     width: KONACHAN_OUTPUT_WIDTH,
@@ -287,6 +342,7 @@ async function generateImage(post) {
     source: post.source,
     author: post.author,
     tags: post.tags,
+    sourceColor,
     variants,
   };
 }
@@ -370,6 +426,8 @@ async function main() {
       return;
     }
 
+    const enriched = await enrichKonachanManifestSourceColors(previousManifest, OUTPUT_DIR);
+    await writeManifest(enriched.manifest);
     console.log("Konachan assets are already up to date.");
     return;
   }
@@ -397,10 +455,11 @@ async function main() {
     images,
   };
 
-  await writeFile(MANIFEST_TEMP_PATH, `${JSON.stringify(manifest, null, 2)}\n`);
+  await writeManifestTemps(manifest);
   await rm(OUTPUT_DIR, { recursive: true, force: true });
   await rename(TEMP_DIR, OUTPUT_DIR);
   await rename(MANIFEST_TEMP_PATH, MANIFEST_PATH);
+  await rename(RUNTIME_MANIFEST_TEMP_PATH, RUNTIME_MANIFEST_PATH);
 
   const files = await readdir(OUTPUT_DIR);
   const expectedFiles = expectedFileNames(images);
@@ -413,6 +472,7 @@ async function main() {
 main().catch(async (error) => {
   await rm(TEMP_DIR, { recursive: true, force: true });
   await rm(MANIFEST_TEMP_PATH, { force: true });
+  await rm(RUNTIME_MANIFEST_TEMP_PATH, { force: true });
   console.error(error.message);
   process.exitCode = 1;
 });

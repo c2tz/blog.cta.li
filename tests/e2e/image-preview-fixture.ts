@@ -1,4 +1,5 @@
 import { expect, test as base, type Locator, type Page } from "@playwright/test";
+import { observePageRuntime } from "./runtime-observer";
 export { expect };
 
 export const SOURCE_IMAGE_SELECTOR = ".site-prose img[data-image-dialog]";
@@ -238,12 +239,7 @@ export async function expectImageContained(stage: Locator) {
 export const test = base.extend({
   page: async ({ page }, use) => {
     const runtimeMessages: string[] = [];
-    page.on("pageerror", (error) => runtimeMessages.push(error.message));
-    page.on("console", (message) => {
-      if (message.type() === "error" || message.type() === "warning") {
-        runtimeMessages.push(message.text());
-      }
-    });
+    await observePageRuntime(page, runtimeMessages);
     await seedLocalPreferences(page);
     await page.goto("/posts/mdx-smoke-test/", { waitUntil: "domcontentloaded" });
     await expect

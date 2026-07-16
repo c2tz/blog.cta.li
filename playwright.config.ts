@@ -2,11 +2,110 @@ import { defineConfig, devices } from "@playwright/test";
 
 const PORT = 4322;
 const BASE_URL = `http://127.0.0.1:${PORT}`;
+const reuseExistingBuild = process.env.PLAYWRIGHT_REUSE_BUILD === "1";
+const nightly = process.env.PLAYWRIGHT_NIGHTLY === "1";
+const firefoxNightlyTestMatch = /(?:image-preview-(?:core|interactions)|site-resilience)\.spec\.ts/;
+
+const nightlyProjects = nightly
+  ? [
+      {
+        name: "firefox-nightly-desktop-light",
+        testMatch: firefoxNightlyTestMatch,
+        use: {
+          ...devices["Desktop Firefox"],
+          browserName: "firefox" as const,
+          colorScheme: "light" as const,
+          viewport: { width: 1440, height: 1100 },
+        },
+      },
+      {
+        name: "firefox-nightly-desktop-dark",
+        testMatch: firefoxNightlyTestMatch,
+        use: {
+          ...devices["Desktop Firefox"],
+          browserName: "firefox" as const,
+          colorScheme: "dark" as const,
+          viewport: { width: 1440, height: 1100 },
+        },
+      },
+      // Firefox has no phone engine. This keeps its real engine while exercising
+      // the site's phone-sized, coarse-pointer responsive behavior.
+      {
+        name: "firefox-nightly-mobile-light",
+        testMatch: firefoxNightlyTestMatch,
+        use: {
+          browserName: "firefox" as const,
+          colorScheme: "light" as const,
+          deviceScaleFactor: 2,
+          hasTouch: true,
+          screen: { width: 390, height: 844 },
+          viewport: { width: 390, height: 664 },
+        },
+      },
+      {
+        name: "firefox-nightly-mobile-dark",
+        testMatch: firefoxNightlyTestMatch,
+        use: {
+          browserName: "firefox" as const,
+          colorScheme: "dark" as const,
+          deviceScaleFactor: 2,
+          hasTouch: true,
+          screen: { width: 390, height: 844 },
+          viewport: { width: 390, height: 664 },
+        },
+      },
+      {
+        name: "webkit-nightly-desktop-light",
+        use: {
+          ...devices["Desktop Safari"],
+          colorScheme: "light" as const,
+          viewport: { width: 1440, height: 1100 },
+        },
+      },
+      {
+        name: "webkit-nightly-desktop-dark",
+        use: {
+          ...devices["Desktop Safari"],
+          colorScheme: "dark" as const,
+          viewport: { width: 1440, height: 1100 },
+        },
+      },
+      {
+        name: "webkit-nightly-mobile-light",
+        use: {
+          ...devices["iPhone 14"],
+          browserName: "webkit" as const,
+          colorScheme: "light" as const,
+        },
+      },
+      {
+        name: "webkit-nightly-mobile-dark",
+        use: {
+          ...devices["iPhone 14"],
+          browserName: "webkit" as const,
+          colorScheme: "dark" as const,
+        },
+      },
+    ]
+  : [];
 
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
-  reporter: [["list"]],
+  outputDir: process.env.PLAYWRIGHT_OUTPUT_DIR || "test-results",
+  reporter: nightly
+    ? [
+        ["list"],
+        [
+          "html",
+          {
+            open: "never",
+            outputFolder: process.env.PLAYWRIGHT_HTML_OUTPUT_DIR || "playwright-report",
+          },
+        ],
+      ]
+    : [["list"]],
+  retries: nightly ? 1 : 0,
   timeout: 30_000,
   expect: {
     timeout: 7_000,
@@ -15,10 +114,10 @@ export default defineConfig({
     baseURL: BASE_URL,
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
-    video: "off",
+    video: nightly ? "retain-on-failure" : "off",
   },
   webServer: {
-    command: "pnpm build && pnpm preview:local",
+    command: reuseExistingBuild ? "pnpm preview:local" : "pnpm build && pnpm preview:local",
     url: BASE_URL,
     reuseExistingServer: process.env.PLAYWRIGHT_REUSE_SERVER === "1",
     timeout: 120_000,
@@ -76,5 +175,6 @@ export default defineConfig({
         colorScheme: "light",
       },
     },
+    ...nightlyProjects,
   ],
 });

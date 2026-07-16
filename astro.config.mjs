@@ -97,7 +97,7 @@ export default defineConfig({
     port: 4321,
   },
   build: {
-    inlineStylesheets: "always",
+    inlineStylesheets: "never",
   },
   devToolbar: {
     enabled: false,

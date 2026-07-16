@@ -5,7 +5,12 @@ import { join, resolve } from "node:path";
 const DEFAULT_POSTS_DIRECTORY = resolve(process.cwd(), "src/content/blog");
 
 function escapeYamlDoubleQuotedString(value) {
-  return value.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
+  return value
+    .replaceAll("\r\n", "\n")
+    .replaceAll("\r", "\n")
+    .replaceAll("\\", "\\\\")
+    .replaceAll('"', '\\"')
+    .replaceAll("\n", "\\n");
 }
 
 export function slugifyPostTitle(title) {
@@ -20,15 +25,25 @@ export function slugifyPostTitle(title) {
     .replace(/^-+|-+$/g, "");
 }
 
-export function createPostContent(title, { listed = false } = {}) {
+export function createPostContent(title, { description, listed = false } = {}) {
+  const normalizedTitle = title.trim();
+  const normalizedDescription = description?.trim();
+  if (!normalizedTitle) {
+    throw new Error("Le titre doit contenir au moins une lettre ou un chiffre.");
+  }
+  if (listed && !normalizedDescription) {
+    throw new Error("Un article publié doit avoir une description non vide.");
+  }
+
+  const descriptionFrontmatter = normalizedDescription
+    ? `description: "${escapeYamlDoubleQuotedString(normalizedDescription)}"\n`
+    : "";
+
   return `---
-title: "${escapeYamlDoubleQuotedString(title)}"
-description: ""
-tags: []
+title: "${escapeYamlDoubleQuotedString(normalizedTitle)}"
+${descriptionFrontmatter}tags: []
 listed: ${listed}
 ---
-
-# ${title}
 
 Écrivez votre article ici.
 `;
@@ -37,6 +52,7 @@ listed: ${listed}
 export async function createPost({
   title,
   postsDirectory = DEFAULT_POSTS_DIRECTORY,
+  description,
   listed = false,
 }) {
   const normalizedTitle = title.trim();
@@ -49,7 +65,7 @@ export async function createPost({
   await mkdir(postsDirectory, { recursive: true });
 
   try {
-    await writeFile(filePath, createPostContent(normalizedTitle, { listed }), {
+    await writeFile(filePath, createPostContent(normalizedTitle, { description, listed }), {
       encoding: "utf8",
       flag: "wx",
     });
@@ -64,7 +80,40 @@ export async function createPost({
 }
 
 function printUsage() {
-  console.log('Usage : pnpm new:post "Titre de l’article" [--publish]');
+  console.log('Usage : pnpm new:post "Titre de l’article" [--description "Résumé"] [--publish]');
+}
+
+export function parsePostArguments(args) {
+  const titleParts = [];
+  let description;
+  let listed = false;
+
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index];
+    if (argument === "--publish") {
+      listed = true;
+      continue;
+    }
+    if (argument === "--description") {
+      const value = args[index + 1];
+      if (!value || value.startsWith("--")) {
+        throw new Error("--description attend un résumé non vide.");
+      }
+      description = value;
+      index += 1;
+      continue;
+    }
+    if (argument.startsWith("--")) {
+      throw new Error(`Option inconnue : ${argument}`);
+    }
+    titleParts.push(argument);
+  }
+
+  if (titleParts.length !== 1) {
+    throw new Error("Indiquez un titre unique pour le nouvel article.");
+  }
+
+  return { description, listed, title: titleParts[0] };
 }
 
 export async function main(args = process.argv.slice(2)) {
@@ -73,16 +122,17 @@ export async function main(args = process.argv.slice(2)) {
     return;
   }
 
-  const listed = args.includes("--publish");
-  const titleParts = args.filter((argument) => argument !== "--publish");
-  if (titleParts.length !== 1) {
+  let postOptions;
+  try {
+    postOptions = parsePostArguments(args);
+  } catch (error) {
     printUsage();
-    throw new Error("Indiquez un titre unique pour le nouvel article.");
+    throw error;
   }
 
-  const filePath = await createPost({ listed, title: titleParts[0] });
+  const filePath = await createPost(postOptions);
   console.log(`Article créé : ${filePath}`);
-  if (!listed) {
+  if (!postOptions.listed) {
     console.log("Il est non listé par défaut ; ajoutez --publish ou passez listed à true.");
   }
 }

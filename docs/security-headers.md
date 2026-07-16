@@ -17,8 +17,10 @@ pnpm check:headers
 `pnpm verify` builds first and then checks that the committed hashes match the
 current `dist` output.
 
-The `Update security header hashes` GitHub Action also runs on same-repository
-pull requests and commits a refreshed `vercel.json` when the hashes drift.
+The `Validate security header hashes` GitHub Action runs with read-only
+repository permissions on every pull request. It derives the expected hashes
+locally and fails with the exact command above when `vercel.json` is stale. It
+never commits to, or pushes, contributor branches.
 
 ## Blocking Vercel production promotion on CI
 

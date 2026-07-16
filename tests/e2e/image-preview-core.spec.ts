@@ -588,8 +588,10 @@ test("keeps rapid gallery navigation ordered while images decode", async ({ page
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowRight");
   await expect(status).toHaveText("Image 1 sur 2 : konachan-382339.jpg");
+  // WebKit may defer the second animation start while decoding both images.
+  // This asserts eventual cleanup without racing its rendering thread.
   await expect(dialog.locator(".site-image-dialog-image--outgoing")).toHaveCount(0, {
-    timeout: 600,
+    timeout: 2_000,
   });
 });
 

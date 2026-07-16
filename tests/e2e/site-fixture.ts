@@ -1,4 +1,5 @@
 import { expect, test as base, type Locator, type Page } from "@playwright/test";
+import { observePageRuntime } from "./runtime-observer";
 export { expect };
 
 export const ROUTES = [
@@ -27,13 +28,15 @@ async function seedLocalPreferences(page: Page) {
   });
 }
 
-export async function seedFixedKonachanImage(page: Page) {
-  await page.addInitScript(() => {
+export async function seedFixedKonachanImage(page: Page, sourceColor?: string) {
+  await page.addInitScript((seededSourceColor) => {
     const image = {
       id: 405237,
       url: "/konachan-backgrounds/405237.webp",
       originalUrl: "https://konachan.com/post/show/405237",
       rating: "safe",
+      width: 1920,
+      height: 1080,
       variants: [
         {
           bytes: 54_484,
@@ -42,13 +45,14 @@ export async function seedFixedKonachanImage(page: Page) {
           width: 960,
         },
       ],
+      ...(seededSourceColor ? { sourceColor: seededSourceColor } : {}),
     };
 
     localStorage.setItem(
       "home-konachan-backgrounds-v8",
       JSON.stringify({ currentImage: image, images: [image], storedAt: Date.now() }),
     );
-  });
+  }, sourceColor);
 }
 
 export async function expectStoredSourceColor(page: Page, sourceColor: string) {
@@ -96,7 +100,8 @@ export async function waitForAppReady(page: Page) {
 }
 
 export async function prepareClipboardWrite(page: Page) {
-  if (!test.info().project.name.startsWith("webkit")) {
+  const projectName = test.info().project.name;
+  if (!projectName.startsWith("webkit") && !projectName.startsWith("firefox")) {
     await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
     return false;
   }
@@ -210,12 +215,7 @@ export const test = base.extend({
     const geoRequests = { count: 0 };
     pageRuntimeErrors.set(page, runtimeErrors);
     geoRequestCounts.set(page, geoRequests);
-    page.on("pageerror", (error) => runtimeErrors.push(error.message));
-    page.on("console", (message) => {
-      if (message.type() === "error" || message.type() === "warning") {
-        runtimeErrors.push(message.text());
-      }
-    });
+    await observePageRuntime(page, runtimeErrors);
 
     await page.route("https://api.ipapi.is/**", (route) => {
       geoRequests.count += 1;

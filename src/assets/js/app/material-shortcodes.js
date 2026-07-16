@@ -1,4 +1,4 @@
-import { initMaterialMenuFocusIndicators } from "./material-menu.js";
+import { initMaterialMenuEnhancements } from "./material-menu.js";
 
 const SORT_ICON = "\uE5D7";
 const SORT_ASCENDING_ICON = "\uE5D8";
@@ -403,7 +403,7 @@ function enhanceTable(host) {
   });
 
   host.replaceChildren(...content);
-  initMaterialMenuFocusIndicators(host);
+  initMaterialMenuEnhancements(host);
   host.dataset.materialEnhanced = "true";
   render();
 }

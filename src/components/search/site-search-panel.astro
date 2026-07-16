@@ -55,31 +55,22 @@ const limitId = `${idPrefix}-filter-limit`;
       <md-filled-select
         id={`${idPrefix}-sort`}
         name="sort"
-        class="site-material-select site-search-panel-sort-select"
+        class="site-search-panel-sort-select"
         label="Tri par"
         aria-label="Trier les résultats"
         menu-positioning="popover"
         value={deferred ? undefined : "relevance"}
         data-sort-select
       >
-        <md-icon slot="trailing-icon" class="site-search-sort-chevron" aria-hidden="true">
-          &#xE5CF;
-        </md-icon>
         {
           SORT_OPTIONS.map((option) => (
             <md-select-option
-              class="site-material-select-option site-search-sort-option"
               value={option.value}
               display-text={option.label}
               aria-label={option.accessibleLabel}
               selected={!deferred && option.value === "relevance" ? true : undefined}
             >
-              <span slot="headline" class="site-material-option-content">
-                <span>{option.label}</span>
-                <md-icon class="site-material-menu-check" aria-hidden="true">
-                  &#xE5CA;
-                </md-icon>
-              </span>
+              <span slot="headline">{option.label}</span>
             </md-select-option>
           ))
         }

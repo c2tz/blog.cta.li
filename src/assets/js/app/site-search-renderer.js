@@ -43,10 +43,50 @@ function renderResultMeta(result) {
   return meta;
 }
 
+function appendSafeSearchMarkup(container, markup) {
+  const template = document.createElement("template");
+  template.innerHTML = String(markup ?? "");
+
+  const appendNodes = (source, target) => {
+    source.childNodes.forEach((node) => {
+      if (node.nodeType === 3) {
+        target.append(document.createTextNode(node.nodeValue ?? ""));
+        return;
+      }
+      if (!(node instanceof HTMLElement)) return;
+      if (["SCRIPT", "STYLE", "TEMPLATE"].includes(node.tagName)) return;
+
+      if (node.tagName === "MARK") {
+        const mark = document.createElement("mark");
+        appendNodes(node, mark);
+        target.append(mark);
+        return;
+      }
+
+      appendNodes(node, target);
+    });
+  };
+
+  appendNodes(template.content, container);
+}
+
+function safeSearchResultUrl(value) {
+  try {
+    const url = new URL(String(value ?? ""), document.baseURI);
+    if (!["http:", "https:"].includes(url.protocol) || url.origin !== location.origin) return null;
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return null;
+  }
+}
+
 export function renderSearchResults(container, results) {
   container.replaceChildren();
 
   for (const result of results) {
+    const resultUrl = safeSearchResultUrl(result.url);
+    if (!resultUrl) continue;
+
     const item = document.createElement("li");
     item.className = "site-search-panel-result";
 
@@ -55,8 +95,8 @@ export function renderSearchResults(container, results) {
 
     const title = document.createElement("a");
     title.className = "site-search-panel-result-title";
-    title.href = result.url;
-    title.innerHTML = result.titleHtml;
+    title.href = resultUrl;
+    appendSafeSearchMarkup(title, result.titleHtml);
     body.append(title);
 
     if (result.createdLabel || result.modifiedLabel) body.append(renderResultMeta(result));
@@ -64,7 +104,7 @@ export function renderSearchResults(container, results) {
     if (result.excerpt) {
       const excerpt = document.createElement("p");
       excerpt.className = "site-search-panel-result-excerpt";
-      excerpt.innerHTML = result.excerpt;
+      appendSafeSearchMarkup(excerpt, result.excerpt);
       body.append(excerpt);
     }
 

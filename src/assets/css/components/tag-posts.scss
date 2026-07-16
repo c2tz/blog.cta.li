@@ -35,11 +35,6 @@ site-tag-posts [data-empty-row][hidden] {
   background: color-mix(in srgb, var(--site-muted) 42%, transparent);
 }
 
-.tag-posts-table-scroll:focus-visible {
-  border-radius: var(--site-shape-extra-small);
-  outline: 0;
-}
-
 .tag-posts-table {
   min-width: 42rem;
   width: max-content;
@@ -124,10 +119,6 @@ site-tag-posts [data-empty-row][hidden] {
 .tag-posts-sort-active {
   background: var(--md-sys-color-surface-container-low);
   color: var(--site-text);
-}
-
-.tag-posts-sort-button:focus-visible {
-  outline-offset: -3px;
 }
 
 .tag-posts-table .tag-posts-table-row.is-last-visible td,

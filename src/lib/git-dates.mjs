@@ -1,10 +1,29 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, statSync } from "node:fs";
+import { existsSync, realpathSync, statSync } from "node:fs";
 import { relative, resolve } from "node:path";
 
 const cwd = process.cwd();
 const CONTENT_EXTENSIONS = [".md", ".mdx"];
 const GIT_LOG_FORMAT = "%H%x1f%aI%x1f%s";
+const gitDatesCache = new Map();
+
+function getFileSignature(filePath) {
+  try {
+    const stats = statSync(filePath);
+    return `${filePath}\0${stats.mtimeMs}\0${stats.size}`;
+  } catch {
+    return `${filePath}\0missing`;
+  }
+}
+
+function resolveFilePath(filePath) {
+  const resolvedPath = resolve(cwd, filePath);
+  try {
+    return realpathSync(resolvedPath);
+  } catch {
+    return resolvedPath;
+  }
+}
 
 function isPullRequestSummaryCommit(subject = "") {
   return (
@@ -53,6 +72,11 @@ function getFileSystemDates(filePath) {
 }
 
 export function getFileGitDates(filePath) {
+  const resolvedPath = resolveFilePath(filePath);
+  const signature = getFileSignature(resolvedPath);
+  const cached = gitDatesCache.get(resolvedPath);
+  if (cached?.signature === signature) return { ...cached.dates };
+
   const created =
     gitLogEntry(
       [
@@ -63,29 +87,29 @@ export function getFileGitDates(filePath) {
         "--reverse",
         `--format=${GIT_LOG_FORMAT}`,
       ],
-      filePath,
+      resolvedPath,
       { skipPullRequestSummaries: true },
     ) ||
     gitLogEntry(
       ["log", "--follow", "--no-merges", "--reverse", `--format=${GIT_LOG_FORMAT}`],
-      filePath,
+      resolvedPath,
       { skipPullRequestSummaries: true },
     ) ||
-    gitLogEntry(["log", "--follow", "--reverse", `--format=${GIT_LOG_FORMAT}`], filePath, {
+    gitLogEntry(["log", "--follow", "--reverse", `--format=${GIT_LOG_FORMAT}`], resolvedPath, {
       skipPullRequestSummaries: true,
     }) ||
-    gitLogEntry(["log", "--follow", "--reverse", `--format=${GIT_LOG_FORMAT}`], filePath);
+    gitLogEntry(["log", "--follow", "--reverse", `--format=${GIT_LOG_FORMAT}`], resolvedPath);
   const modified =
-    gitLogEntry(["log", "--follow", "--no-merges", `--format=${GIT_LOG_FORMAT}`], filePath, {
+    gitLogEntry(["log", "--follow", "--no-merges", `--format=${GIT_LOG_FORMAT}`], resolvedPath, {
       skipPullRequestSummaries: true,
     }) ||
-    gitLogEntry(["log", "--follow", `--format=${GIT_LOG_FORMAT}`], filePath, {
+    gitLogEntry(["log", "--follow", `--format=${GIT_LOG_FORMAT}`], resolvedPath, {
       skipPullRequestSummaries: true,
     }) ||
-    gitLogEntry(["log", "--follow", "-1", `--format=${GIT_LOG_FORMAT}`], filePath);
-  const fileSystemDates = getFileSystemDates(filePath);
+    gitLogEntry(["log", "--follow", "-1", `--format=${GIT_LOG_FORMAT}`], resolvedPath);
+  const fileSystemDates = getFileSystemDates(resolvedPath);
 
-  return {
+  const dates = {
     createdAt:
       normalizeDate(created?.date) || fileSystemDates.createdAt || fileSystemDates.lastModified,
     createdCommit: created?.commit,
@@ -96,6 +120,8 @@ export function getFileGitDates(filePath) {
       fileSystemDates.createdAt,
     lastModifiedCommit: modified?.commit,
   };
+  gitDatesCache.set(resolvedPath, { dates, signature: getFileSignature(resolvedPath) });
+  return { ...dates };
 }
 
 function resolveContentEntryPath(collection, entry) {

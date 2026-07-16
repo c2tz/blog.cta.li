@@ -82,68 +82,47 @@ test("opens the Material Web theme menu from its icon button", async ({ page }) 
     .toBe("rgb(0, 0, 0)");
 });
 
-test("shows animated button contours only after keyboard input", async ({ page }) => {
-  test.skip(test.info().project.name.includes("mobile"), "Touch screens hide focus contours.");
+test("delegates native and Material focus indicators to their owners", async ({ page }) => {
+  test.skip(test.info().project.name.includes("mobile"), "Covered by the coarse-screen scenario.");
   await gotoRoute(page, "/");
 
   await waitForNativeEnhancement(page, "[data-home-detail-toggle]");
   const materialButton = page.locator("md-icon-button.home-detail-trigger");
-  await materialButton.click();
-
-  await expect
-    .poll(() => page.evaluate(() => document.documentElement.dataset.focusModality))
-    .toBe("pointer");
-  await expect
-    .poll(() =>
-      materialButton.evaluate((element) => {
-        const focusRing = element.shadowRoot?.querySelector("md-focus-ring");
-        return focusRing ? getComputedStyle(focusRing).display : "missing";
-      }),
-    )
-    .toBe("none");
-
-  await page.keyboard.press("ArrowDown");
-  await expect
-    .poll(() => page.evaluate(() => document.documentElement.dataset.focusModality))
-    .toBe("keyboard");
+  await page.keyboard.press("Tab");
+  await materialButton.focus();
   const materialFocus = await materialButton.evaluate((element) => {
     const focusRing = element.shadowRoot?.querySelector("md-focus-ring");
-    const icon = element.querySelector(
-      element.hasAttribute("selected") ? "md-icon[slot='selected']" : "md-icon:not([slot])",
-    );
-    if (!focusRing || !icon) return null;
+    if (!focusRing) return null;
     const styles = getComputedStyle(focusRing);
     return {
       animationDuration: styles.animationDuration,
       animationName: styles.animationName,
       color: styles.color,
-      controlColor: getComputedStyle(icon).color,
       display: styles.display,
+      override: getComputedStyle(element).getPropertyValue("--md-focus-ring-color").trim(),
     };
   });
   expect(materialFocus).toMatchObject({
     animationDuration: "0.15s, 0.45s",
     animationName: "outward-grow, outward-shrink",
     display: "flex",
+    override: "",
   });
-  expect(materialFocus?.color).toBe(materialFocus?.controlColor);
+  expect(materialFocus?.color).not.toBe("rgba(0, 0, 0, 0)");
 
   const nativeButton = page.locator(".home-posts-sort-button").first();
   await nativeButton.focus();
   const nativeFocus = await nativeButton.evaluate((element) => {
     const styles = getComputedStyle(element);
     return {
-      animationDuration: styles.animationDuration,
       animationName: styles.animationName,
-      color: styles.color,
-      outlineColor: styles.outlineColor,
+      outlineStyle: styles.outlineStyle,
+      outlineWidth: styles.outlineWidth,
     };
   });
-  expect(nativeFocus).toMatchObject({
-    animationDuration: "0.15s, 0.45s",
-    animationName: "site-focus-ring-grow, site-focus-ring-shrink",
-  });
-  expect(nativeFocus.outlineColor).toBe(nativeFocus.color);
+  expect(nativeFocus.animationName).toBe("none");
+  expect(nativeFocus.outlineStyle).not.toBe("none");
+  expect(nativeFocus.outlineWidth).not.toBe("0px");
 
   const link = page.locator("a.header-link");
   await link.focus();
@@ -154,10 +133,11 @@ test("shows animated button contours only after keyboard input", async ({ page }
       textDecorationLine: styles.textDecorationLine,
     };
   });
-  expect(linkFocus).toEqual({ outlineWidth: "0px", textDecorationLine: "underline" });
+  expect(linkFocus.outlineWidth).not.toBe("0px");
+  expect(linkFocus.textDecorationLine).toBe("underline");
 });
 
-test("keeps tab panels and href links free of focus contours", async ({ page }) => {
+test("keeps native focus contours on tab panels", async ({ page }) => {
   await gotoRoute(page, "/posts/hugo-material-shortcodes/");
 
   const tab = page.locator("md-primary-tab").first();
@@ -172,17 +152,15 @@ test("keeps tab panels and href links free of focus contours", async ({ page }) 
         return focusRing ? getComputedStyle(focusRing).color : "missing";
       }),
     )
-    .toBe("rgba(0, 0, 0, 0)");
+    .not.toBe("rgba(0, 0, 0, 0)");
 
   await panel.focus();
   await expect
     .poll(() => panel.evaluate((element) => getComputedStyle(element).outlineWidth))
-    .toBe("0px");
+    .not.toBe("0px");
 });
 
-test("shows Material keyboard focus on coarse screens without adding a pointer outline", async ({
-  page,
-}) => {
+test("keeps native and official Material keyboard focus on coarse screens", async ({ page }) => {
   test.skip(!test.info().project.name.includes("mobile"), "Touch-only behavior.");
   await gotoRoute(page, "/");
 
@@ -217,7 +195,7 @@ test("shows Material keyboard focus on coarse screens without adding a pointer o
   await nativeButton.focus();
   await expect
     .poll(() => nativeButton.evaluate((element) => getComputedStyle(element).outlineWidth))
-    .toBe("0px");
+    .not.toBe("0px");
 });
 
 test("selects Material Web themes with Enter and Space", async ({ page }) => {
@@ -377,22 +355,21 @@ test("keeps the theme menu focus indicator after reopen and reload", async ({ pa
     .poll(() => trigger.evaluate((element) => element.matches(":focus-within")))
     .toBe(true);
 
-  await trigger.click();
+  await page.keyboard.press("Enter");
   await expectMenuFocus(systemItem);
-  await expect(systemItem).toHaveAttribute("data-menu-focus-indicator", "");
   await page.keyboard.press("ArrowDown");
   await expectMenuFocus(lightItem);
-  await expect(lightItem).toHaveAttribute("data-menu-focus-indicator", "");
 
   await page.getByRole("heading", { name: "Blog de c2tz", level: 1 }).click();
   await expect(systemItem).toBeHidden();
-  await expect(systemItem).not.toHaveAttribute("data-menu-focus-indicator", "");
-  await trigger.click();
+  await trigger.focus();
+  await page.keyboard.press("Enter");
   await expectMenuFocus(systemItem);
 
   await page.reload({ waitUntil: "domcontentloaded" });
   await waitForNativeEnhancement(page, "[data-theme-switcher]");
-  await trigger.click();
+  await trigger.focus();
+  await page.keyboard.press("Enter");
   await expectMenuFocus(systemItem);
   await page.keyboard.press("ArrowDown");
   await expectMenuFocus(lightItem);
@@ -409,22 +386,20 @@ test("distinguishes touch selection from keyboard focus on coarse screens", asyn
   await openMaterialMenu(themeTrigger, themeMenu);
   const systemItem = page.locator('md-menu-item[data-theme-option="system"]');
   await expect(systemItem).toBeVisible();
-  await expect(systemItem).not.toHaveAttribute("data-menu-focus-indicator", "");
   await expect
     .poll(() =>
       systemItem.evaluate((element) => {
         const focusRing = element.shadowRoot?.querySelector("md-focus-ring");
-        return focusRing ? getComputedStyle(focusRing).color : "missing";
+        return focusRing ? getComputedStyle(focusRing).display : "missing";
       }),
     )
-    .toBe("rgba(0, 0, 0, 0)");
+    .toBe("none");
 
   await page.keyboard.press("ArrowDown");
   const lightItem = page.locator('md-menu-item[data-theme-option="light"]');
   await expect
     .poll(() => lightItem.evaluate((element) => element.matches(":focus-within")))
     .toBe(true);
-  await expect(lightItem).not.toHaveAttribute("data-menu-focus-indicator", "");
   await expect
     .poll(() =>
       lightItem.evaluate((element) => {

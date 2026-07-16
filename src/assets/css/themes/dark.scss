@@ -16,17 +16,6 @@
   color: var(--site-muted);
 }
 
-:root[data-theme="dark"] .home-anime-background::after {
-  background:
-    linear-gradient(to bottom, rgb(0 0 0 / 0.18), rgb(0 0 0 / 0.42)),
-    linear-gradient(90deg, rgb(0 0 0 / 0.48), rgb(0 0 0 / 0.08) 70%);
-}
-
-:root[data-theme="dark"] body.home-page {
-  --home-image-filter: brightness(0.72) saturate(0.88) contrast(1);
-  --home-media-surface: var(--m3-surface-container-lowest);
-}
-
 :root[data-theme="dark"] :where(.code-shell, pre.astro-code) {
   --code-line-info: #64b5f6;
   --code-line-info-text: #90caf9;

@@ -22,6 +22,7 @@ const SEARCH_TIMEOUT_MS = 12_000;
 const QUERY_DEBOUNCE_MS = 160;
 const MAX_PRIORITY = 100;
 const RELEVANCE_PRIORITY_WEIGHT = 0.01;
+const INTERNAL_PAGEFIND_PATH = "/posts/pagefind-index-placeholder/";
 
 const panelControllers = new WeakMap();
 let filterChipModule;
@@ -51,6 +52,27 @@ function controlValue(event) {
   }
 
   return "";
+}
+
+function isInternalPagefindUrl(value) {
+  if (typeof value !== "string" || !value) return false;
+
+  try {
+    return new URL(value, document.baseURI).pathname === INTERNAL_PAGEFIND_PATH;
+  } catch {
+    return false;
+  }
+}
+
+function isPublicSearchResultUrl(value) {
+  if (typeof value !== "string" || !value) return false;
+
+  try {
+    const url = new URL(value, document.baseURI);
+    return ["http:", "https:"].includes(url.protocol) && url.origin === location.origin;
+  } catch {
+    return false;
+  }
 }
 
 class SearchPanelController {
@@ -435,7 +457,9 @@ class SearchPanelController {
 
       this.setTagFilterCounts(response.filters?.tag ?? response.totalFilters?.tag);
 
-      const resultRefs = response.results.slice(0, this.resultFetchLimit());
+      const resultRefs = response.results
+        .filter((result) => !isInternalPagefindUrl(result.raw_url))
+        .slice(0, this.resultFetchLimit());
       const results = await this.withSearchTimeout(
         Promise.all(
           resultRefs.map(async (result) => ({
@@ -447,25 +471,30 @@ class SearchPanelController {
 
       if (currentRequest !== this.requestId) return;
 
-      const mappedResults = results.map((result) => {
-        const title = result.data.meta?.title ?? result.data.title ?? result.data.url;
-        const createdAt = result.data.meta?.created;
-        const modifiedAt = result.data.meta?.modified;
+      const mappedResults = results
+        .filter(
+          (result) =>
+            !isInternalPagefindUrl(result.data.url) && isPublicSearchResultUrl(result.data.url),
+        )
+        .map((result) => {
+          const title = result.data.meta?.title ?? result.data.title ?? result.data.url;
+          const createdAt = result.data.meta?.created;
+          const modifiedAt = result.data.meta?.modified;
 
-        return {
-          createdAt,
-          createdLabel: formatDate(createdAt, this.dateFormatter),
-          excerpt: removeLeadingTitle(result.data.excerpt ?? "", title),
-          modifiedAt,
-          modifiedLabel: formatDate(modifiedAt, this.dateFormatter),
-          priority: parsePriority(result.data.meta?.priority, MAX_PRIORITY),
-          score: result.score,
-          tags: parseTags(result.data.meta?.tags),
-          title,
-          titleHtml: highlightTitle(title, query),
-          url: result.data.url,
-        };
-      });
+          return {
+            createdAt,
+            createdLabel: formatDate(createdAt, this.dateFormatter),
+            excerpt: removeLeadingTitle(result.data.excerpt ?? "", title),
+            modifiedAt,
+            modifiedLabel: formatDate(modifiedAt, this.dateFormatter),
+            priority: parsePriority(result.data.meta?.priority, MAX_PRIORITY),
+            score: result.score,
+            tags: parseTags(result.data.meta?.tags),
+            title,
+            titleHtml: highlightTitle(title, query),
+            url: result.data.url,
+          };
+        });
 
       this.results = this.sortResults(
         mappedResults.filter((result) => this.matchesSelectedTags(result, this.selectedTags)),
@@ -529,11 +558,11 @@ class SearchPanelController {
   }
 
   pagefindSearchOptions() {
-    const options = {};
+    const options = { filters: { not: { internal: "placeholder" } } };
     const sort = this.pagefindSort();
 
-    if (this.selectedTags.length === 1) options.filters = { tag: this.selectedTags[0] ?? "" };
-    else if (this.selectedTags.length > 1) options.filters = { tag: this.selectedTags };
+    if (this.selectedTags.length === 1) options.filters.tag = this.selectedTags[0] ?? "";
+    else if (this.selectedTags.length > 1) options.filters.tag = this.selectedTags;
     if (sort) options.sort = sort;
     return options;
   }

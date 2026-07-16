@@ -35,25 +35,10 @@ export const withImagePreviewGestures = (Base) =>
         return;
       }
 
-      if (this.isBrowserZoomed()) {
-        if (event.pointerType !== "mouse") return;
-
-        this.hideTooltip();
-        this.activePointers.add(event.pointerId);
-        this.zoomPanGesture = {
-          id: event.pointerId,
-          startPanX: this.zoomPanX,
-          startPanY: this.zoomPanY,
-          x: event.clientX,
-          y: event.clientY,
-        };
-        this.stage.setAttribute("data-image-dragging", "");
-        try {
-          this.stage.setPointerCapture(event.pointerId);
-        } catch {}
-        if (event.cancelable) event.preventDefault();
-        return;
-      }
+      // Once the browser owns the zoomed visual viewport, it must also own
+      // panning and smart-zoom/double-click gestures. The lightbox only keeps
+      // observing that state so gallery navigation stays disabled until 100%.
+      if (this.isBrowserZoomed()) return;
 
       if (this.gestureNavigationBlocked()) return;
 
@@ -88,21 +73,6 @@ export const withImagePreviewGestures = (Base) =>
     handlePointerMove = (event) => {
       if (!this.activePointers.has(event.pointerId)) return;
 
-      const zoomPanGesture = this.zoomPanGesture;
-      if (zoomPanGesture?.id === event.pointerId) {
-        if (!this.isBrowserZoomed()) {
-          this.cancelPointerGesture();
-          return;
-        }
-
-        this.setZoomPan(
-          zoomPanGesture.startPanX + event.clientX - zoomPanGesture.x,
-          zoomPanGesture.startPanY + event.clientY - zoomPanGesture.y,
-        );
-        if (event.cancelable) event.preventDefault();
-        return;
-      }
-
       const gesture = this.pointerGesture;
       if (!gesture || gesture.id !== event.pointerId) return;
       if (this.gestureNavigationBlocked()) {
@@ -126,17 +96,6 @@ export const withImagePreviewGestures = (Base) =>
     };
 
     handlePointerUp = (event) => {
-      if (this.zoomPanGesture?.id === event.pointerId) {
-        this.activePointers.delete(event.pointerId);
-        this.zoomPanGesture = undefined;
-        this.stage.removeAttribute("data-image-dragging");
-        try {
-          this.stage.releasePointerCapture(event.pointerId);
-        } catch {}
-        if (event.cancelable) event.preventDefault();
-        return;
-      }
-
       const gesture = this.pointerGesture;
       const wasMultiPointer = this.hadMultiPointerGesture || this.activePointers.size > 1;
       const pointer = { x: event.clientX, y: event.clientY };
@@ -212,13 +171,6 @@ export const withImagePreviewGestures = (Base) =>
     };
 
     handlePointerCancel = (event) => {
-      if (this.zoomPanGesture?.id === event.pointerId) {
-        this.activePointers.delete(event.pointerId);
-        this.zoomPanGesture = undefined;
-        this.stage.removeAttribute("data-image-dragging");
-        return;
-      }
-
       this.activePointers.delete(event.pointerId);
       if (this.activePointers.size > 0) return;
 
@@ -261,9 +213,7 @@ export const withImagePreviewGestures = (Base) =>
       }
 
       if (this.isBrowserZoomed()) {
-        if (event.cancelable) event.preventDefault();
         this.trackpadSwipeDelta = 0;
-        this.setZoomPan(this.zoomPanX - event.deltaX, this.zoomPanY - event.deltaY);
         return;
       }
 
@@ -304,8 +254,6 @@ export const withImagePreviewGestures = (Base) =>
           this.cancelImageMotion();
           this.clearGesturePreview();
         }
-        this.clampZoomPan();
-        this.applyViewTransform();
         this.trackpadSwipeDelta = 0;
         return;
       }
@@ -324,10 +272,6 @@ export const withImagePreviewGestures = (Base) =>
     };
 
     handleImageLoad = () => {
-      if (this.isBrowserZoomed()) {
-        this.clampZoomPan();
-        this.applyViewTransform();
-      }
       if (this.informationOpen) this.updateInformation();
     };
 
@@ -338,25 +282,10 @@ export const withImagePreviewGestures = (Base) =>
     };
 
     syncBrowserZoomState() {
-      const viewport = window.visualViewport;
-      const viewportRight = viewport
-        ? Math.max(0, window.innerWidth - viewport.offsetLeft - viewport.width)
-        : 0;
-      this.toolbar.style.setProperty(
-        "--site-image-dialog-visual-top",
-        `${Math.max(0, viewport?.offsetTop ?? 0)}px`,
-      );
-      this.toolbar.style.setProperty("--site-image-dialog-visual-right", `${viewportRight}px`);
-
       const pageZoomScale = (window.devicePixelRatio || 1) / this.browserZoomBaselineDpr;
       this.browserZoomScale = Math.max(1, window.visualViewport?.scale ?? 1, pageZoomScale);
       const zoomed = this.isBrowserZoomed();
-      if (zoomed) {
-        this.clampZoomPan();
-      } else {
-        this.zoomPanX = 0;
-        this.zoomPanY = 0;
-      }
+      this.shell.toggleAttribute("data-browser-zoomed", zoomed);
       this.stage.toggleAttribute("data-browser-zoomed", zoomed);
     }
 
@@ -372,47 +301,22 @@ export const withImagePreviewGestures = (Base) =>
       );
     }
 
-    zoomPanBounds() {
-      if (!this.isBrowserZoomed()) return { x: 0, y: 0 };
-
-      const rect = this.stage.getBoundingClientRect();
-      const hiddenRatio = 1 - 1 / this.browserZoomScale;
-      return {
-        x: Math.max(0, (rect.width * hiddenRatio) / 2),
-        y: Math.max(0, (rect.height * hiddenRatio) / 2),
-      };
-    }
-
-    clampZoomPan() {
-      const bounds = this.zoomPanBounds();
-      this.zoomPanX = clamp(this.zoomPanX, -bounds.x, bounds.x);
-      this.zoomPanY = clamp(this.zoomPanY, -bounds.y, bounds.y);
-    }
-
-    setZoomPan(x, y) {
-      this.zoomPanX = x;
-      this.zoomPanY = y;
-      this.clampZoomPan();
-      this.applyViewTransform();
-    }
-
     applyViewTransform() {
-      const zoomed = this.isBrowserZoomed();
-      const x = zoomed ? this.zoomPanX : this.gestureOffsetX;
-      const y = zoomed ? this.zoomPanY : this.gestureOffsetY;
+      if (this.isBrowserZoomed()) {
+        this.image.style.removeProperty("opacity");
+        this.image.style.removeProperty("transform");
+        this.clearGestureScrim();
+        return;
+      }
+
+      const x = this.gestureOffsetX;
+      const y = this.gestureOffsetY;
       const transformed = Math.abs(x) > 0.1 || Math.abs(y) > 0.1;
 
       if (transformed) {
         this.image.style.transform = `translate3d(${x}px, ${y}px, 0)`;
       } else {
         this.image.style.removeProperty("transform");
-      }
-
-      if (zoomed) {
-        this.image.style.removeProperty("opacity");
-        this.clearGestureScrim();
-        this.stage.setAttribute("data-browser-zoomed", "");
-        return;
       }
 
       const distance = Math.hypot(this.gestureOffsetX, this.gestureOffsetY);
@@ -453,8 +357,6 @@ export const withImagePreviewGestures = (Base) =>
       } else {
         this.image.style.removeProperty("opacity");
       }
-
-      this.stage.toggleAttribute("data-browser-zoomed", this.isBrowserZoomed());
     }
 
     applyGesturePreview(x, y) {
@@ -516,9 +418,6 @@ export const withImagePreviewGestures = (Base) =>
       this.gestureSettleTimer = undefined;
       this.gestureOffsetX = 0;
       this.gestureOffsetY = 0;
-      this.zoomPanX = 0;
-      this.zoomPanY = 0;
-      this.zoomPanGesture = undefined;
       this.swipeDismissActive = false;
       this.swipeDismissScrimOpacity = undefined;
       this.image.classList.remove("is-gesture-settling");
@@ -538,9 +437,16 @@ export const withImagePreviewGestures = (Base) =>
       this.activePointers.clear();
       this.hadMultiPointerGesture = false;
       this.pointerGesture = undefined;
-      this.zoomPanGesture = undefined;
       this.stage.removeAttribute("data-image-dragging");
     }
+
+    handleDoubleClick = () => {
+      if (!this.isOpen || this.isClosing || this.informationOpen) return;
+
+      // Do not cancel the event: Safari smart zoom and every other browser's
+      // native double-click/tap policy remain authoritative.
+      this.setControlsVisible(true);
+    };
 
     handleTap(pointer) {
       const now = Date.now();

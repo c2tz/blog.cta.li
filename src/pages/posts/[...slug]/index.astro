@@ -5,6 +5,12 @@ import GiscusComments from "@/components/feedback/giscus-comments.astro";
 import PostGitDates from "@/components/post/post-git-dates.astro";
 import Prose from "@/components/post/prose.astro";
 import Layout from "@/layouts/site-layout.astro";
+import "@/assets/css/components/code-block.scss";
+import "@/assets/css/components/_image-dialog.scss";
+import "@/assets/css/content/footnotes.scss";
+import "@/assets/css/content/material-shortcodes.scss";
+import "@/assets/css/content/post-meta.scss";
+import "@/assets/css/content/prose.scss";
 import { isListedBlogPost } from "@/lib/blog-posts";
 import { getContentEntryGitDates } from "@/lib/git-dates.mjs";
 import { SITE_GISCUS_CONFIG } from "@/site-config";
@@ -115,7 +121,15 @@ const postStructuredData = {
             {
               postTags.map((tag) => (
                 <li>
-                  <a href={`/tags/${tag}/`}>#{tag}</a>
+                  {isListed ? (
+                    <a class="post-tag-link" href={`/tags/${encodeURIComponent(tag)}/`}>
+                      #{tag}
+                    </a>
+                  ) : (
+                    <span class="post-tag-label" data-post-tag-static>
+                      #{tag}
+                    </span>
+                  )}
                 </li>
               ))
             }

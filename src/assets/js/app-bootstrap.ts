@@ -1,4 +1,5 @@
 import { schedulePostPaint } from "@/assets/js/app/post-paint";
+import { parseVersionedState, readCookieValue } from "@/assets/js/app/site-persistence.js";
 import {
   SITE_COOKIE_NAMES,
   SITE_EVENTS,
@@ -124,30 +125,18 @@ function armConsentResync() {
   });
 }
 
-function readCookie(name: string) {
-  const prefix = `${encodeURIComponent(name)}=`;
-  const cookie = document.cookie
-    .split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(prefix));
-  if (!cookie) return null;
-
-  try {
-    return decodeURIComponent(cookie.slice(prefix.length));
-  } catch {
-    return null;
-  }
-}
-
 function explicitContentAcknowledged() {
   try {
-    const state = JSON.parse(
-      localStorage.getItem(SITE_STORAGE_KEYS.explicitContentAcknowledgement) || "null",
+    const state = parseVersionedState(
+      localStorage.getItem(SITE_STORAGE_KEYS.explicitContentAcknowledgement),
     );
-    if (state?.version === 1 && state.acknowledged === true) return true;
+    if (state?.acknowledged === true) return true;
   } catch {}
 
-  return readCookie(SITE_COOKIE_NAMES.explicitContentAcknowledgement) === "acknowledged";
+  return (
+    readCookieValue(document.cookie, SITE_COOKIE_NAMES.explicitContentAcknowledgement) ===
+    "acknowledged"
+  );
 }
 
 async function loadSearchControllers() {

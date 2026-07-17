@@ -10,12 +10,16 @@ on:
       - synchronize
       - reopened
       - ready_for_review
+  push:
+    branches:
+      - develop
+      - main
 
 permissions:
   contents: read
 
 concurrency:
-  group: sync-security-header-hashes-${{ github.event.pull_request.number }}
+  group: sync-security-header-hashes-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -26,7 +30,7 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - name: Checkout pull request merge commit without stored credentials
+      - name: Checkout repository without stored credentials
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false

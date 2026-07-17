@@ -313,6 +313,24 @@ test("opens a second information dialog, then restores history, scroll and focus
     .toBe(true);
 });
 
+test("downloads the lightbox image without starting the page loading indicator", async ({
+  page,
+}) => {
+  const { dialog } = await openLightbox(page);
+  const informationDialog = page.locator("[data-image-information-dialog]");
+  const downloadButton = informationDialog.locator("[data-image-download]");
+  const pageProgress = page.locator("md-circular-progress.site-page-loading-progress");
+
+  await dialog.locator("[data-image-information]").click();
+  await expect(informationDialog).toHaveJSProperty("open", true);
+
+  const [download] = await Promise.all([page.waitForEvent("download"), downloadButton.click()]);
+  expect(download.suggestedFilename()).toBe("konachan-382339.jpg");
+  await page.waitForTimeout(300);
+  await expect(pageProgress).toHaveCount(0);
+  await expect(dialog).toHaveJSProperty("open", true);
+});
+
 test("requests native fullscreen in the originating Material button activation", async ({
   page,
 }) => {

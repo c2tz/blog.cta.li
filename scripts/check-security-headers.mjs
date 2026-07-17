@@ -4,6 +4,7 @@ import { collectExecutableInlineScriptHashes } from "./lib/inline-script-hashes.
 const GLOBAL_SECURITY_HEADER_SOURCE = "/(.*)";
 const DOCUMENT_SECURITY_HEADER_SOURCE =
   "/((?!_astro/|fonts/|giscus/|konachan-backgrounds/|favicon\\.ico$|mask\\.webp$|.*\\.(?:css|js|mjs|map|woff2?|png|jpe?g|gif|svg|webp|avif|ico|json|xml|txt|webmanifest)$).*)";
+const LICENSE_HEADER_SOURCE = "/LICENSE.txt";
 
 const GLOBAL_REQUIRED_HEADERS = new Map([
   ["Strict-Transport-Security", ["max-age=63072000", "includeSubDomains", "preload"]],
@@ -85,6 +86,9 @@ const globalSecurityRule = vercelConfig.headers?.find(
 const documentSecurityRule = vercelConfig.headers?.find(
   (rule) => rule.source === DOCUMENT_SECURITY_HEADER_SOURCE,
 );
+const licenseHeaderRule = vercelConfig.headers?.find(
+  (rule) => rule.source === LICENSE_HEADER_SOURCE,
+);
 
 if (!globalSecurityRule) {
   throw new Error(`Missing global security header rule for ${GLOBAL_SECURITY_HEADER_SOURCE}.`);
@@ -100,8 +104,19 @@ const globalHeaders = new Map(
 const documentHeaders = new Map(
   documentSecurityRule.headers?.map((header) => [header.key, header.value]) ?? [],
 );
+const licenseHeaders = new Map(
+  licenseHeaderRule?.headers?.map((header) => [header.key, header.value]) ?? [],
+);
 
 const problems = [];
+
+if (licenseHeaders.get("Content-Type") !== "text/plain; charset=utf-8") {
+  problems.push("/LICENSE.txt must be served as text/plain; charset=utf-8.");
+}
+
+if (licenseHeaders.get("Content-Disposition") !== 'inline; filename="LICENSE.txt"') {
+  problems.push('/LICENSE.txt must use Content-Disposition inline; filename="LICENSE.txt".');
+}
 
 for (const [source, requiredTokens] of REQUIRED_CACHE_RULES) {
   const rule = vercelConfig.headers?.find((candidate) => candidate.source === source);

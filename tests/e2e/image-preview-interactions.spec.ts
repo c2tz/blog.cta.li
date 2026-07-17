@@ -320,12 +320,17 @@ test("downloads the lightbox image without starting the page loading indicator",
   const informationDialog = page.locator("[data-image-information-dialog]");
   const downloadButton = informationDialog.locator("[data-image-download]");
   const pageProgress = page.locator("md-circular-progress.site-page-loading-progress");
+  const imageSource = await dialog.locator("[data-image-dialog-image]").getAttribute("src");
+  if (!imageSource) throw new Error("Missing lightbox image source");
+  const expectedFilename = decodeURIComponent(new URL(imageSource, page.url()).pathname)
+    .split("/")
+    .pop();
 
   await dialog.locator("[data-image-information]").click();
   await expect(informationDialog).toHaveJSProperty("open", true);
 
   const [download] = await Promise.all([page.waitForEvent("download"), downloadButton.click()]);
-  expect(download.suggestedFilename()).toBe("konachan-382339.jpg");
+  expect(download.suggestedFilename()).toBe(expectedFilename);
   await page.waitForTimeout(300);
   await expect(pageProgress).toHaveCount(0);
   await expect(dialog).toHaveJSProperty("open", true);

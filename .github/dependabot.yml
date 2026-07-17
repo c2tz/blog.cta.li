@@ -12,7 +12,8 @@ updates:
       default-days: 1
     open-pull-requests-limit: 5
     labels:
-      - "dependencies"
+      - "type: dependencies"
+      - "status: needs-review"
     commit-message:
       prefix: "chore"
       include: "scope"
@@ -40,7 +41,9 @@ updates:
       default-days: 1
     open-pull-requests-limit: 5
     labels:
-      - "dependencies"
+      - "type: dependencies"
+      - "area: tooling"
+      - "status: needs-review"
     commit-message:
       prefix: "chore"
       include: "scope"

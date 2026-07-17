@@ -68,6 +68,19 @@
       ]
     },
     {
+      "source": "/LICENSE.txt",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        },
+        {
+          "key": "Content-Disposition",
+          "value": "inline; filename=\"LICENSE.txt\""
+        }
+      ]
+    },
+    {
       "source": "/_astro/(.*)",
       "headers": [
         {

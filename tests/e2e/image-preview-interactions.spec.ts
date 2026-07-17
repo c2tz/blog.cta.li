@@ -313,6 +313,29 @@ test("opens a second information dialog, then restores history, scroll and focus
     .toBe(true);
 });
 
+test("downloads the lightbox image without starting the page loading indicator", async ({
+  page,
+}) => {
+  const { dialog } = await openLightbox(page);
+  const informationDialog = page.locator("[data-image-information-dialog]");
+  const downloadButton = informationDialog.locator("[data-image-download]");
+  const pageProgress = page.locator("md-circular-progress.site-page-loading-progress");
+  const imageSource = await dialog.locator("[data-image-dialog-image]").getAttribute("src");
+  if (!imageSource) throw new Error("Missing lightbox image source");
+  const expectedFilename = decodeURIComponent(new URL(imageSource, page.url()).pathname)
+    .split("/")
+    .pop();
+
+  await dialog.locator("[data-image-information]").click();
+  await expect(informationDialog).toHaveJSProperty("open", true);
+
+  const [download] = await Promise.all([page.waitForEvent("download"), downloadButton.click()]);
+  expect(download.suggestedFilename()).toBe(expectedFilename);
+  await page.waitForTimeout(300);
+  await expect(pageProgress).toHaveCount(0);
+  await expect(dialog).toHaveJSProperty("open", true);
+});
+
 test("requests native fullscreen in the originating Material button activation", async ({
   page,
 }) => {

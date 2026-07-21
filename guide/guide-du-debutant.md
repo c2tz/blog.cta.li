@@ -94,7 +94,7 @@ Si le port 4321 est déjà occupé, consultez [Dépannage](depannage.md#le-port-
 | `scripts`                 | Contrôles et tâches de maintenance            | Rarement                                |
 | `tests`                   | Tests unitaires et tests de navigateur        | Lors d'une fonctionnalité               |
 | `.github/workflows`       | Automatisations GitHub Actions                | Rarement et avec prudence               |
-| `docs`                    | Documentation humaine                         | Oui                                     |
+| `guide`                   | Documentation humaine                         | Oui                                     |
 | `dist`                    | Résultat temporaire de `pnpm build`           | Jamais à la main                        |
 | `node_modules`            | Dépendances installées localement             | Jamais à la main                        |
 

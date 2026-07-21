@@ -42,7 +42,7 @@ Pour créer un article immédiatement publiable :
 pnpm new:post "Titre de mon article" --description "Résumé de l'article." --publish
 ```
 
-Le guide complet est dans [Publier un article](docs/publier-un-article.md).
+Le guide complet est dans [Publier un article](guide/publier-un-article.md).
 
 ## Quelle commande utiliser ?
 
@@ -57,31 +57,31 @@ Le guide complet est dans [Publier un article](docs/publier-un-article.md).
 
 `pnpm verify` est volontairement long. Pour une simple rédaction d'article, il est raisonnable de
 lancer `pnpm build` localement et de laisser GitHub Actions refaire la matrice complète. Consultez
-[Commandes et contrôles](docs/commandes-et-controles.md) avant de lancer ou de corriger une commande
+[Commandes et contrôles](guide/commandes-et-controles.md) avant de lancer ou de corriger une commande
 que vous ne connaissez pas.
 
 ## Documentation
 
 Commencez par les documents suivants :
 
-1. [Guide du débutant](docs/guide-du-debutant.md) : vocabulaire, installation et organisation du
+1. [Guide du débutant](guide/guide-du-debutant.md) : vocabulaire, installation et organisation du
    dépôt.
-2. [Publier un article](docs/publier-un-article.md) : brouillon, Markdown, images, dates Git et
+2. [Publier un article](guide/publier-un-article.md) : brouillon, Markdown, images, dates Git et
    publication.
-3. [Commandes et contrôles](docs/commandes-et-controles.md) : rôle de chaque script `pnpm`.
-4. [GitHub Actions et déploiement](docs/github-actions-et-deploiement.md) : contrôles automatiques,
+3. [Commandes et contrôles](guide/commandes-et-controles.md) : rôle de chaque script `pnpm`.
+4. [GitHub Actions et déploiement](guide/github-actions-et-deploiement.md) : contrôles automatiques,
    Vercel et hébergement statique.
-5. [Dépendances](docs/dependances.md) : pourquoi il y en a plusieurs et lesquelles arrivent dans le
+5. [Dépendances](guide/dependances.md) : pourquoi il y en a plusieurs et lesquelles arrivent dans le
    navigateur.
-6. [Dépannage](docs/depannage.md) : solutions aux erreurs les plus courantes.
+6. [Dépannage](guide/depannage.md) : solutions aux erreurs les plus courantes.
 
 Références techniques pour les modifications plus avancées :
 
-- [Architecture](docs/architecture.md)
-- [Architecture du rendu et performances](docs/rendering-architecture.md)
-- [En-têtes de sécurité](docs/security-headers.md)
-- [Messages de commit](docs/commit-messages.md)
-- [Vérification sur appareils physiques](docs/physical-device-qa.md)
+- [Architecture](guide/architecture.md)
+- [Architecture du rendu et performances](guide/rendering-architecture.md)
+- [En-têtes de sécurité](guide/security-headers.md)
+- [Messages de commit](guide/commit-messages.md)
+- [Vérification sur appareils physiques](guide/physical-device-qa.md)
 
 ## Branches et publication
 

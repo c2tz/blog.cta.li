@@ -1,5 +1,8 @@
 # Rendering architecture and performance contract
 
+> Ce document est un contrat technique de non-régression, pas un guide d'installation. Commencez par
+> le [guide du débutant](guide-du-debutant.md) si vous découvrez Astro ou ce dépôt.
+
 This document describes the production rendering path at the `2c73092a` baseline and the
 performance migration applied on `develop` in July 2026. It is a regression contract: a new
 feature should be placed in the latest possible loading phase that still preserves its first

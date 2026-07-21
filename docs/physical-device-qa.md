@@ -1,5 +1,9 @@
 # Physical device QA
 
+> Cette vérification complète les tests automatiques après une modification visible importante. Le
+> parcours GitHub Actions et déploiement est expliqué dans
+> [GitHub Actions et déploiement](github-actions-et-deploiement.md).
+
 Run this short pass on a public Vercel preview after automated checks. Record the device, OS/browser
 version, preview URL, commit, and pass/fail result. Start in a private window so consent and cached
 assets cannot hide a regression.

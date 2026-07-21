@@ -1,5 +1,9 @@
 # Commit Messages
 
+> Si Git et les pull requests sont nouveaux pour vous, commencez par la
+> [routine Git simple](guide-du-debutant.md#routine-git-simple). Les commandes ci-dessous sont des
+> outils avancés de normalisation et ne sont pas nécessaires pour publier un article ordinaire.
+
 This repository uses the Conventional Commits style for new work:
 
 ```text

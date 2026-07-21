@@ -1,5 +1,10 @@
 # Architecture
 
+> Ce document est une référence technique. Pour découvrir le projet ou publier un article, commencez
+> par le [guide du débutant](guide-du-debutant.md) et le guide
+> [Publier un article](publier-un-article.md). Le rôle des contrôles est expliqué sans jargon dans
+> [Commandes et contrôles](commandes-et-controles.md).
+
 ## Roles
 
 - Astro owns page structure, routing, layouts, content collections, and static rendering.

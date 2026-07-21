@@ -1,0 +1,168 @@
+# GitHub Actions et déploiement
+
+GitHub Actions est le service qui exécute les fichiers `.github/workflows/*.yml`. Il installe le
+projet sur une machine temporaire, lance des commandes et affiche un résultat vert ou rouge dans la
+pull request.
+
+GitHub Actions ne remplace pas l'hébergeur : un contrôle vert signifie que le code testé respecte
+les règles prévues. Il ne prouve pas à lui seul que Vercel, le DNS ou un NAS sert correctement la
+dernière version.
+
+## Ce qui se passe sur une pull request
+
+Les workflows importants sont :
+
+| Workflow                                | Déclenchement                                 | Rôle                                                 |
+| --------------------------------------- | --------------------------------------------- | ---------------------------------------------------- |
+| `Verify Astro and Material Web project` | Pull requests et pushes vers `develop`/`main` | Qualité, build, en-têtes, Playwright et Lighthouse   |
+| `Validate security header hashes`       | Pull requests et pushes vers `develop`/`main` | Recalcule la CSP et refuse un `vercel.json` obsolète |
+| `Commit message standards`              | Pull requests et pushes protégés              | Valide le titre de PR ou le dernier message poussé   |
+| `CodeQL`                                | Pull requests, pushes et planning             | Analyse de sécurité JavaScript/TypeScript            |
+| `Smoke Vercel preview deployment`       | Déploiement Vercel ou lancement manuel        | Vérifie le site réellement déployé et ses en-têtes   |
+
+Deux jobs composent le workflow principal :
+
+### Check Astro, Material Web, and security headers
+
+Il récupère tout l'historique Git, installe Node.js, pnpm, Chromium et WebKit, puis lance
+`pnpm verify:quality`. En cas d'échec Playwright, les traces et captures sont publiées comme artefact
+pendant 14 jours.
+
+### Lighthouse 95+ performance (mobile and desktop, no SEO)
+
+Il construit le site, lance trois mesures mobiles et trois mesures bureau, puis impose au moins 95
+en performance et 100 en accessibilité et bonnes pratiques. Les rapports sont conservés comme
+artefacts même si le job échoue.
+
+Les noms exacts des jobs peuvent être référencés par les rulesets de branches. Ne les renommez pas
+sans modifier les rulesets correspondants dans `.github/rulesets`.
+
+## Workflows planifiés ou manuels
+
+### Nightly cross-browser QA
+
+Chaque nuit, une matrice supplémentaire teste Firefox et WebKit, puis répète les parcours WebKit
+fragiles. Ce workflow cherche des problèmes qui peuvent ne pas apparaître dans la validation rapide
+d'une pull request.
+
+### Refresh Konachan backgrounds
+
+Chaque mois, il télécharge une nouvelle sélection, valide le nombre d'images, les variantes, les
+manifestes et leurs tailles, puis ouvre une pull request si quelque chose a changé. Il utilise le
+secret `BOT_TOKEN` uniquement pour créer cette proposition.
+
+### Normalize commit messages with Codex
+
+Workflow manuel et spécialisé pour réécrire des messages de commit sur une branche du même dépôt.
+Il ne doit pas être lancé pour publier un article ordinaire. Une réécriture d'historique peut gêner
+les collaborateurs ; consultez [Messages de commit](commit-messages.md).
+
+## Lire un échec GitHub Actions
+
+1. Ouvrez l'onglet **Checks** de la pull request.
+2. Ouvrez le job rouge, puis l'étape rouge.
+3. Remontez jusqu'à la première vraie erreur. Les lignes suivantes sont souvent des conséquences.
+4. Reproduisez la commande indiquée localement si possible.
+5. Corrigez la cause, commitez et poussez. GitHub relancera les contrôles.
+
+Exemples :
+
+- `Run pnpm lint` échoue : ouvrez la première erreur ESLint avec son fichier et sa ligne ;
+- `Build static output` échoue : lancez `pnpm build` localement ;
+- hachages CSP obsolètes : lancez `pnpm build && pnpm sync:headers && pnpm check:headers`, puis
+  commitez `vercel.json` ;
+- Playwright échoue : téléchargez l'artefact et consultez la trace ou la capture ;
+- Lighthouse échoue : consultez le rapport de la catégorie et vérifiez si la baisse se reproduit.
+
+Un job `Cancelled` n'est pas un succès. La règle `cancel-in-progress: true` annule normalement une
+ancienne exécution lorsqu'un nouveau commit arrive sur la même branche ; attendez le résultat du
+dernier commit.
+
+## Déploiement Vercel
+
+`vercel.json` demande à Vercel d'exécuter :
+
+```sh
+pnpm build:vercel
+```
+
+Cette commande :
+
+1. vérifie que l'historique Git est suffisant pour calculer les dates ;
+2. génère le site statique dans `dist` ;
+3. vérifie les en-têtes de sécurité.
+
+`vercel.json` définit aussi la CSP, HSTS, les politiques du navigateur et les règles de cache. Les
+ressources versionnées comme `/_astro/*` peuvent être conservées longtemps, alors que les documents
+HTML restent actualisables.
+
+Le workflow de smoke test Vercel vérifie une URL publique. Son exécution automatique n'est active que
+si la variable de dépôt `VERCEL_PREVIEW_SMOKE_ENABLED` vaut exactement `true`. Si Vercel Deployment
+Protection redirige les visiteurs anonymes vers une connexion, laissez cette variable désactivée ou
+lancez un contrôle adapté avec une URL réellement accessible.
+
+## Déploiement sur un NAS Synology
+
+Le site est statique, donc il peut être copié sur un NAS sans exécuter Astro ou Node.js en continu.
+
+Sur la machine de build :
+
+```sh
+pnpm install --frozen-lockfile
+pnpm build
+```
+
+Copiez ensuite **le contenu** de `dist` dans la racine web configurée sur le NAS. Le serveur doit :
+
+- servir `index.html` pour les routes générées ;
+- conserver les bons types MIME pour CSS, JavaScript, JSON, XML, WebP et WOFF2 ;
+- utiliser HTTPS ;
+- servir la vraie page `404.html` avec un statut HTTP 404 ;
+- reproduire les en-têtes de sécurité et de cache utiles de `vercel.json` dans sa propre
+  configuration.
+
+La dernière condition est importante : copier `dist` ne copie pas automatiquement les en-têtes
+Vercel. Si Synology utilise Nginx en interne, sa configuration se maintient sur le NAS et non dans ce
+dépôt. C'est à cet endroit qu'un analyseur Nginx comme Gixy pourrait éventuellement avoir du sens.
+
+Pour automatiser le couplage avec GitHub, utilisez de préférence un déploiement à sens unique :
+
+1. GitHub reste la source de vérité ;
+2. un workflow ou un service du NAS récupère un commit validé ;
+3. il construit le site dans un espace temporaire ;
+4. il remplace la version servie seulement si le build réussit.
+
+Évitez de modifier directement les fichiers servis sur le NAS : ces changements disparaîtraient au
+prochain déploiement et ne seraient pas enregistrés par Git.
+
+## GitHub Pages
+
+Le dossier `dist` est compatible avec un hébergement statique, mais ce dépôt n'inclut pas actuellement
+de workflow de déploiement GitHub Pages. Il faudrait en ajouter un qui construit le site et publie
+`dist`.
+
+GitHub Pages ne lit pas `vercel.json`. Les en-têtes CSP, HSTS et cache définis pour Vercel n'y seront
+donc pas reproduits de la même manière. Une URL sous un sous-chemin, par exemple
+`utilisateur.github.io/depot/`, demanderait aussi de vérifier la base Astro et tous les chemins
+commençant par `/`. Un domaine personnalisé servi à la racine évite une partie de ce problème.
+
+Les possibilités de Pages pour un dépôt privé dépendent du plan GitHub et des règles du compte ;
+elles doivent être confirmées dans les paramètres GitHub actuels avant de choisir cet hébergement.
+
+## Séparer contrôle et déploiement
+
+Un parcours fiable ressemble à ceci :
+
+```text
+modification -> pull request -> contrôles GitHub verts -> fusion -> build hébergeur -> smoke distant
+```
+
+Chaque étape répond à une question différente :
+
+- les fichiers sont-ils cohérents ?
+- le site se construit-il ?
+- les interactions automatisées fonctionnent-elles ?
+- l'hébergeur a-t-il déployé le bon commit ?
+- l'URL publique sert-elle les bons fichiers et en-têtes ?
+
+Ne concluez pas qu'une production est à jour uniquement à partir d'un contrôle GitHub vert.

@@ -1,5 +1,10 @@
 # Security Headers
 
+> Cette référence explique les détails de la politique de sécurité. Pour savoir quelle commande
+> lancer et comment corriger un hachage obsolète, consultez
+> [Commandes et contrôles](commandes-et-controles.md#securite-et-contenu-produit) et
+> [Dépannage](depannage.md#les-hachages-de-securite-sont-obsoletes).
+
 ## CSP inline script hashes
 
 The production CSP in `vercel.json` does not allow `script-src 'unsafe-inline'`.

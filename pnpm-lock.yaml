@@ -6,6 +6,9 @@ settings:
 
 overrides:
   esbuild: 0.28.1
+  fast-uri: 3.1.4
+  fast-xml-parser: 5.10.1
+  immutable: 5.1.8
   tmp: 0.2.7
   uuid: 11.1.1
 
@@ -909,8 +912,8 @@ packages:
       '@emnapi/core': ^1.7.1
       '@emnapi/runtime': ^1.7.1
 
-  '@nodable/entities@2.2.0':
-    resolution: {integrity: sha512-9uGyhaQavEUMC8AIddIjau4NsnsXhou+j5sBAGojCM1oxmQpVKTWR/9JxABD6UAv12vpIms55fPZKFQEhG6uBg==}
+  '@nodable/entities@3.0.0':
+    resolution: {integrity: sha512-8L9xFeTYKhm49xfIypoe2W5wV1m/3Z58kT+7kR9A8OyFxcPduI4VmxaUMQyKYrRjUoLLSXv6EKKID5Tvj9cUVw==}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -2626,8 +2629,8 @@ packages:
   fast-string-width@3.0.2:
     resolution: {integrity: sha512-gX8LrtNEI5hq8DVUfRQMbr5lpaS4nMIWV+7XEbXk2b8kiQIizgnlr12B4dA3ZEx3308ze0O4Q1R+cHts8kyUJg==}
 
-  fast-uri@3.1.2:
-    resolution: {integrity: sha512-rVjf7ArG3LTk+FS6Yw81V1DLuZl1bRbNrev6Tmd/9RaroeeRRJhAt7jg/6YFxbvAQXUCavSoZhPPj6oOx+5KjQ==}
+  fast-uri@3.1.4:
+    resolution: {integrity: sha512-8JnbkQ4juDyvYs4mgFGQqg4yCYtFDtUtmp2QIQq11ZZe5CFQ5wcqm1rqDgAh/QdMySuBnPzMUiJUNZG5N/AiQw==}
 
   fast-wrap-ansi@0.2.2:
     resolution: {integrity: sha512-7F2Fl+TjRSenLqlU3UjSH0iyqopqoZIu7eZVpEirP2g1GtWa2G/ecEmBdgz31+Mxr+ELclgg6sokpSFIQiZ02Q==}
@@ -2635,8 +2638,8 @@ packages:
   fast-xml-builder@1.2.0:
     resolution: {integrity: sha512-00aAWieqff+ZJhsXA4g1g7M8k+7AYoMUUHF+/zFb5U6Uv/P0Vl4QZo84/IcufzYalLuEj9928bXN9PbbFzMF0Q==}
 
-  fast-xml-parser@5.9.3:
-    resolution: {integrity: sha512-brCNCeScma/kqa54J4PIDriSSSLssRkuYaUCpvHJulGc3HGI/xxKUCTDcYkAdqJsyb//ydpbxecjC3hB9+tb/g==}
+  fast-xml-parser@5.10.1:
+    resolution: {integrity: sha512-IEMIf7298kXuZSRFoGfMYrl7is8LpavODgbNz1cwIudv7KwVFnuU+UsMporfq6PD6aXSlawZlARiA3UywCTfMw==}
     hasBin: true
 
   fastq@1.20.1:
@@ -2959,8 +2962,8 @@ packages:
   immediate@3.0.6:
     resolution: {integrity: sha512-XXOFtyqDjNDAQxVfYxuF7g9Il/IbWmmlQg2MYKOH8ExIT1qg6xc4zyS3HaEEATgs1btfzxq15ciUiY7gjSXRGQ==}
 
-  immutable@5.1.6:
-    resolution: {integrity: sha512-q1swsS8K7L8usSHuOqF2TAoCCkonYz0SG38wLAggaa4Wml70zixIvt2ql4coQ2C2B3hTjltJry4r6bULwgAXLQ==}
+  immutable@5.1.8:
+    resolution: {integrity: sha512-TM5YqrGeTsVIPPpILzeqZ8D2Zc2TvNgSDi88zPF2a4cyqQdWV/wVWBDRDbNzzrLeRWScrFcOX9lW2iX6GOtUDw==}
 
   import-fresh@3.3.1:
     resolution: {integrity: sha512-TR3KfrTZTYLPB6jUjfx6MF9WcWrHL9su5TObK4ZkYgBdWKPOFoSoQIdEuTuR82pmtxH2spWG9h6etwfr1pLBqQ==}
@@ -3142,8 +3145,8 @@ packages:
   is-typedarray@1.0.0:
     resolution: {integrity: sha512-cyA56iCMHAh5CdzjJIa4aohJyeO1YbwLi3Jc35MmRU6poroFjIGZzUzupGiRPOjgHg9TLu43xbpwXk523fMxKA==}
 
-  is-unsafe@1.0.1:
-    resolution: {integrity: sha512-CLK2+VdgERgD96EYm5lUQssZYlRg2tkZnbsxZoacmSiRxiFJ4Nk4SzjCl+Ur+v3kXIY9dTIdb3IH22y1mZ56LA==}
+  is-unsafe@2.0.0:
+    resolution: {integrity: sha512-2LdV822R+wmI86unXA93WCFpL6g+av8ynWk0nrHyJqGop5VoocYsSLFgN8jrfalT6iGeLNM4KXuVSsULP53kEA==}
 
   is-weakmap@2.0.2:
     resolution: {integrity: sha512-K5pXYOm9wqY1RgjpL3YTkF39tni1XajUIkawTLUo9EZEVUFga5gSQJF8nNS7ZwJQ02y+1YCNYcMh+HIf1ZqE+w==}
@@ -3904,6 +3907,10 @@ packages:
 
   path-expression-matcher@1.5.0:
     resolution: {integrity: sha512-cbrerZV+6rvdQrrD+iGMcZFEiiSrbv9Tfdkvnusy6y0x0GKBXREFg/Y65GhIfm0tnLntThhzCnfKwp1WRjeCyQ==}
+    engines: {node: '>=14.0.0'}
+
+  path-expression-matcher@1.6.2:
+    resolution: {integrity: sha512-enSlaiat05iasnzmgNxRj8reFdj3puY2QpNgP1aPIaVfT6nn9ICuPoFlKHk8EN22HcwewshO+mN2DGbkCEOtqQ==}
     engines: {node: '>=14.0.0'}
 
   path-is-absolute@1.0.1:
@@ -5024,6 +5031,10 @@ packages:
     resolution: {integrity: sha512-k8KO9hrMyNk6tUWqUfkTEZbezRRpONVOzUTnc97VnCvyj6Tf9lyUR9EDAIeiVLv56jsMcoXEwjW8Kv5yPY52lw==}
     engines: {node: '>=16.0.0'}
 
+  xml-naming@0.3.0:
+    resolution: {integrity: sha512-ghig2TBE/H11aOVgmahA3MhimvkBr6JIYknH/Dhdk10nXwdbIqBJsbfMxpvFPG8bAw77gN29aQWvKpmVoPlvPQ==}
+    engines: {node: '>=16.0.0'}
+
   xxhash-wasm@1.1.0:
     resolution: {integrity: sha512-147y/6YNh+tlp6nd/2pWq38i9h6mz/EuQ6njIrmW8D1BS5nCqs0P6DG+m6zTGnNz5I+uhZ0SHxBs9BsPrwcKDA==}
 
@@ -5264,7 +5275,7 @@ snapshots:
 
   '@astrojs/rss@4.0.19':
     dependencies:
-      fast-xml-parser: 5.9.3
+      fast-xml-parser: 5.10.1
       piccolore: 0.1.3
       zod: 4.4.3
 
@@ -5918,7 +5929,7 @@ snapshots:
       '@tybys/wasm-util': 0.10.3
     optional: true
 
-  '@nodable/entities@2.2.0': {}
+  '@nodable/entities@3.0.0': {}
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
@@ -6575,7 +6586,7 @@ snapshots:
   ajv@8.20.0:
     dependencies:
       fast-deep-equal: 3.1.3
-      fast-uri: 3.1.2
+      fast-uri: 3.1.4
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
@@ -7705,7 +7716,7 @@ snapshots:
     dependencies:
       fast-string-truncated-width: 3.0.3
 
-  fast-uri@3.1.2: {}
+  fast-uri@3.1.4: {}
 
   fast-wrap-ansi@0.2.2:
     dependencies:
@@ -7716,14 +7727,14 @@ snapshots:
       path-expression-matcher: 1.5.0
       xml-naming: 0.1.0
 
-  fast-xml-parser@5.9.3:
+  fast-xml-parser@5.10.1:
     dependencies:
-      '@nodable/entities': 2.2.0
+      '@nodable/entities': 3.0.0
       fast-xml-builder: 1.2.0
-      is-unsafe: 1.0.1
-      path-expression-matcher: 1.5.0
+      is-unsafe: 2.0.0
+      path-expression-matcher: 1.6.2
       strnum: 2.4.1
-      xml-naming: 0.1.0
+      xml-naming: 0.3.0
 
   fastq@1.20.1:
     dependencies:
@@ -8150,7 +8161,7 @@ snapshots:
 
   immediate@3.0.6: {}
 
-  immutable@5.1.6: {}
+  immutable@5.1.8: {}
 
   import-fresh@3.3.1:
     dependencies:
@@ -8333,7 +8344,7 @@ snapshots:
 
   is-typedarray@1.0.0: {}
 
-  is-unsafe@1.0.1: {}
+  is-unsafe@2.0.0: {}
 
   is-weakmap@2.0.2: {}
 
@@ -9437,6 +9448,8 @@ snapshots:
 
   path-expression-matcher@1.5.0: {}
 
+  path-expression-matcher@1.6.2: {}
+
   path-is-absolute@1.0.1: {}
 
   path-key@3.1.1: {}
@@ -9834,7 +9847,7 @@ snapshots:
   sass@1.101.0:
     dependencies:
       chokidar: 5.0.0
-      immutable: 5.1.6
+      immutable: 5.1.8
       source-map-js: 1.2.1
     optionalDependencies:
       '@parcel/watcher': 2.5.6
@@ -10724,6 +10737,8 @@ snapshots:
   xdg-basedir@4.0.0: {}
 
   xml-naming@0.1.0: {}
+
+  xml-naming@0.3.0: {}
 
   xxhash-wasm@1.1.0: {}
 

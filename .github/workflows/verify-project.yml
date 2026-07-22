@@ -18,7 +18,7 @@ jobs:
   check-build-and-headers:
     name: Check Astro, Material Web, and security headers
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repository

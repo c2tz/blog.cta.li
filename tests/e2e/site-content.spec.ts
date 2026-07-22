@@ -8,7 +8,26 @@ import {
   waitForNativeEnhancement,
   expectPopoverOpen,
   expectKeyboardFocusOverridesPendingPointerFrame,
+  clearConsentState,
 } from "./site-fixture";
+
+test("links each post title to its own anchor", async ({ page }) => {
+  await gotoRoute(page, "/posts/bienvenue-sur-ct-blog/");
+
+  const title = page.getByRole("heading", { level: 1, name: "Bienvenue sur ct-blog" });
+  const titleLink = title.getByRole("link", { name: "Bienvenue sur ct-blog" });
+  const headerLink = page.locator(".header-link");
+  await expect(title).toHaveAttribute("id", "post-title");
+  await expect(titleLink).toHaveClass("heading-link");
+  await expect(titleLink).toHaveAttribute("href", "#post-title");
+  const headerSkipInk = await headerLink.evaluate(
+    (element) => getComputedStyle(element).textDecorationSkipInk,
+  );
+  await expect(titleLink).toHaveCSS("text-decoration-skip-ink", headerSkipInk);
+
+  await titleLink.click();
+  await expect(page).toHaveURL(/#post-title$/);
+});
 
 test("keeps the latest-posts table interactive without exposing hidden posts", async ({ page }) => {
   await gotoRoute(page, "/");
@@ -41,74 +60,10 @@ test("keeps the latest-posts table interactive without exposing hidden posts", a
   await expect(page.getByRole("link", { name: "Shortcodes Astro et Material Web" })).toHaveCount(0);
 });
 
-test("renders the cookie preferences controls", async ({ page }) => {
-  await gotoRoute(page, "/cookies/#modifier-vos-choix-cookies");
-
-  await expect(page.getByRole("heading", { name: "Modifier vos choix cookies" })).toBeVisible();
-  const panel = page.locator(".cookie-preferences-panel");
-  const allowButton = page.locator("md-filled-tonal-button.cookie-preferences-allow");
-  const rejectButton = page.locator("md-filled-button.cookie-preferences-reject");
-  const resetButton = page.locator("md-text-button.cookie-preferences-reset");
-
-  await expect(panel).toBeVisible();
-  await expect(allowButton).toBeVisible();
-  await expect(rejectButton).toBeVisible();
-  await expect(resetButton).toBeVisible();
-  await expect(allowButton).toHaveAttribute("has-icon", "");
-  await expect(rejectButton).toHaveAttribute("has-icon", "");
-  expect(
-    await allowButton
-      .locator('md-icon[slot="icon"]')
-      .evaluate((icon) => icon.textContent?.codePointAt(0)),
-  ).toBe(0xe5ca);
-  expect(
-    await rejectButton
-      .locator('md-icon[slot="icon"]')
-      .evaluate((icon) => icon.textContent?.codePointAt(0)),
-  ).toBe(0xe5cd);
-  const rejectColors = await rejectButton.evaluate((button) => ({
-    button: getComputedStyle(button).getPropertyValue("--md-filled-button-container-color").trim(),
-    theme: getComputedStyle(document.documentElement)
-      .getPropertyValue("--md-sys-color-error")
-      .trim(),
-  }));
-  expect(rejectColors.button).toBe(rejectColors.theme);
-
-  await expect(panel).toHaveAttribute("data-cookie-preference-state", "rejected");
-  await expect(panel.getByText("Refusés", { exact: true })).toBeVisible();
-  await expect(rejectButton).toHaveAttribute("data-selected", "");
-
-  await allowButton.click();
-  await expect(panel).toHaveAttribute("data-cookie-preference-state", "accepted");
-  await expect(panel.getByText("Autorisés", { exact: true })).toBeVisible();
-  await expect(allowButton).toHaveAttribute("data-selected", "");
-  await expect(rejectButton).not.toHaveAttribute("data-selected", "");
-
-  await resetButton.click();
-  await expect(panel).toHaveAttribute("data-cookie-preference-state", "unset");
-  await expect(panel.getByText("Aucun choix enregistré", { exact: true })).toBeVisible();
-  await expect(panel.getByText("Choix des services optionnels réinitialisé.")).toBeVisible();
-  await expect(resetButton).toHaveAttribute("disabled", "");
-  await expect
-    .poll(() =>
-      resetButton.evaluate(
-        (button) =>
-          (button.shadowRoot?.querySelector("button") as HTMLButtonElement | null)?.disabled ??
-          false,
-      ),
-    )
-    .toBe(true);
-});
-
 test("keeps consent actions uppercase and the privacy banner below the search scrim", async ({
   page,
 }) => {
-  await page.addInitScript(() => {
-    localStorage.removeItem("ct-explicit-content-ack-v1");
-    localStorage.removeItem("ct-cookie-consent-v1");
-    document.cookie = "ct-explicit-content-ack=; Max-Age=0; Path=/; SameSite=Lax";
-    document.cookie = "ct-cookie-consent=; Max-Age=0; Path=/; SameSite=Lax";
-  });
+  await page.addInitScript(clearConsentState);
   await gotoRoute(page, "/");
 
   const explicitConsent = page.getByRole("dialog", {
@@ -240,7 +195,7 @@ test("keeps consent actions uppercase and the privacy banner below the search sc
       };
     });
     expect(compactLayout.buttonsFit).toBe(true);
-    expect(compactLayout.count).toBe(3);
+    expect(compactLayout.count).toBe(4);
     expect(compactLayout.fullWidth).toBe(true);
     expect(compactLayout.ordered).toBe(true);
     expect(compactLayout.left).toBeGreaterThanOrEqual(7);
@@ -798,9 +753,7 @@ test("keeps Giscus disabled behind the privacy choice", async ({ page }) => {
     "#commentaires",
   );
   await expect(
-    page.getByText(
-      "Les commentaires sont masqués, car les services optionnels n'ont pas été acceptés.",
-    ),
+    page.getByText("Les commentaires sont masqués, car Giscus n'a pas été autorisé."),
   ).toBeVisible();
   await expect(page.getByRole("link", { name: "Modifier mes préférences" })).toHaveAttribute(
     "href",
@@ -886,8 +839,12 @@ test("keeps one Giscus progress bar until its iframe has loaded", async ({ page 
     });
     const updatedAt = new Date().toISOString();
     localStorage.setItem(
-      "ct-cookie-consent-v1",
-      JSON.stringify({ functionality: true, updatedAt, version: 1 }),
+      "ct-cookie-consent-v2",
+      JSON.stringify({
+        services: { giscus: true, ipgeo: false, "speed-insights": false },
+        updatedAt,
+        version: 2,
+      }),
     );
     localStorage.setItem(
       "site-giscus-comments-enabled-v1",

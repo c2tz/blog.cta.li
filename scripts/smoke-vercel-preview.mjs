@@ -331,7 +331,7 @@ async function verifyBrowserSurface(targetUrl) {
     const consentState = await page.evaluate(() => {
       let storedConsent = null;
       try {
-        storedConsent = JSON.parse(localStorage.getItem("ct-cookie-consent-v1") ?? "null");
+        storedConsent = JSON.parse(localStorage.getItem("ct-cookie-consent-v2") ?? "null");
       } catch {}
 
       return {
@@ -340,18 +340,20 @@ async function verifyBrowserSurface(targetUrl) {
         cookie: globalThis.document.cookie
           .split(";")
           .map((part) => part.trim())
-          .find((part) => part.startsWith("ct-cookie-consent=")),
-        functionality: storedConsent?.functionality,
+          .find((part) => part.startsWith("ct-cookie-consent-v2=")),
+        services: storedConsent?.services,
         version: storedConsent?.version,
       };
     });
 
     assert(
-      consentState.functionality === false && consentState.version === 1,
+      consentState.version === 2 &&
+        consentState.services &&
+        Object.values(consentState.services).every((value) => value === false),
       `Refusal was not persisted in localStorage: ${JSON.stringify(consentState)}.`,
     );
     assert(
-      consentState.cookie === "ct-cookie-consent=rejected",
+      consentState.cookie?.startsWith("ct-cookie-consent-v2="),
       `Refusal cookie is missing or invalid: ${JSON.stringify(consentState.cookie)}.`,
     );
     assert(

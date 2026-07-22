@@ -5,6 +5,8 @@ const BASE_URL = `http://127.0.0.1:${PORT}`;
 const reuseExistingBuild = process.env.PLAYWRIGHT_REUSE_BUILD === "1";
 const nightly = process.env.PLAYWRIGHT_NIGHTLY === "1";
 const firefoxNightlyTestMatch = /(?:image-preview-(?:core|interactions)|site-resilience)\.spec\.ts/;
+const webkitPullRequestTestMatch =
+  /(?:image-preview-(?:core|interactions)|site-(?:archive|consent|content|giscus|navigation|rendering|search))\.spec\.ts/;
 
 const nightlyProjects = nightly
   ? [
@@ -157,8 +159,7 @@ export default defineConfig({
     },
     {
       name: "webkit-desktop-light",
-      testMatch:
-        /(?:image-preview-(?:core|interactions)|site-(?:consent|content|giscus|search))\.spec\.ts/,
+      testMatch: webkitPullRequestTestMatch,
       use: {
         ...devices["Desktop Safari"],
         colorScheme: "light",
@@ -166,13 +167,30 @@ export default defineConfig({
       },
     },
     {
+      name: "webkit-desktop-dark",
+      testMatch: webkitPullRequestTestMatch,
+      use: {
+        ...devices["Desktop Safari"],
+        colorScheme: "dark",
+        viewport: { width: 1440, height: 1100 },
+      },
+    },
+    {
       name: "webkit-mobile-light",
-      testMatch:
-        /(?:image-preview-(?:core|interactions)|site-(?:consent|content|giscus|search))\.spec\.ts/,
+      testMatch: webkitPullRequestTestMatch,
       use: {
         ...devices["iPhone 14"],
         browserName: "webkit",
         colorScheme: "light",
+      },
+    },
+    {
+      name: "webkit-mobile-dark",
+      testMatch: webkitPullRequestTestMatch,
+      use: {
+        ...devices["iPhone 14"],
+        browserName: "webkit",
+        colorScheme: "dark",
       },
     },
     ...nightlyProjects,

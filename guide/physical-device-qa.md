@@ -8,6 +8,14 @@ Run this short pass on a public Vercel preview after automated checks. Record th
 version, preview URL, commit, and pass/fail result. Start in a private window so consent and cached
 assets cannot hide a regression.
 
+## À renseigner dans la pull request
+
+Pour toute modification visuelle, complétez la section **QA sur appareil physique** du modèle de
+pull request avant de demander la fusion : appareil, version d'OS et de navigateur, URL de preview,
+commit vérifié et résultat. Si cette passe ne s'applique pas ou est bloquée, indiquez-le explicitement
+avec la raison ; ne laissez pas la case non renseignée. Les tests WebKit automatisés complètent cette
+preuve, mais ne remplacent pas Safari sur un appareil réel.
+
 The `Smoke Vercel preview deployment` workflow can also be run manually with a public
 `https://<deployment>.vercel.app/` origin. Automatic `deployment_status` runs are enabled only when
 the repository variable `VERCEL_PREVIEW_SMOKE_ENABLED` is exactly `true`. Keep that variable unset

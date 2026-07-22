@@ -5,6 +5,7 @@ export { expect };
 export const ROUTES = [
   "/",
   "/cookies/",
+  "/posts/bienvenue-sur-ct-blog/",
   "/posts/hugo-material-shortcodes/",
   "/posts/mdx-smoke-test/",
 ];
@@ -21,11 +22,24 @@ async function seedLocalPreferences(page: Page) {
       JSON.stringify({ acknowledged: true, updatedAt, version: 1 }),
     );
     localStorage.setItem(
-      "ct-cookie-consent-v1",
-      JSON.stringify({ functionality: false, updatedAt, version: 1 }),
+      "ct-cookie-consent-v2",
+      JSON.stringify({
+        services: { giscus: false, ipgeo: false, "speed-insights": false },
+        updatedAt,
+        version: 2,
+      }),
     );
     localStorage.setItem("site-theme-preference", "system");
   });
+}
+
+export function clearConsentState() {
+  localStorage.removeItem("ct-explicit-content-ack-v1");
+  localStorage.removeItem("ct-cookie-consent-v2");
+  localStorage.removeItem("ct-cookie-consent-v1");
+  document.cookie = "ct-explicit-content-ack=; Max-Age=0; Path=/; SameSite=Lax";
+  document.cookie = "ct-cookie-consent-v2=; Max-Age=0; Path=/; SameSite=Lax";
+  document.cookie = "ct-cookie-consent=; Max-Age=0; Path=/; SameSite=Lax";
 }
 
 export async function seedFixedKonachanImage(page: Page, sourceColor?: string) {

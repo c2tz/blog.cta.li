@@ -26,7 +26,7 @@ paquets directs. Il est donc beaucoup plus long que la liste de `package.json`.
 | `@material/web`                      | Fournit les composants Material 3 utilisés par l'interface                  | Oui, seulement les modules importés et découpés par le build  |
 | `@material/material-color-utilities` | Calcule les palettes Material dynamiques et le thème généré                 | Partiellement, pour les couleurs dynamiques ; aussi au build  |
 | `@floating-ui/dom`                   | Positionne menus et surfaces flottantes                                     | Oui, quand la fonctionnalité correspondante est chargée       |
-| `@vercel/speed-insights`             | Mesure optionnelle des performances après consentement                      | Oui, seulement après l'accord fonctionnel                     |
+| `@vercel/speed-insights`             | Mesure optionnelle des performances après consentement                      | Oui, seulement après son accord individuel                    |
 | `rehype-slug`                        | Ajoute des identifiants aux titres Markdown                                 | Non ; seul le HTML résultant est servi                        |
 | `rehype-autolink-headings`           | Rend les titres Markdown directement liés à leur ancre                      | Non ; seul le HTML résultant est servi                        |
 | `satori` et `satori-html`            | Produisent le visuel Open Graph d'un article                                | Non ; seule l'image générée est servie                        |
@@ -57,7 +57,6 @@ paquets directs. Il est donc beaucoup plus long que la liste de `package.json`.
 | `parse5`                                               | Analyse structurée du HTML dans les contrôles de contenu et de preview |
 | `sass`                                                 | Compilation des fichiers `.scss` en CSS                                |
 | `material-symbols`                                     | Source de la police d'icônes locale réduite                            |
-| `@openai/codex`                                        | Aide facultative pour générer ou normaliser les messages de commit     |
 
 ## Pourquoi Prettier et ESLint sont tous les deux présents
 

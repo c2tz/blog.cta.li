@@ -30,8 +30,8 @@ state and tests the equivalent image-preview behavior on the replacement fixture
 | Markdown and shortcodes | Shiki HTML, prose and shortcode source markup                                     | A selector gate inspects the rendered prose                                           | Copy controls only for code blocks; shortcode Material runtime only when complex controls exist                                                                 | None                                                               |
 | Image preview           | Two Material dialog hosts and the source images                                   | A small capture-phase loader only                                                     | Full controller, dialogs and buttons on focus/hover/first click; share-file fetch after preview intent                                                          | None                                                               |
 | Konachan home           | Hero structure and local manifest URL                                             | Lightweight home table and controls required for the visible shell                    | Background controller, compact manifest and selected images after explicit-content acknowledgement; precomputed source colors avoid a Worker on the normal path | Explicit-content acknowledgement                                   |
-| Giscus                  | Local consent UI and placeholder                                                  | Local controller on post routes                                                       | `giscus.app/client.js` and iframe only after functionality consent plus the separate comments opt-in                                                            | Functionality consent and comments opt-in                          |
-| Optional services       | Static IP placeholder and Vercel metadata                                         | No optional service module before consent                                             | IP geolocation and Speed Insights modules/services only after functionality consent; any inserted third-party script is purged by one consent-revocation reload | Functionality consent                                              |
+| Giscus                  | Local consent UI and placeholder                                                  | Local controller on post routes                                                       | `giscus.app/client.js` and iframe only after the Giscus switch plus the separate comments opt-in                                                                | Giscus consent and comments opt-in                                 |
+| Optional services       | Static IP placeholder and Vercel metadata                                         | No optional service module before consent                                             | IP geolocation and Speed Insights modules/services only after their individual switch; any inserted third-party script is purged by one consent-revocation reload | Individual service consent                                         |
 | CSP/Vercel              | CSP hashes and headers are generated from the built HTML                          | No runtime policy relaxation                                                          | Pagefind Worker/WASM and approved external Giscus/IP origins                                                                                                    | Deployment checks gate alias promotion                             |
 
 ## Target invariants
@@ -71,10 +71,10 @@ state and tests the equivalent image-preview behavior on the replacement fixture
 
 - Removed sequential Lit warm-up imports.
 - Stopped bootstrapping interactive code on the bare 404 page.
-- Moved IP geolocation and Speed Insights behind functionality consent.
-- Made functionality-consent revocation remove Speed Insights and reload once whenever its script
+- Moved IP geolocation and Speed Insights behind their individual consent switches.
+- Made individual Speed Insights revocation remove its script and reload once whenever it
   had been inserted, including while its response is still in flight.
-- Made functionality-consent revocation stop the current document load, remove the Giscus
+- Made individual Giscus revocation stop the current document load, remove the Giscus
   script/iframe, reset its loading state and reload once whenever Giscus reached the document.
   Returning consent reloads comments when their separate opt-in is still stored.
 - Moved the Konachan background/color path behind explicit-content acknowledgement.
@@ -187,8 +187,8 @@ that extraction path remains only as a fallback when a usable precomputed color 
 The pre-acknowledgement boundary still blocks both the controller and image network work rather
 than merely hiding the result.
 
-The functionality-accepted home path was not part of this refreshed route snapshot. Its contract
-remains unchanged: IP geolocation and Speed Insights stay behind functionality consent, and a
+The individually accepted home path was not part of this refreshed route snapshot. Its contract
+remains unchanged: IP geolocation and Speed Insights stay behind their own consent switches, and a
 local preview does not activate Speed Insights without Vercel's production marker.
 
 ### Pagefind first-use path

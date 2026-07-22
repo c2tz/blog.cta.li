@@ -39,7 +39,6 @@ const contentTags = [
       .filter((tag): tag is string => tag !== undefined && tag !== "all"),
   ),
 ].sort();
-const uniqueTags = ["all", ...contentTags];
 const intro = await getEntry("info", "intro");
 if (!intro) throw new Error("Missing required info/intro content entry");
 // Astro validates this data with infoSchema before exposing the content entry.
@@ -93,7 +92,7 @@ const homeStructuredData = {
           <a href="#tags" class="heading-link">{homeCopy.tagsTitle}</a>
         </h2>
 
-        <HomeTagsTree tags={uniqueTags} />
+        <HomeTagsTree tags={contentTags} />
       </div>
     </section>
   </Fragment>

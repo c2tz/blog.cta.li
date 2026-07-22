@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { access, constants, readFile } from "node:fs/promises";
 import test from "node:test";
 
 import { checkKonachanRuntimeManifest } from "../scripts/check-konachan-runtime-manifest.mjs";
@@ -87,4 +87,12 @@ test("keeps the checked-in runtime manifest exactly synchronized", async () => {
   const result = await checkKonachanRuntimeManifest();
   assert.equal(result.images, 150);
   assert.ok(result.bytes < KONACHAN_RUNTIME_MANIFEST_MAX_BYTES);
+});
+
+test("keeps the complete Konachan manifest out of public assets", async () => {
+  await assert.rejects(access("public/konachan-backgrounds.json", constants.F_OK), {
+    code: "ENOENT",
+  });
+  const sourceManifest = JSON.parse(await readFile("data/konachan-backgrounds.json", "utf8"));
+  assert.equal(sourceManifest.images.length, 150);
 });

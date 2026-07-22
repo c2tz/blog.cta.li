@@ -30,3 +30,23 @@
   align-items: center;
   gap: 0.25rem;
 }
+
+.skip-link {
+  position: fixed;
+  z-index: 10000;
+  top: 0.75rem;
+  left: 50%;
+  padding: 0.75rem 1rem;
+  border-radius: var(--md-sys-shape-corner-small);
+  background: var(--md-sys-color-inverse-surface);
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--md-sys-color-shadow) 28%, transparent);
+  color: var(--md-sys-color-inverse-on-surface);
+  font-weight: 700;
+  text-decoration: none;
+  transform: translate(-50%, -150%);
+  transition: transform 160ms ease;
+}
+
+.skip-link:focus-visible {
+  transform: translate(-50%, 0);
+}

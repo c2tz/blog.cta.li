@@ -45,17 +45,22 @@ Chaque nuit, une matrice supplémentaire teste Firefox et WebKit, puis répète 
 fragiles. Ce workflow cherche des problèmes qui peuvent ne pas apparaître dans la validation rapide
 d'une pull request.
 
+La validation standard d'une pull request inclut aussi les parcours WebKit ciblés en thèmes clair et
+sombre, sur bureau et mobile. La matrice nocturne reste plus large et répète les parcours fragiles.
+
+### QA sur appareil physique
+
+Avant de demander la fusion d'une modification visuelle, renseignez la section dédiée du modèle de
+pull request. Elle demande le résultat de la passe sur appareil réel, ou une justification explicite
+si elle ne s'applique pas ou ne peut pas être effectuée. Suivez la liste de
+[vérification sur appareils physiques](physical-device-qa.md) ; les tests WebKit automatisés la
+complètent mais ne remplacent pas Safari sur un vrai appareil.
+
 ### Refresh Konachan backgrounds
 
 Chaque mois, il télécharge une nouvelle sélection, valide le nombre d'images, les variantes, les
 manifestes et leurs tailles, puis ouvre une pull request si quelque chose a changé. Il utilise le
 secret `BOT_TOKEN` uniquement pour créer cette proposition.
-
-### Normalize commit messages with Codex
-
-Workflow manuel et spécialisé pour réécrire des messages de commit sur une branche du même dépôt.
-Il ne doit pas être lancé pour publier un article ordinaire. Une réécriture d'historique peut gêner
-les collaborateurs ; consultez [Messages de commit](commit-messages.md).
 
 ## Lire un échec GitHub Actions
 

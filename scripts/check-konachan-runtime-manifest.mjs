@@ -8,7 +8,7 @@ import {
 } from "../src/lib/konachan-runtime-manifest.mjs";
 
 const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const DEFAULT_FULL_MANIFEST_PATH = resolve(ROOT_DIRECTORY, "public/konachan-backgrounds.json");
+const DEFAULT_FULL_MANIFEST_PATH = resolve(ROOT_DIRECTORY, "data/konachan-backgrounds.json");
 const DEFAULT_RUNTIME_MANIFEST_PATH = resolve(
   ROOT_DIRECTORY,
   "public/konachan-backgrounds.runtime.json",

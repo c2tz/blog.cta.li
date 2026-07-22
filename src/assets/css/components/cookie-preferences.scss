@@ -61,8 +61,56 @@ site-cookie-preferences {
   color: var(--md-sys-color-on-error-container);
 }
 
+.cookie-preferences-panel[data-cookie-preference-state="custom"] .cookie-preferences-status {
+  background: var(--md-sys-color-tertiary-container);
+  color: var(--md-sys-color-on-tertiary-container);
+}
+
 .cookie-preferences-panel md-divider {
   --md-divider-color: var(--md-sys-color-outline-variant);
+}
+
+.cookie-preferences-services {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.cookie-preferences-service {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  min-height: 4.75rem;
+  padding: 0.75rem;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container);
+}
+
+.cookie-preferences-service-copy {
+  min-width: 0;
+}
+
+.cookie-preferences-service-title {
+  color: var(--md-sys-color-on-surface);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.cookie-preferences-service-description {
+  margin-block-start: 0.25rem !important;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.cookie-preferences-service md-switch {
+  --md-switch-selected-handle-color: var(--md-sys-color-on-primary);
+  --md-switch-selected-track-color: var(--md-sys-color-primary);
+  --md-switch-selected-icon-color: var(--md-sys-color-primary);
+  --md-switch-unselected-handle-color: var(--md-sys-color-outline);
+  --md-switch-unselected-track-color: var(--md-sys-color-surface-container-highest);
+
+  flex: 0 0 auto;
 }
 
 .cookie-preferences-actions {
@@ -132,6 +180,11 @@ site-cookie-preferences {
   .cookie-preferences-actions,
   .cookie-preferences-choice-actions {
     width: 100%;
+  }
+
+  .cookie-preferences-service {
+    gap: 0.5rem;
+    padding: 0.75rem;
   }
 
   .cookie-preferences-reset {

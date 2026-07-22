@@ -17,6 +17,7 @@ interface Props {
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50] as const;
 const { posts, tag, view = "list" } = Astro.props;
+const isAllPosts = tag === "all";
 const isTable = view === "table";
 const hasPagination = posts.length > PAGE_SIZE_OPTIONS[0];
 const contentId = isTable ? "tag-posts-table" : "tag-posts-list";
@@ -24,8 +25,12 @@ const initialEnd = Math.min(PAGE_SIZE_OPTIONS[0], posts.length);
 const initialRange = posts.length === 0 ? "0 sur 0" : `1 - ${initialEnd} sur ${posts.length}`;
 const initialStatus =
   posts.length === 0
-    ? `Aucun article pour le tag ${tag}.`
-    : `Articles 1 à ${initialEnd} sur ${posts.length} pour le tag ${tag}.`;
+    ? isAllPosts
+      ? "Aucun article à afficher."
+      : `Aucun article pour le tag ${tag}.`
+    : isAllPosts
+      ? `Articles 1 à ${initialEnd} sur ${posts.length}.`
+      : `Articles 1 à ${initialEnd} sur ${posts.length} pour le tag ${tag}.`;
 ---
 
 <site-tag-posts data-view={view} data-tag={tag}>
@@ -58,7 +63,11 @@ const initialStatus =
   {
     isTable ? (
       <div class="tag-posts-table-scroll" tabindex="0">
-        <table id={contentId} class="tag-posts-table" aria-label={`Articles du tag ${tag}`}>
+        <table
+          id={contentId}
+          class="tag-posts-table"
+          aria-label={isAllPosts ? "Tous les articles" : `Articles du tag ${tag}`}
+        >
           <thead>
             <tr>
               <th class="tag-posts-created-column" scope="col" data-sort-header="created">
@@ -155,7 +164,12 @@ const initialStatus =
 
   {
     hasPagination && (
-      <nav class="tag-posts-pagination" aria-label={`Pagination des articles du tag ${tag}`}>
+      <nav
+        class="tag-posts-pagination"
+        aria-label={
+          isAllPosts ? "Pagination des articles" : `Pagination des articles du tag ${tag}`
+        }
+      >
         <div class="tag-posts-page-size">
           <span>Articles par page</span>
           <md-outlined-select

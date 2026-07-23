@@ -6,7 +6,8 @@ html.interaction-disabled.consent-visible body {
 
 html.consent-prelock .site-header,
 html.consent-prelock .site-main,
-html.consent-prelock .site-footer {
+html.consent-prelock .site-footer,
+html.consent-prelock .skip-link {
   pointer-events: none;
   -webkit-user-select: none;
   user-select: none;

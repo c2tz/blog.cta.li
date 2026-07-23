@@ -113,6 +113,7 @@ class SearchPanelController {
     this.filterChipReady = loadFilterChipModule();
 
     this.handleInput = this.handleInput.bind(this);
+    this.handleSearchInputKeydown = this.handleSearchInputKeydown.bind(this);
     this.handleSortControlMediaChange = this.handleSortControlMediaChange.bind(this);
     this.connect();
   }
@@ -139,6 +140,7 @@ class SearchPanelController {
     });
     this.input.addEventListener("input", this.handleInput);
     this.input.addEventListener("keyup", this.handleInput);
+    this.input.addEventListener("keydown", this.handleSearchInputKeydown, true);
     this.clearSearchButton.addEventListener("click", () => this.clearSearch());
     this.clearFiltersButton.addEventListener("click", () => this.clearFilters());
     this.sortSelect.addEventListener("change", (event) => this.setSortMode(controlValue(event)));
@@ -243,8 +245,33 @@ class SearchPanelController {
     }, QUERY_DEBOUNCE_MS);
   }
 
+  handleSearchInputKeydown(event) {
+    if (event.defaultPrevented || event.isComposing || event.key !== "Escape") return;
+
+    const dialog = this.root.closest("md-dialog");
+    if (!dialog?.open) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    if (String(this.input.value ?? "").length > 0) {
+      this.clearSearch();
+      return;
+    }
+
+    void dialog.close("escape");
+  }
+
   focus() {
+    const control = this.inputControl ?? this.input.shadowRoot?.querySelector("input, textarea");
+    if (control instanceof HTMLElement) {
+      control.focus({ preventScroll: true });
+      return;
+    }
+
     this.input.focus({ preventScroll: true });
+    void this.connectMaterialTextField().then(() => {
+      this.inputControl?.focus({ preventScroll: true });
+    });
   }
 
   clearFilters() {
@@ -680,7 +707,11 @@ export function initSiteSearchTriggers() {
     };
 
     const open = async () => {
-      if (opening || dialog.open) return;
+      if (opening) return;
+      if (dialog.open) {
+        initSiteSearchPanel(panel, { includeDeferred: true })?.focus();
+        return;
+      }
       hideSiteTooltip();
       opening = true;
       openButton.setAttribute("aria-expanded", "true");
@@ -734,7 +765,9 @@ export function initSiteSearchTriggers() {
           controller?.syncSortControl();
         }
         await showPromise;
-        window.setTimeout(() => focusSiteSearchPanel(panel));
+        window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(() => focusSiteSearchPanel(panel));
+        });
       } finally {
         endOpening();
       }

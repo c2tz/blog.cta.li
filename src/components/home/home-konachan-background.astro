@@ -8,8 +8,6 @@ import {
   SITE_STORAGE_KEYS,
 } from "@/lib/site-contracts";
 import { SITE_TITLE } from "@/site-config";
-import landingKonachan405393 from "@/assets/images/home/405393.webp";
-import landingKonachan405393Small from "@/assets/images/home/405393-960.webp";
 
 interface Props {
   title?: string;
@@ -30,7 +28,7 @@ const {
 } = Astro.props;
 const initialBackground = {
   id: 405393,
-  url: landingKonachan405393.src,
+  url: "/konachan-backgrounds/405393.webp",
   originalUrl:
     "https://konachan.com/jpeg/47ed526f888b73c532f9c3a257066e00/Konachan.com%20-%20405393%20black_hair%20braids%20choker%20close%20dark_skin%20desscaras%20long_hair%20madan_no_ichi%20o_%28crazyoton46%29%20sword%20twintails%20weapon%20yellow_eyes.jpg",
   width: 1920,
@@ -45,7 +43,7 @@ const initialBackground = {
   tags: "black_hair braids choker close dark_skin desscaras long_hair madan_no_ichi o_(crazyoton46) sword twintails weapon yellow_eyes",
   variants: [
     {
-      url: landingKonachan405393Small.src,
+      url: "/konachan-backgrounds/405393-960.webp",
       width: 960,
       height: 540,
       bytes: 49_982,

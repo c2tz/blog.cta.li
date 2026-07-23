@@ -11,7 +11,9 @@ import {
   expectPopoverOpen,
 } from "./site-fixture";
 
-test("keeps unlisted posts out of the home page for every publication state", async ({ page }) => {
+test("shows the published introduction while keeping unlisted posts out of the home page", async ({
+  page,
+}) => {
   await gotoRoute(page, "/");
   await waitForAppReady(page);
 
@@ -21,9 +23,7 @@ test("keeps unlisted posts out of the home page for every publication state", as
   await expect(renderedTitles.filter({ hasText: "Shortcodes Astro et Material Web" })).toHaveCount(
     0,
   );
-  if ((await renderedTitles.count()) === 0) {
-    await expect(page.getByText("Aucun article à afficher.")).toBeVisible();
-  }
+  await expect(renderedTitles.filter({ hasText: "Bienvenue sur ct-blog" })).toHaveCount(1);
   const tableProgress = page.locator("md-linear-progress.home-posts-table-progress");
   await expect(tableProgress).toHaveAttribute("indeterminate", "");
   await expect(tableProgress).toHaveAttribute("four-color", /^(?:|true)$/);

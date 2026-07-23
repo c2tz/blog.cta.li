@@ -28,8 +28,9 @@ import "@/assets/css/content/prose.scss";
       </p>
       <ul>
         <li>
-          <code>ct-cookie-consent</code> et <code>ct-cookie-consent-v1</code> mémorisent votre choix d’autoriser
-          ou de refuser les services optionnels.
+          <code>ct-cookie-consent-v2</code> mémorise séparément votre choix pour les commentaires, la
+          géolocalisation IP et la mesure des performances. Les anciennes préférences globales sont migrées
+          une seule fois puis supprimées.
         </li>
         <li>
           <code>ct-explicit-content-ack</code> et <code>ct-explicit-content-ack-v1</code> mémorisent l’avertissement
@@ -83,17 +84,19 @@ import "@/assets/css/content/prose.scss";
         mesurer les performances de navigation en production via Vercel Speed Insights.
       </p>
       <p>
-        Ces trois services ne sont chargés qu’après votre accord. Si vous refusez, l’adresse IP
-        disparaît du pied de page, Giscus n’est pas chargé et Vercel Speed Insights reste inactif.
+        Chaque service n’est chargé qu’après votre accord individuel. Si vous le refusez, l’adresse
+        IP disparaît du pied de page, Giscus n’est pas chargé ou Vercel Speed Insights reste
+        inactif, selon le service concerné.
       </p>
 
       <h2 id="modifier-vos-choix-cookies">
         <a href="#modifier-vos-choix-cookies" class="heading-link">Modifier vos choix cookies</a>
       </h2>
       <p>
-        Le panneau ci-dessous permet de modifier ou de réinitialiser le choix lié aux services
-        optionnels. Vous pouvez aussi supprimer toutes les données depuis les réglages de votre
-        navigateur en effaçant les cookies et les données de site associées à
+        Le panneau ci-dessous permet de modifier indépendamment chaque service, de tout autoriser,
+        de tout refuser ou de réinitialiser vos choix. Vous pouvez aussi supprimer toutes les
+        données depuis les réglages de votre navigateur en effaçant les cookies et les données de
+        site associées à
         <code>ct-blog.cta.li</code>.
       </p>
 

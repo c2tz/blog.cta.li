@@ -8,7 +8,7 @@ import { enrichKonachanManifestSourceColors } from "./lib/konachan-material-sour
 const ROOT_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PUBLIC_DIR = resolve(ROOT_DIR, "public");
 const IMAGE_DIR = resolve(PUBLIC_DIR, "konachan-backgrounds");
-const MANIFEST_PATH = resolve(PUBLIC_DIR, "konachan-backgrounds.json");
+const MANIFEST_PATH = resolve(ROOT_DIR, "data", "konachan-backgrounds.json");
 const RUNTIME_MANIFEST_PATH = resolve(PUBLIC_DIR, "konachan-backgrounds.runtime.json");
 const MANIFEST_TEMP_PATH = `${MANIFEST_PATH}.tmp`;
 const RUNTIME_MANIFEST_TEMP_PATH = `${RUNTIME_MANIFEST_PATH}.tmp`;

@@ -40,10 +40,7 @@ const rememberAcceptance = () => {
 const optionalServicesAllowed = () => {
   try {
     const cookieConsent = (window as CookieConsentWindow).cookieConsent;
-    return Boolean(
-      cookieConsent?.acceptedService("giscus", "functionality") ||
-      cookieConsent?.isCategoryAccepted("functionality"),
-    );
+    return Boolean(cookieConsent?.acceptedService("giscus", "functionality"));
   } catch {
     return false;
   }

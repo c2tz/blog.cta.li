@@ -8,44 +8,99 @@
       <div class="cookie-preferences-heading">
         <p class="cookie-preferences-title">Services optionnels</p>
         <p class="cookie-preferences-description">
-          Commentaires, géolocalisation IP et mesure des performances.
+          Choisissez séparément les services que vous souhaitez activer.
         </p>
       </div>
-      <strong class="cookie-preferences-status" data-cookie-preferences-status>
+      <strong
+        class="cookie-preferences-status"
+        data-cookie-preferences-status
+        role="status"
+        aria-live="polite"
+      >
         Aucun choix enregistré
       </strong>
     </header>
 
     <md-divider></md-divider>
 
-    <div class="cookie-preferences-actions" role="group" aria-label="Choix des services optionnels">
+    <div class="cookie-preferences-services" aria-label="Services optionnels">
+      <section class="cookie-preferences-service">
+        <div class="cookie-preferences-service-copy">
+          <p class="cookie-preferences-service-title" id="cookie-service-giscus-title">
+            Commentaires Giscus
+          </p>
+          <p class="cookie-preferences-service-description">
+            Autorise le service de commentaires sur les articles. Vous gardez ensuite le choix de le
+            charger sur chaque page.
+          </p>
+        </div>
+        <md-switch
+          data-cookie-preference-service="giscus"
+          aria-label="Autoriser les commentaires Giscus"></md-switch>
+      </section>
+
+      <section class="cookie-preferences-service">
+        <div class="cookie-preferences-service-copy">
+          <p class="cookie-preferences-service-title" id="cookie-service-ipgeo-title">
+            Géolocalisation IP
+          </p>
+          <p class="cookie-preferences-service-description">
+            Interroge ipapi.is pour afficher votre pays, votre ASN et votre réseau dans le pied de
+            page.
+          </p>
+        </div>
+        <md-switch
+          data-cookie-preference-service="ipgeo"
+          aria-label="Autoriser la géolocalisation IP"></md-switch>
+      </section>
+
+      <section class="cookie-preferences-service">
+        <div class="cookie-preferences-service-copy">
+          <p class="cookie-preferences-service-title" id="cookie-service-speed-insights-title">
+            Mesure des performances Vercel
+          </p>
+          <p class="cookie-preferences-service-description">
+            Autorise Vercel Speed Insights à mesurer les performances de navigation en production.
+          </p>
+        </div>
+        <md-switch
+          data-cookie-preference-service="speed-insights"
+          aria-label="Autoriser Vercel Speed Insights"></md-switch>
+      </section>
+    </div>
+
+    <div
+      class="cookie-preferences-actions"
+      role="group"
+      aria-label="Actions sur les services optionnels"
+    >
       <div class="cookie-preferences-choice-actions">
         <md-filled-tonal-button
           class="cookie-preferences-choice cookie-preferences-allow"
           type="button"
           aria-label="Autoriser les services optionnels"
-          data-cookie-preference-choice="accepted"
+          data-cookie-preference-action="accept-all"
           has-icon
         >
           <md-icon slot="icon" aria-hidden="true">&#xE5CA;</md-icon>
-          Autoriser
+          Tout autoriser
         </md-filled-tonal-button>
         <md-filled-button
           class="cookie-preferences-choice cookie-preferences-reject"
           type="button"
           aria-label="Refuser les services optionnels"
-          data-cookie-preference-choice="rejected"
+          data-cookie-preference-action="reject-all"
           has-icon
         >
           <md-icon slot="icon" aria-hidden="true">&#xE5CD;</md-icon>
-          Refuser
+          Tout refuser
         </md-filled-button>
       </div>
       <md-text-button
         class="cookie-preferences-reset"
         type="button"
         aria-label="Réinitialiser le choix des services optionnels"
-        data-cookie-preference-choice="unset"
+        data-cookie-preference-action="reset"
       >
         Réinitialiser
       </md-text-button>

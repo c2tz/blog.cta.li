@@ -62,10 +62,7 @@ function consentApiReady() {
 
 function hasConsent() {
   try {
-    return Boolean(
-      window.cookieConsent?.acceptedService("ipgeo", "functionality") ||
-      window.cookieConsent?.isCategoryAccepted("functionality"),
-    );
+    return Boolean(window.cookieConsent?.acceptedService("ipgeo", "functionality"));
   } catch {
     return false;
   }

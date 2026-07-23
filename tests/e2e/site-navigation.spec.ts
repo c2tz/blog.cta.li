@@ -4,10 +4,22 @@ import {
   gotoRoute,
   openMaterialMenu,
   openMaterialSelect,
+  expectNoPageOverflow,
   waitForAppReady,
   waitForNativeEnhancement,
   expectPopoverOpen,
 } from "./site-fixture";
+
+test("offers a keyboard skip link", async ({ page }) => {
+  await gotoRoute(page, "/");
+  await expect(page.locator("header.site-header .site-header-navigation")).toHaveCount(0);
+
+  const skipLink = page.getByRole("link", { name: "Aller au contenu", exact: true });
+  await skipLink.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#main-content")).toBeFocused();
+  await expectNoPageOverflow(page);
+});
 
 test("tracks reading progress fractionally without a delayed indicator transition", async ({
   page,
@@ -495,8 +507,15 @@ test("uses the Material Web pagination menu with keyboard selection", async ({ p
     "visibility",
     "visible",
   );
+  const closed = pageSizeSelect.evaluate(
+    (select) =>
+      new Promise<void>((resolve) => {
+        select.addEventListener("closed", () => resolve(), { once: true });
+      }),
+  );
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("Enter");
+  await closed;
   await expect
     .poll(() => pageSizeSelect.evaluate((select) => String((select as HTMLInputElement).value)))
     .toBe("10");

@@ -23,7 +23,6 @@
   ],
   "ignore": [".astro/**", "dist/**", "public/pagefind/**"],
   "ignoreDependencies": [
-    "@openai/codex",
     "@types/node",
     "material-symbols",
     "prettier-plugin-astro",

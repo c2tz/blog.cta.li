@@ -59,6 +59,7 @@ Effectue, dans cet ordre :
 3. génération de l'index de recherche Pagefind pour les articles listés ;
 4. contrôle du HTML, des routes, ancres, ressources et surfaces de découverte ;
 5. minification des fichiers HTML.
+6. contrôle des budgets JavaScript/CSS et de la charge initiale de l'accueil.
 
 Le résultat final est écrit dans `dist`. Si cette commande réussit, le contenu peut être servi par
 un hébergeur statique, sous réserve de sa configuration d'en-têtes et de domaine.
@@ -110,6 +111,14 @@ mais excessifs pour la rédaction normale d'un article.
 Knip recherche les fichiers, exports et dépendances qui semblent inutilisés. Un résultat Knip doit
 être interprété : un usage dynamique ou connu uniquement d'un hébergeur peut nécessiter une entrée
 explicite dans `knip.json` plutôt qu'une suppression immédiate.
+
+### `pnpm check:bundles`
+
+Mesure les fichiers générés dans `dist/_astro` par leur extension et les ressources réellement
+référencées par l'accueil : les noms hashés changent donc sans fausser le contrôle. Le budget borne
+le JavaScript total, le CSS total, le plus gros bundle JavaScript et la charge initiale de l'accueil.
+Il est exécuté à la fin de `pnpm build`. L'index Pagefind reste hors de ce budget car il dépend du
+contenu publié et se charge seulement à l'ouverture de la recherche.
 
 ## Tests
 
@@ -248,17 +257,6 @@ Valide un message reçu sur l'entrée standard avec Commitlint.
 
 Valide les commits situés entre `origin/develop` et la branche actuelle. Exécutez d'abord un
 `git fetch` si votre référence distante est ancienne.
-
-### `pnpm commit:auto`
-
-Demande à Codex CLI de proposer un message pour les fichiers indexés par Git. Cette commande dépend
-d'une configuration Codex fonctionnelle et n'est pas requise pour committer manuellement.
-
-### `pnpm commit:normalize`
-
-Peut réécrire les messages de plusieurs commits. Une réécriture change les identifiants Git et peut
-nécessiter un force-push. Ne l'utilisez pas sur une branche partagée sans comprendre les
-conséquences. Voir [Messages de commit](commit-messages.md).
 
 ### `pnpm prepare`
 

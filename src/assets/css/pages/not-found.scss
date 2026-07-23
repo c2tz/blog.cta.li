@@ -26,6 +26,10 @@ body.not-found-page .site-content,
 
 .not-found-artwork {
   --not-found-artwork: url("/images/404-screen-dark.webp");
+  --not-found-artwork: image-set(
+    url("/images/404-screen-dark.avif") type("image/avif") 1x,
+    url("/images/404-screen-dark.webp") type("image/webp") 1x
+  );
 
   position: absolute;
   top: 0;
@@ -38,6 +42,34 @@ body.not-found-page .site-content,
 
 :root[data-theme="dark"] .not-found-artwork {
   --not-found-artwork: url("/images/404-screen-light.webp");
+  --not-found-artwork: image-set(
+    url("/images/404-screen-light.avif") type("image/avif") 1x,
+    url("/images/404-screen-light.webp") type("image/webp") 1x
+  );
+}
+
+/*
+ * The 960 px variant is selected only when the artwork itself fits in 960 CSS
+ * pixels. AVIF browsers at 2x still receive the full source, while WebP is
+ * retained as the compatibility fallback.
+ */
+@media (max-aspect-ratio: 1672 / 941) and (max-height: 33.75rem),
+  (min-aspect-ratio: 1672 / 941) and (max-width: 60rem) {
+  .not-found-artwork {
+    --not-found-artwork: image-set(
+      url("/images/404-screen-dark-960.avif") type("image/avif") 1x,
+      url("/images/404-screen-dark.avif") type("image/avif") 2x,
+      url("/images/404-screen-dark.webp") type("image/webp") 1x
+    );
+  }
+
+  :root[data-theme="dark"] .not-found-artwork {
+    --not-found-artwork: image-set(
+      url("/images/404-screen-light-960.avif") type("image/avif") 1x,
+      url("/images/404-screen-light.avif") type("image/avif") 2x,
+      url("/images/404-screen-light.webp") type("image/webp") 1x
+    );
+  }
 }
 
 .not-found-home-hotspot {

@@ -1,0 +1,19 @@
+.post-date {
+  color: var(--site-muted);
+  font-family: var(--site-font);
+  font-size: 1rem;
+  font-style: normal;
+  line-height: 1.5;
+}
+
+.site-date-full {
+  display: none;
+}
+
+:root[data-home-detail-view="true"] .site-date-compact {
+  display: none;
+}
+
+:root[data-home-detail-view="true"] .site-date-full {
+  display: inline;
+}

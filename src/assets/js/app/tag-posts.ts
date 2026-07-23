@@ -233,8 +233,12 @@ class SiteTagPostsElement extends HTMLElement {
     if (status) {
       status.textContent =
         total === 0
-          ? `Aucun article pour le tag ${this.tag}.`
-          : `Articles ${start} à ${end} sur ${total} pour le tag ${this.tag}.`;
+          ? this.tag === "all"
+            ? "Aucun article à afficher."
+            : `Aucun article pour le tag ${this.tag}.`
+          : this.tag === "all"
+            ? `Articles ${start} à ${end} sur ${total}.`
+            : `Articles ${start} à ${end} sur ${total} pour le tag ${this.tag}.`;
     }
   }
 

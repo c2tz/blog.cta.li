@@ -134,15 +134,6 @@
       ]
     },
     {
-      "source": "/konachan-backgrounds.json",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0"
-        }
-      ]
-    },
-    {
       "source": "/konachan-backgrounds.runtime.json",
       "headers": [
         {

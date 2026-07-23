@@ -67,6 +67,70 @@ test("shows the official four-color progress while the search dialog opens slowl
   await expect(openProgress).toBeHidden();
 });
 
+test("opens and refocuses search with Cmd/Ctrl+K without stealing editable field shortcuts", async ({
+  page,
+}) => {
+  await gotoRoute(page, "/");
+
+  const trigger = page.locator(searchTriggerSelector);
+  const dialog = page.getByRole("dialog", { name: "Recherche" });
+  await expect(trigger).toHaveAttribute("data-search-loader-armed", "true");
+  await page.keyboard.press("ControlOrMeta+K");
+  await expect(trigger).toHaveAttribute("data-search-enhanced", "true");
+  await expect(dialog).toBeVisible();
+
+  const searchFieldIsFocused = () =>
+    page.evaluate(() => {
+      const field = document.querySelector("[data-search-input]");
+      if (!(field instanceof HTMLElement)) return false;
+      const control = field.shadowRoot?.querySelector("input, textarea");
+      return control !== null && field.shadowRoot?.activeElement === control;
+    });
+  await expect.poll(searchFieldIsFocused).toBe(true);
+
+  await page.getByRole("button", { name: "Fermer la recherche" }).focus();
+  await page.keyboard.press("ControlOrMeta+K");
+  await expect.poll(searchFieldIsFocused).toBe(true);
+
+  const editableShortcutWasPrevented = await page.evaluate(async () => {
+    await customElements.whenDefined("md-filled-text-field");
+    const field = document.querySelector("[data-search-input]");
+    if (!(field instanceof HTMLElement)) return null;
+    const control = field.shadowRoot?.querySelector("input, textarea");
+    if (!(control instanceof HTMLElement)) return null;
+
+    const event = new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      ctrlKey: true,
+      key: "k",
+    });
+    control.dispatchEvent(event);
+    return event.defaultPrevented;
+  });
+  expect(editableShortcutWasPrevented).toBe(false);
+});
+
+test("uses Escape to clear a search, then close its empty dialog", async ({ page }) => {
+  await gotoRoute(page, "/");
+  const { dialog, openButton } = await openSearch(page);
+  const searchDialog = page.locator("md-dialog.site-search-dialog[open]");
+  const searchInput = searchDialog.getByRole("searchbox", {
+    name: "Mot-clé, titre ou contenu",
+  });
+
+  await searchInput.fill("site");
+  await expect(searchInput).toHaveValue("site");
+  await page.keyboard.press("Escape");
+  await expect(searchInput).toHaveValue("");
+  await expect(dialog).toBeVisible();
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(openButton).toBeFocused();
+});
+
 test("searches through the Material Web text field", async ({ page }) => {
   await gotoRoute(page, "/");
 
@@ -92,16 +156,30 @@ test("searches through the Material Web text field", async ({ page }) => {
   });
   await searchInput.fill("MDX actif");
 
-  await expect(searchDialog.getByText("Aucun article trouvé.")).toBeVisible();
+  await expect(searchDialog.locator("[data-search-status]")).toHaveText(
+    /résultat|Aucun article trouvé/,
+  );
   await expect(
     searchDialog.getByRole("link", { name: "Vérification MDX", exact: true }),
   ).toHaveCount(0);
 
   await searchInput.fill("Shortcodes Astro");
-  await expect(searchDialog.getByText("Aucun article trouvé.")).toBeVisible();
+  await expect(searchDialog.locator("[data-search-status]")).toHaveText(
+    /résultat|Aucun article trouvé/,
+  );
   await expect(
     searchDialog.getByRole("link", { name: "Shortcodes Astro et Material Web", exact: true }),
   ).toHaveCount(0);
+
+  await searchInput.fill("Bienvenue");
+  await expect(
+    searchDialog.getByRole("link", { name: "Bienvenue sur ct-blog", exact: true }),
+  ).toBeVisible();
+
+  await searchInput.fill("site");
+  const excerpt = searchDialog.locator(".site-search-panel-result-excerpt");
+  await expect(excerpt).toHaveText(/^Ce site est un carnet de notes/);
+  await expect(excerpt).not.toHaveText(/^\s*\./);
 });
 
 test("keeps the official Material filled select and its complete sort menu", async ({ page }) => {
@@ -244,13 +322,13 @@ test("never exposes the internal Pagefind placeholder", async ({ page }) => {
     control.dispatchEvent(new Event("change", { bubbles: true }));
   });
 
-  await expect(dialog.getByText("Aucun article trouvé.")).toBeVisible();
+  await expect(dialog.locator("[data-search-status]")).toHaveText(/résultat|Aucun article trouvé/);
   await expect(dialog.locator('a[href="/posts/pagefind-index-placeholder/"]')).toHaveCount(0);
 
   await dialog
     .getByRole("searchbox", { name: "Mot-clé, titre ou contenu" })
     .fill("pagefind-internal-placeholder-4d6af32b");
-  await expect(dialog.getByText("Aucun article trouvé.")).toBeVisible();
+  await expect(dialog.locator("[data-search-status]")).toHaveText(/résultat|Aucun article trouvé/);
   await expect(dialog.locator('a[href="/posts/pagefind-index-placeholder/"]')).toHaveCount(0);
 });
 
@@ -346,7 +424,6 @@ test("keeps the search sort menu anchored while the zoomed dialog scrolls", asyn
 
   const searchDialog = page.locator("md-dialog.site-search-dialog[open]");
   await searchDialog.getByRole("searchbox", { name: "Mot-clé, titre ou contenu" }).fill("MDX");
-  await expect(searchDialog.getByText("Aucun article trouvé.")).toBeVisible();
 
   const sortSelect = searchDialog.locator("[data-sort-select]");
   await openMaterialSelect(sortSelect);

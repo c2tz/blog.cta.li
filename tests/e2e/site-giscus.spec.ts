@@ -32,8 +32,12 @@ test("unloads Giscus on consent revocation and reloads it after consent returns"
     if (sessionStorage.getItem("giscus-consent-seeded") !== "true") {
       sessionStorage.setItem("giscus-consent-seeded", "true");
       localStorage.setItem(
-        "ct-cookie-consent-v1",
-        JSON.stringify({ functionality: true, updatedAt, version: 1 }),
+        "ct-cookie-consent-v2",
+        JSON.stringify({
+          services: { giscus: true, ipgeo: true, "speed-insights": true },
+          updatedAt,
+          version: 2,
+        }),
       );
     }
     localStorage.setItem(
@@ -54,8 +58,12 @@ test("unloads Giscus on consent revocation and reloads it after consent returns"
   const reloaded = page.waitForEvent("domcontentloaded");
   await page.evaluate(() => {
     localStorage.setItem(
-      "ct-cookie-consent-v1",
-      JSON.stringify({ functionality: false, updatedAt: new Date().toISOString(), version: 1 }),
+      "ct-cookie-consent-v2",
+      JSON.stringify({
+        services: { giscus: false, ipgeo: true, "speed-insights": true },
+        updatedAt: new Date().toISOString(),
+        version: 2,
+      }),
     );
     window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true }));
   });
@@ -67,11 +75,15 @@ test("unloads Giscus on consent revocation and reloads it after consent returns"
 
   await page.evaluate(() => {
     localStorage.setItem(
-      "ct-cookie-consent-v1",
-      JSON.stringify({ functionality: true, updatedAt: new Date().toISOString(), version: 1 }),
+      "ct-cookie-consent-v2",
+      JSON.stringify({
+        services: { giscus: true, ipgeo: true, "speed-insights": true },
+        updatedAt: new Date().toISOString(),
+        version: 2,
+      }),
     );
     window.dispatchEvent(
-      new StorageEvent("storage", { key: "ct-cookie-consent-v1", storageArea: localStorage }),
+      new StorageEvent("storage", { key: "ct-cookie-consent-v2", storageArea: localStorage }),
     );
   });
   await expect(frame.locator("iframe.giscus-frame")).toHaveCount(1);
@@ -117,8 +129,12 @@ test("prevents an in-flight Giscus client from executing after consent is revoke
     if (sessionStorage.getItem("giscus-in-flight-seeded") !== "true") {
       sessionStorage.setItem("giscus-in-flight-seeded", "true");
       localStorage.setItem(
-        "ct-cookie-consent-v1",
-        JSON.stringify({ functionality: true, updatedAt, version: 1 }),
+        "ct-cookie-consent-v2",
+        JSON.stringify({
+          services: { giscus: true, ipgeo: true, "speed-insights": true },
+          updatedAt,
+          version: 2,
+        }),
       );
     }
     localStorage.setItem(
@@ -135,8 +151,12 @@ test("prevents an in-flight Giscus client from executing after consent is revoke
   const reloaded = page.waitForEvent("domcontentloaded");
   await page.evaluate(() => {
     localStorage.setItem(
-      "ct-cookie-consent-v1",
-      JSON.stringify({ functionality: false, updatedAt: new Date().toISOString(), version: 1 }),
+      "ct-cookie-consent-v2",
+      JSON.stringify({
+        services: { giscus: false, ipgeo: true, "speed-insights": true },
+        updatedAt: new Date().toISOString(),
+        version: 2,
+      }),
     );
     window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true }));
   });

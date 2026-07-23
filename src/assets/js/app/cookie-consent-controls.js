@@ -5,6 +5,16 @@ import {
   SITE_LEGACY_STORAGE_KEYS,
   SITE_STORAGE_KEYS,
 } from "@/lib/site-contracts";
+import {
+  OPTIONAL_SERVICE_IDS,
+  OPTIONAL_SERVICES_CONSENT_VERSION,
+  areAllOptionalServicesEnabled,
+  countEnabledOptionalServices,
+  createOptionalServices,
+  createOptionalServicesConsent,
+  normalizeOptionalServicesConsent,
+  optionalServicesFromLegacyConsent,
+} from "@/lib/optional-services-consent.mjs";
 import { parseVersionedState, readCookieValue, serializeCookie } from "./site-persistence.js";
 
 const BACKGROUND_INTERACTION_SELECTORS = [".site-header", ".site-main", ".site-footer"];
@@ -28,12 +38,6 @@ const MATERIAL_BUTTON_TAG_NAMES = new Set([
   "md-outlined-button",
   "md-text-button",
 ]);
-const STATUS_LABELS = {
-  accepted: "Autorisés",
-  rejected: "Refusés",
-  unset: "Aucun choix enregistré",
-};
-
 function readCookie(name) {
   return readCookieValue(document.cookie, name);
 }
@@ -46,85 +50,135 @@ function expireCookie(name) {
   document.cookie = serializeCookie(name, "", { maxAgeSeconds: 0 });
 }
 
-function readConsent() {
+function parseCurrentConsent(value) {
+  return normalizeOptionalServicesConsent(
+    parseVersionedState(value, OPTIONAL_SERVICES_CONSENT_VERSION),
+  );
+}
+
+function readCurrentStorageConsent() {
   try {
-    const current = localStorage.getItem(SITE_STORAGE_KEYS.cookieConsent);
-    const legacy = localStorage.getItem(SITE_LEGACY_STORAGE_KEYS.cookieConsent);
-    const raw = current ?? legacy;
-    if (!raw) return null;
-
-    const parsed = parseVersionedState(raw);
-    if (!parsed) return null;
-
-    if (current === null && legacy !== null) {
-      localStorage.setItem(SITE_STORAGE_KEYS.cookieConsent, legacy);
-      localStorage.removeItem(SITE_LEGACY_STORAGE_KEYS.cookieConsent);
-    }
-
-    return parsed;
+    return parseCurrentConsent(localStorage.getItem(SITE_STORAGE_KEYS.cookieConsent));
   } catch {
     return null;
   }
 }
 
-function readStoredChoice() {
-  const consent = readConsent();
-  if (consent) return consent.functionality ? "accepted" : "rejected";
+function readCurrentCookieConsent() {
+  return parseCurrentConsent(readCookie(SITE_COOKIE_NAMES.cookieConsent));
+}
 
-  const cookie =
-    readCookie(SITE_COOKIE_NAMES.cookieConsent) ??
-    readCookie(SITE_LEGACY_COOKIE_NAMES.cookieConsent);
-  return cookie === "accepted" || cookie === "rejected" ? cookie : "unset";
+function readLegacyStorageServices() {
+  try {
+    for (const key of [
+      SITE_LEGACY_STORAGE_KEYS.cookieConsentV1,
+      SITE_LEGACY_STORAGE_KEYS.cookieConsent,
+    ]) {
+      const services = optionalServicesFromLegacyConsent(
+        parseVersionedState(localStorage.getItem(key)),
+      );
+      if (services) return services;
+    }
+  } catch {}
+
+  return null;
+}
+
+function readLegacyCookieServices() {
+  for (const name of [
+    SITE_LEGACY_COOKIE_NAMES.cookieConsentV1,
+    SITE_LEGACY_COOKIE_NAMES.cookieConsent,
+  ]) {
+    const choice = readCookie(name);
+    if (choice === "accepted") return createOptionalServices(true);
+    if (choice === "rejected") return createOptionalServices(false);
+  }
+
+  return null;
+}
+
+function clearLegacyConsentStorage() {
+  try {
+    localStorage.removeItem(SITE_LEGACY_STORAGE_KEYS.cookieConsentV1);
+    localStorage.removeItem(SITE_LEGACY_STORAGE_KEYS.cookieConsent);
+  } catch {}
+}
+
+function clearLegacyConsentCookies() {
+  expireCookie(SITE_LEGACY_COOKIE_NAMES.cookieConsentV1);
+  expireCookie(SITE_LEGACY_COOKIE_NAMES.cookieConsent);
+}
+
+function writeConsentServices(services) {
+  const consent = createOptionalServicesConsent(services);
+  if (!consent) return null;
+
+  try {
+    localStorage.setItem(SITE_STORAGE_KEYS.cookieConsent, JSON.stringify(consent));
+    clearLegacyConsentStorage();
+  } catch {}
+
+  writeCookie(SITE_COOKIE_NAMES.cookieConsent, JSON.stringify(consent));
+  clearLegacyConsentCookies();
+  return consent;
+}
+
+function readConsent() {
+  const current = readCurrentStorageConsent() ?? readCurrentCookieConsent();
+  if (current) {
+    clearLegacyConsentStorage();
+    clearLegacyConsentCookies();
+    return current;
+  }
+
+  const legacyServices = readLegacyStorageServices() ?? readLegacyCookieServices();
+  return legacyServices ? writeConsentServices(legacyServices) : null;
+}
+
+function choiceForServices(services) {
+  if (!services) return "unset";
+
+  const enabledCount = countEnabledOptionalServices(services);
+  if (enabledCount === 0) return "rejected";
+  if (enabledCount === OPTIONAL_SERVICE_IDS.length) return "accepted";
+  return "custom";
+}
+
+function statusLabelForServices(services) {
+  if (!services) return "Aucun choix enregistré";
+
+  const enabledCount = countEnabledOptionalServices(services);
+  if (enabledCount === 0) return "Aucun service autorisé";
+  if (enabledCount === OPTIONAL_SERVICE_IDS.length) return "Tous les services autorisés";
+  return `${enabledCount} service${enabledCount > 1 ? "s" : ""} autorisé${
+    enabledCount > 1 ? "s" : ""
+  } sur ${OPTIONAL_SERVICE_IDS.length}`;
+}
+
+function readStoredChoice() {
+  return choiceForServices(readConsent()?.services);
 }
 
 function functionalityConsentAccepted() {
-  const consent = readConsent();
-  if (consent) return Boolean(consent.functionality);
-
-  const cookie =
-    readCookie(SITE_COOKIE_NAMES.cookieConsent) ??
-    readCookie(SITE_LEGACY_COOKIE_NAMES.cookieConsent);
-  return cookie === "accepted";
+  return areAllOptionalServicesEnabled(readConsent()?.services);
 }
 
-function migrateLegacyConsentCookie() {
-  const current = readCookie(SITE_COOKIE_NAMES.cookieConsent);
-  const legacy = readCookie(SITE_LEGACY_COOKIE_NAMES.cookieConsent);
-  if (
-    current !== "accepted" &&
-    current !== "rejected" &&
-    (legacy === "accepted" || legacy === "rejected")
-  ) {
-    writeCookie(SITE_COOKIE_NAMES.cookieConsent, legacy);
-  }
-  expireCookie(SITE_LEGACY_COOKIE_NAMES.cookieConsent);
+function serviceConsentAccepted(service) {
+  return Boolean(readConsent()?.services?.[service]);
 }
 
 function writeConsent(choice) {
-  const functionality = choice === "accepted";
-  const state = {
-    functionality,
-    updatedAt: new Date().toISOString(),
-    version: 1,
-  };
-
-  try {
-    localStorage.setItem(SITE_STORAGE_KEYS.cookieConsent, JSON.stringify(state));
-    localStorage.removeItem(SITE_LEGACY_STORAGE_KEYS.cookieConsent);
-  } catch {}
-
-  writeCookie(SITE_COOKIE_NAMES.cookieConsent, choice);
-  expireCookie(SITE_LEGACY_COOKIE_NAMES.cookieConsent);
+  return writeConsentServices(createOptionalServices(choice === "accepted"));
 }
 
 function resetConsent() {
   try {
     localStorage.removeItem(SITE_STORAGE_KEYS.cookieConsent);
-    localStorage.removeItem(SITE_LEGACY_STORAGE_KEYS.cookieConsent);
   } catch {}
 
+  clearLegacyConsentStorage();
   expireCookie(SITE_COOKIE_NAMES.cookieConsent);
-  expireCookie(SITE_LEGACY_COOKIE_NAMES.cookieConsent);
+  clearLegacyConsentCookies();
 }
 
 function readExplicitContentAcknowledgement() {
@@ -165,7 +219,7 @@ function exposeConsentApi() {
     acceptedService: (service, category) =>
       category === "functionality" &&
       ["giscus", "ipgeo", "speed-insights"].includes(service) &&
-      functionalityConsentAccepted(),
+      serviceConsentAccepted(service),
     isCategoryAccepted: (category) =>
       category === "necessary" || (category === "functionality" && functionalityConsentAccepted()),
   };
@@ -234,7 +288,7 @@ class SiteCookieConsentBanner extends HTMLElement {
     if (this.dataset.cookieConsentReady === "true") return;
 
     this.dataset.cookieConsentReady = "true";
-    migrateLegacyConsentCookie();
+    readConsent();
     exposeConsentApi();
     document.dispatchEvent(new Event(SITE_EVENTS.consentChange));
 
@@ -397,78 +451,113 @@ class SiteCookieConsentBanner extends HTMLElement {
 }
 
 class SiteCookiePreferences extends HTMLElement {
-  #choice = "unset";
+  #services = null;
   #feedbackTimer = 0;
 
   #handleClick = (event) => {
-    const choiceControl =
+    const actionControl =
       event.target instanceof Element
-        ? event.target.closest("[data-cookie-preference-choice]")
+        ? event.target.closest("[data-cookie-preference-action]")
         : null;
-    const choice = choiceControl?.dataset.cookiePreferenceChoice;
+    const action = actionControl?.dataset.cookiePreferenceAction;
 
-    if (choice === "accepted" || choice === "rejected") {
-      this.#writeChoice(choice);
-    } else if (choice === "unset") {
+    if (action === "accept-all") {
+      this.#writeServices(
+        createOptionalServices(true),
+        "Tous les services optionnels sont autorisés.",
+      );
+    } else if (action === "reject-all") {
+      this.#writeServices(
+        createOptionalServices(false),
+        "Tous les services optionnels sont refusés.",
+      );
+    } else if (action === "reset") {
       this.#resetChoice();
     }
+  };
+
+  #handleChange = (event) => {
+    const serviceControl =
+      event.target instanceof Element
+        ? event.target.closest("[data-cookie-preference-service]")
+        : null;
+    const service = serviceControl?.dataset.cookiePreferenceService;
+    if (!service || !OPTIONAL_SERVICE_IDS.includes(service)) return;
+
+    const services = {
+      ...(this.#services ?? createOptionalServices(false)),
+      [service]: Boolean(serviceControl.selected),
+    };
+    this.#writeServices(services, "Préférences des services optionnels enregistrées.");
   };
 
   connectedCallback() {
     if (this.dataset.cookiePreferencesReady === "true") return;
 
     this.dataset.cookiePreferencesReady = "true";
-    this.#choice = readStoredChoice();
-    this.#syncView(this.#choice === "unset" ? null : this.#choice);
+    this.#services = readConsent()?.services ?? null;
+    this.#syncView();
     this.addEventListener("click", this.#handleClick);
+    this.addEventListener("change", this.#handleChange);
     document.dispatchEvent(new Event("site:cookie-preferences-ready"));
   }
 
   disconnectedCallback() {
     this.removeEventListener("click", this.#handleClick);
+    this.removeEventListener("change", this.#handleChange);
     this.#clearFeedbackTimer();
     delete this.dataset.cookiePreferencesReady;
   }
 
-  #writeChoice(choice) {
+  #writeServices(services, feedback) {
     this.#clearFeedbackTimer();
-    writeConsent(choice);
-    this.#choice = choice;
-    this.#syncView(
-      choice,
-      choice === "accepted" ? "Services optionnels autorisés." : "Services optionnels refusés.",
-    );
+    const consent = writeConsentServices(services);
+    if (!consent) return;
+
+    this.#services = consent.services;
+    exposeConsentApi();
+    this.#syncView(feedback);
     document.dispatchEvent(new Event(SITE_EVENTS.consentChange));
   }
 
   #resetChoice() {
     this.#clearFeedbackTimer();
     resetConsent();
-    this.#choice = "unset";
-    this.#syncView(null, "Choix des services optionnels réinitialisé.");
+    this.#services = null;
+    exposeConsentApi();
+    this.#syncView("Choix des services optionnels réinitialisé.");
     document.dispatchEvent(new Event(SITE_EVENTS.consentChange));
   }
 
-  #syncView(selectedChoice, feedback = "") {
+  #syncView(feedback = "") {
     const status = this.querySelector("[data-cookie-preferences-status]");
     const feedbackElement = this.querySelector("[data-cookie-preferences-feedback]");
     const panel = this.querySelector(".cookie-preferences-panel");
 
-    if (status) status.textContent = STATUS_LABELS[this.#choice];
+    if (status) status.textContent = statusLabelForServices(this.#services);
     if (feedbackElement) feedbackElement.textContent = feedback;
-    if (panel) panel.dataset.cookiePreferenceState = this.#choice;
-    this.#syncSelection(selectedChoice);
-  }
+    if (panel) panel.dataset.cookiePreferenceState = choiceForServices(this.#services);
 
-  #syncSelection(selectedChoice) {
-    for (const control of this.querySelectorAll("[data-cookie-preference-choice]")) {
-      if (control.dataset.cookiePreferenceChoice === "unset") {
-        control.removeAttribute("data-selected");
-        control.toggleAttribute("disabled", this.#choice === "unset");
-        continue;
-      }
-      const selected = control.dataset.cookiePreferenceChoice === selectedChoice;
-      control.toggleAttribute("data-selected", selected);
+    const allServicesEnabled = areAllOptionalServicesEnabled(this.#services);
+    const noServicesEnabled =
+      this.#services !== null && countEnabledOptionalServices(this.#services) === 0;
+    this.querySelector('[data-cookie-preference-action="accept-all"]')?.toggleAttribute(
+      "data-selected",
+      allServicesEnabled,
+    );
+    this.querySelector('[data-cookie-preference-action="reject-all"]')?.toggleAttribute(
+      "data-selected",
+      noServicesEnabled,
+    );
+    this.querySelector('[data-cookie-preference-action="reset"]')?.toggleAttribute(
+      "disabled",
+      this.#services === null,
+    );
+
+    for (const control of this.querySelectorAll("[data-cookie-preference-service]")) {
+      const selected = Boolean(this.#services?.[control.dataset.cookiePreferenceService]);
+      control.toggleAttribute("selected", selected);
+      control.selected = selected;
     }
   }
 

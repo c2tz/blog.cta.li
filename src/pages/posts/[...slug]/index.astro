@@ -32,7 +32,10 @@ const isListed = isListedBlogPost(post);
 const { createdAt, lastModified } = gitDates;
 const postPriority = post.data.priority ?? 0;
 const visiblePostTags = [...(post.data.tags ?? [])].filter((tag) => tag !== "all");
-const postTags = ["all", ...visiblePostTags];
+const postTags = visiblePostTags.map((tag) => ({
+  label: `#${tag}`,
+  value: tag,
+}));
 const postUrl = new URL(`/posts/${post.id}/`, Astro.site).toString();
 const postImage = new URL(`/posts/${post.id}/og.png`, Astro.site).toString();
 const postStructuredData = {
@@ -80,7 +83,7 @@ const postStructuredData = {
     >
       <header class="post-header">
         <h1 id="post-title" class="post-title-anchor" data-anchor-reset>
-          {post.data.title}
+          <a href="#post-title" class="heading-link">{post.data.title}</a>
         </h1>
       </header>
       <div class="post-search-metadata" data-pagefind-ignore aria-hidden="true">
@@ -116,25 +119,27 @@ const postStructuredData = {
           lastModified={lastModified}
           lastModifiedCommit={gitDates.lastModifiedCommit}
         />
-        <nav class="post-tags-section" aria-label="Tags de l’article">
-          <ul class="post-tags">
-            {
-              postTags.map((tag) => (
-                <li>
-                  {isListed ? (
-                    <a class="post-tag-link" href={`/tags/${encodeURIComponent(tag)}/`}>
-                      #{tag}
-                    </a>
-                  ) : (
-                    <span class="post-tag-label" data-post-tag-static>
-                      #{tag}
-                    </span>
-                  )}
-                </li>
-              ))
-            }
-          </ul>
-        </nav>
+        {
+          postTags.length > 0 && (
+            <nav class="post-tags-section" aria-label="Tags de l’article">
+              <ul class="post-tags">
+                {postTags.map((tag) => (
+                  <li>
+                    {isListed ? (
+                      <a class="post-tag-link" href={`/tags/${encodeURIComponent(tag.value)}/`}>
+                        {tag.label}
+                      </a>
+                    ) : (
+                      <span class="post-tag-label" data-post-tag-static>
+                        {tag.label}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          )
+        }
       </div>
       <GiscusComments
         repo={SITE_GISCUS_CONFIG.repo}

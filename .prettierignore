@@ -1,7 +1,7 @@
 dist/
 node_modules/
 public/pagefind/
-public/konachan-backgrounds.json
+data/konachan-backgrounds.json
 public/konachan-backgrounds.runtime.json
 src/assets/css/base/material-theme.generated.scss
 .astro/

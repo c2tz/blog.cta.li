@@ -330,9 +330,16 @@ const speedInsightsVersion = speedInsightsPackage.version;
         }
       })();
     </script>
+    {
+      !barePage && (
+        <a class="skip-link" href="#main-content">
+          Aller au contenu
+        </a>
+      )
+    }
     {!barePage && <Header />}
-    <main class="site-main">
-      <div id="main-content" class="site-content">
+    <main id="main-content" class="site-main" tabindex="-1">
+      <div class="site-content">
         <slot name="content" />
       </div>
     </main>

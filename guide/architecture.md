@@ -95,7 +95,7 @@ They are incremented when the stored JSON, cache content, or meaning changes eno
 
 Examples:
 
-- `ct-cookie-consent-v1`: consent payload version.
+- `ct-cookie-consent-v2`: individual optional-services consent payload.
 - `ct-explicit-content-ack-v1`: explicit image warning acknowledgement.
 - `site-ip-geolocation-v3`: IP geolocation cache format.
 - `home-konachan-backgrounds-v8`: selected home background manifest cache format.
@@ -118,9 +118,10 @@ script stay decoupled.
 - `konachan:refresh-request`: emitted by the refresh button.
 - `konachan:refresh-state`: emitted by the home background script with `{ busy, status }`.
 
-The full JSON manifest is an authoring artifact; the browser downloads the compact runtime
-manifest. Every normal production build runs `pnpm check:konachan-runtime` first and fails if both
-checked-in manifests are not byte-for-byte synchronized or if the runtime file exceeds 40 KiB.
+The full JSON manifest is an authoring artifact in `data/konachan-backgrounds.json`, outside the
+public asset directory; the browser downloads only the compact runtime manifest. Every normal
+production build runs `pnpm check:konachan-runtime` first and fails if both checked-in manifests
+are not byte-for-byte synchronized or if the runtime file exceeds 40 KiB.
 
 ## Checks
 

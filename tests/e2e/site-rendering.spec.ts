@@ -89,8 +89,12 @@ test("shows one cached localized IP and network lookup after consent", async ({ 
   await page.addInitScript(() => {
     const updatedAt = new Date().toISOString();
     localStorage.setItem(
-      "ct-cookie-consent-v1",
-      JSON.stringify({ functionality: true, updatedAt, version: 1 }),
+      "ct-cookie-consent-v2",
+      JSON.stringify({
+        services: { giscus: false, ipgeo: true, "speed-insights": false },
+        updatedAt,
+        version: 2,
+      }),
     );
     if (!sessionStorage.getItem("playwright-ip-cache-cleared")) {
       localStorage.removeItem("site-ip-geolocation-v3");
@@ -124,6 +128,10 @@ test("shows one cached localized IP and network lookup after consent", async ({ 
 });
 
 test("scrolls the document vertically with a mouse wheel in Chromium", async ({ page }) => {
+  test.skip(
+    test.info().project.name.includes("webkit"),
+    "The targeted WebKit matrix covers rendering, not Chromium wheel semantics.",
+  );
   await gotoRoute(page, "/posts/hugo-material-shortcodes/");
 
   await expect

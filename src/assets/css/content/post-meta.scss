@@ -1,14 +1,7 @@
 @use "../components/site-dates";
 
-.post-git-date-icon {
-  display: block;
-  width: 1.1rem;
-  height: 1.1rem;
-  font-size: 1.1rem;
-  line-height: 1.1rem;
-}
-
-.post-git-commit-icon {
+.post-git-date-icon.material-symbols-rounded,
+.post-git-commit-icon.material-symbols-rounded {
   display: block;
   width: 1.1rem;
   height: 1.1rem;

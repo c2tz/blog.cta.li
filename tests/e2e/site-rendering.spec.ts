@@ -21,6 +21,35 @@ for (const route of ROUTES) {
   });
 }
 
+test("keeps post date icons inside their intended line box", async ({ page }) => {
+  await gotoRoute(page, "/posts/bienvenue-sur-ct-blog/");
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+  });
+
+  const icons = page.locator(".post-git-date-icon");
+  await expect(icons).toHaveCount(2);
+  const metrics = await icons.evaluateAll((elements) =>
+    elements.map((element) => {
+      const styles = getComputedStyle(element);
+      const bounds = element.getBoundingClientRect();
+
+      return {
+        fontSize: Number.parseFloat(styles.fontSize),
+        height: bounds.height,
+        lineHeight: Number.parseFloat(styles.lineHeight),
+        width: bounds.width,
+      };
+    }),
+  );
+
+  for (const icon of metrics) {
+    expect(icon.fontSize).toBeCloseTo(icon.width, 1);
+    expect(icon.fontSize).toBeCloseTo(icon.height, 1);
+    expect(icon.lineHeight).toBeCloseTo(icon.fontSize, 1);
+  }
+});
+
 test("renders the inverse-theme 404 artwork without site chrome", async ({ page }) => {
   const response = await page.goto("/page-absente-pour-test/", {
     waitUntil: "domcontentloaded",

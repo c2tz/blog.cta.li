@@ -1,4 +1,4 @@
-import { expect, test, gotoRoute } from "./site-fixture";
+import { clearConsentState, expect, test, gotoRoute } from "./site-fixture";
 
 const speedInsightsSwitchSelector = 'md-switch[data-cookie-preference-service="speed-insights"]';
 
@@ -16,11 +16,20 @@ test("saves each optional service independently with official Material switches"
   await expect(ipgeoSwitch).toHaveJSProperty("localName", "md-switch");
   await expect(speedInsightsSwitch).toHaveJSProperty("localName", "md-switch");
   await expect(
-    page.getByRole("switch", { name: "Autoriser les commentaires Giscus" }),
+    page.getByRole("switch", {
+      name: "Commentaires Giscus. Autorise le service de commentaires sur les articles. Vous gardez ensuite le choix de le charger sur chaque page.",
+    }),
   ).toBeVisible();
-  await expect(page.getByRole("switch", { name: "Autoriser la géolocalisation IP" })).toBeVisible();
-  await expect(page.getByRole("switch", { name: "Autoriser Vercel Speed Insights" })).toBeVisible();
-
+  await expect(
+    page.getByRole("switch", {
+      name: "Géolocalisation IP. Interroge ipapi.is pour afficher votre pays, votre ASN et votre réseau dans le pied de page.",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("switch", {
+      name: "Mesure des performances Vercel. Autorise Vercel Speed Insights à mesurer les performances de navigation en production.",
+    }),
+  ).toBeVisible();
   await giscusSwitch.click();
   await expect(giscusSwitch).toHaveJSProperty("selected", true);
   await expect(status).toHaveText("1 service autorisé sur 3");
@@ -54,6 +63,74 @@ test("saves each optional service independently with official Material switches"
       page.locator(".cookie-preferences-panel").getAttribute("data-cookie-preference-state"),
     )
     .toBe("accepted");
+});
+
+test("does not turn Escape in search into an implicit privacy rejection", async ({ page }) => {
+  await page.addInitScript(clearConsentState);
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "ct-explicit-content-ack-v1",
+      JSON.stringify({ acknowledged: true, updatedAt: new Date().toISOString(), version: 1 }),
+    );
+  });
+  await gotoRoute(page, "/");
+
+  const privacyBanner = page.locator(".cookie-consent--privacy");
+  await expect(privacyBanner).toBeVisible();
+  await page.getByRole("button", { name: "Rechercher" }).click();
+
+  const dialog = page.getByRole("dialog", { name: "Recherche" });
+  const searchInput = page.locator("[data-search-input]");
+  await expect(dialog).toBeVisible();
+  await searchInput.evaluate(async (element) => {
+    const field = element as HTMLElement & { updateComplete?: Promise<unknown>; value: string };
+    await field.updateComplete;
+    const control = field.shadowRoot?.querySelector("input, textarea");
+    if (!(control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement)) {
+      throw new Error("Champ de recherche introuvable");
+    }
+
+    field.value = "site";
+    control.value = "site";
+    control.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
+    control.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        key: "Escape",
+      }),
+    );
+  });
+  await expect(searchInput).toHaveJSProperty("value", "");
+  await expect(dialog).toBeVisible();
+
+  await searchInput.evaluate(async (element) => {
+    const field = element as HTMLElement & { updateComplete?: Promise<unknown> };
+    await field.updateComplete;
+    const control = field.shadowRoot?.querySelector("input, textarea");
+    if (!(control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement)) {
+      throw new Error("Champ de recherche introuvable");
+    }
+
+    control.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        key: "Escape",
+      }),
+    );
+  });
+  await expect(dialog).toBeHidden();
+  await expect(privacyBanner).toBeVisible();
+  await expect(page.locator("site-cookie-consent-banner")).toHaveAttribute(
+    "data-active-notice",
+    "privacy",
+  );
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("ct-cookie-consent-v2")))
+    .toBeNull();
 });
 
 test("stops an already loaded Speed Insights service when its own consent is revoked", async ({

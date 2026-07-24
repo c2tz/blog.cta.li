@@ -131,6 +131,16 @@ test("uses Escape to clear a search, then close its empty dialog", async ({ page
   await expect(openButton).toBeFocused();
 });
 
+test("uses the search status as the only live result announcement", async ({ page }) => {
+  await gotoRoute(page, "/");
+  await openSearch(page);
+
+  const dialog = page.locator("md-dialog.site-search-dialog[open]");
+  await expect(dialog.locator("[data-search-status]")).toHaveAttribute("role", "status");
+  await expect(dialog.locator("[data-search-status]")).toHaveAttribute("aria-live", "polite");
+  await expect(dialog.locator("[data-search-results]")).not.toHaveAttribute("aria-live");
+});
+
 test("searches through the Material Web text field", async ({ page }) => {
   await gotoRoute(page, "/");
 

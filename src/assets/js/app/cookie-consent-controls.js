@@ -261,11 +261,6 @@ class SiteCookieConsentBanner extends HTMLElement {
   #handleKeydown = (event) => {
     if (!this.#activeNotice) return;
 
-    if (event.key === "Escape" && this.#activeNotice === "privacy") {
-      this.#saveConsent("rejected");
-      return;
-    }
-
     if (event.key === "Tab" && this.#activeNotice === "explicit-content") {
       // A backdrop pointerdown may still have an initial-focus frame queued.
       // Once the user presses Tab, keyboard navigation is authoritative: do

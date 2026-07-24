@@ -664,6 +664,41 @@ test("renders shortcode code blocks with highlighted lines and copy controls", a
   await expectNoPageOverflow(page);
 });
 
+test("makes code blocks keyboard-focusable only while they scroll horizontally", async ({
+  page,
+}) => {
+  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
+  await waitForAppReady(page);
+
+  await page.evaluate(() => {
+    const prose = document.querySelector(".site-prose");
+    if (!prose) throw new Error("Zone de contenu introuvable");
+
+    const fixture = document.createElement("div");
+    fixture.dataset.keyboardCodeFixture = "true";
+    fixture.style.width = "14rem";
+    fixture.innerHTML = `
+      <pre class="astro-code"><code><span class="line">${"const resultat = ".repeat(24)}42;</span></code></pre>
+    `;
+    prose.append(fixture);
+  });
+
+  const pre = page.locator("[data-keyboard-code-fixture] pre");
+  await expect(pre).toHaveAttribute("tabindex", "0");
+  await pre.focus();
+  await expect(pre).toBeFocused();
+
+  await page.evaluate(() => {
+    const line = document.querySelector("[data-keyboard-code-fixture] .line");
+    if (!(line instanceof HTMLElement)) throw new Error("Ligne de code introuvable");
+
+    line.textContent = "42";
+    window.dispatchEvent(new Event("resize"));
+  });
+
+  await expect(pre).not.toHaveAttribute("tabindex");
+});
+
 test("renders every shortcode button variant as a real Material Web component", async ({
   page,
 }) => {

@@ -93,35 +93,13 @@ test("does not turn Escape in search into an implicit privacy rejection", async 
     field.value = "site";
     control.value = "site";
     control.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
-    control.dispatchEvent(
-      new KeyboardEvent("keydown", {
-        bubbles: true,
-        cancelable: true,
-        composed: true,
-        key: "Escape",
-      }),
-    );
+    control.focus();
   });
+  await page.keyboard.press("Escape");
   await expect(searchInput).toHaveJSProperty("value", "");
   await expect(dialog).toBeVisible();
 
-  await searchInput.evaluate(async (element) => {
-    const field = element as HTMLElement & { updateComplete?: Promise<unknown> };
-    await field.updateComplete;
-    const control = field.shadowRoot?.querySelector("input, textarea");
-    if (!(control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement)) {
-      throw new Error("Champ de recherche introuvable");
-    }
-
-    control.dispatchEvent(
-      new KeyboardEvent("keydown", {
-        bubbles: true,
-        cancelable: true,
-        composed: true,
-        key: "Escape",
-      }),
-    );
-  });
+  await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
   await expect(privacyBanner).toBeVisible();
   await expect(page.locator("site-cookie-consent-banner")).toHaveAttribute(

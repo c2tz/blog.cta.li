@@ -89,7 +89,7 @@
     "husky": "^9.1.7",
     "knip": "6.27.0",
     "lint-staged": "^17.0.8",
-    "material-symbols": "^0.45.7",
+    "material-symbols": "^0.45.9",
     "pagefind": "^1.5.2",
     "parse5": "^8.0.1",
     "prettier": "^3.9.5",

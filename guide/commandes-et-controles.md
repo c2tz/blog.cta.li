@@ -95,7 +95,9 @@ cette commande : les problèmes nécessitant une décision humaine restent signa
 ### `pnpm format:check`
 
 Vérifie avec Prettier uniquement les fichiers modifiés par rapport à la base Git calculée par le
-script du projet. Cette commande ne modifie aucun fichier.
+script du projet. En local, cette base est `origin/develop` (ou `FORMAT_BASE` si vous le définissez) ;
+dans GitHub Actions, elle est le commit de base de la pull request ou le commit précédent du push.
+Cette commande ne modifie aucun fichier.
 
 ### `pnpm format`
 

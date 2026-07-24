@@ -12,21 +12,28 @@ dernière version.
 
 Les workflows importants sont :
 
-| Workflow                                | Déclenchement                                 | Rôle                                                 |
-| --------------------------------------- | --------------------------------------------- | ---------------------------------------------------- |
-| `Verify Astro and Material Web project` | Pull requests et pushes vers `develop`/`main` | Qualité, build, en-têtes, Playwright et Lighthouse   |
-| `Validate security header hashes`       | Pull requests et pushes vers `develop`/`main` | Recalcule la CSP et refuse un `vercel.json` obsolète |
-| `Commit message standards`              | Pull requests et pushes protégés              | Valide le titre de PR ou le dernier message poussé   |
-| `CodeQL`                                | Pull requests, pushes et planning             | Analyse de sécurité JavaScript/TypeScript            |
-| `Smoke Vercel preview deployment`       | Déploiement Vercel ou lancement manuel        | Vérifie le site réellement déployé et ses en-têtes   |
+| Workflow                                | Déclenchement                                 | Rôle                                                              |
+| --------------------------------------- | --------------------------------------------- | ----------------------------------------------------------------- |
+| `Verify Astro and Material Web project` | Pull requests et pushes vers `develop`/`main` | Qualité, build, en-têtes, Playwright et Lighthouse                |
+| `Validate security header hashes`       | Pull requests et pushes vers `develop`/`main` | Recalcule la CSP et refuse un `vercel.json` obsolète              |
+| `Commit message standards`              | Pull requests et pushes protégés              | Valide le titre de PR ou tous les messages introduits par le push |
+| `CodeQL`                                | Pull requests, pushes et planning             | Analyse de sécurité JavaScript/TypeScript                         |
+| `Smoke Vercel preview deployment`       | Déploiement Vercel ou lancement manuel        | Vérifie le site réellement déployé et ses en-têtes                |
 
 Deux jobs composent le workflow principal :
 
 ### Check Astro, Material Web, and security headers
 
 Il récupère tout l'historique Git, installe Node.js, pnpm, Chromium et WebKit, puis lance
-`pnpm verify:quality`. En cas d'échec Playwright, les traces et captures sont publiées comme artefact
-pendant 14 jours.
+`pnpm verify:quality`. Le contrôle de formatage compare une pull request à son commit de base et un
+push à son commit précédent, plutôt qu'à une branche fixée. En cas d'échec Playwright, les traces et
+captures sont publiées comme artefact pendant 14 jours. L'étape de vérification s'arrête trois minutes
+avant le délai du job pour laisser cet envoi s'exécuter ; une interruption brutale du runner par GitHub
+reste impossible à récupérer.
+
+Les parcours E2E ne sont pas divisés en shards dans ce job : son nom exact est utilisé par les rulesets
+de branches et doit rester le verdict complet de la validation. Une division demanderait un job
+d'agrégation et une mise à jour coordonnée des règles ; elle ne doit pas être ajoutée isolément.
 
 ### Lighthouse 95+ performance (mobile and desktop, no SEO)
 

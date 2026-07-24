@@ -32,3 +32,6 @@ the commit is created.
 The required GitHub check validates the pull request title instead of every commit in the
 branch. That keeps old or temporary branch commits from blocking a PR when the final merge
 message will be clean.
+
+For a direct push to `develop` or `main`, the same check validates every commit introduced by that
+push, not only its last commit. This also applies to a multi-commit hotfix.

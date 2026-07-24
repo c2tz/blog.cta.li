@@ -45,14 +45,18 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium webkit
 
       - name: Check, build, and validate security headers
+        # Leave enough of the job timeout for diagnostics to be uploaded if this step times out.
+        timeout-minutes: 42
         run: pnpm verify:quality
 
       - name: Upload Playwright failure artifacts
-        if: failure()
+        if: ${{ failure() || cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: playwright-failure-artifacts
-          path: test-results/
+          path: |
+            playwright-report/
+            test-results/
           if-no-files-found: ignore
           retention-days: 14
 

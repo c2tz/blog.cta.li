@@ -4,15 +4,12 @@ import {
   SchemeTonalSpot,
   argbFromHex,
   hexFromArgb,
-  sourceColorFromImageBytes,
 } from "@material/material-color-utilities";
 import {
   isMaterialDynamicColorActive,
   storeMaterialDynamicColorPalette,
   syncMaterialDynamicColor,
 } from "./material-dynamic-color.js";
-import { withDeterministicMaterialSourceColorRandom } from "./material-source-color-random.js";
-import { sourceColorFromImageBytesInWorker } from "./material-source-color-worker.js";
 import { MATERIAL_DYNAMIC_COLOR_ROLES, SITE_EVENTS } from "@/lib/site-contracts";
 
 const MATERIAL_DYNAMIC_COLORS = new MaterialDynamicColors();
@@ -117,40 +114,9 @@ export function createHomeKonachanThemeController({
     );
   }
 
-  function imageBytes(image) {
-    const width = image.naturalWidth || image.width;
-    const height = image.naturalHeight || image.height;
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d", { willReadFrequently: true });
-    if (!context || width <= 0 || height <= 0) {
-      throw new Error("konachan_dynamic_theme_canvas_unavailable");
-    }
-
-    canvas.width = width;
-    canvas.height = height;
-    context.drawImage(image, 0, 0, width, height);
-    return context.getImageData(0, 0, width, height).data;
-  }
-
-  function deterministicMaterialSourceColorFromBytes(bytes) {
-    return withDeterministicMaterialSourceColorRandom(() => sourceColorFromImageBytes(bytes));
-  }
-
-  async function deterministicMaterialSourceColor(image) {
-    let bytes = imageBytes(image);
-
-    try {
-      return await sourceColorFromImageBytesInWorker(bytes);
-    } catch {
-      // A successful transfer detaches the main-thread buffer. Recreate the
-      // exact full-resolution pixels only when the Worker cannot return them.
-      if (bytes.byteLength === 0) bytes = imageBytes(image);
-      return deterministicMaterialSourceColorFromBytes(bytes);
-    }
-  }
-
   async function createHomeDynamicTheme(image) {
-    const sourceColor = await deterministicMaterialSourceColor(image);
+    const { materialSourceColorFromImage } = await import("./material-source-color-fallback.js");
+    const sourceColor = await materialSourceColorFromImage(image);
 
     return createHomeDynamicThemeFromSourceColor(sourceColor);
   }

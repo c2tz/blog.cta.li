@@ -163,6 +163,12 @@ test("uses a precomputed Konachan source color before the Worker fallback", asyn
       }),
     });
   });
+  const fallbackRequests: string[] = [];
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname.includes("material-source-color-fallback")) {
+      fallbackRequests.push(request.url());
+    }
+  });
   await seedFixedKonachanImage(page, "#5BC3D6");
 
   await gotoRoute(page, "/");
@@ -170,6 +176,7 @@ test("uses a precomputed Konachan source color before the Worker fallback", asyn
   expect(
     await page.evaluate(() => Reflect.get(window, "__materialSourceColorWorkerCount") ?? 0),
   ).toBe(0);
+  expect(fallbackRequests).toEqual([]);
 });
 
 test("uses upgraded Material Web buttons and the generated color roles", async ({ page }) => {
@@ -311,6 +318,12 @@ test("extracts the exact Konachan source color in a module Worker", async ({ pag
     test.info().project.name !== "desktop-light",
     "The Worker transport only needs one browser-project verification.",
   );
+  const fallbackRequests: string[] = [];
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname.includes("material-source-color-fallback")) {
+      fallbackRequests.push(request.url());
+    }
+  });
   await seedFixedKonachanImage(page);
   await page.addInitScript({
     content: `
@@ -340,6 +353,7 @@ test("extracts the exact Konachan source color in a module Worker", async ({ pag
   const worker = await workerPromise;
 
   expect(worker.url()).toContain("material-source-color.worker");
+  await expect.poll(() => fallbackRequests.length).toBe(1);
   await expectStoredSourceColor(page, "#5BC3D6");
   await expect
     .poll(() =>

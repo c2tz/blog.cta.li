@@ -920,7 +920,10 @@ test("keeps one Giscus progress bar until its iframe has loaded", async ({ page 
     ).__giscusTiming;
     return (timing?.visibleAt ?? 0) - (timing?.busyAt ?? 0);
   });
-  expect(progressDelay).toBeGreaterThanOrEqual(180);
+  // MutationObserver records `busyAt` after the loading task has started, so
+  // allow one busy runner task while still proving that the 200 ms indicator
+  // delay is not bypassed.
+  expect(progressDelay).toBeGreaterThanOrEqual(150);
 
   releaseFrameResponse();
   await expect(panel).toHaveAttribute("aria-busy", "false");

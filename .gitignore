@@ -23,7 +23,8 @@ test-results/
 
 # environment variables
 .env
-.env.production
+.env.*
+!.env.example
 
 # macOS-specific files
 .DS_Store
@@ -32,4 +33,3 @@ test-results/
 .idea/
 diff.txt
 .vercel/
-.env.local

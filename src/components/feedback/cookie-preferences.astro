@@ -1,7 +1,15 @@
+---
+interface Props {
+  labelledby?: string;
+}
+
+const { labelledby = "modifier-vos-choix-cookies" } = Astro.props;
+---
+
 <site-cookie-preferences class="not-prose">
   <section
     class="cookie-preferences-panel"
-    aria-labelledby="modifier-vos-choix-cookies"
+    aria-labelledby={labelledby}
     data-cookie-preference-state="unset"
   >
     <header class="cookie-preferences-header">

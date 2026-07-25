@@ -28,8 +28,5 @@
     "prettier-plugin-astro",
     "sass",
     "typescript"
-  ],
-  "ignoreIssues": {
-    "src/lib/konachan-backgrounds.mjs": ["duplicates"]
-  }
+  ]
 }

@@ -223,18 +223,15 @@ modifiés après vérification visuelle.
 
 ### `pnpm check:konachan-runtime`
 
-Vérifie que le manifeste complet et le manifeste compact destiné au navigateur correspondent, et
-que le manifeste compact respecte sa limite de taille. `pnpm build` l'exécute déjà.
+Vérifie le manifeste compact injecté pour le navigateur ainsi que chaque WebP déclaré. `pnpm
+build` prépare d'abord les assets puis exécute déjà ce contrôle.
 
-### `pnpm sync:konachan-runtime`
+### `pnpm prepare:landing-assets`
 
-Régénère le manifeste compact à partir du manifeste complet. Cette commande modifie un fichier.
-
-### `pnpm update:konachan`
-
-Télécharge et prépare une nouvelle sélection d'arrière-plans Konachan. Elle contacte un service
-externe, modifie de nombreux fichiers et n'appartient pas au cycle normal de publication d'un
-article. Un workflow mensuel propose normalement ces changements dans une pull request.
+Prépare transactionnellement les arrière-plans. Les builds Vercel fiables de `main` et `develop`
+lisent le dépôt privé avec une clé de déploiement en lecture seule. Les autres builds et le
+développement local utilisent des fixtures abstraites sans contenu sensible. Pour vérifier un
+checkout privé local, définissez `LANDING_ASSETS_SOURCE_DIR` vers son dossier `public/`.
 
 ### `pnpm index:search`
 

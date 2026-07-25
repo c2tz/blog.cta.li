@@ -213,12 +213,34 @@ function initialKonachanImagePath(homeHtml) {
   }
 
   const initial = payload?.initialBackground;
+  if (!initial) return null;
   const variant =
     initial?.variants?.find((candidate) => Number(candidate?.width) === 960) ??
     initial?.variants?.[0];
   const path = localAssetPath(variant?.url ?? initial?.url);
   if (!path) throw new Error("Home Konachan runtime configuration has no local initial image.");
   return path;
+}
+
+function runtimeKonachanImagePath(runtimeManifestSource) {
+  let manifest;
+  try {
+    manifest = JSON.parse(runtimeManifestSource);
+  } catch (error) {
+    throw new Error(`Konachan runtime manifest is invalid: ${error.message}`, {
+      cause: error,
+    });
+  }
+
+  const id = manifest?.images?.[0]?.id;
+  const variantWidth = manifest?.variantWidth;
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    throw new Error("Konachan runtime manifest has no representative image ID.");
+  }
+  if (!Number.isSafeInteger(variantWidth) || variantWidth <= 0) {
+    throw new Error("Konachan runtime manifest has no valid variant width.");
+  }
+  return `konachan-backgrounds/${id}-${variantWidth}.webp`;
 }
 
 function largestFile(files) {
@@ -284,7 +306,11 @@ export async function collectBundleStats({ distDirectory = DEFAULT_DIST_DIRECTOR
       ]),
     ),
   );
-  const initialKonachanImage = initialKonachanImagePath(homeHtml);
+  const initialKonachanImage =
+    initialKonachanImagePath(homeHtml) ??
+    runtimeKonachanImagePath(
+      await readFile(resolve(distDirectory, "konachan-backgrounds.runtime.json"), "utf8"),
+    );
   const deferredJourneys = {
     search: await measureFiles(distDirectory, deferredGraphs.search, measurementCache),
     imagePreview: await measureFiles(distDirectory, deferredGraphs.imagePreview, measurementCache),

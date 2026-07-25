@@ -118,10 +118,12 @@ script stay decoupled.
 - `konachan:refresh-request`: emitted by the refresh button.
 - `konachan:refresh-state`: emitted by the home background script with `{ busy, status }`.
 
-The full JSON manifest is an authoring artifact in `data/konachan-backgrounds.json`, outside the
-public asset directory; the browser downloads only the compact runtime manifest. Every normal
-production build runs `pnpm check:konachan-runtime` first and fails if both checked-in manifests
-are not byte-for-byte synchronized or if the runtime file exceeds 40 KiB.
+The authoring manifest, downloader, and generated images live in the private
+`c2tz/ct-blog-landing-img` repository. Trusted Vercel builds clone it through a read-only deploy
+key, validate every declared WebP, and stage only the compact runtime manifest plus browser assets.
+Pull requests and local development use abstract fixtures, so no private asset or credential is
+present in this public repository. Every build fails if the runtime contract, dimensions, file
+set, or 40 KiB manifest budget is invalid.
 
 ## Checks
 

@@ -520,7 +520,6 @@ test("keeps all required check names aligned and every external action pinned by
   const allWorkflowFiles = [
     ...workflowFiles,
     ".github/workflows/nightly-browser-qa.yml",
-    ".github/workflows/refresh-konachan-backgrounds.yml",
     ".github/workflows/vercel-preview-smoke.yml",
   ];
   const workflowText = workflowFiles.map((path) => readFileSync(path, "utf8")).join("\n");

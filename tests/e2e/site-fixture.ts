@@ -45,9 +45,9 @@ export function clearConsentState() {
 export async function seedFixedKonachanImage(page: Page, sourceColor = "#5BC3D6") {
   await page.addInitScript((seededSourceColor) => {
     const image = {
-      id: 405237,
-      url: "/konachan-backgrounds/405237.webp",
-      originalUrl: "https://konachan.com/post/show/405237",
+      id: 910001,
+      url: "/konachan-backgrounds/910001.webp",
+      originalUrl: "https://www.cta.li/",
       rating: "safe",
       width: 1920,
       height: 1080,
@@ -55,7 +55,7 @@ export async function seedFixedKonachanImage(page: Page, sourceColor = "#5BC3D6"
         {
           bytes: 54_484,
           height: 540,
-          url: "/konachan-backgrounds/405237-960.webp",
+          url: "/konachan-backgrounds/910001-960.webp",
           width: 960,
         },
       ],

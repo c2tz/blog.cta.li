@@ -1,6 +1,9 @@
 # build output
 dist/
 public/pagefind/
+public/konachan-backgrounds/
+public/konachan-backgrounds.runtime.json
+public/.landing-assets-*/
 # generated types
 .astro/
 .vscode

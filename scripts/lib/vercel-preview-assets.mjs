@@ -3,7 +3,6 @@ import { parse } from "parse5";
 import { KONACHAN_RUNTIME_MANIFEST_VERSION } from "../../src/lib/konachan-runtime-manifest.mjs";
 
 export const KONACHAN_RUNTIME_MAX_BYTES = 40 * 1024;
-export const KONACHAN_RUNTIME_IMAGE_COUNT = 150;
 
 const ASTRO_STYLESHEET_PATH = /^\/_astro\/[^/?#]+\.css$/;
 
@@ -108,8 +107,8 @@ export function inspectKonachanRuntimeManifest(bytes) {
     `Konachan runtime manifest must use version ${KONACHAN_RUNTIME_MANIFEST_VERSION}.`,
   );
   assert(
-    Array.isArray(manifest.images) && manifest.images.length === KONACHAN_RUNTIME_IMAGE_COUNT,
-    `Konachan runtime manifest must contain exactly ${KONACHAN_RUNTIME_IMAGE_COUNT} images.`,
+    Array.isArray(manifest.images) && manifest.images.length > 0,
+    "Konachan runtime manifest must contain at least one image.",
   );
 
   const ids = manifest.images.map((image) => image?.id);
@@ -126,6 +125,12 @@ export function inspectKonachanRuntimeManifest(bytes) {
   assert(
     Number.isSafeInteger(manifest.variantWidth) && manifest.variantWidth > 0,
     "Konachan runtime manifest must declare a positive integer variantWidth.",
+  );
+  assert(
+    manifest.images.every(
+      (image) => image?.rating === "s" || image?.rating === "q" || image?.rating === "e",
+    ),
+    "Konachan runtime manifest images must declare an s, q, or e rating.",
   );
 
   return {

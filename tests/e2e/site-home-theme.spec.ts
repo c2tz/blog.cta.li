@@ -48,9 +48,7 @@ test("shows the published introduction while keeping unlisted posts out of the h
   expect(tagLinks.every(({ href, upgraded }) => upgraded && href?.startsWith("/tags/"))).toBe(true);
 });
 
-test("starts with the permanent Konachan landing image when no cached image exists", async ({
-  page,
-}) => {
+test("starts with the neutral landing fallback when no cached image exists", async ({ page }) => {
   await page.addInitScript(() => {
     if (sessionStorage.getItem("test-konachan-cache-cleared")) return;
     localStorage.removeItem("home-konachan-backgrounds-v8");
@@ -61,10 +59,10 @@ test("starts with the permanent Konachan landing image when no cached image exis
   const background = page.locator("[data-konachan-background]");
   const credit = page.locator("[data-konachan-credit-link]");
   await expect(background).toHaveAttribute("data-loaded", "true", { timeout: 15_000 });
-  await expect(credit).toHaveAttribute("href", "https://konachan.com/post/show/405393");
+  await expect(credit).toHaveAttribute("href", "https://www.cta.li/");
 
   const firstUrl = await background.getAttribute("data-konachan-current-url");
-  expect(firstUrl).toContain("405393");
+  expect(firstUrl).toContain("910001");
   const manifestRequests = await page.evaluate(() =>
     performance
       .getEntriesByType("resource")
@@ -80,7 +78,7 @@ test("starts with the permanent Konachan landing image when no cached image exis
         return stored?.currentImage?.id;
       }),
     )
-    .toBe(405393);
+    .toBe(910001);
 
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.locator("[data-konachan-background]")).toHaveAttribute(
@@ -90,9 +88,9 @@ test("starts with the permanent Konachan landing image when no cached image exis
 
   await page.evaluate(() => {
     const cachedImage = {
-      id: 405237,
-      url: "/konachan-backgrounds/405237.webp",
-      originalUrl: "https://konachan.com/post/show/405237",
+      id: 999999,
+      url: "/konachan-backgrounds/999999.webp",
+      originalUrl: "https://www.cta.li/",
       rating: "safe",
     };
     localStorage.setItem(
@@ -103,7 +101,7 @@ test("starts with the permanent Konachan landing image when no cached image exis
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.locator("[data-konachan-background]")).toHaveAttribute(
     "data-konachan-current-url",
-    /\/konachan-backgrounds\/405393(?:-960)?\.webp$/,
+    /\/konachan-backgrounds\/910001(?:-960)?\.webp$/,
   );
   await expect
     .poll(() =>
@@ -119,7 +117,7 @@ test("starts with the permanent Konachan landing image when no cached image exis
         };
       }),
     )
-    .toEqual({ currentId: 405393, allColorsValid: true });
+    .toEqual({ currentId: 910001, allColorsValid: true });
 });
 
 test("chooses 960 or full Konachan assets from cover geometry times DPR", async ({ page }) => {
@@ -134,7 +132,7 @@ test("chooses 960 or full Konachan assets from cover geometry times DPR", async 
   const background = page.locator("[data-konachan-background]");
   await expect(background).toHaveAttribute(
     "data-konachan-current-url",
-    /\/konachan-backgrounds\/405237-960\.webp$/,
+    /\/konachan-backgrounds\/910001-960\.webp$/,
   );
   await expect
     .poll(() =>
@@ -147,8 +145,8 @@ test("chooses 960 or full Konachan assets from cover geometry times DPR", async 
       }),
     )
     .toEqual({
-      loadedUrl: expect.stringMatching(/\/405237-960\.webp$/),
-      url: expect.stringMatching(/\/405237\.webp$/),
+      loadedUrl: expect.stringMatching(/\/910001-960\.webp$/),
+      url: expect.stringMatching(/\/910001\.webp$/),
     });
 
   await page.addInitScript(() => {
@@ -157,7 +155,7 @@ test("chooses 960 or full Konachan assets from cover geometry times DPR", async 
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(background).toHaveAttribute(
     "data-konachan-current-url",
-    /\/konachan-backgrounds\/405237\.webp$/,
+    /\/konachan-backgrounds\/910001\.webp$/,
   );
 });
 

@@ -22,16 +22,21 @@ function html({ body = "", links = "", scripts = "" } = {}) {
   return `<!doctype html><html><head>${links}</head><body>${body}${scripts}</body></html>`;
 }
 
-async function createDistFixture(t) {
+async function createDistFixture(
+  t,
+  {
+    initialBackground = {
+      url: "/konachan-backgrounds/42.webp",
+      variants: [{ url: "/konachan-backgrounds/42-960.webp", width: 960 }],
+    },
+  } = {},
+) {
   const distDirectory = await mkdtemp(join(tmpdir(), "ct-blog-bundle-budget-"));
   t.after(() => rm(distDirectory, { force: true, recursive: true }));
 
   const homeHtml = html({
     body: `<script id="home-konachan-config" type="application/json">${JSON.stringify({
-      initialBackground: {
-        url: "/konachan-backgrounds/42.webp",
-        variants: [{ url: "/konachan-backgrounds/42-960.webp", width: 960 }],
-      },
+      initialBackground,
     })}</script>`,
     links: '<link rel="stylesheet" href="/_astro/site.Z9y8.css">',
     scripts: '<script type="module" src="/_astro/app-A1b2.js"></script>',
@@ -85,7 +90,11 @@ async function createDistFixture(t) {
     writeFixture(distDirectory, "images/404-screen-dark-960.avif", "d".repeat(18)),
     writeFixture(distDirectory, "images/404-screen-light-960.avif", "l".repeat(19)),
     writeFixture(distDirectory, "images/404-screen-dark.avif", "f".repeat(20)),
-    writeFixture(distDirectory, "konachan-backgrounds.runtime.json", '{"version":2}'),
+    writeFixture(
+      distDirectory,
+      "konachan-backgrounds.runtime.json",
+      '{"version":2,"variantWidth":960,"images":[{"id":42}]}',
+    ),
     writeFixture(distDirectory, "konachan-backgrounds/42-960.webp", "k".repeat(20)),
   ]);
 
@@ -151,6 +160,18 @@ test("sépare Pagefind, les parcours différés et l'image 404 AVIF déterminist
     ],
   );
   await assert.doesNotReject(() => checkBundleBudget({ distDirectory }));
+});
+
+test("mesure une image représentative du manifeste sans fallback HTML", async (t) => {
+  const { distDirectory } = await createDistFixture(t, { initialBackground: null });
+  const stats = await collectBundleStats({ distDirectory });
+
+  assert.equal(stats.initialKonachanImage, "konachan-backgrounds/42-960.webp");
+  assert.ok(
+    stats.deferredJourneys.konachan.files.some(
+      ({ path }) => path === "konachan-backgrounds/42-960.webp",
+    ),
+  );
 });
 
 test("signale séparément une régression gzip et refuse une entrée différée ambiguë", async (t) => {

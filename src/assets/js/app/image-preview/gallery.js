@@ -1,5 +1,10 @@
 import { GALLERY_MOTION_DURATION_MS, fileNameFromURL, decodeImageSource } from "./support.js";
 
+const waitForNextTask = () =>
+  new Promise((resolve) => {
+    window.setTimeout(resolve);
+  });
+
 export const withImagePreviewGallery = (Base) =>
   class extends Base {
     getDialogImage(event) {
@@ -41,6 +46,16 @@ export const withImagePreviewGallery = (Base) =>
       this.restoreTriggerFocus = restoreFocus;
       this.isOpen = true;
       this.isClosing = false;
+      if (richTooltipWasOpen) {
+        // Keep every opening mutation outside WebKit's trusted activation.
+        // Changing the clicked popover or page layout in that task can prevent
+        // the pointer action itself from completing.
+        await waitForNextTask();
+        if (!this.isOpen || this.isClosing || !this.dialog.isConnected) {
+          this.finishClose();
+          return;
+        }
+      }
       this.finishInformationClose(false);
       this.setControlsVisible(true);
       await this.renderCurrent();
@@ -49,11 +64,9 @@ export const withImagePreviewGallery = (Base) =>
         richTooltipTrigger && restoreFocus ? { suppressNextFocus: true } : undefined,
       );
       if (richTooltipWasOpen) {
-        // Let WebKit finish the trusted activation after removing the popover
-        // from the top layer before promoting the Material dialog to a modal.
-        await new Promise((resolve) => {
-          window.setTimeout(resolve);
-        });
+        // Give WebKit a separate task to remove the popover from the top layer
+        // before promoting the Material dialog to a modal.
+        await waitForNextTask();
         if (!this.isOpen || this.isClosing || !this.dialog.isConnected) {
           this.finishClose();
           return;

@@ -274,18 +274,25 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
       __richTooltipActivationOrder?: {
         clickObserved: boolean;
         clickTaskActive: boolean;
+        hidePopoverDuringClickTask?: boolean;
         showModalDuringClickTask?: boolean;
       };
     };
     const nativeDialog = element.shadowRoot?.querySelector("dialog");
+    const richTooltip = document.querySelector("#tooltip-http-shiki");
     if (!(nativeDialog instanceof HTMLDialogElement)) {
       throw new Error("Expected the Material dialog to expose a native dialog");
+    }
+    if (!(richTooltip instanceof HTMLElement)) {
+      throw new Error("Expected the rich tooltip surface");
     }
     const activationOrder = {
       clickObserved: false,
       clickTaskActive: false,
+      hidePopoverDuringClickTask: undefined as boolean | undefined,
       showModalDuringClickTask: undefined as boolean | undefined,
     };
+    const originalHidePopover = richTooltip.hidePopover.bind(richTooltip);
     const originalShowModal = nativeDialog.showModal.bind(nativeDialog);
     testWindow.__richTooltipActivationOrder = activationOrder;
     window.addEventListener(
@@ -299,6 +306,10 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
       },
       { capture: true, once: true },
     );
+    richTooltip.hidePopover = () => {
+      activationOrder.hidePopoverDuringClickTask = activationOrder.clickTaskActive;
+      originalHidePopover();
+    };
     nativeDialog.showModal = () => {
       activationOrder.showModalDuringClickTask = activationOrder.clickTaskActive;
       originalShowModal();
@@ -315,13 +326,19 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
               __richTooltipActivationOrder?: {
                 clickObserved: boolean;
                 clickTaskActive: boolean;
+                hidePopoverDuringClickTask?: boolean;
                 showModalDuringClickTask?: boolean;
               };
             }
           ).__richTooltipActivationOrder,
       ),
     )
-    .toEqual({ clickObserved: true, clickTaskActive: false, showModalDuringClickTask: false });
+    .toEqual({
+      clickObserved: true,
+      clickTaskActive: false,
+      hidePopoverDuringClickTask: false,
+      showModalDuringClickTask: false,
+    });
   await expectPopoverOpen(richTooltip, false);
   await dialog.locator("[data-image-close]").click();
   await expect(dialog).toHaveJSProperty("open", false);

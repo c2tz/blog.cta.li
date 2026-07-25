@@ -88,7 +88,7 @@
     "globals": "^17.7.0",
     "html-minifier-terser": "^7.2.0",
     "husky": "^9.1.7",
-    "knip": "6.27.0",
+    "knip": "6.29.0",
     "lint-staged": "^17.0.8",
     "material-symbols": "^0.45.7",
     "pagefind": "^1.5.2",

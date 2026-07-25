@@ -17,10 +17,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check-build-and-headers:
-    name: Check Astro, Material Web, and security headers
+  classify-project-validation:
+    name: Classify project validation lane
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 5
+    outputs:
+      lane: ${{ steps.ci_lane.outputs.lane }}
+      reason: ${{ steps.ci_lane.outputs.reason }}
 
     steps:
       - name: Checkout repository
@@ -35,45 +38,44 @@ jobs:
         with:
           token: ${{ github.token }}
 
+  project-quality:
+    name: Validate project quality
+    needs: classify-project-validation
+    if: ${{ needs.classify-project-validation.result == 'success' && needs.classify-project-validation.outputs.lane != 'post-merge' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
       - name: Setup pnpm
-        if: steps.ci_lane.outputs.lane != 'post-merge'
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
           version: 11.1.3
 
       - name: Setup Node.js
-        if: steps.ci_lane.outputs.lane != 'post-merge'
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 22.22.3
           cache: pnpm
 
       - name: Install dependencies
-        if: steps.ci_lane.outputs.lane != 'post-merge'
         run: pnpm install --frozen-lockfile
 
-      - name: Explain why project validation is not repeated
-        if: steps.ci_lane.outputs.lane == 'post-merge'
-        env:
-          CI_REASON: ${{ steps.ci_lane.outputs.reason }}
-        run: |
-          echo "$CI_REASON"
-          echo "Project validation was not repeated because the merged pull request already passed every required check." >>"$GITHUB_STEP_SUMMARY"
-
-      - name: Install Playwright Chromium and WebKit
-        if: steps.ci_lane.outputs.lane == 'full'
-        run: pnpm exec playwright install --with-deps chromium webkit
-
       - name: Install Playwright Chromium for content smoke tests
-        if: steps.ci_lane.outputs.lane == 'content'
+        if: needs.classify-project-validation.outputs.lane == 'content'
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Check changed documentation formatting
-        if: steps.ci_lane.outputs.lane == 'docs'
+        if: needs.classify-project-validation.outputs.lane == 'docs'
         run: pnpm exec node scripts/classify-ci-lane.mjs --check-docs-format
 
       - name: Build and smoke-test editorial content
-        if: steps.ci_lane.outputs.lane == 'content'
+        if: needs.classify-project-validation.outputs.lane == 'content'
         env:
           PLAYWRIGHT_REUSE_BUILD: "1"
         run: |
@@ -87,22 +89,170 @@ jobs:
             tests/e2e/site-discovery.spec.ts \
             --project=desktop-light
 
-      - name: Run the complete project quality suite
-        if: steps.ci_lane.outputs.lane == 'full'
-        # Leave enough of the job timeout for diagnostics to be uploaded if this step times out.
-        timeout-minutes: 42
-        run: pnpm verify:quality
+      - name: Run the project quality suite before browser shards
+        if: needs.classify-project-validation.outputs.lane == 'full'
+        run: pnpm verify:quality:static
 
-      - name: Upload Playwright failure artifacts
-        if: ${{ failure() || cancelled() }}
+      - name: Upload content smoke failure artifacts
+        if: ${{ (failure() || cancelled()) && needs.classify-project-validation.outputs.lane == 'content' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: playwright-failure-artifacts
+          name: playwright-content-smoke-failure-artifacts
           path: |
             playwright-report/
             test-results/
           if-no-files-found: ignore
           retention-days: 14
+
+  playwright-shards:
+    name: Playwright shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+    needs: classify-project-validation
+    if: ${{ needs.classify-project-validation.result == 'success' && needs.classify-project-validation.outputs.lane == 'full' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2, 3, 4]
+        shardTotal: [4]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+        with:
+          version: 11.1.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22.22.3
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium and WebKit
+        run: pnpm exec playwright install --with-deps chromium webkit
+
+      - name: Build production output for this shard
+        run: pnpm build
+
+      - name: Run Playwright shard
+        timeout-minutes: 20
+        env:
+          PLAYWRIGHT_BLOB_OUTPUT_FILE: blob-report/report-${{ matrix.shardIndex }}.zip
+          PLAYWRIGHT_REUSE_BUILD: "1"
+        run: >-
+          pnpm exec playwright test
+          --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+          --workers=1
+          --reporter=list,blob
+
+      - name: Upload mergeable Playwright blob report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: playwright-blob-report-${{ matrix.shardIndex }}
+          path: blob-report/report-${{ matrix.shardIndex }}.zip
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload Playwright shard failure artifacts
+        if: ${{ failure() || cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: playwright-failure-artifacts-shard-${{ matrix.shardIndex }}
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  merge-playwright-reports:
+    name: Merge Playwright shard reports
+    needs:
+      - classify-project-validation
+      - playwright-shards
+    if: ${{ always() && !cancelled() && needs.classify-project-validation.result == 'success' && needs.classify-project-validation.outputs.lane == 'full' && needs.playwright-shards.result != 'skipped' && needs.playwright-shards.result != 'cancelled' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+        with:
+          version: 11.1.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22.22.3
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download Playwright blob reports
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          path: all-blob-reports
+          pattern: playwright-blob-report-*
+          merge-multiple: true
+
+      - name: Require one blob report from every shard
+        run: pnpm exec node scripts/check-playwright-blob-reports.mjs all-blob-reports 4
+
+      - name: Merge Playwright reports
+        run: pnpm exec playwright merge-reports --reporter=html all-blob-reports
+
+      - name: Upload merged Playwright report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: playwright-html-report
+          path: playwright-report/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  check-build-and-headers:
+    name: Check Astro, Material Web, and security headers
+    needs:
+      - classify-project-validation
+      - project-quality
+      - playwright-shards
+      - merge-playwright-reports
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22.22.3
+
+      - name: Require the complete lane-specific validation result
+        env:
+          CI_CLASSIFICATION_RESULT: ${{ needs.classify-project-validation.result }}
+          CI_LANE: ${{ needs.classify-project-validation.outputs.lane }}
+          CI_PLAYWRIGHT_REPORT_RESULT: ${{ needs.merge-playwright-reports.result }}
+          CI_PLAYWRIGHT_SHARDS_RESULT: ${{ needs.playwright-shards.result }}
+          CI_PROJECT_QUALITY_RESULT: ${{ needs.project-quality.result }}
+        run: node scripts/required-ci-verdict.mjs
 
   lighthouse-performance:
     name: Lighthouse 95+ performance (mobile and desktop, no SEO)

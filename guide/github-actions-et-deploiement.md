@@ -20,20 +20,26 @@ Les workflows importants sont :
 | `CodeQL`                                | Pull requests, pushes et planning             | Analyse JavaScript/TypeScript pour la lane complète et le planning |
 | `Smoke Vercel preview deployment`       | Déploiement Vercel ou lancement manuel        | Vérifie le site réellement déployé et ses en-têtes                 |
 
-Deux jobs composent le workflow principal :
+Le workflow principal publie deux verdicts requis. Le premier agrège des jobs internes de qualité et
+de navigation ; le second exécute Lighthouse.
 
 ### Check Astro, Material Web, and security headers
 
-Dans la lane complète, il récupère tout l'historique Git, installe Node.js, pnpm, Chromium et WebKit,
-puis lance `pnpm verify:quality`. Le contrôle de formatage compare une pull request à son commit de
-base et un push à son commit précédent, plutôt qu'à une branche fixée. En cas d'échec Playwright, les
-traces et captures sont publiées comme artefact pendant 14 jours. L'étape de vérification s'arrête
-trois minutes avant le délai du job pour laisser cet envoi s'exécuter ; une interruption brutale du
-runner par GitHub reste impossible à récupérer.
+Dans la lane complète, un job exécute les contrôles statiques et le build pendant que quatre runners
+Playwright indépendants construisent le même commit et se partagent la collection avec
+`--shard=1/4` à `--shard=4/4`. Chaque runner conserve un seul worker afin d'éviter la contention entre
+navigateurs sur une même machine. `fullyParallel: true` permet à Playwright de répartir les tests
+individuels sans retirer de projet Chromium ou WebKit.
 
-Les parcours E2E ne sont pas divisés en shards dans ce job : son nom exact est utilisé par les rulesets
-de branches et doit rester le verdict complet de la validation. Une division demanderait un job
-d'agrégation et une mise à jour coordonnée des règles ; elle ne doit pas être ajoutée isolément.
+`fail-fast: false` laisse les quatre shards terminer même si l'un échoue. Chaque shard publie un
+rapport blob au nom unique ; les traces et captures d'un shard rouge sont conservées pendant 14 jours.
+Un job séparé exige exactement quatre blobs, les fusionne et publie le rapport HTML.
+
+Le job portant le nom requis `Check Astro, Material Web, and security headers` ne duplique aucun test :
+il utilise `needs` avec `always()` et vérifie le résultat exact attendu pour la lane. Une
+classification absente, un contrôle statique rouge, un shard échoué ou annulé, un rapport manquant et
+toute combinaison inattendue font échouer ce verdict unique. Les rulesets restent donc attachés au
+même nom sans considérer un shard isolé comme une validation complète.
 
 ### Lighthouse 95+ performance (mobile and desktop, no SEO)
 
@@ -49,7 +55,8 @@ sans modifier les rulesets correspondants dans `.github/rulesets`.
 
 Chaque pull request est classée dans une lane `docs`, `content` ou `full`. Un push de merge peut
 utiliser `post-merge` uniquement si Git et l’API GitHub prouvent la PR et ses cinq checks verts. Les
-cinq jobs requis restent toujours présents : seules leurs étapes internes changent.
+cinq jobs requis restent toujours présents : leurs étapes internes ou les dépendances acceptées par
+leur verdict changent selon la lane.
 
 - `docs` vérifie les documents modifiés sans build, navigateur, Lighthouse ni analyse CodeQL réelle ;
 - `content` vérifie le formatage et les tests unitaires, construit le site et Pagefind, valide le
@@ -62,9 +69,10 @@ forcés, multiples ou non prouvables restent également complets, même si le me
 ressemble à un merge. La taxonomie, les priorités et la preuve API sont détaillées dans
 [Validation CI adaptée aux changements](ci-path-aware.md).
 
-Dans la lane `content`, le job principal n'installe que Chromium et exécute le sous-ensemble
+Dans la lane `content`, le job de qualité n'installe que Chromium et exécute le sous-ensemble
 éditorial après le build. Dans la lane `docs`, il limite le contrôle au diff et au formatage des
-documents modifiés.
+documents modifiés. Les quatre shards et leur fusion sont alors explicitement `skipped`, ce que le
+verdict final exige au lieu de les traiter comme des résultats manquants.
 
 ## Workflows planifiés ou manuels
 
@@ -105,7 +113,8 @@ Exemples :
 - `Build static output` échoue : lancez `pnpm build` localement ;
 - hachages CSP obsolètes : lancez `pnpm build && pnpm sync:headers && pnpm check:headers`, puis
   commitez `vercel.json` ;
-- Playwright échoue : téléchargez l'artefact et consultez la trace ou la capture ;
+- Playwright échoue : ouvrez le shard rouge, puis téléchargez son artefact de traces ou le rapport
+  HTML fusionné ;
 - Lighthouse échoue : consultez le rapport de la catégorie et vérifiez si la baisse se reproduit.
 
 Un job `Cancelled` n'est pas un succès. La règle `cancel-in-progress: true` annule normalement une

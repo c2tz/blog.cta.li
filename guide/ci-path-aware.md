@@ -7,12 +7,12 @@ Il ne compare jamais une pull request à une branche locale supposée.
 
 ## Lanes
 
-| Lane         | Chemins admis                                                                                             | Validation                                                                                |
-| ------------ | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `docs`       | `guide/**`, documents racine connus et documentation/templates Markdown GitHub                            | Diff/Prettier des documents modifiés et titre de pull request                             |
-| `content`    | `LICENSE*` et fichiers Markdown/MDX sous `src/content/**`                                                 | Formatage, tests unitaires, build/Pagefind, CSP/headers et smoke Chromium ciblé           |
-| `post-merge` | Push d’un unique commit de merge dont la PR et les cinq checks verts sont prouvés par GitHub              | Publication rapide des cinq statuts sans répéter les validations déjà réussies            |
-| `full`       | Code, styles, dépendances, configuration, workflows, rulesets, scripts, tests, assets et chemins inconnus | Suite qualité et Playwright actuelle, Lighthouse, validation CSP complète et vraie CodeQL |
+| Lane         | Chemins admis                                                                                             | Validation                                                                                   |
+| ------------ | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `docs`       | `guide/**`, documents racine connus et documentation/templates Markdown GitHub                            | Diff/Prettier des documents modifiés et titre de pull request                                |
+| `content`    | `LICENSE*` et fichiers Markdown/MDX sous `src/content/**`                                                 | Formatage, tests unitaires, build/Pagefind, CSP/headers et smoke Chromium ciblé              |
+| `post-merge` | Push d’un unique commit de merge dont la PR et les cinq checks verts sont prouvés par GitHub              | Publication rapide des cinq statuts sans répéter les validations déjà réussies               |
+| `full`       | Code, styles, dépendances, configuration, workflows, rulesets, scripts, tests, assets et chemins inconnus | Suite qualité, quatre shards Playwright, Lighthouse, validation CSP complète et vraie CodeQL |
 
 La priorité est `full` > `content` > `docs`. Les deux chemins d’un renommage sont classés et une
 suppression conserve la classe de son ancien chemin. Un chemin inconnu, un ensemble vide, un SHA
@@ -35,6 +35,18 @@ Chaque job requis est créé pour chaque pull request et push protégé. Une lan
 uniquement ses étapes lourdes à l’intérieur du job, explique ce choix dans le résumé GitHub et
 termine normalement. Aucun workflow requis n’utilise `paths-ignore`.
 
+Le check `Check Astro, Material Web, and security headers` est l'unique verdict d'agrégation du
+workflow principal. Il utilise `needs` avec `always()` afin de rester présent après un job interne
+rouge ou ignoré. Sa table fail-closed exige :
+
+- `docs` et `content` : qualité réussie, shards et fusion explicitement ignorés ;
+- `full` : qualité, quatre shards et fusion réussis ;
+- `post-merge` : qualité, shards et fusion explicitement ignorés après la preuve GitHub.
+
+Tout résultat absent, annulé, inconnu ou différent de cette table échoue. Les quatre shards utilisent
+un worker chacun et `fail-fast: false`. Leurs rapports blob portent des noms distincts, sont vérifiés
+avant fusion et ne partagent jamais le nom du check requis.
+
 ## Preuve `post-merge`
 
 Le message du commit n’est jamais utilisé comme preuve. Le fast-path exige cumulativement :
@@ -54,12 +66,18 @@ incomplète rebascule en `full`.
 
 ## Validation locale
 
-Le classificateur et l’alignement statique des checks sont couverts par :
+Le classificateur, le verdict agrégé, les quatre rapports et la partition Playwright sont couverts
+par :
 
 ```sh
-node --test tests/classify-ci-lane.test.mjs
+node --test \
+  tests/classify-ci-lane.test.mjs \
+  tests/required-ci-verdict.test.mjs \
+  tests/check-playwright-blob-reports.test.mjs \
+  tests/playwright-sharding.test.mjs
 ```
 
 La suite simule notamment documentation, article, licence, code, workflow, dépendances, mélange,
 renommage, suppression, merge prouvé, push direct, faux merge, API indisponible, check absent ou
-rouge, push multiple/forcé, SHA absent et historique indisponible.
+rouge, push multiple/forcé, SHA absent et historique indisponible. Elle vérifie aussi que les quatre
+shards sont disjoints, équilibrés et couvrent exactement la collection complète.

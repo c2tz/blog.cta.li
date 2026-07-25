@@ -525,10 +525,46 @@ test("keeps all required check names aligned and every external action pinned by
   ];
   const workflowText = workflowFiles.map((path) => readFileSync(path, "utf8")).join("\n");
   const verifyWorkflow = readFileSync(".github/workflows/verify-project.yml", "utf8");
+  const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
   assert.match(
     verifyWorkflow,
     /pnpm format:check\s+pnpm test:unit\s+pnpm build\s+pnpm check:headers/,
     "content validation must format, run unit tests, build, and check headers in that order",
+  );
+  assert.match(
+    verifyWorkflow,
+    /strategy:\s+fail-fast: false\s+matrix:\s+shardIndex: \[1, 2, 3, 4\]\s+shardTotal: \[4\]/,
+    "the full lane must keep four non-fail-fast Playwright shards",
+  );
+  assert.match(
+    verifyWorkflow,
+    /--shard=\$\{\{ matrix\.shardIndex \}\}\/\$\{\{ matrix\.shardTotal \}\}\s+--workers=1\s+--reporter=list,blob/,
+    "each runner must execute exactly one mergeable shard with one worker",
+  );
+  assert.match(
+    verifyWorkflow,
+    /PLAYWRIGHT_BLOB_OUTPUT_FILE: blob-report\/report-\$\{\{ matrix\.shardIndex \}\}\.zip/,
+  );
+  assert.match(
+    verifyWorkflow,
+    /name: playwright-blob-report-\$\{\{ matrix\.shardIndex \}\}\s+path: blob-report\/report-\$\{\{ matrix\.shardIndex \}\}\.zip\s+if-no-files-found: error/,
+    "every shard must upload one uniquely named mergeable report",
+  );
+  assert.match(
+    verifyWorkflow,
+    /name: playwright-failure-artifacts-shard-\$\{\{ matrix\.shardIndex \}\}/,
+    "every failed shard must retain its own diagnostics",
+  );
+  assert.match(
+    verifyWorkflow,
+    /scripts\/check-playwright-blob-reports\.mjs all-blob-reports 4/,
+    "report merging must fail closed unless all four blobs are present",
+  );
+  assert.doesNotMatch(verifyWorkflow, /\bcontinue-on-error\s*:/);
+  assert.match(packageJson.scripts["verify:quality:static"], /pnpm build && pnpm check:headers$/);
+  assert.equal(
+    packageJson.scripts["verify:quality"],
+    "pnpm verify:quality:static && PLAYWRIGHT_REUSE_BUILD=1 pnpm test:e2e",
   );
 
   for (const check of requiredChecks) {
@@ -561,8 +597,22 @@ test("keeps all required check names aligned and every external action pinned by
       const nextJobIndex = text.slice(nameIndex + 1).search(/^ {2}[a-z][a-z0-9-]*:\s*$/m);
       const blockEnd = nextJobIndex === -1 ? text.length : nameIndex + 1 + nextJobIndex;
       const jobBlock = text.slice(nameIndex, blockEnd);
-      assert.doesNotMatch(jobBlock, /^ {4}if:/m, `${check} must always be created`);
-      assert.doesNotMatch(jobBlock, /^ {4}needs:/m, `${check} must not inherit a skipped job`);
+      if (check === requiredChecks[2]) {
+        assert.match(
+          jobBlock,
+          /^ {4}if: \$\{\{ always\(\) \}\}$/m,
+          `${check} must run after successful, failed, and skipped dependencies`,
+        );
+        assert.match(
+          jobBlock,
+          /^ {4}needs:\s+ {6}- classify-project-validation\s+ {6}- project-quality\s+ {6}- playwright-shards\s+ {6}- merge-playwright-reports/m,
+          `${check} must aggregate every internal project validation job`,
+        );
+        assert.match(jobBlock, /node scripts\/required-ci-verdict\.mjs/);
+      } else {
+        assert.doesNotMatch(jobBlock, /^ {4}if:/m, `${check} must always be created`);
+        assert.doesNotMatch(jobBlock, /^ {4}needs:/m, `${check} must not inherit a skipped job`);
+      }
     }
   }
 

@@ -12,24 +12,24 @@ dernière version.
 
 Les workflows importants sont :
 
-| Workflow                                | Déclenchement                                 | Rôle                                                              |
-| --------------------------------------- | --------------------------------------------- | ----------------------------------------------------------------- |
-| `Verify Astro and Material Web project` | Pull requests et pushes vers `develop`/`main` | Qualité, build, en-têtes, Playwright et Lighthouse                |
-| `Validate security header hashes`       | Pull requests et pushes vers `develop`/`main` | Recalcule la CSP et refuse un `vercel.json` obsolète              |
-| `Commit message standards`              | Pull requests et pushes protégés              | Valide le titre de PR ou tous les messages introduits par le push |
-| `CodeQL`                                | Pull requests, pushes et planning             | Analyse de sécurité JavaScript/TypeScript                         |
-| `Smoke Vercel preview deployment`       | Déploiement Vercel ou lancement manuel        | Vérifie le site réellement déployé et ses en-têtes                |
+| Workflow                                | Déclenchement                                 | Rôle                                                               |
+| --------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------ |
+| `Verify Astro and Material Web project` | Pull requests et pushes vers `develop`/`main` | Validation légère, éditoriale ou complète selon les changements    |
+| `Validate security header hashes`       | Pull requests et pushes vers `develop`/`main` | Recalcule la CSP pour les lanes qui construisent le site           |
+| `Commit message standards`              | Pull requests et pushes protégés              | Valide le titre de PR ou tous les messages introduits par le push  |
+| `CodeQL`                                | Pull requests, pushes et planning             | Analyse JavaScript/TypeScript pour la lane complète et le planning |
+| `Smoke Vercel preview deployment`       | Déploiement Vercel ou lancement manuel        | Vérifie le site réellement déployé et ses en-têtes                 |
 
 Deux jobs composent le workflow principal :
 
 ### Check Astro, Material Web, and security headers
 
-Il récupère tout l'historique Git, installe Node.js, pnpm, Chromium et WebKit, puis lance
-`pnpm verify:quality`. Le contrôle de formatage compare une pull request à son commit de base et un
-push à son commit précédent, plutôt qu'à une branche fixée. En cas d'échec Playwright, les traces et
-captures sont publiées comme artefact pendant 14 jours. L'étape de vérification s'arrête trois minutes
-avant le délai du job pour laisser cet envoi s'exécuter ; une interruption brutale du runner par GitHub
-reste impossible à récupérer.
+Dans la lane complète, il récupère tout l'historique Git, installe Node.js, pnpm, Chromium et WebKit,
+puis lance `pnpm verify:quality`. Le contrôle de formatage compare une pull request à son commit de
+base et un push à son commit précédent, plutôt qu'à une branche fixée. En cas d'échec Playwright, les
+traces et captures sont publiées comme artefact pendant 14 jours. L'étape de vérification s'arrête
+trois minutes avant le délai du job pour laisser cet envoi s'exécuter ; une interruption brutale du
+runner par GitHub reste impossible à récupérer.
 
 Les parcours E2E ne sont pas divisés en shards dans ce job : son nom exact est utilisé par les rulesets
 de branches et doit rester le verdict complet de la validation. Une division demanderait un job
@@ -37,12 +37,34 @@ d'agrégation et une mise à jour coordonnée des règles ; elle ne doit pas êt
 
 ### Lighthouse 95+ performance (mobile and desktop, no SEO)
 
-Il construit le site, lance trois mesures mobiles et trois mesures bureau, puis impose au moins 95
-en performance et 100 en accessibilité et bonnes pratiques. Les rapports sont conservés comme
-artefacts même si le job échoue.
+Dans la lane complète, il construit le site, lance trois mesures mobiles et trois mesures bureau,
+puis impose au moins 95 en performance et 100 en accessibilité et bonnes pratiques. Pour une lane
+légère, le job reste présent et explique pourquoi la mesure ne s'applique pas. Les rapports produits
+sont conservés comme artefacts même si le job échoue.
 
 Les noms exacts des jobs peuvent être référencés par les rulesets de branches. Ne les renommez pas
 sans modifier les rulesets correspondants dans `.github/rulesets`.
+
+### Validation adaptée aux fichiers modifiés
+
+Chaque pull request est classée dans une lane `docs`, `content` ou `full`. Un push de merge peut
+utiliser `post-merge` uniquement si Git et l’API GitHub prouvent la PR et ses cinq checks verts. Les
+cinq jobs requis restent toujours présents : seules leurs étapes internes changent.
+
+- `docs` vérifie les documents modifiés sans build, navigateur, Lighthouse ni analyse CodeQL réelle ;
+- `content` vérifie le formatage et les tests unitaires, construit le site et Pagefind, valide le
+  contenu et la CSP, puis exécute un smoke Chromium ciblé ;
+- `post-merge` republie rapidement les cinq statuts sans répéter les contrôles déjà réussis ;
+- `full` conserve tous les contrôles, navigateurs, Lighthouse et CodeQL.
+
+Tout chemin inconnu, SHA incomplet ou historique indisponible utilise `full`. Les pushes directs,
+forcés, multiples ou non prouvables restent également complets, même si le message du commit
+ressemble à un merge. La taxonomie, les priorités et la preuve API sont détaillées dans
+[Validation CI adaptée aux changements](ci-path-aware.md).
+
+Dans la lane `content`, le job principal n'installe que Chromium et exécute le sous-ensemble
+éditorial après le build. Dans la lane `docs`, il limite le contrôle au diff et au formatage des
+documents modifiés.
 
 ## Workflows planifiés ou manuels
 
@@ -52,8 +74,8 @@ Chaque nuit, une matrice supplémentaire teste Firefox et WebKit, puis répète 
 fragiles. Ce workflow cherche des problèmes qui peuvent ne pas apparaître dans la validation rapide
 d'une pull request.
 
-La validation standard d'une pull request inclut aussi les parcours WebKit ciblés en thèmes clair et
-sombre, sur bureau et mobile. La matrice nocturne reste plus large et répète les parcours fragiles.
+La lane `full` d'une pull request inclut aussi les parcours WebKit ciblés en thèmes clair et sombre,
+sur bureau et mobile. La matrice nocturne reste plus large et répète les parcours fragiles.
 
 ### QA sur appareil physique
 

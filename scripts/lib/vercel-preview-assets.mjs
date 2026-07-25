@@ -1,5 +1,7 @@
 import { parse } from "parse5";
 
+import { KONACHAN_RUNTIME_MANIFEST_VERSION } from "../../src/lib/konachan-runtime-manifest.mjs";
+
 export const KONACHAN_RUNTIME_MAX_BYTES = 40 * 1024;
 export const KONACHAN_RUNTIME_IMAGE_COUNT = 150;
 
@@ -101,7 +103,10 @@ export function inspectKonachanRuntimeManifest(bytes) {
     });
   }
 
-  assert(manifest?.version === 1, "Konachan runtime manifest must use version 1.");
+  assert(
+    manifest?.version === KONACHAN_RUNTIME_MANIFEST_VERSION,
+    `Konachan runtime manifest must use version ${KONACHAN_RUNTIME_MANIFEST_VERSION}.`,
+  );
   assert(
     Array.isArray(manifest.images) && manifest.images.length === KONACHAN_RUNTIME_IMAGE_COUNT,
     `Konachan runtime manifest must contain exactly ${KONACHAN_RUNTIME_IMAGE_COUNT} images.`,
@@ -111,6 +116,12 @@ export function inspectKonachanRuntimeManifest(bytes) {
   assert(
     ids.every((id) => Number.isSafeInteger(id) && id > 0) && new Set(ids).size === ids.length,
     "Konachan runtime manifest must contain unique positive integer image IDs.",
+  );
+  assert(
+    manifest.images.every(
+      (image) => typeof image?.sourceColor === "string" && /^#[0-9A-F]{6}$/.test(image.sourceColor),
+    ),
+    "Konachan runtime manifest images must declare uppercase six-digit sourceColor values.",
   );
   assert(
     Number.isSafeInteger(manifest.variantWidth) && manifest.variantWidth > 0,

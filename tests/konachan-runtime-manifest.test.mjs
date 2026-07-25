@@ -6,6 +6,7 @@ import { checkKonachanRuntimeManifest } from "../scripts/check-konachan-runtime-
 import { materialSourceColorFromImageBuffer } from "../scripts/lib/konachan-material-source-color.mjs";
 import {
   KONACHAN_RUNTIME_MANIFEST_MAX_BYTES,
+  KONACHAN_RUNTIME_MANIFEST_VERSION,
   createKonachanRuntimeManifest,
   expandKonachanRuntimeManifest,
   serializeKonachanRuntimeManifest,
@@ -29,6 +30,7 @@ test("creates and expands a minimal Konachan runtime manifest", () => {
   };
 
   const runtime = createKonachanRuntimeManifest(fullManifest);
+  assert.equal(runtime.version, KONACHAN_RUNTIME_MANIFEST_VERSION);
   assert.deepEqual(runtime.images, [
     {
       id: 405237,
@@ -58,6 +60,41 @@ test("creates and expands a minimal Konachan runtime manifest", () => {
       ],
     },
   ]);
+});
+
+test("rejects missing colors at build time and stale incomplete runtime manifests", () => {
+  const incompleteImage = {
+    id: 405237,
+    rating: "safe",
+    source: "https://konachan.com/post/show/405237",
+  };
+
+  assert.throws(
+    () => createKonachanRuntimeManifest({ images: [incompleteImage] }),
+    /405237.*valid six-digit sourceColor/,
+  );
+  assert.throws(
+    () =>
+      createKonachanRuntimeManifest({
+        images: [{ ...incompleteImage, sourceColor: "#12345" }],
+      }),
+    /405237.*valid six-digit sourceColor/,
+  );
+
+  assert.deepEqual(
+    expandKonachanRuntimeManifest({
+      version: KONACHAN_RUNTIME_MANIFEST_VERSION,
+      images: [incompleteImage],
+    }),
+    [],
+  );
+  assert.deepEqual(
+    expandKonachanRuntimeManifest({
+      version: KONACHAN_RUNTIME_MANIFEST_VERSION - 1,
+      images: [{ ...incompleteImage, sourceColor: "#5BC3D6" }],
+    }),
+    [],
+  );
 });
 
 test("keeps 150 runtime entries below the 40 KiB budget", () => {

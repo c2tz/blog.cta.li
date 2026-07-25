@@ -12,8 +12,8 @@ let materialColorUtilitiesPromise;
 async function loadMaterialColorUtilities() {
   materialColorUtilitiesPromise ??= (async () => {
     // The package's public index currently contains extensionless Node imports.
-    // Its versioned utility modules are ESM-safe and are the same functions
-    // bundled for the browser worker.
+    // Its versioned utility modules are ESM-safe and provide the build-time
+    // extraction used when the authoring manifest is refreshed.
     const packageRoot = dirname(
       fileURLToPath(import.meta.resolve("@material/material-color-utilities")),
     );

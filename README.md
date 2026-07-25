@@ -13,8 +13,8 @@ en Markdown ou MDX et l'interface utilise Material Web.
   pas exécutés pour chaque visiteur.
 - Git fournit automatiquement la date de création et la dernière date de modification d'un
   article.
-- GitHub Actions refait les principaux contrôles à chaque pull request et lors des pushes vers
-  `develop` ou `main`.
+- GitHub Actions adapte les contrôles aux fichiers d’une pull request et ne les répète après fusion
+  que si l’origine ou les résultats précédents ne peuvent pas être prouvés.
 
 ## Démarrage rapide
 
@@ -56,9 +56,10 @@ Le guide complet est dans [Publier un article](guide/publier-un-article.md).
 | Reproduire le contrôle complet du projet | `pnpm verify`           | Tous les tests, navigateurs et audits passent |
 
 `pnpm verify` est volontairement long. Pour une simple rédaction d'article, il est raisonnable de
-lancer `pnpm build` localement et de laisser GitHub Actions refaire la matrice complète. Consultez
-[Commandes et contrôles](guide/commandes-et-controles.md) avant de lancer ou de corriger une commande
-que vous ne connaissez pas.
+lancer `pnpm build` localement ; GitHub Actions refera le build, les contrôles de contenu et un smoke
+Chromium ciblé. La matrice complète reste réservée aux changements applicatifs et aux situations
+ambiguës. Consultez [Commandes et contrôles](guide/commandes-et-controles.md) avant de lancer ou de
+corriger une commande que vous ne connaissez pas.
 
 ## Documentation
 
@@ -80,6 +81,7 @@ Références techniques pour les modifications plus avancées :
 - [Architecture](guide/architecture.md)
 - [Architecture du rendu et performances](guide/rendering-architecture.md)
 - [En-têtes de sécurité](guide/security-headers.md)
+- [Validation CI adaptée aux changements](guide/ci-path-aware.md)
 - [Messages de commit](guide/commit-messages.md)
 - [Vérification sur appareils physiques](guide/physical-device-qa.md)
 

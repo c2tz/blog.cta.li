@@ -1,0 +1,56 @@
+name: Classify CI lane
+description: Select the fail-closed docs, content, post-merge, or full validation lane.
+
+inputs:
+  token:
+    description: GitHub token used only to prove a post-merge fast path.
+    required: true
+
+outputs:
+  lane:
+    description: Selected CI lane.
+    value: ${{ steps.classify.outputs.lane }}
+  reason:
+    description: Human-readable classification reason.
+    value: ${{ steps.classify.outputs.reason }}
+
+runs:
+  using: composite
+  steps:
+    - name: Classify the complete pull request change set
+      id: classify
+      shell: bash
+      env:
+        CI_GITHUB_TOKEN: ${{ inputs.token }}
+      run: |
+        set -euo pipefail
+
+        classifier_output="$(mktemp "${RUNNER_TEMP}/ci-lane.XXXXXX")"
+        trap 'rm -f "$classifier_output"' EXIT
+
+        if ! node "${GITHUB_WORKSPACE}/scripts/classify-ci-lane.mjs" >"$classifier_output"; then
+          {
+            echo "lane=full"
+            echo "reason=The classifier process failed; using full validation."
+            echo "changed_count=0"
+          } >"$classifier_output"
+        fi
+
+        lane="$(sed -n 's/^lane=//p' "$classifier_output" | tail -n 1)"
+        reason="$(sed -n 's/^reason=//p' "$classifier_output" | tail -n 1)"
+        case "$lane" in
+          docs|content|full|post-merge)
+            ;;
+          *)
+            lane="full"
+            reason="The classifier returned an invalid lane; using full validation."
+            {
+              echo "lane=$lane"
+              echo "reason=$reason"
+              echo "changed_count=0"
+            } >"$classifier_output"
+            ;;
+        esac
+
+        cat "$classifier_output" >>"$GITHUB_OUTPUT"
+        printf 'CI lane: `%s` — %s\n' "$lane" "$reason" >>"$GITHUB_STEP_SUMMARY"

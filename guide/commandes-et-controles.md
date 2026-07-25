@@ -116,11 +116,13 @@ explicite dans `knip.json` plutôt qu'une suppression immédiate.
 
 ### `pnpm check:bundles`
 
-Mesure les fichiers générés dans `dist/_astro` par leur extension et les ressources réellement
-référencées par l'accueil : les noms hashés changent donc sans fausser le contrôle. Le budget borne
-le JavaScript total, le CSS total, le plus gros bundle JavaScript et la charge initiale de l'accueil.
-Il est exécuté à la fin de `pnpm build`. L'index Pagefind reste hors de ce budget car il dépend du
-contenu publié et se charge seulement à l'ouverture de la recherche.
+Mesure en brut, gzip et Brotli le HTML et les ressources initiales de l'accueil, d'un article, de la
+page cookies et de la 404. Il borne aussi chaque fichier JavaScript et image AVIF 404, les totaux
+JavaScript/CSS, Pagefind et les graphes différés de recherche, d'aperçu d'image et de Konachan. Les
+entrées générées sont retrouvées par leur nom stable plutôt que par leur hash, afin qu'un nouveau
+build ne fausse pas le contrôle. Les graphes différés constituent une garde de poids déterministe :
+ils peuvent partager des chunks et ne représentent pas une trace réseau incrémentale. Cette
+vérification s'exécute à la fin de `pnpm build`.
 
 ## Tests
 
@@ -135,6 +137,13 @@ lancent pas de navigateur.
 Playwright construit le site, le sert sur le port 4322 et pilote de vrais moteurs de navigateur. La
 configuration normale couvre plusieurs tailles d'écran, les thèmes clair/sombre, Chromium et des
 parcours ciblés WebKit. Les captures et traces sont conservées lors d'un échec.
+
+La matrice Chromium évite le produit cartésien complet : le profil bureau clair exécute toutes les
+specs non nocturnes, le bureau sombre conserve les specs qui vérifient explicitement les thèmes, le
+mobile clair conserve les parcours responsive, tactiles ou critiques sur téléphone, et le mobile
+sombre couvre l'accueil thématique et le rendu. Les neuf specs WebKit ciblées restent exécutées dans
+les quatre combinaisons bureau/mobile et clair/sombre. `site-resilience.spec.ts` appartient
+exclusivement à la matrice nocturne Firefox/WebKit.
 
 Ces tests vérifient des interactions : recherche, consentement, commentaires, aperçu d'image,
 navigation, contenu et résilience. Ils sont plus lents que les tests unitaires.

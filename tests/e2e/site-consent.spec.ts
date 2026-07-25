@@ -77,30 +77,27 @@ test("does not turn Escape in search into an implicit privacy rejection", async 
 
   const privacyBanner = page.locator(".cookie-consent--privacy");
   await expect(privacyBanner).toBeVisible();
-  await page.getByRole("button", { name: "Rechercher" }).click();
+  const searchTrigger = page.locator("[data-site-search-trigger]");
+  const openSearchButton = page.getByRole("button", { name: "Rechercher" });
+  await openSearchButton.click();
+  await expect(searchTrigger).toHaveAttribute("data-search-enhanced", "true");
 
-  const dialog = page.getByRole("dialog", { name: "Recherche" });
-  const searchInput = page.locator("[data-search-input]");
-  await expect(dialog).toBeVisible();
-  await searchInput.evaluate(async (element) => {
-    const field = element as HTMLElement & { updateComplete?: Promise<unknown>; value: string };
-    await field.updateComplete;
-    const control = field.shadowRoot?.querySelector("input, textarea");
-    if (!(control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement)) {
-      throw new Error("Champ de recherche introuvable");
-    }
+  const searchDialog = page.locator("md-dialog.site-search-dialog[open]");
+  await expect(searchDialog).toBeVisible();
+  await expect(openSearchButton).toBeEnabled();
+  await expect(openSearchButton).not.toHaveAttribute("aria-busy", "true");
 
-    field.value = "site";
-    control.value = "site";
-    control.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
-    control.focus();
+  const searchInput = searchDialog.getByRole("searchbox", {
+    name: "Mot-clé, titre ou contenu",
   });
+  await searchInput.fill("site");
+  await expect(searchInput).toHaveValue("site");
   await page.keyboard.press("Escape");
-  await expect(searchInput).toHaveJSProperty("value", "");
-  await expect(dialog).toBeVisible();
+  await expect(searchInput).toHaveValue("");
+  await expect(searchDialog).toBeVisible();
 
   await page.keyboard.press("Escape");
-  await expect(dialog).toBeHidden();
+  await expect(searchDialog).toBeHidden();
   await expect(privacyBanner).toBeVisible();
   await expect(page.locator("site-cookie-consent-banner")).toHaveAttribute(
     "data-active-notice",

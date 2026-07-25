@@ -22,17 +22,17 @@ state and tests the equivalent image-preview behavior on the replacement fixture
 
 ## Execution map
 
-| Surface                 | Static HTML/CSS                                                                   | Initial post-paint code                                                               | Lazy code/network                                                                                                                                               | Consent boundary                                                   |
-| ----------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| Astro shell             | Header, footer, navigation, post markup, tags, cookie templates and dialog markup | Small base Material registry, theme, cookie controls, tooltips, loading/focus helpers | Route registries selected by DOM presence                                                                                                                       | Explicit-content notice pre-locks the page before interactive code |
-| Material 3              | Real `md-*` hosts and local Material Symbols are emitted by Astro                 | Only controls shared by the current shell are registered                              | Search, tags, content, home and image-preview registries are split                                                                                              | None; the components themselves are local                          |
-| Search                  | Closed dialog and trigger are static                                              | A small trigger loader only                                                           | Search controller and search Material controls on focus/hover/first click; Pagefind Worker/WASM and index on opening/query                                      | None                                                               |
-| Markdown and shortcodes | Shiki HTML, prose and shortcode source markup                                     | A selector gate inspects the rendered prose                                           | Copy controls only for code blocks; shortcode Material runtime only when complex controls exist                                                                 | None                                                               |
-| Image preview           | Two Material dialog hosts and the source images                                   | A small capture-phase loader only                                                     | Full controller, dialogs and buttons on focus/hover/first click; share-file fetch after preview intent                                                          | None                                                               |
-| Konachan home           | Hero structure and local manifest URL                                             | Lightweight home table and controls required for the visible shell                    | Background controller, compact manifest and selected images after explicit-content acknowledgement; precomputed source colors avoid a Worker on the normal path | Explicit-content acknowledgement                                   |
-| Giscus                  | Local consent UI and placeholder                                                  | Local controller on post routes                                                       | `giscus.app/client.js` and iframe only after the Giscus switch plus the separate comments opt-in                                                                | Giscus consent and comments opt-in                                 |
-| Optional services       | Static IP placeholder and Vercel metadata                                         | No optional service module before consent                                             | IP geolocation and Speed Insights modules/services only after their individual switch; any inserted third-party script is purged by one consent-revocation reload | Individual service consent                                         |
-| CSP/Vercel              | CSP hashes and headers are generated from the built HTML                          | No runtime policy relaxation                                                          | Pagefind Worker/WASM and approved external Giscus/IP origins                                                                                                    | Deployment checks gate alias promotion                             |
+| Surface                 | Static HTML/CSS                                                                   | Initial post-paint code                                                               | Lazy code/network                                                                                                                                                          | Consent boundary                                                   |
+| ----------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Astro shell             | Header, footer, navigation, post markup, tags, cookie templates and dialog markup | Small base Material registry, theme, cookie controls, tooltips, loading/focus helpers | Route registries selected by DOM presence                                                                                                                                  | Explicit-content notice pre-locks the page before interactive code |
+| Material 3              | Real `md-*` hosts and local Material Symbols are emitted by Astro                 | Only controls shared by the current shell are registered                              | Search, tags, content, home and image-preview registries are split                                                                                                         | None; the components themselves are local                          |
+| Search                  | Closed dialog and trigger are static                                              | A small trigger loader only                                                           | Search controller and search Material controls on focus/hover/first click; Pagefind Worker/WASM and index on opening/query                                                 | None                                                               |
+| Markdown and shortcodes | Shiki HTML, prose and shortcode source markup                                     | A selector gate inspects the rendered prose                                           | Copy controls only for code blocks; shortcode Material runtime only when complex controls exist                                                                            | None                                                               |
+| Image preview           | Two Material dialog hosts and the source images                                   | A small capture-phase loader only                                                     | Full controller, dialogs and buttons on focus/hover/first click; share-file fetch after preview intent                                                                     | None                                                               |
+| Konachan home           | Hero structure and local manifest URL                                             | Lightweight home table and controls required for the visible shell                    | Background controller, compact manifest and selected images after explicit-content acknowledgement; mandatory precomputed source colors remove browser extraction entirely | Explicit-content acknowledgement                                   |
+| Giscus                  | Local consent UI and placeholder                                                  | Local controller on post routes                                                       | `giscus.app/client.js` and iframe only after the Giscus switch plus the separate comments opt-in                                                                           | Giscus consent and comments opt-in                                 |
+| Optional services       | Static IP placeholder and Vercel metadata                                         | No optional service module before consent                                             | IP geolocation and Speed Insights modules/services only after their individual switch; any inserted third-party script is purged by one consent-revocation reload          | Individual service consent                                         |
+| CSP/Vercel              | CSP hashes and headers are generated from the built HTML                          | No runtime policy relaxation                                                          | Pagefind Worker/WASM and approved external Giscus/IP origins                                                                                                               | Deployment checks gate alias promotion                             |
 
 ## Target invariants
 
@@ -78,6 +78,9 @@ state and tests the equivalent image-preview behavior on the replacement fixture
   script/iframe, reset its loading state and reload once whenever Giscus reached the document.
   Returning consent reloads comments when their separate opt-in is still stored.
 - Moved the Konachan background/color path behind explicit-content acknowledgement.
+- Made every runtime Konachan entry carry a validated source color and removed the browser
+  extraction Worker, its controller and its synchronous fallback. Source extraction remains a
+  build-time responsibility when the authoring manifest is refreshed.
 
 ### 2. Split route and interaction registries
 
@@ -115,14 +118,53 @@ state and tests the equivalent image-preview behavior on the replacement fixture
 
 ## Measurements
 
-Cold-route request counts come from isolated Chromium contexts against one `astro preview` of
-the final production `dist`, without rebuilding between scenarios. Each scenario uses a fresh
-browser context with its normal cold cache. Raw, gzip and Brotli sizes are calculated file by
-file for local JavaScript responses with Node's default zlib settings; they do not represent a
-CDN's transfer encoding. Request counts are browser request events, including cache-backed
-requests. The accepted-consent scenario deterministically fulfills the single `ipapi.is` request
-with the same fixture as Playwright; no external response time or byte count is included in the
-local JavaScript totals.
+The deterministic build measurements below come from `pnpm build` on July 25, 2026. Raw, gzip and
+Brotli sizes are calculated file by file with Node's default zlib settings; they do not represent
+a CDN's exact transfer encoding. Route totals include the minified HTML, including inline scripts,
+plus directly referenced local scripts, stylesheets and preloads. Generated entry points are
+resolved by their stable stem and module imports, not by a checked-in content hash.
+
+### Deterministic final build budgets
+
+| HTML route and direct initial assets |       Raw |     Gzip |   Brotli |
+| ------------------------------------ | --------: | -------: | -------: |
+| Home                                 |  97,262 B | 21,406 B | 18,524 B |
+| Published article                    | 133,367 B | 30,667 B | 26,582 B |
+| Cookies                              |  90,552 B | 20,468 B | 17,648 B |
+| 404                                  |  53,926 B | 11,321 B |  9,669 B |
+| 404 plus largest generated AVIF      |  99,557 B | 56,964 B | 55,304 B |
+
+The selected 404 image is the largest generated AVIF across the light/dark and 960/full-size
+variants, currently `404-screen-dark.avif` at 45,631 B. The six AVIF/WebP 404 artifacts total
+334,928 B. This replaces the obsolete claim that one 404 traversal transferred roughly 1.36 MB;
+an actual browser still selects only one candidate according to format support, theme and
+viewport.
+
+| Deployable surface                    |           Raw |          Gzip |        Brotli |
+| ------------------------------------- | ------------: | ------------: | ------------: |
+| Application JavaScript in `/_astro/`  |     653,287 B |     163,310 B |     142,268 B |
+| CSS in `/_astro/`                     |     106,429 B |      21,422 B |      18,526 B |
+| Pagefind, three consecutive builds    | 230,124–126 B | 168,489–492 B | 165,812–822 B |
+| Largest JavaScript artifact           |      97,651 B |      24,279 B |      20,537 B |
+| Deferred search module graph          |     254,350 B |      65,352 B |      57,756 B |
+| Deferred image-preview module graph   |     110,474 B |      33,308 B |      29,186 B |
+| Deferred Konachan graph and resources |     172,522 B |      78,633 B |      73,944 B |
+
+The deferred rows recursively follow local generated-module references. The Konachan row also
+includes the compact manifest and permanent 960 px landing image. These are deterministic
+deployment-footprint guards, not browser request traces: shared chunks can overlap between rows,
+already-cached modules are not subtracted, and Pagefind remains a separate budget. Unit tests
+cover changed hashes, HTML inclusion, all three encodings, a compressed-size failure, Pagefind,
+the selected 404 image and ambiguous generated entries. The thresholds in
+`scripts/check-bundle-budget.mjs` retain practical headroom instead of tracking the current output
+byte for byte.
+
+The cold-route request counts in the following historical comparison came from isolated Chromium
+contexts against one `astro preview` in the July 15 migration. Each scenario used a fresh browser
+context with its normal cold cache. Request counts include cache-backed request events. The
+accepted-consent scenario deterministically fulfilled the single `ipapi.is` request with the same
+fixture as Playwright; no external response time or byte count was included in the local
+JavaScript totals.
 
 ### Cacheable CSS delivery
 
@@ -155,10 +197,10 @@ instead of compiling it a second time.
 
 The baseline tags route was 40 requests, 35 scripts and 96,938 B gzip. It was not captured in
 the final isolated snapshot, so this document does not claim an unmeasured route-specific gain.
-The four remaining 404 requests transfer the document and static assets; its roughly 1.36 MB
-total transfer is dominated by the 404 image, not runtime code. The `0 B` figure counts external
-JavaScript responses consistently with the other route measurements; two executable inline
-snippets still travel inside `404.html`.
+The four remaining 404 requests transfer the document and static assets. The `0 B` figure counts
+external JavaScript responses consistently with the other route measurements; two executable
+inline snippets still travel inside `404.html`. Current 404 document, stylesheet and image sizes
+are recorded in the deterministic table above rather than inferred from this older request trace.
 
 The fresh-home reduction is the primary initial-load result:
 
@@ -182,10 +224,10 @@ The fresh-home reduction is the primary initial-load result:
 
 Moving from the fresh home notice to acknowledged explicit content adds four request events, two
 JavaScript modules, 113,193 B raw and 29,284 B gzip. The compact runtime manifest carries the
-precomputed Material source color, so this normal path does not start the Konachan color Worker;
-that extraction path remains only as a fallback when a usable precomputed color is unavailable.
-The pre-acknowledgement boundary still blocks both the controller and image network work rather
-than merely hiding the result.
+precomputed Material source color. Runtime manifest version 2 rejects missing or malformed colors,
+and incomplete local caches are discarded and replaced from that manifest. There is no longer a
+browser extraction fallback or Worker artifact. The pre-acknowledgement boundary still blocks both
+the controller and image network work rather than merely hiding the result.
 
 The individually accepted home path was not part of this refreshed route snapshot. Its contract
 remains unchanged: IP geolocation and Speed Insights stay behind their own consent switches, and a
@@ -241,15 +283,17 @@ native file sharing remains explicit debt.
 
 ### Total generated JavaScript
 
-| Production `_astro` output | Artifacts |       Raw |      Gzip |    Brotli |
-| -------------------------- | --------: | --------: | --------: | --------: |
-| Baseline                   |        50 | 770,578 B | 182,794 B | 157,512 B |
-| Migrated                   |        54 | 774,555 B | 185,381 B | 160,591 B |
-| Change                     |        +4 |  +3,977 B |  +2,587 B |  +3,079 B |
+| Production `_astro` output     | Artifacts |        Raw |      Gzip |    Brotli |
+| ------------------------------ | --------: | ---------: | --------: | --------: |
+| Before mandatory source colors |        62 |  779,216 B | 189,962 B | 164,444 B |
+| Final                          |        58 |  653,287 B | 163,310 B | 142,268 B |
+| Change                         |        −4 | −125,929 B | −26,652 B | −22,176 B |
 
-Code splitting therefore slightly increases total deployable JavaScript while removing it from
-unrelated initial routes. The refreshed fresh-home trace requests 31 JavaScript modules; the
-route table above is authoritative for its current raw and gzip weight.
+The three removed extraction artifacts represented 116,820 B raw, 23,774 B gzip and 19,677 B
+Brotli. Dead-code elimination and the resulting chunk regrouping account for the rest of the
+16.2% raw, 14.0% gzip and 13.5% Brotli reduction. `@material/material-color-utilities` remains
+required: the browser creates the light/dark Material schemes from the validated `sourceColor`,
+and the refresh script computes that color from image pixels at build/maintenance time.
 
 ### Lighthouse mobile snapshot
 
@@ -280,8 +324,12 @@ Pagefind, Giscus or image-preview interactions, so those paths remain Playwright
 
 - `pnpm verify:project`: unit/theme/type/lint/audit/symbol/Knip/format, production build,
   CSP/headers, all Playwright projects, then three mobile and three desktop Lighthouse runs.
-- `pnpm build:vercel`: full Git history, Astro SSG, Pagefind, minification and final CSP/header
-  validation.
+- `pnpm build:vercel`: complete history reachable from `HEAD`, Astro SSG, Pagefind, minification
+  and final CSP/header validation. A non-shallow checkout performs no fetch. A shallow detached
+  Vercel checkout fetches only `refs/heads/$VERCEL_GIT_COMMIT_REF`, or the exact `HEAD` SHA when
+  that branch is unavailable; tags and unrelated branches are not downloaded. Unit fixtures
+  verify shallow clones, detached commits, `git log --follow` across a rename and a non-blocking
+  remote failure.
 - `Nightly cross-browser QA`: eight conditional desktop/mobile and light/dark profiles, but not
   eight complete-suite runs. The four Firefox profiles target image-preview and resilience specs;
   the four WebKit profiles run the complete suite. The gate allows one retry maximum with
@@ -332,8 +380,9 @@ Pagefind, Giscus or image-preview interactions, so those paths remain Playwright
 - Search first use is more fragmented than the baseline path: the measured initial-to-query path
   adds 9 requests and 27,623 B gzip over the older opening-only trace. The benefit is the complete
   removal of this work from routes where search stays closed.
-- Splitting raises the deployable JavaScript total by four artifacts and 2,587 B gzip even though
-  the refreshed fresh-home initial gzip is 45.9% below the baseline.
+- Code splitting still trades additional first-interaction requests for a smaller closed route,
+  but mandatory Konachan source colors now remove four deployable artifacts and 26,652 B gzip
+  compared with the immediately preceding build.
 - All three final mobile Lighthouse runs scored 100, but their LCP remained 74–77 ms slower than
   the baseline range. A perfect aggregate score therefore does not erase the timing regression.
 - Extracted, hashed CSS adds render-blocking stylesheet requests on a cold route. The trade-off is
@@ -348,10 +397,10 @@ Pagefind, Giscus or image-preview interactions, so those paths remain Playwright
   production-like fixture would give stronger regression coverage.
 - The Konachan set dominates `dist` (300 WebP files, 23,727,528 B, or 22.6 MiB), but its runtime
   manifest, controller and chosen images are outside the fresh initial path. The browser reads the
-  compact runtime manifest rather than the authoring manifest; source colors are precomputed at
-  refresh time, so the normal acknowledged path starts no color Worker, and the 960/1920 variant
-  is selected against the full `background-size: cover` geometry (width, height and source aspect
-  ratio) multiplied by DPR.
+  compact runtime manifest rather than the authoring manifest; every version 2 entry must contain
+  a valid source color, so no browser color Worker is emitted. The 960/1920 variant is selected
+  against the full `background-size: cover` geometry (width, height and source aspect ratio)
+  multiplied by DPR.
 - Dependabot applies a one-day version cooldown to match pnpm 11's 1,440-minute minimum release
   age. Without it, a fresh automated version PR can be impossible for CI and Vercel to install
   until the package matures; Dependabot security updates remain outside the cooldown.
@@ -366,6 +415,14 @@ Pagefind, Giscus or image-preview interactions, so those paths remain Playwright
 - The Vercel GitHub status already stuck on `Waiting for checks to complete` cannot be repaired by
   repository code alone. The obsolete check must be removed in the authenticated Vercel project,
   then the deployment must be recreated.
+- The preview smoke intentionally has no bypass credential, so a deployment protected by Vercel
+  Authentication remains unverified rather than being reported as a skip or success. Enabling it
+  safely requires creating a project-scoped Protection Bypass for Automation secret, storing it
+  as an encrypted GitHub Actions secret, and teaching both the HTTP probe and Playwright context
+  to send `x-vercel-protection-bypass` only to the already validated preview origin. Browser
+  follow-up requests also require `x-vercel-set-bypass-cookie: true`. No secret, repository
+  variable or Vercel project setting is created by this change; see
+  [Vercel's official automation bypass documentation](https://vercel.com/docs/deployment-protection/methods-to-bypass-deployment-protection/protection-bypass-automation).
 - The versioned rulesets mirror the live GitHub rules, including an `always` bypass for the `c2tz`
   administrator. This permits the requested direct integration push but means branch protections
   are not absolute against that account; removing it requires a deliberate live ruleset policy

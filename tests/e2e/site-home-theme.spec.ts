@@ -103,8 +103,23 @@ test("starts with the permanent Konachan landing image when no cached image exis
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.locator("[data-konachan-background]")).toHaveAttribute(
     "data-konachan-current-url",
-    /\/konachan-backgrounds\/405237\.webp$/,
+    /\/konachan-backgrounds\/405393(?:-960)?\.webp$/,
   );
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const stored = JSON.parse(localStorage.getItem("home-konachan-backgrounds-v8") || "null");
+        return {
+          currentId: stored?.currentImage?.id,
+          allColorsValid:
+            stored?.images?.length > 0 &&
+            stored.images.every((image: { sourceColor?: string }) =>
+              /^#[0-9A-F]{6}$/.test(image.sourceColor ?? ""),
+            ),
+        };
+      }),
+    )
+    .toEqual({ currentId: 405393, allColorsValid: true });
 });
 
 test("chooses 960 or full Konachan assets from cover geometry times DPR", async ({ page }) => {
@@ -146,7 +161,7 @@ test("chooses 960 or full Konachan assets from cover geometry times DPR", async 
   );
 });
 
-test("uses a precomputed Konachan source color before the Worker fallback", async ({ page }) => {
+test("uses the required precomputed Konachan source color without a Worker", async ({ page }) => {
   test.skip(
     test.info().project.name !== "desktop-light",
     "The precomputed-color fast path only needs one browser-project verification.",
@@ -163,12 +178,6 @@ test("uses a precomputed Konachan source color before the Worker fallback", asyn
       }),
     });
   });
-  const fallbackRequests: string[] = [];
-  page.on("request", (request) => {
-    if (new URL(request.url()).pathname.includes("material-source-color-fallback")) {
-      fallbackRequests.push(request.url());
-    }
-  });
   await seedFixedKonachanImage(page, "#5BC3D6");
 
   await gotoRoute(page, "/");
@@ -176,7 +185,6 @@ test("uses a precomputed Konachan source color before the Worker fallback", asyn
   expect(
     await page.evaluate(() => Reflect.get(window, "__materialSourceColorWorkerCount") ?? 0),
   ).toBe(0);
-  expect(fallbackRequests).toEqual([]);
 });
 
 test("uses upgraded Material Web buttons and the generated color roles", async ({ page }) => {
@@ -311,87 +319,6 @@ test("only exposes image colors after detailed mode is selected", async ({ page 
       ),
     )
     .toBe("#1565C0");
-});
-
-test("extracts the exact Konachan source color in a module Worker", async ({ page }) => {
-  test.skip(
-    test.info().project.name !== "desktop-light",
-    "The Worker transport only needs one browser-project verification.",
-  );
-  const fallbackRequests: string[] = [];
-  page.on("request", (request) => {
-    if (new URL(request.url()).pathname.includes("material-source-color-fallback")) {
-      fallbackRequests.push(request.url());
-    }
-  });
-  await seedFixedKonachanImage(page);
-  await page.addInitScript({
-    content: `
-      {
-        const nativePostMessage = Worker.prototype.postMessage;
-        Worker.prototype.postMessage = function (message, transferOrOptions) {
-          const buffer = message?.buffer;
-          const transferList = Array.isArray(transferOrOptions) ? transferOrOptions : [];
-          const tracked = buffer instanceof ArrayBuffer && transferList.includes(buffer);
-          if (tracked) {
-            window.__materialSourceColorTransfer = {
-              after: null,
-              before: buffer.byteLength,
-              transferCount: transferList.length,
-            };
-          }
-          const result = nativePostMessage.call(this, message, transferOrOptions);
-          if (tracked) window.__materialSourceColorTransfer.after = buffer.byteLength;
-          return result;
-        };
-      }
-    `,
-  });
-
-  const workerPromise = page.waitForEvent("worker");
-  await gotoRoute(page, "/");
-  const worker = await workerPromise;
-
-  expect(worker.url()).toContain("material-source-color.worker");
-  await expect.poll(() => fallbackRequests.length).toBe(1);
-  await expectStoredSourceColor(page, "#5BC3D6");
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          (
-            window as typeof window & {
-              __materialSourceColorTransfer?: {
-                after: number | null;
-                before: number;
-                transferCount: number;
-              };
-            }
-          ).__materialSourceColorTransfer ?? null,
-      ),
-    )
-    .toEqual({ after: 0, before: 2_073_600, transferCount: 1 });
-});
-
-test("keeps the exact Konachan palette when Worker construction fails", async ({ page }) => {
-  test.skip(
-    test.info().project.name !== "desktop-light",
-    "The synchronous fallback only needs one browser-project verification.",
-  );
-  await seedFixedKonachanImage(page);
-  await page.addInitScript(() => {
-    Object.defineProperty(window, "Worker", {
-      configurable: true,
-      value: class UnavailableWorker {
-        constructor() {
-          throw new Error("worker_blocked_for_test");
-        }
-      },
-    });
-  });
-
-  await gotoRoute(page, "/");
-  await expectStoredSourceColor(page, "#5BC3D6");
 });
 
 test("restores dynamic hero text colors before the first hydrated frame", async ({ page }) => {

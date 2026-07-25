@@ -42,7 +42,7 @@ export function clearConsentState() {
   document.cookie = "ct-cookie-consent=; Max-Age=0; Path=/; SameSite=Lax";
 }
 
-export async function seedFixedKonachanImage(page: Page, sourceColor?: string) {
+export async function seedFixedKonachanImage(page: Page, sourceColor = "#5BC3D6") {
   await page.addInitScript((seededSourceColor) => {
     const image = {
       id: 405237,
@@ -59,7 +59,7 @@ export async function seedFixedKonachanImage(page: Page, sourceColor?: string) {
           width: 960,
         },
       ],
-      ...(seededSourceColor ? { sourceColor: seededSourceColor } : {}),
+      sourceColor: seededSourceColor,
     };
 
     localStorage.setItem(

@@ -9,6 +9,7 @@ import {
   extractAstroStylesheetUrl,
   inspectKonachanRuntimeManifest,
 } from "../scripts/lib/vercel-preview-assets.mjs";
+import { KONACHAN_RUNTIME_MANIFEST_VERSION } from "../src/lib/konachan-runtime-manifest.mjs";
 
 test("extracts a same-origin hashed Astro stylesheet from the home HTML", () => {
   const html = `
@@ -53,7 +54,7 @@ test("validates exact asset MIME and Cache-Control contracts", () => {
 
 function runtimeManifest({ imageCount = KONACHAN_RUNTIME_IMAGE_COUNT, padding = "" } = {}) {
   return {
-    version: 1,
+    version: KONACHAN_RUNTIME_MANIFEST_VERSION,
     generatedAt: "2026-06-28T23:52:26.568Z",
     width: 1920,
     height: 1080,
@@ -62,6 +63,7 @@ function runtimeManifest({ imageCount = KONACHAN_RUNTIME_IMAGE_COUNT, padding = 
     images: Array.from({ length: imageCount }, (_, index) => ({
       id: 405_000 + index,
       rating: "s",
+      sourceColor: "#5BC3D6",
     })),
   };
 }
@@ -88,6 +90,19 @@ test("rejects stale or oversized Konachan runtime manifests", () => {
     JSON.stringify(runtimeManifest({ padding: "x".repeat(KONACHAN_RUNTIME_MAX_BYTES) })),
   );
   assert.throws(() => inspectKonachanRuntimeManifest(oversizedBytes), /the limit is 40960/);
+
+  const incompleteBytes = new TextEncoder().encode(
+    JSON.stringify({
+      ...runtimeManifest(),
+      images: runtimeManifest().images.map((image) =>
+        Object.fromEntries(Object.entries(image).filter(([key]) => key !== "sourceColor")),
+      ),
+    }),
+  );
+  assert.throws(
+    () => inspectKonachanRuntimeManifest(incompleteBytes),
+    /must declare uppercase six-digit sourceColor/,
+  );
 });
 
 test("validates that the downloaded Konachan asset is really a WebP", () => {

@@ -8,7 +8,9 @@ on:
       - main
 
 permissions:
+  checks: read
   contents: read
+  pull-requests: read
 
 concurrency:
   group: verify-project-${{ github.ref }}
@@ -27,24 +29,66 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Classify CI lane
+        id: ci_lane
+        uses: ./.github/actions/classify-ci
+        with:
+          token: ${{ github.token }}
+
       - name: Setup pnpm
+        if: steps.ci_lane.outputs.lane != 'post-merge'
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
           version: 11.1.3
 
       - name: Setup Node.js
+        if: steps.ci_lane.outputs.lane != 'post-merge'
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 22.22.3
           cache: pnpm
 
       - name: Install dependencies
+        if: steps.ci_lane.outputs.lane != 'post-merge'
         run: pnpm install --frozen-lockfile
 
+      - name: Explain why project validation is not repeated
+        if: steps.ci_lane.outputs.lane == 'post-merge'
+        env:
+          CI_REASON: ${{ steps.ci_lane.outputs.reason }}
+        run: |
+          echo "$CI_REASON"
+          echo "Project validation was not repeated because the merged pull request already passed every required check." >>"$GITHUB_STEP_SUMMARY"
+
       - name: Install Playwright Chromium and WebKit
+        if: steps.ci_lane.outputs.lane == 'full'
         run: pnpm exec playwright install --with-deps chromium webkit
 
-      - name: Check, build, and validate security headers
+      - name: Install Playwright Chromium for content smoke tests
+        if: steps.ci_lane.outputs.lane == 'content'
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Check changed documentation formatting
+        if: steps.ci_lane.outputs.lane == 'docs'
+        run: pnpm exec node scripts/classify-ci-lane.mjs --check-docs-format
+
+      - name: Build and smoke-test editorial content
+        if: steps.ci_lane.outputs.lane == 'content'
+        env:
+          PLAYWRIGHT_REUSE_BUILD: "1"
+        run: |
+          pnpm format:check
+          pnpm test:unit
+          pnpm build
+          pnpm check:headers
+          pnpm exec playwright test \
+            tests/e2e/license.spec.ts \
+            tests/e2e/site-content.spec.ts \
+            tests/e2e/site-discovery.spec.ts \
+            --project=desktop-light
+
+      - name: Run the complete project quality suite
+        if: steps.ci_lane.outputs.lane == 'full'
         # Leave enough of the job timeout for diagnostics to be uploaded if this step times out.
         timeout-minutes: 42
         run: pnpm verify:quality
@@ -69,29 +113,52 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
+          fetch-depth: 0
           persist-credentials: false
 
+      - name: Classify CI lane
+        id: ci_lane
+        uses: ./.github/actions/classify-ci
+        with:
+          token: ${{ github.token }}
+
+      - name: Explain why Lighthouse is not required
+        if: steps.ci_lane.outputs.lane != 'full'
+        env:
+          CI_LANE: ${{ steps.ci_lane.outputs.lane }}
+          CI_REASON: ${{ steps.ci_lane.outputs.reason }}
+        run: |
+          echo "Lighthouse is not required for the ${CI_LANE} lane."
+          echo "$CI_REASON"
+          echo "Lighthouse was not executed for the \`${CI_LANE}\` lane." >>"$GITHUB_STEP_SUMMARY"
+
       - name: Setup pnpm
+        if: steps.ci_lane.outputs.lane == 'full'
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
           version: 11.1.3
 
       - name: Setup Node.js
+        if: steps.ci_lane.outputs.lane == 'full'
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 22.22.3
           cache: pnpm
 
       - name: Install dependencies
+        if: steps.ci_lane.outputs.lane == 'full'
         run: pnpm install --frozen-lockfile
 
       - name: Install Lighthouse Chromium
+        if: steps.ci_lane.outputs.lane == 'full'
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Build minified production output
+        if: steps.ci_lane.outputs.lane == 'full'
         run: pnpm build
 
       - name: Require 95+ performance and perfect accessibility and best practices on every run
+        if: steps.ci_lane.outputs.lane == 'full'
         run: pnpm test:lighthouse
 
       - name: Upload Lighthouse CI quality reports

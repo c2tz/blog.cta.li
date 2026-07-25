@@ -1,4 +1,4 @@
-const KONACHAN_RUNTIME_MANIFEST_VERSION = 1;
+export const KONACHAN_RUNTIME_MANIFEST_VERSION = 2;
 export const KONACHAN_RUNTIME_MANIFEST_MAX_BYTES = 40 * 1024;
 const KONACHAN_RUNTIME_VARIANT_WIDTH = 960;
 
@@ -36,13 +36,19 @@ export function createKonachanRuntimeManifest(manifest) {
     if (!id) throw new TypeError("Konachan runtime image IDs must be positive integers.");
 
     const sourceColor = normalizeSourceColor(image.sourceColor);
+    if (!sourceColor) {
+      throw new TypeError(
+        `Konachan runtime image ${id} must declare a valid six-digit sourceColor.`,
+      );
+    }
+
     return {
       id,
       rating: ratingCode(image.rating),
       source:
         typeof image.source === "string" ? image.source : `https://konachan.com/post/show/${id}`,
       ...(image.author ? { author: String(image.author) } : {}),
-      ...(sourceColor ? { sourceColor } : {}),
+      sourceColor,
     };
   });
 
@@ -77,12 +83,14 @@ export function expandKonachanRuntimeManifest(manifest) {
   const variantWidth = Number(manifest.variantWidth) || KONACHAN_RUNTIME_VARIANT_WIDTH;
   const variantHeight = Math.round((height / width) * variantWidth);
 
-  return manifest.images
+  const images = manifest.images
     .map((image) => {
       const id = normalizeId(image?.id);
       if (!id) return null;
 
       const sourceColor = normalizeSourceColor(image.sourceColor);
+      if (!sourceColor) return null;
+
       return {
         id,
         rating: ratingFromCode(image.rating),
@@ -92,7 +100,7 @@ export function expandKonachanRuntimeManifest(manifest) {
         source:
           typeof image.source === "string" ? image.source : `https://konachan.com/post/show/${id}`,
         author: typeof image.author === "string" ? image.author : "",
-        ...(sourceColor ? { sourceColor } : {}),
+        sourceColor,
         variants: [
           {
             url: `/konachan-backgrounds/${id}-${variantWidth}.webp`,
@@ -103,4 +111,6 @@ export function expandKonachanRuntimeManifest(manifest) {
       };
     })
     .filter(Boolean);
+
+  return images.length === manifest.images.length ? images : [];
 }

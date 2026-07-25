@@ -16,13 +16,7 @@ const MATERIAL_DYNAMIC_COLORS = new MaterialDynamicColors();
 const MATERIAL_DYNAMIC_SPEC_VERSION = "2021";
 const MATERIAL_DYNAMIC_VARIANT = SchemeTonalSpot;
 
-export function createHomeKonachanThemeController({
-  imageThemeCacheKey,
-  imageThemeCandidates,
-  landingSelector,
-  preload,
-  state,
-}) {
+export function createHomeKonachanThemeController({ imageThemeCacheKey, landingSelector, state }) {
   const LANDING_SELECTOR = landingSelector;
   const DYNAMIC_HERO_COLOR_PROPERTIES = [
     "--home-hero-on-image",
@@ -114,24 +108,12 @@ export function createHomeKonachanThemeController({
     );
   }
 
-  async function createHomeDynamicTheme(image) {
-    const { materialSourceColorFromImage } = await import("./material-source-color-fallback.js");
-    const sourceColor = await materialSourceColorFromImage(image);
-
-    return createHomeDynamicThemeFromSourceColor(sourceColor);
-  }
-
   function createHomeDynamicThemeFromSourceColor(sourceColor) {
     return {
       dark: createHomeDynamicScheme(sourceColor, { dark: true }),
       light: createHomeDynamicScheme(sourceColor, { dark: false }),
       sourceColor,
     };
-  }
-
-  async function createHomeDynamicThemeFromUrl(url) {
-    const { image } = await preload(url);
-    return createHomeDynamicTheme(image);
   }
 
   function applyHomeDynamicTokens(theme, image, loadedUrl) {
@@ -191,49 +173,28 @@ export function createHomeKonachanThemeController({
     });
   }
 
-  async function resolveHomeDynamicTheme(image, loadedImage, loadedUrl) {
+  function resolveHomeDynamicTheme(image, loadedUrl) {
     const precomputedSourceColor =
       typeof image === "object" && /^#[0-9a-f]{6}$/i.test(image?.sourceColor)
         ? image.sourceColor
         : null;
-    const precomputedCacheKey = imageThemeCacheKey(image, loadedUrl);
-    const precomputedCachedTheme = state.dynamicThemeCache.get(precomputedCacheKey);
-    if (precomputedCachedTheme) return precomputedCachedTheme;
-    if (precomputedSourceColor) {
-      const theme = createHomeDynamicThemeFromSourceColor(argbFromHex(precomputedSourceColor));
-      state.dynamicThemeCache.set(precomputedCacheKey, theme);
-      return theme;
-    }
+    if (!precomputedSourceColor) return null;
 
-    const candidates = imageThemeCandidates(image, loadedUrl);
+    const cacheKey = imageThemeCacheKey(image, loadedUrl);
+    const cachedTheme = state.dynamicThemeCache.get(cacheKey);
+    if (cachedTheme) return cachedTheme;
 
-    for (const candidate of candidates) {
-      const cacheKey = imageThemeCacheKey(image, candidate);
-      const cachedTheme = state.dynamicThemeCache.get(cacheKey);
-      if (cachedTheme) return cachedTheme;
-
-      try {
-        const theme =
-          candidate === loadedUrl && loadedImage
-            ? await createHomeDynamicTheme(loadedImage)
-            : await createHomeDynamicThemeFromUrl(candidate);
-
-        state.dynamicThemeCache.set(cacheKey, theme);
-        return theme;
-      } catch (error) {
-        console.warn(`[Konachan] Unable to extract Material color from ${candidate}.`, error);
-      }
-    }
-
-    return null;
+    const theme = createHomeDynamicThemeFromSourceColor(argbFromHex(precomputedSourceColor));
+    state.dynamicThemeCache.set(cacheKey, theme);
+    return theme;
   }
 
-  async function applyDynamicHeroColor(target, image, loadedImage, loadedUrl) {
+  async function applyDynamicHeroColor(target, image, loadedUrl) {
     const landing = target.closest(LANDING_SELECTOR);
     if (!landing) return;
 
     try {
-      const dynamicTheme = await resolveHomeDynamicTheme(image, loadedImage, loadedUrl);
+      const dynamicTheme = resolveHomeDynamicTheme(image, loadedUrl);
       if (state.currentUrl !== loadedUrl) return;
       if (!dynamicTheme) throw new Error("konachan_dynamic_theme_unavailable");
 

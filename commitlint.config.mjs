@@ -35,7 +35,10 @@ export default {
   ],
   rules: {
     "body-leading-blank": [2, "always"],
-    "footer-leading-blank": [2, "always"],
+    // Dependabot's structured metadata is parsed as a footer even though it is
+    // separated from the prose by `---`. Keep the style signal without making
+    // otherwise valid dependency updates fail after they reach develop.
+    "footer-leading-blank": [1, "always"],
     "header-max-length": [2, "always", 100],
     "scope-enum": [1, "always", preferredScopes],
     "subject-case": [2, "never", ["sentence-case", "start-case", "pascal-case", "upper-case"]],

@@ -160,9 +160,10 @@ test("keeps consent actions uppercase and the privacy banner below the search sc
   const privacyBanner = page.getByRole("region", { name: "Avis de confidentialité" });
   await expect(privacyBanner).toBeVisible();
   const detailsLink = privacyBanner
-    .locator('md-text-button[href="/cookies/#modifier-vos-choix-cookies"]')
+    .locator('md-text-button[href="/#modifier-vos-choix-cookies"]')
     .filter({ hasText: "PLUS DE DÉTAILS" });
   await expect(detailsLink).toHaveCount(1);
+  await expect(detailsLink).toHaveAttribute("href", "/#modifier-vos-choix-cookies");
   if (test.info().project.name.includes("mobile")) await expect(detailsLink).toBeHidden();
   else await expect(detailsLink).toBeVisible();
   await expect(
@@ -171,7 +172,7 @@ test("keeps consent actions uppercase and the privacy banner below the search sc
   await expect(privacyBanner.locator("[data-cookie-action='reject']:visible")).toBeVisible();
   await expect(privacyBanner.locator("[data-cookie-action='accept']:visible")).toBeVisible();
 
-  await page.setViewportSize({ width: 450, height: 720 });
+  await page.setViewportSize({ width: 601, height: 720 });
   await expect(detailsLink).toBeVisible();
   const narrowDesktopLayout = await measureConsentActionLayout(privacyBanner, "desktop");
   expect(narrowDesktopLayout.buttonsFit).toBe(true);
@@ -180,9 +181,14 @@ test("keeps consent actions uppercase and the privacy banner below the search sc
   expect(narrowDesktopLayout.leadingGap).toBeGreaterThanOrEqual(8);
   expect(narrowDesktopLayout.oneRow).toBe(true);
   expect(narrowDesktopLayout.orderedWithoutOverlap).toBe(true);
+  expect(narrowDesktopLayout.left).toBeGreaterThanOrEqual(7);
+  expect(narrowDesktopLayout.right).toBeLessThanOrEqual(narrowDesktopLayout.viewportWidth - 7);
 
   if (test.info().project.name.includes("mobile")) {
-    await page.setViewportSize({ width: 330, height: 720 });
+    await page.setViewportSize({ width: 320, height: 720 });
+    await expect(detailsLink).toBeHidden();
+    await expect(privacyBanner.locator("md-text-button[href]:visible")).toHaveCount(0);
+    await expect(privacyBanner.locator("[data-cookie-action]:visible")).toHaveCount(2);
     const compactLayout = await measureConsentActionLayout(privacyBanner, "mobile");
     expect(compactLayout.buttonsFit).toBe(true);
     expect(compactLayout.count).toBe(2);

@@ -65,6 +65,22 @@ body.home-page {
   margin-block-start: var(--home-section-block-gap);
 }
 
+.home-cookie-preferences {
+  display: none;
+  margin-block-end: 2rem;
+  scroll-margin-block-start: 5rem;
+}
+
+.home-cookie-preferences:target {
+  display: block;
+}
+
+.home-cookie-preferences-intro {
+  max-width: 48rem;
+  margin-block: 0;
+  color: var(--site-muted);
+}
+
 body.home-page[data-home-detail-view="true"] .home-tags-detail,
 :root[data-home-detail-view="true"] body.home-page .home-tags-detail {
   display: block;

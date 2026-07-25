@@ -269,8 +269,59 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
   await waitForLightboxController(dialog);
   await expect(sourceImage).toHaveAttribute("role", "button");
   await expect(sourceImage).toHaveAttribute("tabindex", "0");
+  await dialog.evaluate((element) => {
+    const testWindow = window as typeof window & {
+      __richTooltipActivationOrder?: {
+        clickObserved: boolean;
+        clickTaskActive: boolean;
+        showModalDuringClickTask?: boolean;
+      };
+    };
+    const nativeDialog = element.shadowRoot?.querySelector("dialog");
+    if (!(nativeDialog instanceof HTMLDialogElement)) {
+      throw new Error("Expected the Material dialog to expose a native dialog");
+    }
+    const activationOrder = {
+      clickObserved: false,
+      clickTaskActive: false,
+      showModalDuringClickTask: undefined as boolean | undefined,
+    };
+    const originalShowModal = nativeDialog.showModal.bind(nativeDialog);
+    testWindow.__richTooltipActivationOrder = activationOrder;
+    window.addEventListener(
+      "click",
+      () => {
+        activationOrder.clickObserved = true;
+        activationOrder.clickTaskActive = true;
+        window.setTimeout(() => {
+          activationOrder.clickTaskActive = false;
+        });
+      },
+      { capture: true, once: true },
+    );
+    nativeDialog.showModal = () => {
+      activationOrder.showModalDuringClickTask = activationOrder.clickTaskActive;
+      originalShowModal();
+    };
+  });
   await sourceImage.click();
   await expect(dialog).toHaveJSProperty("open", true);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            window as typeof window & {
+              __richTooltipActivationOrder?: {
+                clickObserved: boolean;
+                clickTaskActive: boolean;
+                showModalDuringClickTask?: boolean;
+              };
+            }
+          ).__richTooltipActivationOrder,
+      ),
+    )
+    .toEqual({ clickObserved: true, clickTaskActive: false, showModalDuringClickTask: false });
   await expectPopoverOpen(richTooltip, false);
   await dialog.locator("[data-image-close]").click();
   await expect(dialog).toHaveJSProperty("open", false);

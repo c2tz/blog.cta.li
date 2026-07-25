@@ -36,6 +36,7 @@ export const withImagePreviewGallery = (Base) =>
             (trigger) => trigger.dataset.richTooltipTrigger === richTooltip.id,
           )
         : null;
+      const richTooltipWasOpen = Boolean(richTooltip?.matches(":popover-open"));
       this.triggerImage = restoreFocus && richTooltipTrigger ? richTooltipTrigger : sourceImage;
       this.restoreTriggerFocus = restoreFocus;
       this.isOpen = true;
@@ -47,6 +48,17 @@ export const withImagePreviewGallery = (Base) =>
       this.hideTooltip(
         richTooltipTrigger && restoreFocus ? { suppressNextFocus: true } : undefined,
       );
+      if (richTooltipWasOpen) {
+        // Let WebKit finish the trusted activation after removing the popover
+        // from the top layer before promoting the Material dialog to a modal.
+        await new Promise((resolve) => {
+          window.setTimeout(resolve);
+        });
+        if (!this.isOpen || this.isClosing || !this.dialog.isConnected) {
+          this.finishClose();
+          return;
+        }
+      }
 
       try {
         const focusRequestBeforeShow = this.focusRequest;

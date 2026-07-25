@@ -5,6 +5,8 @@ publicHoistPattern:
   - tslib
 
 overrides:
+  # GHSA-mh99-v99m-4gvg is fixed only in brace-expansion 5.0.8.
+  brace-expansion: 5.0.8
   esbuild: 0.28.1
   fast-uri: 3.1.4
   fast-xml-parser: 5.10.1
@@ -21,3 +23,7 @@ allowBuilds:
 
 minimumReleaseAgeExclude:
   - prettier@3.9.5
+
+patchedDependencies:
+  # minimatch 3 expects the callable v1 CommonJS export; v5 exposes expand by name.
+  minimatch@3.1.5: patches/minimatch@3.1.5.patch

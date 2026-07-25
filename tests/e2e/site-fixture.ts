@@ -223,6 +223,47 @@ export async function expectKeyboardFocusOverridesPendingPointerFrame(dialog: Lo
   });
 }
 
+export async function measureConsentActionLayout(banner: Locator, variant: "desktop" | "mobile") {
+  return banner.evaluate((element, actionVariant) => {
+    const bannerRect = element.getBoundingClientRect();
+    const actions = element.querySelector(`.cookie-consent-actions--${actionVariant}`);
+    const buttons = actions
+      ? Array.from(actions.querySelectorAll("[data-cookie-action], md-text-button[href]")).filter(
+          (button) => {
+            const styles = getComputedStyle(button);
+            return styles.display !== "none" && styles.visibility !== "hidden";
+          },
+        )
+      : [];
+    const buttonRects = buttons.map((button) => button.getBoundingClientRect());
+    const firstRect = buttonRects[0];
+
+    return {
+      buttonsFit: buttonRects.every(
+        (rect) => rect.left >= bannerRect.left - 1 && rect.right <= bannerRect.right + 1,
+      ),
+      count: buttonRects.length,
+      equalWidth: Boolean(
+        firstRect && buttonRects.every((rect) => Math.abs(rect.width - firstRect.width) <= 1),
+      ),
+      labelsUnclipped: buttons.every((button) => {
+        const label = button.shadowRoot?.querySelector(".label");
+        return !label || label.scrollWidth <= label.clientWidth + 1;
+      }),
+      leadingGap: buttonRects[1]
+        ? buttonRects[1].left - (firstRect?.right ?? buttonRects[1].left)
+        : 0,
+      left: bannerRect.left,
+      oneRow: buttonRects.every((rect) => Math.abs(rect.top - (firstRect?.top ?? rect.top)) <= 1),
+      orderedWithoutOverlap: buttonRects.every(
+        (rect, index) => index === 0 || rect.left >= buttonRects[index - 1].right - 1,
+      ),
+      right: bannerRect.right,
+      viewportWidth: window.innerWidth,
+    };
+  }, variant);
+}
+
 export const test = base.extend({
   page: async ({ page }, use) => {
     const runtimeErrors: string[] = [];

@@ -229,9 +229,10 @@ build` prépare d'abord les assets puis exécute déjà ce contrôle.
 ### `pnpm prepare:landing-assets`
 
 Prépare transactionnellement les arrière-plans. Les builds Vercel fiables de `main` et `develop`
-lisent le dépôt privé avec une clé de déploiement en lecture seule. Les autres builds et le
-développement local utilisent des fixtures abstraites sans contenu sensible. Pour vérifier un
-checkout privé local, définissez `LANDING_ASSETS_SOURCE_DIR` vers son dossier `public/`.
+lisent le dépôt privé avec une clé de déploiement en lecture seule. En local, le script utilise
+automatiquement le dossier `public/` d'un checkout voisin nommé `ct-blog-landing-img`. Il conserve
+les fixtures abstraites sans contenu sensible si ce checkout est absent. Pour utiliser un autre
+emplacement local, définissez `LANDING_ASSETS_SOURCE_DIR` vers son dossier `public/`.
 
 ### `pnpm index:search`
 

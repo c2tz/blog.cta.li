@@ -560,7 +560,14 @@ test("keeps all required check names aligned and every external action pinned by
     "report merging must fail closed unless all four blobs are present",
   );
   assert.doesNotMatch(verifyWorkflow, /\bcontinue-on-error\s*:/);
-  assert.match(packageJson.scripts["verify:quality:static"], /pnpm build && pnpm check:headers$/);
+  assert.equal(
+    packageJson.scripts["build:test"],
+    "LANDING_ASSETS_SOURCE_DIR=tests/fixtures/landing-assets pnpm build",
+  );
+  assert.match(
+    packageJson.scripts["verify:quality:static"],
+    /pnpm build:test && pnpm check:headers$/,
+  );
   assert.equal(
     packageJson.scripts["verify:quality"],
     "pnpm verify:quality:static && PLAYWRIGHT_REUSE_BUILD=1 pnpm test:e2e",

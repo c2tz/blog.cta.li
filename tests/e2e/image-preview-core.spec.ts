@@ -257,6 +257,10 @@ test("fits the complete image with CSS and stays scroll-free through gestures an
 test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwards", async ({
   page,
 }) => {
+  test.slow(
+    test.info().project.name.includes("webkit"),
+    "WebKit serializes the trusted click between popover and dialog top layers",
+  );
   await page.goto("/posts/hugo-material-shortcodes/", { waitUntil: "domcontentloaded" });
   const richTooltip = page.locator("#tooltip-http-shiki");
   const trigger = page.locator('[data-rich-tooltip-trigger="tooltip-http-shiki"]');

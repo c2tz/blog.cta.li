@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { existsSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
@@ -10,6 +11,7 @@ import { prepareLandingAssets } from "./prepare-landing-assets.mjs";
 const execFileAsync = promisify(execFile);
 const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const FIXTURE_DIRECTORY = resolve(ROOT_DIRECTORY, "tests/fixtures/landing-assets");
+const LOCAL_PRIVATE_DIRECTORY = resolve(ROOT_DIRECTORY, "../ct-blog-landing-img/public");
 const PRIVATE_REPOSITORY = "git@github.com:c2tz/ct-blog-landing-img.git";
 const PRIVATE_REPOSITORY_BRANCH = "main";
 const PRIVATE_KEY_MAX_BYTES = 16 * 1024;
@@ -35,7 +37,10 @@ function trustedVercelTarget(environment) {
   return null;
 }
 
-export function selectLandingAssetSource(environment = process.env) {
+export function selectLandingAssetSource(
+  environment = process.env,
+  { localPrivateDirectory = LOCAL_PRIVATE_DIRECTORY, pathExists = existsSync } = {},
+) {
   const privateKey = environment.LANDING_ASSETS_SSH_KEY;
   const trustedTarget = trustedVercelTarget(environment);
 
@@ -55,6 +60,10 @@ export function selectLandingAssetSource(environment = process.env) {
       directory: resolve(ROOT_DIRECTORY, environment.LANDING_ASSETS_SOURCE_DIR),
       kind: "local-directory",
     };
+  }
+
+  if (pathExists(localPrivateDirectory)) {
+    return { directory: localPrivateDirectory, kind: "local-directory" };
   }
 
   return { directory: FIXTURE_DIRECTORY, kind: "fixtures" };
@@ -140,8 +149,9 @@ async function clonePrivateRepository(privateKey) {
 export async function fetchAndPrepareLandingAssets({
   destinationDirectory,
   environment = process.env,
+  sourceSelectionOptions,
 } = {}) {
-  const selected = selectLandingAssetSource(environment);
+  const selected = selectLandingAssetSource(environment, sourceSelectionOptions);
 
   if (selected.kind !== "private-repository") {
     const result = await prepareLandingAssets({

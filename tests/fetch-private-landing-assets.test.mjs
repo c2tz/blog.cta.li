@@ -13,9 +13,21 @@ const OPENSSH_TEST_KEY =
   "-----BEGIN OPENSSH PRIVATE KEY-----\nfixture\n-----END OPENSSH PRIVATE KEY-----\n";
 
 test("uses neutral fixtures when no private source is authorized", () => {
-  const selected = selectLandingAssetSource({});
+  const selected = selectLandingAssetSource({}, { pathExists: () => false });
   assert.equal(selected.kind, "fixtures");
   assert.match(selected.directory, /tests\/fixtures\/landing-assets$/);
+});
+
+test("automatically uses the neighboring private checkout when it is available", () => {
+  const localPrivateDirectory = resolve("../ct-blog-landing-img/public");
+  const selected = selectLandingAssetSource(
+    {},
+    { localPrivateDirectory, pathExists: (path) => path === localPrivateDirectory },
+  );
+  assert.deepEqual(selected, {
+    directory: localPrivateDirectory,
+    kind: "local-directory",
+  });
 });
 
 test("allows an explicit local source without accepting a private key", () => {
@@ -67,6 +79,7 @@ test("stages fixtures through the source-selection wrapper", async (t) => {
   const result = await fetchAndPrepareLandingAssets({
     destinationDirectory: directory,
     environment: {},
+    sourceSelectionOptions: { pathExists: () => false },
   });
 
   assert.equal(result.sourceKind, "fixtures");

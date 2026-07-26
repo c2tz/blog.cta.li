@@ -5,9 +5,7 @@ import HomeLatestPostsTable from "@/components/home/home-latest-posts-table.astr
 import HomeKonachanBackground from "@/components/home/home-konachan-background.astro";
 import HomeSectionDivider from "@/components/home/home-section-divider.astro";
 import HomeTagsTree from "@/components/home/home-tags-tree.astro";
-import CookiePreferences from "@/components/feedback/cookie-preferences.astro";
 import Layout from "@/layouts/site-layout.astro";
-import "@/assets/css/components/cookie-preferences.scss";
 import "@/assets/css/pages/home-hero.scss";
 import "@/assets/css/pages/home-index.scss";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/site-config";
@@ -96,20 +94,6 @@ const homeStructuredData = {
 
         <HomeTagsTree tags={contentTags} />
       </div>
-    </section>
-
-    <section
-      id="modifier-vos-choix-cookies"
-      class="home-section home-cookie-preferences"
-      aria-labelledby="home-cookie-preferences-title"
-      tabindex="-1"
-    >
-      <h2 id="home-cookie-preferences-title">Modifier vos choix cookies</h2>
-      <p class="home-cookie-preferences-intro">
-        Autorisez ou refusez séparément chaque service optionnel. Vous pourrez modifier ces choix à
-        tout moment.
-      </p>
-      <CookiePreferences labelledby="home-cookie-preferences-title" />
     </section>
   </Fragment>
 </Layout>

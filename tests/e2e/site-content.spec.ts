@@ -924,12 +924,10 @@ test("keeps one Giscus progress bar until its iframe has loaded", async ({ page 
     const theme = (element as HTMLIFrameElement).dataset.initialTheme || "";
     return decodeURIComponent(theme.slice(theme.indexOf(",") + 1));
   });
-  expect(initialThemeCss).toContain("--color-canvas-default:transparent");
-  expect(initialThemeCss).toContain("background:transparent!important");
+  expect(initialThemeCss).toMatch(/--color-canvas-default:#[0-9A-F]{6}/);
   expect(initialThemeCss).toContain(".gsc-reactions-popover.color-bg-overlay");
-  expect(initialThemeCss).toContain(
-    test.info().project.name.includes("dark") ? "#238636" : "#1F883D",
-  );
+  const expectedGithubGreen = test.info().project.name.includes("dark") ? "#238636" : "#1F883D";
+  expect(initialThemeCss).toContain(expectedGithubGreen);
   expect(initialThemeCss).toContain("color:#FFF!important");
   expect(initialThemeCss).toContain("fill:currentColor!important");
 
@@ -962,16 +960,18 @@ test("keeps one Giscus progress bar until its iframe has loaded", async ({ page 
   const firstLiveTheme = await giscusFrame.locator("body").getAttribute("data-theme");
 
   await page.evaluate(() => {
-    document.documentElement.style.setProperty("--md-sys-color-primary", "#123456");
+    document.documentElement.style.cssText +=
+      "--md-sys-color-primary:#123456;--md-sys-color-background:#120F13;--md-sys-color-shadow:#010203;--md-sys-color-surface-container:#211D22;--md-sys-color-surface-container-low:#1B171C;--md-sys-color-surface-container-lowest:#0D0A0E";
     document.dispatchEvent(new CustomEvent("site:material-dynamic-color-change"));
   });
   await expect
     .poll(() => giscusFrame.locator("body").getAttribute("data-theme"))
     .not.toBe(firstLiveTheme);
   const updatedTheme = await giscusFrame.locator("body").getAttribute("data-theme");
-  expect(decodeURIComponent(updatedTheme!.slice(updatedTheme!.indexOf(",") + 1))).toContain(
-    "#123456",
-  );
+  const updatedThemeCss = decodeURIComponent(updatedTheme!.slice(updatedTheme!.indexOf(",") + 1));
+  expect(updatedThemeCss).toContain("#123456");
+  expect(updatedThemeCss).toContain("#010203 22%,transparent)");
+  expect(updatedThemeCss).toMatch(/#120F13.*#1B171C.*#0D0A0E/s);
 
   await page.reload({ waitUntil: "domcontentloaded" });
   const reloadedPanel = page.locator("[data-giscus-panel]");

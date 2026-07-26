@@ -234,6 +234,11 @@ automatiquement le dossier `public/` d'un checkout voisin nommé `ct-blog-landin
 les fixtures abstraites sans contenu sensible si ce checkout est absent. Pour utiliser un autre
 emplacement local, définissez `LANDING_ASSETS_SOURCE_DIR` vers son dossier `public/`.
 
+Les validations automatisées appellent `pnpm build:test`, qui force les trois fixtures abstraites
+pour rester déterministe même si le checkout privé voisin est présent. `pnpm dev` et `pnpm build`
+gardent les images privées locales, tandis que `pnpm build:vercel` laisse `main` et `develop`
+récupérer le dépôt privé avec leur clé de déploiement autorisée.
+
 ### `pnpm index:search`
 
 Nettoie l'ancien index Pagefind, indexe uniquement `dist/posts/**/index.html`, puis prépare le

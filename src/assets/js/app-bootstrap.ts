@@ -24,6 +24,7 @@ let searchModulePromise: Promise<SearchControllers> | undefined;
 let consentServicesListenerInstalled = false;
 let consentResyncInstalled = false;
 let explicitContentListenerInstalled = false;
+let searchShortcutInstalled = false;
 let pageIsUnloading = false;
 
 type CookieConsentWindow = Window & {
@@ -62,10 +63,7 @@ async function loadBaseModules() {
 function hasFunctionalityConsent(service: string) {
   try {
     const consent = (window as CookieConsentWindow).cookieConsent;
-    return Boolean(
-      consent?.acceptedService(service, "functionality") ||
-      consent?.isCategoryAccepted("functionality"),
-    );
+    return Boolean(consent?.acceptedService(service, "functionality"));
   } catch {
     return false;
   }
@@ -118,7 +116,8 @@ function armConsentResync() {
     if (
       event.key === null ||
       event.key === SITE_STORAGE_KEYS.cookieConsent ||
-      event.key === SITE_LEGACY_STORAGE_KEYS.cookieConsent
+      event.key === SITE_LEGACY_STORAGE_KEYS.cookieConsent ||
+      event.key === SITE_LEGACY_STORAGE_KEYS.cookieConsentV1
     ) {
       dispatchConsentChange();
     }
@@ -149,7 +148,48 @@ async function loadSearchControllers() {
   initSiteSearchTriggers();
 }
 
+function isEditableSearchShortcutTarget(event: KeyboardEvent) {
+  return event.composedPath().some((target) => {
+    if (!(target instanceof HTMLElement)) return false;
+
+    return (
+      target.isContentEditable ||
+      target.matches(
+        "input, textarea, select, [contenteditable]:not([contenteditable='false']), [role='textbox'], [role='combobox'], md-filled-text-field, md-outlined-text-field, md-filled-select, md-outlined-select",
+      )
+    );
+  });
+}
+
+function armSearchShortcut() {
+  if (searchShortcutInstalled) return;
+  searchShortcutInstalled = true;
+
+  document.addEventListener("keydown", (event) => {
+    if (
+      event.defaultPrevented ||
+      event.isComposing ||
+      event.altKey ||
+      event.shiftKey ||
+      (!event.metaKey && !event.ctrlKey) ||
+      event.key.toLocaleLowerCase() !== "k" ||
+      isEditableSearchShortcutTarget(event)
+    ) {
+      return;
+    }
+
+    const searchButton = document.querySelector<HTMLElement>("[data-search-open]");
+    if (!searchButton) return;
+
+    event.preventDefault();
+    void loadSearchControllers()
+      .then(() => document.querySelector<HTMLElement>("[data-search-open]")?.click())
+      .catch(() => undefined);
+  });
+}
+
 function armSearch() {
+  armSearchShortcut();
   const eagerPanel = document.querySelector('[data-site-search-panel]:not([data-deferred="true"])');
   if (eagerPanel) void loadSearchControllers().catch(() => undefined);
 
@@ -240,6 +280,7 @@ function scheduleBootstrap() {
 }
 
 armConsentResync();
+armSearchShortcut();
 scheduleBootstrap();
 window.addEventListener("pagehide", () => {
   pageIsUnloading = true;

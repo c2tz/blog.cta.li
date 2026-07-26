@@ -11,7 +11,9 @@ import {
   expectPopoverOpen,
 } from "./site-fixture";
 
-test("keeps unlisted posts out of the home page for every publication state", async ({ page }) => {
+test("shows the published introduction while keeping unlisted posts out of the home page", async ({
+  page,
+}) => {
   await gotoRoute(page, "/");
   await waitForAppReady(page);
 
@@ -21,9 +23,7 @@ test("keeps unlisted posts out of the home page for every publication state", as
   await expect(renderedTitles.filter({ hasText: "Shortcodes Astro et Material Web" })).toHaveCount(
     0,
   );
-  if ((await renderedTitles.count()) === 0) {
-    await expect(page.getByText("Aucun article à afficher.")).toBeVisible();
-  }
+  await expect(renderedTitles.filter({ hasText: "Bienvenue sur ct-blog" })).toHaveCount(1);
   const tableProgress = page.locator("md-linear-progress.home-posts-table-progress");
   await expect(tableProgress).toHaveAttribute("indeterminate", "");
   await expect(tableProgress).toHaveAttribute("four-color", /^(?:|true)$/);
@@ -48,9 +48,7 @@ test("keeps unlisted posts out of the home page for every publication state", as
   expect(tagLinks.every(({ href, upgraded }) => upgraded && href?.startsWith("/tags/"))).toBe(true);
 });
 
-test("starts with the permanent Konachan landing image when no cached image exists", async ({
-  page,
-}) => {
+test("starts with the neutral landing fallback when no cached image exists", async ({ page }) => {
   await page.addInitScript(() => {
     if (sessionStorage.getItem("test-konachan-cache-cleared")) return;
     localStorage.removeItem("home-konachan-backgrounds-v8");
@@ -61,10 +59,10 @@ test("starts with the permanent Konachan landing image when no cached image exis
   const background = page.locator("[data-konachan-background]");
   const credit = page.locator("[data-konachan-credit-link]");
   await expect(background).toHaveAttribute("data-loaded", "true", { timeout: 15_000 });
-  await expect(credit).toHaveAttribute("href", "https://konachan.com/post/show/405393");
+  await expect(credit).toHaveAttribute("href", "https://www.cta.li/");
 
   const firstUrl = await background.getAttribute("data-konachan-current-url");
-  expect(firstUrl).toContain("405393");
+  expect(firstUrl).toContain("910001");
   const manifestRequests = await page.evaluate(() =>
     performance
       .getEntriesByType("resource")
@@ -80,7 +78,7 @@ test("starts with the permanent Konachan landing image when no cached image exis
         return stored?.currentImage?.id;
       }),
     )
-    .toBe(405393);
+    .toBe(910001);
 
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.locator("[data-konachan-background]")).toHaveAttribute(
@@ -90,9 +88,9 @@ test("starts with the permanent Konachan landing image when no cached image exis
 
   await page.evaluate(() => {
     const cachedImage = {
-      id: 405237,
-      url: "/konachan-backgrounds/405237.webp",
-      originalUrl: "https://konachan.com/post/show/405237",
+      id: 999999,
+      url: "/konachan-backgrounds/999999.webp",
+      originalUrl: "https://www.cta.li/",
       rating: "safe",
     };
     localStorage.setItem(
@@ -103,8 +101,23 @@ test("starts with the permanent Konachan landing image when no cached image exis
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.locator("[data-konachan-background]")).toHaveAttribute(
     "data-konachan-current-url",
-    /\/konachan-backgrounds\/405237\.webp$/,
+    /\/konachan-backgrounds\/910001(?:-960)?\.webp$/,
   );
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const stored = JSON.parse(localStorage.getItem("home-konachan-backgrounds-v8") || "null");
+        return {
+          currentId: stored?.currentImage?.id,
+          allColorsValid:
+            stored?.images?.length > 0 &&
+            stored.images.every((image: { sourceColor?: string }) =>
+              /^#[0-9A-F]{6}$/.test(image.sourceColor ?? ""),
+            ),
+        };
+      }),
+    )
+    .toEqual({ currentId: 910001, allColorsValid: true });
 });
 
 test("chooses 960 or full Konachan assets from cover geometry times DPR", async ({ page }) => {
@@ -119,7 +132,7 @@ test("chooses 960 or full Konachan assets from cover geometry times DPR", async 
   const background = page.locator("[data-konachan-background]");
   await expect(background).toHaveAttribute(
     "data-konachan-current-url",
-    /\/konachan-backgrounds\/405237-960\.webp$/,
+    /\/konachan-backgrounds\/910001-960\.webp$/,
   );
   await expect
     .poll(() =>
@@ -132,8 +145,8 @@ test("chooses 960 or full Konachan assets from cover geometry times DPR", async 
       }),
     )
     .toEqual({
-      loadedUrl: expect.stringMatching(/\/405237-960\.webp$/),
-      url: expect.stringMatching(/\/405237\.webp$/),
+      loadedUrl: expect.stringMatching(/\/910001-960\.webp$/),
+      url: expect.stringMatching(/\/910001\.webp$/),
     });
 
   await page.addInitScript(() => {
@@ -142,11 +155,11 @@ test("chooses 960 or full Konachan assets from cover geometry times DPR", async 
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(background).toHaveAttribute(
     "data-konachan-current-url",
-    /\/konachan-backgrounds\/405237\.webp$/,
+    /\/konachan-backgrounds\/910001\.webp$/,
   );
 });
 
-test("uses a precomputed Konachan source color before the Worker fallback", async ({ page }) => {
+test("uses the required precomputed Konachan source color without a Worker", async ({ page }) => {
   test.skip(
     test.info().project.name !== "desktop-light",
     "The precomputed-color fast path only needs one browser-project verification.",
@@ -304,80 +317,6 @@ test("only exposes image colors after detailed mode is selected", async ({ page 
       ),
     )
     .toBe("#1565C0");
-});
-
-test("extracts the exact Konachan source color in a module Worker", async ({ page }) => {
-  test.skip(
-    test.info().project.name !== "desktop-light",
-    "The Worker transport only needs one browser-project verification.",
-  );
-  await seedFixedKonachanImage(page);
-  await page.addInitScript({
-    content: `
-      {
-        const nativePostMessage = Worker.prototype.postMessage;
-        Worker.prototype.postMessage = function (message, transferOrOptions) {
-          const buffer = message?.buffer;
-          const transferList = Array.isArray(transferOrOptions) ? transferOrOptions : [];
-          const tracked = buffer instanceof ArrayBuffer && transferList.includes(buffer);
-          if (tracked) {
-            window.__materialSourceColorTransfer = {
-              after: null,
-              before: buffer.byteLength,
-              transferCount: transferList.length,
-            };
-          }
-          const result = nativePostMessage.call(this, message, transferOrOptions);
-          if (tracked) window.__materialSourceColorTransfer.after = buffer.byteLength;
-          return result;
-        };
-      }
-    `,
-  });
-
-  const workerPromise = page.waitForEvent("worker");
-  await gotoRoute(page, "/");
-  const worker = await workerPromise;
-
-  expect(worker.url()).toContain("material-source-color.worker");
-  await expectStoredSourceColor(page, "#5BC3D6");
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          (
-            window as typeof window & {
-              __materialSourceColorTransfer?: {
-                after: number | null;
-                before: number;
-                transferCount: number;
-              };
-            }
-          ).__materialSourceColorTransfer ?? null,
-      ),
-    )
-    .toEqual({ after: 0, before: 2_073_600, transferCount: 1 });
-});
-
-test("keeps the exact Konachan palette when Worker construction fails", async ({ page }) => {
-  test.skip(
-    test.info().project.name !== "desktop-light",
-    "The synchronous fallback only needs one browser-project verification.",
-  );
-  await seedFixedKonachanImage(page);
-  await page.addInitScript(() => {
-    Object.defineProperty(window, "Worker", {
-      configurable: true,
-      value: class UnavailableWorker {
-        constructor() {
-          throw new Error("worker_blocked_for_test");
-        }
-      },
-    });
-  });
-
-  await gotoRoute(page, "/");
-  await expectStoredSourceColor(page, "#5BC3D6");
 });
 
 test("restores dynamic hero text colors before the first hydrated frame", async ({ page }) => {

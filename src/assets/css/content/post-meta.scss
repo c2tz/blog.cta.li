@@ -1,32 +1,7 @@
-.post-date {
-  color: var(--site-muted);
-  font-family: var(--site-font);
-  font-size: 1rem;
-  font-style: normal;
-  line-height: 1.5;
-}
+@use "../components/site-dates";
 
-.site-date-full {
-  display: none;
-}
-
-:root[data-home-detail-view="true"] .site-date-compact {
-  display: none;
-}
-
-:root[data-home-detail-view="true"] .site-date-full {
-  display: inline;
-}
-
-.post-git-date-icon {
-  display: block;
-  width: 1.1rem;
-  height: 1.1rem;
-  font-size: 1.1rem;
-  line-height: 1.1rem;
-}
-
-.post-git-commit-icon {
+.post-git-date-icon.material-symbols-rounded,
+.post-git-commit-icon.material-symbols-rounded {
   display: block;
   width: 1.1rem;
   height: 1.1rem;

@@ -5,10 +5,7 @@ let reloadRequested = false;
 
 function hasSpeedInsightsConsent() {
   try {
-    return Boolean(
-      window.cookieConsent?.acceptedService("speed-insights", "functionality") ||
-      window.cookieConsent?.isCategoryAccepted("functionality"),
-    );
+    return Boolean(window.cookieConsent?.acceptedService("speed-insights", "functionality"));
   } catch {
     return false;
   }

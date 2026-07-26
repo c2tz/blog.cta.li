@@ -16,7 +16,7 @@ export const SITE_EVENTS = Object.freeze({
 export const SITE_LOADING_INDICATOR_DELAY_MS = 200;
 
 export const SITE_STORAGE_KEYS = Object.freeze({
-  cookieConsent: "ct-cookie-consent-v1",
+  cookieConsent: "ct-cookie-consent-v2",
   explicitContentAcknowledgement: "ct-explicit-content-ack-v1",
   homeDetailView: "home-detail-view-v1",
   homeKonachanBackgrounds: "home-konachan-backgrounds-v8",
@@ -82,6 +82,7 @@ export const MATERIAL_DYNAMIC_COLOR_ROLES = Object.freeze([
 
 export const SITE_LEGACY_STORAGE_KEYS = Object.freeze({
   cookieConsent: "ct_cookie_consent_v1",
+  cookieConsentV1: "ct-cookie-consent-v1",
   homeDetailView: "home_detail_view_v1",
   homeKonachanBackgrounds: "home_konachan_backgrounds_v6",
   homeKonachanRatingPreference: "home_konachan_rating_preference_v1",
@@ -90,7 +91,7 @@ export const SITE_LEGACY_STORAGE_KEYS = Object.freeze({
 });
 
 export const SITE_COOKIE_NAMES = Object.freeze({
-  cookieConsent: "ct-cookie-consent",
+  cookieConsent: "ct-cookie-consent-v2",
   explicitContentAcknowledgement: "ct-explicit-content-ack",
   giscusCommentsEnabled: "site-giscus-comments-enabled",
   homeDetailView: "home-detail-view",
@@ -99,6 +100,7 @@ export const SITE_COOKIE_NAMES = Object.freeze({
 
 export const SITE_LEGACY_COOKIE_NAMES = Object.freeze({
   cookieConsent: "ct_cookie_consent",
+  cookieConsentV1: "ct-cookie-consent",
   homeDetailView: "home_detail_view",
   homeKonachanRatingPreference: "home_konachan_rating_preference",
 });

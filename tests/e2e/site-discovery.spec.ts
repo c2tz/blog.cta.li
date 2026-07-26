@@ -1,6 +1,10 @@
 import { expect, test } from "./site-fixture";
 
 test("keeps technical posts reachable but out of every discovery feed", async ({ page }) => {
+  const listedPost = {
+    slug: "bienvenue-sur-ct-blog",
+    title: "Bienvenue sur ct-blog",
+  };
   const hiddenPosts = [
     {
       slug: "hugo-material-shortcodes",
@@ -35,6 +39,14 @@ test("keeps technical posts reachable but out of every discovery feed", async ({
 
   const latestPosts = JSON.parse(discovery["/latest-posts.json"]).posts;
   expect(Array.isArray(latestPosts)).toBe(true);
+  expect(latestPosts).toContainEqual(
+    expect.objectContaining({ href: `/posts/${listedPost.slug}/`, title: listedPost.title }),
+  );
+  for (const path of ["/", "/tags/all/", "/rss.xml"]) {
+    expect(discovery[path]).toContain(listedPost.slug);
+    expect(discovery[path]).toContain(listedPost.title);
+  }
+  expect(discovery["/sitemap.xml"]).toContain(listedPost.slug);
   for (const { slug, title } of hiddenPosts) {
     expect(latestPosts).not.toContainEqual(expect.objectContaining({ href: `/posts/${slug}/` }));
     for (const path of ["/", "/tags/all/", "/rss.xml", "/sitemap.xml"]) {

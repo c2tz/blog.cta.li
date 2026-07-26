@@ -1,6 +1,116 @@
-import { expect, test, gotoRoute } from "./site-fixture";
+import { clearConsentState, expect, test, gotoRoute } from "./site-fixture";
 
-test("stops an already loaded Speed Insights service when consent is revoked", async ({ page }) => {
+const speedInsightsSwitchSelector = 'md-switch[data-cookie-preference-service="speed-insights"]';
+
+test("saves each optional service independently with official Material switches", async ({
+  page,
+}) => {
+  await gotoRoute(page, "/cookies/#modifier-vos-choix-cookies");
+
+  const giscusSwitch = page.locator('md-switch[data-cookie-preference-service="giscus"]');
+  const ipgeoSwitch = page.locator('md-switch[data-cookie-preference-service="ipgeo"]');
+  const speedInsightsSwitch = page.locator(speedInsightsSwitchSelector);
+  const status = page.locator("[data-cookie-preferences-status]");
+
+  await expect(giscusSwitch).toHaveJSProperty("localName", "md-switch");
+  await expect(ipgeoSwitch).toHaveJSProperty("localName", "md-switch");
+  await expect(speedInsightsSwitch).toHaveJSProperty("localName", "md-switch");
+  await expect(
+    page.getByRole("switch", {
+      name: "Commentaires Giscus. Autorise le service de commentaires sur les articles. Vous gardez ensuite le choix de le charger sur chaque page.",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("switch", {
+      name: "Géolocalisation IP. Interroge ipapi.is pour afficher votre pays, votre ASN et votre réseau dans le pied de page.",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("switch", {
+      name: "Mesure des performances Vercel. Autorise Vercel Speed Insights à mesurer les performances de navigation en production.",
+    }),
+  ).toBeVisible();
+  await giscusSwitch.click();
+  await expect(giscusSwitch).toHaveJSProperty("selected", true);
+  await expect(status).toHaveText("1 service autorisé sur 3");
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const consent = (
+          window as typeof window & {
+            cookieConsent?: {
+              acceptedService(service: string, category: string): boolean;
+              isCategoryAccepted(category: string): boolean;
+            };
+          }
+        ).cookieConsent;
+        return {
+          category: consent?.isCategoryAccepted("functionality"),
+          giscus: consent?.acceptedService("giscus", "functionality"),
+          ipgeo: consent?.acceptedService("ipgeo", "functionality"),
+          speedInsights: consent?.acceptedService("speed-insights", "functionality"),
+        };
+      }),
+    )
+    .toEqual({ category: false, giscus: true, ipgeo: false, speedInsights: false });
+
+  await ipgeoSwitch.click();
+  await expect(status).toHaveText("2 services autorisés sur 3");
+  await speedInsightsSwitch.click();
+  await expect(status).toHaveText("Tous les services autorisés");
+  await expect
+    .poll(() =>
+      page.locator(".cookie-preferences-panel").getAttribute("data-cookie-preference-state"),
+    )
+    .toBe("accepted");
+});
+
+test("does not turn Escape in search into an implicit privacy rejection", async ({ page }) => {
+  await page.addInitScript(clearConsentState);
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "ct-explicit-content-ack-v1",
+      JSON.stringify({ acknowledged: true, updatedAt: new Date().toISOString(), version: 1 }),
+    );
+  });
+  await gotoRoute(page, "/");
+
+  const privacyBanner = page.locator(".cookie-consent--privacy");
+  await expect(privacyBanner).toBeVisible();
+  const searchTrigger = page.locator("[data-site-search-trigger]");
+  const openSearchButton = page.getByRole("button", { name: "Rechercher" });
+  await openSearchButton.click();
+  await expect(searchTrigger).toHaveAttribute("data-search-enhanced", "true");
+
+  const searchDialog = page.locator("md-dialog.site-search-dialog[open]");
+  await expect(searchDialog).toBeVisible();
+  await expect(openSearchButton).toBeEnabled();
+  await expect(openSearchButton).not.toHaveAttribute("aria-busy", "true");
+
+  const searchInput = searchDialog.getByRole("searchbox", {
+    name: "Mot-clé, titre ou contenu",
+  });
+  await searchInput.fill("site");
+  await expect(searchInput).toHaveValue("site");
+  await page.keyboard.press("Escape");
+  await expect(searchInput).toHaveValue("");
+  await expect(searchDialog).toBeVisible();
+
+  await page.keyboard.press("Escape");
+  await expect(searchDialog).toBeHidden();
+  await expect(privacyBanner).toBeVisible();
+  await expect(page.locator("site-cookie-consent-banner")).toHaveAttribute(
+    "data-active-notice",
+    "privacy",
+  );
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("ct-cookie-consent-v2")))
+    .toBeNull();
+});
+
+test("stops an already loaded Speed Insights service when its own consent is revoked", async ({
+  page,
+}) => {
   await page.route("**/_vercel/speed-insights/script.js", (route) =>
     route.fulfill({
       body: "window.__speedInsightsSdkLoaded = true;",
@@ -15,10 +125,9 @@ test("stops an already loaded Speed Insights service when consent is revoked", a
     document.body.dataset.speedInsightsVersion = "test";
   });
 
-  const allowButton = page.locator("md-filled-tonal-button.cookie-preferences-allow");
-  const rejectButton = page.locator("md-filled-button.cookie-preferences-reject");
+  const speedInsightsSwitch = page.locator(speedInsightsSwitchSelector);
   const serviceScript = page.locator('script[data-site-service="speed-insights"]');
-  await allowButton.click();
+  await speedInsightsSwitch.click();
   await expect(serviceScript).toHaveAttribute("data-site-service-loaded", "true");
   await expect
     .poll(() =>
@@ -29,7 +138,7 @@ test("stops an already loaded Speed Insights service when consent is revoked", a
     .toBe(true);
 
   const reloaded = page.waitForEvent("domcontentloaded");
-  await rejectButton.click();
+  await speedInsightsSwitch.click();
   await reloaded;
 
   await expect(serviceScript).toHaveCount(0);
@@ -37,7 +146,9 @@ test("stops an already loaded Speed Insights service when consent is revoked", a
     .poll(() =>
       page.evaluate(() => {
         try {
-          return JSON.parse(localStorage.getItem("ct-cookie-consent-v1") || "null")?.functionality;
+          return JSON.parse(localStorage.getItem("ct-cookie-consent-v2") || "null")?.services?.[
+            "speed-insights"
+          ];
         } catch {
           return null;
         }
@@ -76,16 +187,15 @@ test("reloads when Speed Insights consent is revoked while its script is still l
     document.body.dataset.speedInsightsVersion = "test";
   });
 
-  const allowButton = page.locator("md-filled-tonal-button.cookie-preferences-allow");
-  const rejectButton = page.locator("md-filled-button.cookie-preferences-reject");
+  const speedInsightsSwitch = page.locator(speedInsightsSwitchSelector);
   const serviceScript = page.locator('script[data-site-service="speed-insights"]');
-  await allowButton.click();
+  await speedInsightsSwitch.click();
   await requestGate;
   await expect(serviceScript).toHaveCount(1);
   await expect(serviceScript).not.toHaveAttribute("data-site-service-loaded", "true");
 
   const reloaded = page.waitForEvent("domcontentloaded");
-  await rejectButton.click({ noWaitAfter: true });
+  await speedInsightsSwitch.click({ noWaitAfter: true });
   releaseResponse();
   await reloaded;
 
@@ -95,7 +205,7 @@ test("reloads when Speed Insights consent is revoked while its script is still l
     .toBeNull();
 });
 
-test("keeps functionality consent available through its cookie fallback", async ({ page }) => {
+test("migrates the legacy global cookie through the v2 cookie fallback", async ({ page }) => {
   await page.addInitScript(() => {
     document.cookie = "ct-explicit-content-ack=acknowledged; Path=/; SameSite=Lax";
     document.cookie = "ct_cookie_consent=accepted; Path=/; SameSite=Lax";
@@ -118,9 +228,6 @@ test("keeps functionality consent available through its cookie fallback", async 
   );
   await expect(page.locator(".cookie-consent--privacy")).toHaveCount(0);
   await expect
-    .poll(() => page.evaluate(() => document.cookie.includes("ct-cookie-consent=accepted")))
-    .toBe(true);
-  await expect
     .poll(() =>
       page.evaluate(() => {
         const consent = (
@@ -133,11 +240,20 @@ test("keeps functionality consent available through its cookie fallback", async 
         ).cookieConsent;
         return {
           category: consent?.isCategoryAccepted("functionality"),
+          cookie: document.cookie.includes("ct-cookie-consent-v2="),
           giscus: consent?.acceptedService("giscus", "functionality"),
           ipgeo: consent?.acceptedService("ipgeo", "functionality"),
+          legacyCookie: document.cookie.includes("ct_cookie_consent="),
           speedInsights: consent?.acceptedService("speed-insights", "functionality"),
         };
       }),
     )
-    .toEqual({ category: true, giscus: true, ipgeo: true, speedInsights: true });
+    .toEqual({
+      category: true,
+      cookie: true,
+      giscus: true,
+      ipgeo: true,
+      legacyCookie: false,
+      speedInsights: true,
+    });
 });

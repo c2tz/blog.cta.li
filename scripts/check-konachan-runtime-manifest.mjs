@@ -1,53 +1,27 @@
-import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
-  KONACHAN_RUNTIME_MANIFEST_MAX_BYTES,
-  serializeKonachanRuntimeManifest,
-} from "../src/lib/konachan-runtime-manifest.mjs";
+import { validateLandingAssetSource } from "./prepare-landing-assets.mjs";
 
 const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const DEFAULT_FULL_MANIFEST_PATH = resolve(ROOT_DIRECTORY, "public/konachan-backgrounds.json");
-const DEFAULT_RUNTIME_MANIFEST_PATH = resolve(
-  ROOT_DIRECTORY,
-  "public/konachan-backgrounds.runtime.json",
-);
+const DEFAULT_SOURCE_DIRECTORY = resolve(ROOT_DIRECTORY, "public");
 
 export async function checkKonachanRuntimeManifest({
-  fullManifestPath = DEFAULT_FULL_MANIFEST_PATH,
-  runtimeManifestPath = DEFAULT_RUNTIME_MANIFEST_PATH,
+  sourceDirectory = DEFAULT_SOURCE_DIRECTORY,
 } = {}) {
-  const [fullManifestSource, runtimeManifestSource] = await Promise.all([
-    readFile(fullManifestPath, "utf8"),
-    readFile(runtimeManifestPath, "utf8"),
-  ]);
-  const fullManifest = JSON.parse(fullManifestSource);
-  const expectedRuntimeManifest = serializeKonachanRuntimeManifest(fullManifest);
-
-  if (runtimeManifestSource !== expectedRuntimeManifest) {
-    throw new Error(
-      "Le manifeste Konachan runtime ne correspond pas au manifeste complet. " +
-        "Exécutez `pnpm sync:konachan-runtime` puis validez les deux fichiers.",
-    );
-  }
-
-  const runtimeManifest = JSON.parse(runtimeManifestSource);
-  const bytes = Buffer.byteLength(runtimeManifestSource);
-  const images = runtimeManifest.images?.length ?? 0;
-
-  if (bytes > KONACHAN_RUNTIME_MANIFEST_MAX_BYTES) {
-    throw new Error(
-      `Le manifeste Konachan runtime dépasse ${KONACHAN_RUNTIME_MANIFEST_MAX_BYTES} octets : ${bytes}.`,
-    );
-  }
-
-  return { bytes, images };
+  const result = await validateLandingAssetSource({ sourceDirectory });
+  return {
+    bytes: result.manifestBytes,
+    files: result.files.size,
+    images: result.imageCount,
+  };
 }
 
 async function main() {
-  const { bytes, images } = await checkKonachanRuntimeManifest();
-  console.log(`Manifeste Konachan runtime vérifié : ${images} images, ${bytes} octets.`);
+  const { bytes, files, images } = await checkKonachanRuntimeManifest();
+  console.log(
+    `Manifeste runtime vérifié : ${images} images, ${files} fichiers WebP, ${bytes} octets.`,
+  );
 }
 
 const invokedPath = process.argv[1] && resolve(process.argv[1]);

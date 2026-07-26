@@ -26,22 +26,43 @@ jobs:
     timeout-minutes: 15
     permissions:
       actions: read # CodeQL reads workflow metadata for analysis context.
+      checks: read # Prove required checks on a merged pull request head.
       contents: read # Checkout and analyze repository sources.
+      pull-requests: read # Prove that a pushed commit is an associated merge.
       security-events: write # Publish SARIF results to code scanning.
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
 
+      - name: Classify CI lane
+        id: ci_lane
+        uses: ./.github/actions/classify-ci
+        with:
+          token: ${{ github.token }}
+
+      - name: Explain why CodeQL analysis is not required
+        if: steps.ci_lane.outputs.lane != 'full'
+        env:
+          CI_LANE: ${{ steps.ci_lane.outputs.lane }}
+          CI_REASON: ${{ steps.ci_lane.outputs.reason }}
+        run: |
+          echo "CodeQL analysis is not required for the ${CI_LANE} lane."
+          echo "$CI_REASON"
+          echo "CodeQL analysis was not executed for the \`${CI_LANE}\` lane." >>"$GITHUB_STEP_SUMMARY"
+
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0
+        if: steps.ci_lane.outputs.lane == 'full'
+        uses: github/codeql-action/init@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
         with:
           languages: javascript-typescript
 
       - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0
+        if: steps.ci_lane.outputs.lane == 'full'
+        uses: github/codeql-action/analyze@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
         with:
           # Private repositories without GitHub Code Security can run the
           # analysis, but GitHub rejects the SARIF upload. Restore uploads

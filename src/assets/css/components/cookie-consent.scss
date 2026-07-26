@@ -6,7 +6,8 @@ html.interaction-disabled.consent-visible body {
 
 html.consent-prelock .site-header,
 html.consent-prelock .site-main,
-html.consent-prelock .site-footer {
+html.consent-prelock .site-footer,
+html.consent-prelock .skip-link {
   pointer-events: none;
   -webkit-user-select: none;
   user-select: none;
@@ -189,8 +190,8 @@ html.consent-visible body {
 }
 
 .cookie-consent--privacy .cookie-consent-actions {
-  flex-wrap: wrap;
-  gap: 0.25rem 0.5rem;
+  flex-wrap: nowrap;
+  gap: 0.25rem 1rem;
   justify-content: space-between;
   margin: 0.25rem -0.5rem 0 -0.5rem;
 }
@@ -210,7 +211,13 @@ html.consent-visible body {
   display: inline-flex;
   flex: 0 0 auto;
   flex-wrap: nowrap;
+  gap: 0.25rem;
   margin-inline-start: auto;
+}
+
+.cookie-consent-details-action {
+  flex: 1 1 auto;
+  min-width: 4rem;
 }
 
 .cookie-consent-actions
@@ -254,6 +261,23 @@ html.consent-visible body {
   min-width: 4rem;
 }
 
+.cookie-consent.cookie-consent--privacy
+  .cookie-consent-actions.cookie-consent-actions--desktop
+  md-text-button {
+  --md-text-button-leading-space: 0.25rem;
+  --md-text-button-trailing-space: 0.25rem;
+}
+
+@media (min-width: 431px) and (max-width: 520px) {
+  .cookie-consent--privacy {
+    margin: 0.5rem;
+  }
+
+  .cookie-consent--privacy .cookie-consent-actions--desktop {
+    gap: 0.75rem;
+  }
+}
+
 @media (max-width: 430px) {
   .cookie-consent--privacy {
     right: max(0.5rem, env(safe-area-inset-right, 0px));
@@ -271,7 +295,7 @@ html.consent-visible body {
 
   .cookie-consent--privacy .cookie-consent-actions--mobile {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.625rem;
     margin-inline: 0;
   }

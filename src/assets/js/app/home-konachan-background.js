@@ -31,7 +31,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
   const LANDING_SELECTOR = ".home-anime-landing";
   const STATUS_SELECTOR = "[data-konachan-status]";
   const MANIFEST_URL = new URL(
-    "/konachan-backgrounds.runtime.json?v=1",
+    "/konachan-backgrounds.runtime.json?v=2",
     window.location.href,
   ).toString();
   const EXPLICIT_CONTENT_CHANGE_EVENT = konachanClientConfig.events.explicitContentChange;
@@ -66,9 +66,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
   const { applyDynamicHeroColor, clearDynamicHeroColor, initHomeDynamicThemeSync } =
     createHomeKonachanThemeController({
       imageThemeCacheKey,
-      imageThemeCandidates,
       landingSelector: LANDING_SELECTOR,
-      preload,
       state,
     });
 
@@ -80,7 +78,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     return new Promise((resolve, reject) => {
       const image = new Image();
       image.decoding = "async";
-      image.onload = () => resolve({ image, url });
+      image.onload = () => resolve({ url });
       image.onerror = reject;
       image.src = url;
     });
@@ -92,7 +90,15 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
       const cached = JSON.parse(current || "null");
       if (!cached?.storedAt || !Array.isArray(cached.images)) return null;
       if (Date.now() - cached.storedAt > KONACHAN_CACHE_TTL_MS) return null;
-      return cached;
+
+      const images = cached.images.map(normalizeImage);
+      const currentImage = cached.currentImage ? normalizeImage(cached.currentImage) : null;
+      if (images.some((image) => !image) || (cached.currentImage && !currentImage)) {
+        localStorage.removeItem(KONACHAN_CACHE_KEY);
+        return null;
+      }
+
+      return { ...cached, currentImage, images };
     } catch {
       return null;
     }
@@ -117,13 +123,10 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     if (!normalizedImage) return;
 
     const cachedImages = readStoredImages()?.images ?? [];
-    const rememberedImage =
-      typeof normalizedImage === "string"
-        ? normalizeUrl(loadedUrl) || normalizedImage
-        : {
-            ...normalizedImage,
-            loadedUrl: normalizeUrl(loadedUrl) || normalizedImage.loadedUrl,
-          };
+    const rememberedImage = {
+      ...normalizedImage,
+      loadedUrl: normalizeUrl(loadedUrl) || normalizedImage.loadedUrl,
+    };
     writeStoredImages(mergeImages(rememberedImage, cachedImages), rememberedImage);
   }
 
@@ -179,8 +182,11 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
       throw new Error("konachan_manifest_invalid_json");
     }
 
+    const images = expandKonachanRuntimeManifest(manifest);
+    if (images.length === 0) throw new Error("konachan_manifest_invalid_contract");
+
     await cacheJsonResponse(MANIFEST_URL, text);
-    return expandKonachanRuntimeManifest(manifest);
+    return images;
   }
 
   async function readManifest({ cache = "no-cache" } = {}) {
@@ -206,14 +212,17 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
   }
 
   function normalizeImage(image) {
-    if (typeof image === "string") return image;
     if (!image || typeof image !== "object") return null;
 
     const url = normalizeUrl(image.url);
     const originalUrl = normalizeUrl(image.originalUrl || image.remoteUrl);
     const loadedUrl = normalizeUrl(image.loadedUrl);
     const rating = normalizeRating(image.rating);
-    if (!url && !originalUrl) return null;
+    const sourceColor =
+      typeof image.sourceColor === "string" && /^#[0-9a-f]{6}$/i.test(image.sourceColor)
+        ? image.sourceColor.toUpperCase()
+        : null;
+    if ((!url && !originalUrl) || !sourceColor) return null;
 
     const variants = Array.isArray(image.variants)
       ? image.variants
@@ -232,6 +241,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
       originalUrl,
       loadedUrl,
       variants,
+      sourceColor,
     };
   }
 
@@ -321,10 +331,6 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
   }
 
   function imageSources(image) {
-    if (typeof image === "string") {
-      return [{ url: normalizeUrl(image), width: 0 }].filter(({ url }) => isSameOriginUrl(url));
-    }
-
     const sources = [
       ...(Array.isArray(image?.variants) ? image.variants : []),
       { url: image?.url, width: Number(image?.width) || 0 },
@@ -366,43 +372,17 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
   }
 
   function imageUrls(image) {
-    if (typeof image === "string") return imageCandidates(image);
     return unique([image?.loadedUrl, ...imageSources(image).map(({ url }) => url)])
       .map(normalizeUrl)
       .filter(isSameOriginUrl);
   }
 
-  function imageThemeCandidates(image, loadedUrl) {
-    const variantCandidates =
-      typeof image === "object" && Array.isArray(image?.variants)
-        ? image.variants
-            .map((variant) => ({
-              url: normalizeUrl(variant?.url),
-              width: Number(variant?.width) || 0,
-            }))
-            .filter((variant) => variant.url)
-            .sort(
-              (left, right) =>
-                Math.abs(left.width - 960) - Math.abs(right.width - 960) ||
-                left.width - right.width,
-            )
-            .map((variant) => variant.url)
-        : [];
-
-    const canonicalUrl = typeof image === "string" ? image : image?.url;
-
-    return unique([...variantCandidates, loadedUrl, normalizeUrl(canonicalUrl)])
-      .map(normalizeUrl)
-      .filter(isSameOriginUrl);
-  }
-
   function imageThemeCacheKey(image, url) {
-    if (typeof image === "object" && image?.id) return `konachan:${image.id}`;
+    if (image?.id) return `konachan:${image.id}`;
     return normalizeUrl(url);
   }
 
   function ratingAllowed(image) {
-    if (typeof image === "string") return true;
     return RATING_RANK[normalizeRating(image?.rating)] <= RATING_RANK[state.ratingPreference];
   }
 
@@ -411,11 +391,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
   }
 
   function preferredImages(images) {
-    return images.filter((image) => {
-      if (typeof image === "string") return state.ratingPreference === "safe";
-
-      return normalizeRating(image?.rating) === state.ratingPreference;
-    });
+    return images.filter((image) => normalizeRating(image?.rating) === state.ratingPreference);
   }
 
   function refreshCandidates(images) {
@@ -504,12 +480,10 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     if (candidates.length === 0) return false;
 
     let loadedUrl = "";
-    let loadedImage = null;
     for (const candidate of candidates) {
       try {
         const loaded = await preload(candidate);
         loadedUrl = loaded.url;
-        loadedImage = loaded.image;
         break;
       } catch (error) {
         console.warn(`[Konachan] Unable to preload ${candidate}.`, error);
@@ -523,8 +497,8 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     target.dataset.konachanCurrentUrl = loadedUrl;
     state.currentImage = image;
     state.currentUrl = loadedUrl;
-    await applyDynamicHeroColor(target, image, loadedImage, loadedUrl);
-    setCredit(typeof image === "string" ? null : image);
+    await applyDynamicHeroColor(target, image, loadedUrl);
+    setCredit(image);
     rememberLoadedImage(image, loadedUrl);
     return true;
   }

@@ -36,7 +36,7 @@ jobs:
 
       - name: Checkout repository
         if: github.event_name == 'pull_request'
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -71,9 +71,9 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 2
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Setup pnpm
@@ -90,5 +90,34 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Validate pushed commit subject
-        run: git log -1 --pretty=%B | pnpm lint:commit
+      - name: Validate all pushed commit messages
+        shell: bash
+        env:
+          PUSH_AFTER: ${{ github.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$PUSH_BEFORE" =~ ^0+$ ]]; then
+            echo "::error::Protected branches must have a previous commit SHA."
+            exit 1
+          fi
+
+          if ! git cat-file -e "$PUSH_BEFORE^{commit}"; then
+            echo "::error::The previous push commit is unavailable, so the introduced commit range cannot be validated."
+            exit 1
+          fi
+
+          range="${PUSH_BEFORE}..${PUSH_AFTER}"
+
+          commits="$(git rev-list --reverse "$range")"
+          if [[ -z "$commits" ]]; then
+            echo "No newly introduced commits need validation."
+            exit 0
+          fi
+
+          while IFS= read -r commit; do
+            echo "::group::Commit $commit"
+            git show -s --format=%B "$commit" | pnpm lint:commit
+            echo "::endgroup::"
+          done <<< "$commits"

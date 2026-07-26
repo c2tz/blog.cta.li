@@ -5,6 +5,7 @@ export { expect };
 export const ROUTES = [
   "/",
   "/cookies/",
+  "/posts/bienvenue-sur-ct-blog/",
   "/posts/hugo-material-shortcodes/",
   "/posts/mdx-smoke-test/",
 ];
@@ -21,19 +22,32 @@ async function seedLocalPreferences(page: Page) {
       JSON.stringify({ acknowledged: true, updatedAt, version: 1 }),
     );
     localStorage.setItem(
-      "ct-cookie-consent-v1",
-      JSON.stringify({ functionality: false, updatedAt, version: 1 }),
+      "ct-cookie-consent-v2",
+      JSON.stringify({
+        services: { giscus: false, ipgeo: false, "speed-insights": false },
+        updatedAt,
+        version: 2,
+      }),
     );
     localStorage.setItem("site-theme-preference", "system");
   });
 }
 
-export async function seedFixedKonachanImage(page: Page, sourceColor?: string) {
+export function clearConsentState() {
+  localStorage.removeItem("ct-explicit-content-ack-v1");
+  localStorage.removeItem("ct-cookie-consent-v2");
+  localStorage.removeItem("ct-cookie-consent-v1");
+  document.cookie = "ct-explicit-content-ack=; Max-Age=0; Path=/; SameSite=Lax";
+  document.cookie = "ct-cookie-consent-v2=; Max-Age=0; Path=/; SameSite=Lax";
+  document.cookie = "ct-cookie-consent=; Max-Age=0; Path=/; SameSite=Lax";
+}
+
+export async function seedFixedKonachanImage(page: Page, sourceColor = "#5BC3D6") {
   await page.addInitScript((seededSourceColor) => {
     const image = {
-      id: 405237,
-      url: "/konachan-backgrounds/405237.webp",
-      originalUrl: "https://konachan.com/post/show/405237",
+      id: 910001,
+      url: "/konachan-backgrounds/910001.webp",
+      originalUrl: "https://www.cta.li/",
       rating: "safe",
       width: 1920,
       height: 1080,
@@ -41,11 +55,11 @@ export async function seedFixedKonachanImage(page: Page, sourceColor?: string) {
         {
           bytes: 54_484,
           height: 540,
-          url: "/konachan-backgrounds/405237-960.webp",
+          url: "/konachan-backgrounds/910001-960.webp",
           width: 960,
         },
       ],
-      ...(seededSourceColor ? { sourceColor: seededSourceColor } : {}),
+      sourceColor: seededSourceColor,
     };
 
     localStorage.setItem(
@@ -207,6 +221,55 @@ export async function expectKeyboardFocusOverridesPendingPointerFrame(dialog: Lo
     leave: false,
     pointerdownCanceled: true,
   });
+}
+
+export async function measureConsentActionLayout(banner: Locator, variant: "desktop" | "mobile") {
+  return banner.evaluate((element, actionVariant) => {
+    const bannerRect = element.getBoundingClientRect();
+    const actions = element.querySelector(`.cookie-consent-actions--${actionVariant}`);
+    const buttons = actions
+      ? Array.from(actions.querySelectorAll("[data-cookie-action], md-text-button[href]")).filter(
+          (button) => {
+            const styles = getComputedStyle(button);
+            return styles.display !== "none" && styles.visibility !== "hidden";
+          },
+        )
+      : [];
+    const buttonRects = buttons.map((button) => button.getBoundingClientRect());
+    const firstRect = buttonRects[0];
+    const detailsButton = buttons.find((button) => button.matches("md-text-button[href]"));
+    const detailsLabel = detailsButton?.shadowRoot?.querySelector(".label");
+
+    return {
+      bannerHeight: bannerRect.height,
+      bannerWidth: bannerRect.width,
+      buttonsFit: buttonRects.every(
+        (rect) => rect.left >= bannerRect.left - 1 && rect.right <= bannerRect.right + 1,
+      ),
+      count: buttonRects.length,
+      detailsTextOverflow: detailsButton ? getComputedStyle(detailsButton).textOverflow : null,
+      detailsTruncated: Boolean(
+        detailsLabel && detailsLabel.scrollWidth > detailsLabel.clientWidth + 1,
+      ),
+      equalWidth: Boolean(
+        firstRect && buttonRects.every((rect) => Math.abs(rect.width - firstRect.width) <= 1),
+      ),
+      labelsUnclipped: buttons.every((button) => {
+        const label = button.shadowRoot?.querySelector(".label");
+        return !label || label.scrollWidth <= label.clientWidth + 1;
+      }),
+      leadingGap: buttonRects[1]
+        ? buttonRects[1].left - (firstRect?.right ?? buttonRects[1].left)
+        : 0,
+      left: bannerRect.left,
+      oneRow: buttonRects.every((rect) => Math.abs(rect.top - (firstRect?.top ?? rect.top)) <= 1),
+      orderedWithoutOverlap: buttonRects.every(
+        (rect, index) => index === 0 || rect.left >= buttonRects[index - 1].right - 1,
+      ),
+      right: bannerRect.right,
+      viewportWidth: window.innerWidth,
+    };
+  }, variant);
 }
 
 export const test = base.extend({

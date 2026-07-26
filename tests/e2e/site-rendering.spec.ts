@@ -21,6 +21,48 @@ for (const route of ROUTES) {
   });
 }
 
+test("keeps post date and commit icons at 1.1rem inside their intended line box", async ({
+  page,
+}) => {
+  await gotoRoute(page, "/posts/bienvenue-sur-ct-blog/");
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+  });
+
+  const rootFontSize = await page.evaluate(() =>
+    Number.parseFloat(getComputedStyle(document.documentElement).fontSize),
+  );
+  const expectedIconSize = rootFontSize * 1.1;
+  const subpixelTolerance = 0.1;
+
+  for (const selector of [".post-git-date-icon", ".post-git-commit-icon"]) {
+    const icons = page.locator(selector);
+    await expect(icons).toHaveCount(2);
+    const metrics = await icons.evaluateAll((elements) =>
+      elements.map((element) => {
+        const styles = getComputedStyle(element);
+        const bounds = element.getBoundingClientRect();
+
+        return {
+          fontSize: Number.parseFloat(styles.fontSize),
+          height: bounds.height,
+          lineHeight: Number.parseFloat(styles.lineHeight),
+          width: bounds.width,
+        };
+      }),
+    );
+
+    for (const [index, icon] of metrics.entries()) {
+      for (const [metric, value] of Object.entries(icon)) {
+        expect(
+          Math.abs(value - expectedIconSize),
+          `${selector}[${index}] ${metric} should resolve 1.1rem within a subpixel tolerance`,
+        ).toBeLessThanOrEqual(subpixelTolerance);
+      }
+    }
+  }
+});
+
 test("renders the inverse-theme 404 artwork without site chrome", async ({ page }) => {
   const response = await page.goto("/page-absente-pour-test/", {
     waitUntil: "domcontentloaded",
@@ -89,8 +131,12 @@ test("shows one cached localized IP and network lookup after consent", async ({ 
   await page.addInitScript(() => {
     const updatedAt = new Date().toISOString();
     localStorage.setItem(
-      "ct-cookie-consent-v1",
-      JSON.stringify({ functionality: true, updatedAt, version: 1 }),
+      "ct-cookie-consent-v2",
+      JSON.stringify({
+        services: { giscus: false, ipgeo: true, "speed-insights": false },
+        updatedAt,
+        version: 2,
+      }),
     );
     if (!sessionStorage.getItem("playwright-ip-cache-cleared")) {
       localStorage.removeItem("site-ip-geolocation-v3");
@@ -124,6 +170,10 @@ test("shows one cached localized IP and network lookup after consent", async ({ 
 });
 
 test("scrolls the document vertically with a mouse wheel in Chromium", async ({ page }) => {
+  test.skip(
+    test.info().project.name.includes("webkit"),
+    "The targeted WebKit matrix covers rendering, not Chromium wheel semantics.",
+  );
   await gotoRoute(page, "/posts/hugo-material-shortcodes/");
 
   await expect

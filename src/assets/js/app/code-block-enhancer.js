@@ -81,6 +81,12 @@ function watchCodeBlockOverflow(shell, pre, codeBlock) {
     animationFrame = 0;
     const scrollable = pre.scrollWidth > pre.clientWidth + 1;
     shell.toggleAttribute("data-scrollable", scrollable);
+    if (scrollable) {
+      pre.setAttribute("tabindex", "0");
+      return;
+    }
+
+    pre.removeAttribute("tabindex");
   };
   const schedule = () => {
     if (animationFrame) window.cancelAnimationFrame(animationFrame);

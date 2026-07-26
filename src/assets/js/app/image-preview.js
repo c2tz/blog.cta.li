@@ -192,8 +192,6 @@ class ImagePreviewController extends ImagePreviewControllerBase {
     const image = this.getDialogImage(event);
     if (!image) return;
 
-    event.preventDefault();
-    event.stopPropagation();
     void this.open(image, { restoreFocus: false });
   };
 

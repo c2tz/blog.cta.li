@@ -4,11 +4,12 @@ interface Props {
 }
 
 const { tags } = Astro.props;
+const visibleTags = tags.filter((tag) => tag !== "all");
 ---
 
 <md-chip-set id="home-tags-list" class="home-tags-tree-links" aria-label="Tous les tags">
   {
-    tags.map((tag) => (
+    visibleTags.map((tag) => (
       <md-assist-chip
         class="home-tags-tree-link"
         href={`/tags/${encodeURIComponent(tag)}/`}

@@ -2,6 +2,7 @@ import { isSearchSortMode } from "@/components/search/site-search-model";
 import { loadPagefindModule } from "@/components/search/site-search-pagefind";
 import { SITE_LOADING_INDICATOR_DELAY_MS } from "@/lib/site-contracts";
 import { hideSiteTooltip } from "./site-tooltips.js";
+import { loadMaterialCustomElements } from "./material-custom-elements.js";
 import { renderSearchResults } from "./site-search-renderer.js";
 import {
   dateValue,
@@ -23,13 +24,23 @@ const QUERY_DEBOUNCE_MS = 160;
 const MAX_PRIORITY = 100;
 const RELEVANCE_PRIORITY_WEIGHT = 0.01;
 const INTERNAL_PAGEFIND_PATH = "/posts/pagefind-index-placeholder/";
+const SEARCH_MATERIAL_TAG_NAMES = [
+  "md-chip-set",
+  "md-dialog",
+  "md-filled-select",
+  "md-filled-text-field",
+  "md-select-option",
+];
 
 const panelControllers = new WeakMap();
 let filterChipModule;
 let searchMaterialModule;
 
 function loadSearchMaterialModule() {
-  searchMaterialModule ??= import("@/assets/js/material-web/search.js").catch((error) => {
+  searchMaterialModule ??= loadMaterialCustomElements({
+    load: () => import("@/assets/js/material-web/search.js"),
+    tagNames: SEARCH_MATERIAL_TAG_NAMES,
+  }).catch((error) => {
     searchMaterialModule = undefined;
     throw error;
   });
@@ -37,7 +48,10 @@ function loadSearchMaterialModule() {
 }
 
 function loadFilterChipModule() {
-  filterChipModule ??= import("@material/web/chips/filter-chip.js").catch((error) => {
+  filterChipModule ??= loadMaterialCustomElements({
+    load: () => import("@material/web/chips/filter-chip.js"),
+    tagNames: ["md-filter-chip"],
+  }).catch((error) => {
     filterChipModule = undefined;
     throw error;
   });
@@ -113,6 +127,7 @@ class SearchPanelController {
     this.filterChipReady = loadFilterChipModule();
 
     this.handleInput = this.handleInput.bind(this);
+    this.handleSearchInputKeydown = this.handleSearchInputKeydown.bind(this);
     this.handleSortControlMediaChange = this.handleSortControlMediaChange.bind(this);
     this.connect();
   }
@@ -139,6 +154,7 @@ class SearchPanelController {
     });
     this.input.addEventListener("input", this.handleInput);
     this.input.addEventListener("keyup", this.handleInput);
+    this.input.addEventListener("keydown", this.handleSearchInputKeydown, true);
     this.clearSearchButton.addEventListener("click", () => this.clearSearch());
     this.clearFiltersButton.addEventListener("click", () => this.clearFilters());
     this.sortSelect.addEventListener("change", (event) => this.setSortMode(controlValue(event)));
@@ -243,8 +259,33 @@ class SearchPanelController {
     }, QUERY_DEBOUNCE_MS);
   }
 
+  handleSearchInputKeydown(event) {
+    if (event.defaultPrevented || event.isComposing || event.key !== "Escape") return;
+
+    const dialog = this.root.closest("md-dialog");
+    if (!dialog?.open) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    if (String(this.input.value ?? "").length > 0) {
+      this.clearSearch();
+      return;
+    }
+
+    void dialog.close("escape");
+  }
+
   focus() {
+    const control = this.inputControl ?? this.input.shadowRoot?.querySelector("input, textarea");
+    if (control instanceof HTMLElement) {
+      control.focus({ preventScroll: true });
+      return;
+    }
+
     this.input.focus({ preventScroll: true });
+    void this.connectMaterialTextField().then(() => {
+      this.inputControl?.focus({ preventScroll: true });
+    });
   }
 
   clearFilters() {
@@ -680,7 +721,11 @@ export function initSiteSearchTriggers() {
     };
 
     const open = async () => {
-      if (opening || dialog.open) return;
+      if (opening) return;
+      if (dialog.open) {
+        initSiteSearchPanel(panel, { includeDeferred: true })?.focus();
+        return;
+      }
       hideSiteTooltip();
       opening = true;
       openButton.setAttribute("aria-expanded", "true");
@@ -734,7 +779,9 @@ export function initSiteSearchTriggers() {
           controller?.syncSortControl();
         }
         await showPromise;
-        window.setTimeout(() => focusSiteSearchPanel(panel));
+        window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(() => focusSiteSearchPanel(panel));
+        });
       } finally {
         endOpening();
       }

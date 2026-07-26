@@ -23,14 +23,10 @@
   ],
   "ignore": [".astro/**", "dist/**", "public/pagefind/**"],
   "ignoreDependencies": [
-    "@openai/codex",
     "@types/node",
     "material-symbols",
     "prettier-plugin-astro",
     "sass",
     "typescript"
-  ],
-  "ignoreIssues": {
-    "src/lib/konachan-backgrounds.mjs": ["duplicates"]
-  }
+  ]
 }

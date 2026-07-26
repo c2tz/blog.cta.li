@@ -96,7 +96,7 @@ function trimLeadingText(root) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   while (walker.nextNode()) {
     const node = walker.currentNode;
-    const trimmed = (node.nodeValue ?? "").replace(/^\s+/, "");
+    const trimmed = (node.nodeValue ?? "").replace(/^\s*\.(?=\s|$)\s*/, "").replace(/^\s+/, "");
     if (!trimmed) {
       node.nodeValue = "";
       continue;

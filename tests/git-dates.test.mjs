@@ -20,7 +20,14 @@ test("getFileGitDates caches by resolved stat signature and invalidates after a 
     const absoluteFile = path.join(repository, relativeFile);
     await writeFile(absoluteFile, "initial\n");
     execFileSync("git", ["add", relativeFile]);
-    execFileSync("git", ["commit", "--quiet", "-m", "feat: add post"]);
+    execFileSync("git", [
+      "-c",
+      "commit.gpgsign=false",
+      "commit",
+      "--quiet",
+      "-m",
+      "feat: add post",
+    ]);
 
     const moduleUrl = new URL(`../src/lib/git-dates.mjs?cache-test=${Date.now()}`, import.meta.url);
     const { getFileGitDates } = await import(moduleUrl.href);

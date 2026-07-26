@@ -13,8 +13,12 @@ async function seedLocalPreferences(page: Page) {
       JSON.stringify({ acknowledged: true, updatedAt, version: 1 }),
     );
     localStorage.setItem(
-      "ct-cookie-consent-v1",
-      JSON.stringify({ functionality: false, updatedAt, version: 1 }),
+      "ct-cookie-consent-v2",
+      JSON.stringify({
+        services: { giscus: false, ipgeo: false, "speed-insights": false },
+        updatedAt,
+        version: 2,
+      }),
     );
   });
 }

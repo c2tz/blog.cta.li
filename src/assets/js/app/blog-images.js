@@ -43,7 +43,11 @@ export function prepareBlogImageDialogs() {
 
       if (!img.dataset.imageDialogTooltipBound) {
         img.dataset.imageDialogTooltipBound = "true";
-        img.addEventListener("click", hideSiteTooltip);
+        img.addEventListener("click", () => {
+          // Let WebKit finish the trusted pointer activation before a rich
+          // tooltip leaves the top layer.
+          window.setTimeout(hideSiteTooltip);
+        });
       }
 
       img.decoding = "async";

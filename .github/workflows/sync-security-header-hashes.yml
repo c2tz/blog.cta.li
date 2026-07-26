@@ -16,7 +16,9 @@ on:
       - main
 
 permissions:
+  checks: read
   contents: read
+  pull-requests: read
 
 concurrency:
   group: sync-security-header-hashes-${{ github.event.pull_request.number || github.ref }}
@@ -31,34 +33,58 @@ jobs:
 
     steps:
       - name: Checkout repository without stored credentials
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
 
+      - name: Classify CI lane
+        id: ci_lane
+        uses: ./.github/actions/classify-ci
+        with:
+          token: ${{ github.token }}
+
+      - name: Explain why a static build is not required
+        if: steps.ci_lane.outputs.lane == 'docs' || steps.ci_lane.outputs.lane == 'post-merge'
+        env:
+          CI_LANE: ${{ steps.ci_lane.outputs.lane }}
+          CI_REASON: ${{ steps.ci_lane.outputs.reason }}
+        run: |
+          echo "Security header generation is not required for the ${CI_LANE} lane."
+          echo "$CI_REASON"
+          echo "Static build and CSP hash generation were not executed for the \`${CI_LANE}\` lane." >>"$GITHUB_STEP_SUMMARY"
+
       - name: Setup pnpm
+        if: steps.ci_lane.outputs.lane == 'content' || steps.ci_lane.outputs.lane == 'full'
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
           version: 11.1.3
 
       - name: Setup Node.js
+        if: steps.ci_lane.outputs.lane == 'content' || steps.ci_lane.outputs.lane == 'full'
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 22.22.3
           cache: pnpm
 
       - name: Install dependencies
+        if: steps.ci_lane.outputs.lane == 'content' || steps.ci_lane.outputs.lane == 'full'
         run: pnpm install --frozen-lockfile
 
       - name: Build static output
+        if: steps.ci_lane.outputs.lane == 'content' || steps.ci_lane.outputs.lane == 'full'
         run: pnpm build
 
       - name: Derive expected security header hashes locally
+        if: steps.ci_lane.outputs.lane == 'content' || steps.ci_lane.outputs.lane == 'full'
         run: pnpm sync:headers
 
       - name: Validate security headers
+        if: steps.ci_lane.outputs.lane == 'content' || steps.ci_lane.outputs.lane == 'full'
         run: pnpm check:headers
 
       - name: Require generated hashes to be committed
+        if: steps.ci_lane.outputs.lane == 'content' || steps.ci_lane.outputs.lane == 'full'
         run: |
           if ! git diff --exit-code -- vercel.json; then
             echo "::error file=vercel.json::Security header hashes are stale. Run 'pnpm build && pnpm sync:headers', then commit vercel.json."

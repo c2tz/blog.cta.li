@@ -41,6 +41,8 @@ export async function getStaticPaths() {
 
 const tag = Astro.params.tag ?? "all";
 const { posts } = Astro.props;
+const isAllPosts = tag === "all";
+const pageTitle = isAllPosts ? "Tous les articles" : `Articles avec le tag « ${tag} »`;
 const tagPosts = posts.map((post) => ({
   createdIso: toDate(post.gitDates.createdAt).toISOString(),
   createdLabelCompact: formatFrenchDate(post.gitDates.createdAt),
@@ -50,11 +52,11 @@ const tagPosts = posts.map((post) => ({
 }));
 ---
 
-<Layout title={`Articles avec le tag « ${tag} »`} bodyClass="tag-page" readingProgress={false}>
+<Layout title={pageTitle} bodyClass="tag-page" readingProgress={false}>
   <Fragment slot="content">
     <section aria-labelledby="tag-posts-title">
-      <h1 id="tag-posts-title">Articles avec le tag « {tag} »</h1>
-      <TagPosts posts={tagPosts} tag={tag} view={tag === "all" ? "table" : "list"} />
+      <h1 id="tag-posts-title">{pageTitle}</h1>
+      <TagPosts posts={tagPosts} tag={tag} view="table" />
     </section>
   </Fragment>
 </Layout>

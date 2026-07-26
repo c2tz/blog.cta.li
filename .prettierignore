@@ -1,8 +1,8 @@
 dist/
 node_modules/
 public/pagefind/
-public/konachan-backgrounds.json
 public/konachan-backgrounds.runtime.json
+tests/fixtures/landing-assets/konachan-backgrounds.runtime.json
 src/assets/css/base/material-theme.generated.scss
 .astro/
 .lighthouse/

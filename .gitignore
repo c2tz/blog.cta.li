@@ -1,6 +1,9 @@
 # build output
 dist/
 public/pagefind/
+public/konachan-backgrounds/
+public/konachan-backgrounds.runtime.json
+public/.landing-assets-*/
 # generated types
 .astro/
 .vscode
@@ -23,7 +26,8 @@ test-results/
 
 # environment variables
 .env
-.env.production
+.env.*
+!.env.example
 
 # macOS-specific files
 .DS_Store
@@ -32,4 +36,3 @@ test-results/
 .idea/
 diff.txt
 .vercel/
-.env.local

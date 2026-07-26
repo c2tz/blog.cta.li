@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  KONACHAN_RUNTIME_IMAGE_COUNT,
   KONACHAN_RUNTIME_MAX_BYTES,
   assertCacheControl,
   assertContentType,
@@ -9,6 +8,7 @@ import {
   extractAstroStylesheetUrl,
   inspectKonachanRuntimeManifest,
 } from "../scripts/lib/vercel-preview-assets.mjs";
+import { KONACHAN_RUNTIME_MANIFEST_VERSION } from "../src/lib/konachan-runtime-manifest.mjs";
 
 test("extracts a same-origin hashed Astro stylesheet from the home HTML", () => {
   const html = `
@@ -51,9 +51,9 @@ test("validates exact asset MIME and Cache-Control contracts", () => {
   );
 });
 
-function runtimeManifest({ imageCount = KONACHAN_RUNTIME_IMAGE_COUNT, padding = "" } = {}) {
+function runtimeManifest({ imageCount = 3, padding = "" } = {}) {
   return {
-    version: 1,
+    version: KONACHAN_RUNTIME_MANIFEST_VERSION,
     generatedAt: "2026-06-28T23:52:26.568Z",
     width: 1920,
     height: 1080,
@@ -61,7 +61,8 @@ function runtimeManifest({ imageCount = KONACHAN_RUNTIME_IMAGE_COUNT, padding = 
     padding,
     images: Array.from({ length: imageCount }, (_, index) => ({
       id: 405_000 + index,
-      rating: "s",
+      rating: ["s", "q", "e"][index % 3],
+      sourceColor: "#5BC3D6",
     })),
   };
 }
@@ -71,23 +72,34 @@ test("validates the compact Konachan runtime manifest and derives a deployed Web
   const result = inspectKonachanRuntimeManifest(bytes);
 
   assert.equal(result.bytes, bytes.byteLength);
-  assert.equal(result.imageCount, KONACHAN_RUNTIME_IMAGE_COUNT);
+  assert.equal(result.imageCount, 3);
   assert.equal(result.imagePath, "/konachan-backgrounds/405000-960.webp");
 });
 
-test("rejects stale or oversized Konachan runtime manifests", () => {
-  const staleBytes = new TextEncoder().encode(
-    JSON.stringify(runtimeManifest({ imageCount: KONACHAN_RUNTIME_IMAGE_COUNT - 1 })),
-  );
+test("rejects empty or oversized Konachan runtime manifests", () => {
+  const staleBytes = new TextEncoder().encode(JSON.stringify(runtimeManifest({ imageCount: 0 })));
   assert.throws(
     () => inspectKonachanRuntimeManifest(staleBytes),
-    /must contain exactly 150 images/,
+    /must contain at least one image/,
   );
 
   const oversizedBytes = new TextEncoder().encode(
     JSON.stringify(runtimeManifest({ padding: "x".repeat(KONACHAN_RUNTIME_MAX_BYTES) })),
   );
   assert.throws(() => inspectKonachanRuntimeManifest(oversizedBytes), /the limit is 40960/);
+
+  const incompleteBytes = new TextEncoder().encode(
+    JSON.stringify({
+      ...runtimeManifest(),
+      images: runtimeManifest().images.map((image) =>
+        Object.fromEntries(Object.entries(image).filter(([key]) => key !== "sourceColor")),
+      ),
+    }),
+  );
+  assert.throws(
+    () => inspectKonachanRuntimeManifest(incompleteBytes),
+    /must declare uppercase six-digit sourceColor/,
+  );
 });
 
 test("validates that the downloaded Konachan asset is really a WebP", () => {

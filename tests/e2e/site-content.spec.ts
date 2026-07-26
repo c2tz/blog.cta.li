@@ -8,7 +8,27 @@ import {
   waitForNativeEnhancement,
   expectPopoverOpen,
   expectKeyboardFocusOverridesPendingPointerFrame,
+  clearConsentState,
+  measureConsentActionLayout,
 } from "./site-fixture";
+
+test("links each post title to its own anchor", async ({ page }) => {
+  await gotoRoute(page, "/posts/bienvenue-sur-ct-blog/");
+
+  const title = page.getByRole("heading", { level: 1, name: "Bienvenue sur ct-blog" });
+  const titleLink = title.getByRole("link", { name: "Bienvenue sur ct-blog" });
+  const headerLink = page.locator(".header-link");
+  await expect(title).toHaveAttribute("id", "post-title");
+  await expect(titleLink).toHaveClass("heading-link");
+  await expect(titleLink).toHaveAttribute("href", "#post-title");
+  const headerSkipInk = await headerLink.evaluate(
+    (element) => getComputedStyle(element).textDecorationSkipInk,
+  );
+  await expect(titleLink).toHaveCSS("text-decoration-skip-ink", headerSkipInk);
+
+  await titleLink.click();
+  await expect(page).toHaveURL(/#post-title$/);
+});
 
 test("keeps the latest-posts table interactive without exposing hidden posts", async ({ page }) => {
   await gotoRoute(page, "/");
@@ -41,74 +61,10 @@ test("keeps the latest-posts table interactive without exposing hidden posts", a
   await expect(page.getByRole("link", { name: "Shortcodes Astro et Material Web" })).toHaveCount(0);
 });
 
-test("renders the cookie preferences controls", async ({ page }) => {
-  await gotoRoute(page, "/cookies/#modifier-vos-choix-cookies");
-
-  await expect(page.getByRole("heading", { name: "Modifier vos choix cookies" })).toBeVisible();
-  const panel = page.locator(".cookie-preferences-panel");
-  const allowButton = page.locator("md-filled-tonal-button.cookie-preferences-allow");
-  const rejectButton = page.locator("md-filled-button.cookie-preferences-reject");
-  const resetButton = page.locator("md-text-button.cookie-preferences-reset");
-
-  await expect(panel).toBeVisible();
-  await expect(allowButton).toBeVisible();
-  await expect(rejectButton).toBeVisible();
-  await expect(resetButton).toBeVisible();
-  await expect(allowButton).toHaveAttribute("has-icon", "");
-  await expect(rejectButton).toHaveAttribute("has-icon", "");
-  expect(
-    await allowButton
-      .locator('md-icon[slot="icon"]')
-      .evaluate((icon) => icon.textContent?.codePointAt(0)),
-  ).toBe(0xe5ca);
-  expect(
-    await rejectButton
-      .locator('md-icon[slot="icon"]')
-      .evaluate((icon) => icon.textContent?.codePointAt(0)),
-  ).toBe(0xe5cd);
-  const rejectColors = await rejectButton.evaluate((button) => ({
-    button: getComputedStyle(button).getPropertyValue("--md-filled-button-container-color").trim(),
-    theme: getComputedStyle(document.documentElement)
-      .getPropertyValue("--md-sys-color-error")
-      .trim(),
-  }));
-  expect(rejectColors.button).toBe(rejectColors.theme);
-
-  await expect(panel).toHaveAttribute("data-cookie-preference-state", "rejected");
-  await expect(panel.getByText("Refusés", { exact: true })).toBeVisible();
-  await expect(rejectButton).toHaveAttribute("data-selected", "");
-
-  await allowButton.click();
-  await expect(panel).toHaveAttribute("data-cookie-preference-state", "accepted");
-  await expect(panel.getByText("Autorisés", { exact: true })).toBeVisible();
-  await expect(allowButton).toHaveAttribute("data-selected", "");
-  await expect(rejectButton).not.toHaveAttribute("data-selected", "");
-
-  await resetButton.click();
-  await expect(panel).toHaveAttribute("data-cookie-preference-state", "unset");
-  await expect(panel.getByText("Aucun choix enregistré", { exact: true })).toBeVisible();
-  await expect(panel.getByText("Choix des services optionnels réinitialisé.")).toBeVisible();
-  await expect(resetButton).toHaveAttribute("disabled", "");
-  await expect
-    .poll(() =>
-      resetButton.evaluate(
-        (button) =>
-          (button.shadowRoot?.querySelector("button") as HTMLButtonElement | null)?.disabled ??
-          false,
-      ),
-    )
-    .toBe(true);
-});
-
 test("keeps consent actions uppercase and the privacy banner below the search scrim", async ({
   page,
 }) => {
-  await page.addInitScript(() => {
-    localStorage.removeItem("ct-explicit-content-ack-v1");
-    localStorage.removeItem("ct-cookie-consent-v1");
-    document.cookie = "ct-explicit-content-ack=; Max-Age=0; Path=/; SameSite=Lax";
-    document.cookie = "ct-cookie-consent=; Max-Age=0; Path=/; SameSite=Lax";
-  });
+  await page.addInitScript(clearConsentState);
   await gotoRoute(page, "/");
 
   const explicitConsent = page.getByRole("dialog", {
@@ -203,49 +159,64 @@ test("keeps consent actions uppercase and the privacy banner below the search sc
 
   const privacyBanner = page.getByRole("region", { name: "Avis de confidentialité" });
   await expect(privacyBanner).toBeVisible();
+  const detailsLink = privacyBanner
+    .locator('md-text-button[href="/cookies/#modifier-vos-choix-cookies"]')
+    .filter({ hasText: "PLUS DE DÉTAILS" });
+  await expect(detailsLink).toHaveCount(1);
+  await expect(detailsLink).toHaveAttribute("href", /\/cookies\/#modifier-vos-choix-cookies$/);
   await expect(
-    privacyBanner.locator("md-text-button[href]:visible").filter({ hasText: "PLUS DE DÉTAILS" }),
-  ).toBeVisible();
+    privacyBanner.locator("md-text-button").filter({ hasText: "PERSONNALISER" }),
+  ).toHaveCount(0);
   await expect(privacyBanner.locator("[data-cookie-action='reject']:visible")).toBeVisible();
   await expect(privacyBanner.locator("[data-cookie-action='accept']:visible")).toBeVisible();
 
-  if (test.info().project.name.includes("mobile")) {
-    await page.setViewportSize({ width: 330, height: 720 });
-    const compactLayout = await privacyBanner.evaluate((banner) => {
-      const bannerRect = banner.getBoundingClientRect();
-      const mobileActions = banner.querySelector(".cookie-consent-actions--mobile");
-      const actionsRect = mobileActions?.getBoundingClientRect();
-      const buttons = mobileActions
-        ? Array.from(
-            mobileActions.querySelectorAll(
-              "md-filled-tonal-button, md-filled-button, md-text-button",
-            ),
-          )
-        : [];
-      const buttonRects = buttons.map((button) => button.getBoundingClientRect());
-      return {
-        buttonsFit: buttonRects.every(
-          (rect) => rect.left >= bannerRect.left - 1 && rect.right <= bannerRect.right + 1,
-        ),
-        count: buttonRects.length,
-        fullWidth: Boolean(
-          actionsRect && buttonRects.every((rect) => Math.abs(rect.width - actionsRect.width) <= 1),
-        ),
-        left: bannerRect.left,
-        ordered: buttonRects.every(
-          (rect, index) => index === 0 || rect.top > buttonRects[index - 1].top,
-        ),
-        right: bannerRect.right,
-        viewportWidth: window.innerWidth,
-      };
-    });
-    expect(compactLayout.buttonsFit).toBe(true);
-    expect(compactLayout.count).toBe(3);
-    expect(compactLayout.fullWidth).toBe(true);
-    expect(compactLayout.ordered).toBe(true);
-    expect(compactLayout.left).toBeGreaterThanOrEqual(7);
-    expect(compactLayout.right).toBeLessThanOrEqual(compactLayout.viewportWidth - 7);
-  }
+  await page.setViewportSize({ width: 601, height: 720 });
+  await expect(detailsLink).toBeVisible();
+  const wideDesktopLayout = await measureConsentActionLayout(privacyBanner, "desktop");
+  expect(wideDesktopLayout.bannerWidth).toBeCloseTo(430, 0);
+  expect(wideDesktopLayout.buttonsFit).toBe(true);
+  expect(wideDesktopLayout.count).toBe(3);
+  expect(wideDesktopLayout.detailsTextOverflow).toBe("ellipsis");
+  expect(wideDesktopLayout.detailsTruncated).toBe(false);
+  expect(wideDesktopLayout.labelsUnclipped).toBe(true);
+  expect(wideDesktopLayout.leadingGap).toBeGreaterThanOrEqual(8);
+  expect(wideDesktopLayout.oneRow).toBe(true);
+  expect(wideDesktopLayout.orderedWithoutOverlap).toBe(true);
+
+  await page.setViewportSize({ width: 431, height: 720 });
+  await expect(detailsLink).toBeVisible();
+  const narrowDesktopLayout = await measureConsentActionLayout(privacyBanner, "desktop");
+  expect(narrowDesktopLayout.bannerWidth).toBeLessThanOrEqual(wideDesktopLayout.bannerWidth);
+  expect(narrowDesktopLayout.bannerHeight).toBeLessThanOrEqual(wideDesktopLayout.bannerHeight + 1);
+  expect(narrowDesktopLayout.buttonsFit).toBe(true);
+  expect(narrowDesktopLayout.count).toBe(3);
+  expect(narrowDesktopLayout.detailsTextOverflow).toBe("ellipsis");
+  expect(narrowDesktopLayout.detailsTruncated).toBe(true);
+  expect(narrowDesktopLayout.leadingGap).toBeGreaterThanOrEqual(8);
+  expect(narrowDesktopLayout.oneRow).toBe(true);
+  expect(narrowDesktopLayout.orderedWithoutOverlap).toBe(true);
+  expect(narrowDesktopLayout.left).toBeGreaterThanOrEqual(7);
+  expect(narrowDesktopLayout.right).toBeLessThanOrEqual(narrowDesktopLayout.viewportWidth - 7);
+
+  await page.setViewportSize({ width: 430, height: 720 });
+  await expect(detailsLink).toBeHidden();
+  await expect(privacyBanner.locator("md-text-button[href]:visible")).toHaveCount(0);
+  const mobileActions = privacyBanner.locator(".cookie-consent-actions--mobile");
+  await expect(mobileActions.locator("md-text-button[data-cookie-action]")).toHaveCount(2);
+  await expect(mobileActions.locator(":is(md-filled-button, md-filled-tonal-button)")).toHaveCount(
+    0,
+  );
+  await expect(privacyBanner.locator("[data-cookie-action]:visible")).toHaveCount(2);
+  const compactLayout = await measureConsentActionLayout(privacyBanner, "mobile");
+  expect(compactLayout.bannerHeight).toBeLessThanOrEqual(wideDesktopLayout.bannerHeight + 1);
+  expect(compactLayout.buttonsFit).toBe(true);
+  expect(compactLayout.count).toBe(2);
+  expect(compactLayout.equalWidth).toBe(true);
+  expect(compactLayout.labelsUnclipped).toBe(true);
+  expect(compactLayout.oneRow).toBe(true);
+  expect(compactLayout.orderedWithoutOverlap).toBe(true);
+  expect(compactLayout.left).toBeGreaterThanOrEqual(7);
+  expect(compactLayout.right).toBeLessThanOrEqual(compactLayout.viewportWidth - 7);
 
   await page.getByRole("button", { name: "Rechercher" }).click();
   await expect(page.getByRole("dialog", { name: "Recherche" })).toBeVisible();
@@ -709,6 +680,41 @@ test("renders shortcode code blocks with highlighted lines and copy controls", a
   await expectNoPageOverflow(page);
 });
 
+test("makes code blocks keyboard-focusable only while they scroll horizontally", async ({
+  page,
+}) => {
+  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
+  await waitForAppReady(page);
+
+  await page.evaluate(() => {
+    const prose = document.querySelector(".site-prose");
+    if (!prose) throw new Error("Zone de contenu introuvable");
+
+    const fixture = document.createElement("div");
+    fixture.dataset.keyboardCodeFixture = "true";
+    fixture.style.width = "14rem";
+    fixture.innerHTML = `
+      <pre class="astro-code"><code><span class="line">${"const resultat = ".repeat(24)}42;</span></code></pre>
+    `;
+    prose.append(fixture);
+  });
+
+  const pre = page.locator("[data-keyboard-code-fixture] pre");
+  await expect(pre).toHaveAttribute("tabindex", "0");
+  await pre.focus();
+  await expect(pre).toBeFocused();
+
+  await page.evaluate(() => {
+    const line = document.querySelector("[data-keyboard-code-fixture] .line");
+    if (!(line instanceof HTMLElement)) throw new Error("Ligne de code introuvable");
+
+    line.textContent = "42";
+    window.dispatchEvent(new Event("resize"));
+  });
+
+  await expect(pre).not.toHaveAttribute("tabindex");
+});
+
 test("renders every shortcode button variant as a real Material Web component", async ({
   page,
 }) => {
@@ -798,9 +804,7 @@ test("keeps Giscus disabled behind the privacy choice", async ({ page }) => {
     "#commentaires",
   );
   await expect(
-    page.getByText(
-      "Les commentaires sont masqués, car les services optionnels n'ont pas été acceptés.",
-    ),
+    page.getByText("Les commentaires sont masqués, car Giscus n'a pas été autorisé."),
   ).toBeVisible();
   await expect(page.getByRole("link", { name: "Modifier mes préférences" })).toHaveAttribute(
     "href",
@@ -886,8 +890,12 @@ test("keeps one Giscus progress bar until its iframe has loaded", async ({ page 
     });
     const updatedAt = new Date().toISOString();
     localStorage.setItem(
-      "ct-cookie-consent-v1",
-      JSON.stringify({ functionality: true, updatedAt, version: 1 }),
+      "ct-cookie-consent-v2",
+      JSON.stringify({
+        services: { giscus: true, ipgeo: false, "speed-insights": false },
+        updatedAt,
+        version: 2,
+      }),
     );
     localStorage.setItem(
       "site-giscus-comments-enabled-v1",
@@ -916,12 +924,10 @@ test("keeps one Giscus progress bar until its iframe has loaded", async ({ page 
     const theme = (element as HTMLIFrameElement).dataset.initialTheme || "";
     return decodeURIComponent(theme.slice(theme.indexOf(",") + 1));
   });
-  expect(initialThemeCss).toContain("--color-canvas-default:transparent");
-  expect(initialThemeCss).toContain("background:transparent!important");
+  expect(initialThemeCss).toMatch(/--color-canvas-default:#[0-9A-F]{6}/);
   expect(initialThemeCss).toContain(".gsc-reactions-popover.color-bg-overlay");
-  expect(initialThemeCss).toContain(
-    test.info().project.name.includes("dark") ? "#238636" : "#1F883D",
-  );
+  const expectedGithubGreen = test.info().project.name.includes("dark") ? "#238636" : "#1F883D";
+  expect(initialThemeCss).toContain(expectedGithubGreen);
   expect(initialThemeCss).toContain("color:#FFF!important");
   expect(initialThemeCss).toContain("fill:currentColor!important");
 
@@ -936,7 +942,10 @@ test("keeps one Giscus progress bar until its iframe has loaded", async ({ page 
     ).__giscusTiming;
     return (timing?.visibleAt ?? 0) - (timing?.busyAt ?? 0);
   });
-  expect(progressDelay).toBeGreaterThanOrEqual(180);
+  // MutationObserver records `busyAt` after the loading task has started, so
+  // allow one busy runner task while still proving that the 200 ms indicator
+  // delay is not bypassed.
+  expect(progressDelay).toBeGreaterThanOrEqual(150);
 
   releaseFrameResponse();
   await expect(panel).toHaveAttribute("aria-busy", "false");
@@ -951,16 +960,18 @@ test("keeps one Giscus progress bar until its iframe has loaded", async ({ page 
   const firstLiveTheme = await giscusFrame.locator("body").getAttribute("data-theme");
 
   await page.evaluate(() => {
-    document.documentElement.style.setProperty("--md-sys-color-primary", "#123456");
+    document.documentElement.style.cssText +=
+      "--md-sys-color-primary:#123456;--md-sys-color-background:#120F13;--md-sys-color-shadow:#010203;--md-sys-color-surface-container:#211D22;--md-sys-color-surface-container-low:#1B171C;--md-sys-color-surface-container-lowest:#0D0A0E";
     document.dispatchEvent(new CustomEvent("site:material-dynamic-color-change"));
   });
   await expect
     .poll(() => giscusFrame.locator("body").getAttribute("data-theme"))
     .not.toBe(firstLiveTheme);
   const updatedTheme = await giscusFrame.locator("body").getAttribute("data-theme");
-  expect(decodeURIComponent(updatedTheme!.slice(updatedTheme!.indexOf(",") + 1))).toContain(
-    "#123456",
-  );
+  const updatedThemeCss = decodeURIComponent(updatedTheme!.slice(updatedTheme!.indexOf(",") + 1));
+  expect(updatedThemeCss).toContain("#123456");
+  expect(updatedThemeCss).toContain("#010203 22%,transparent)");
+  expect(updatedThemeCss).toMatch(/#120F13.*#1B171C.*#0D0A0E/s);
 
   await page.reload({ waitUntil: "domcontentloaded" });
   const reloadedPanel = page.locator("[data-giscus-panel]");

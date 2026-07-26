@@ -2,6 +2,7 @@ import { isSearchSortMode } from "@/components/search/site-search-model";
 import { loadPagefindModule } from "@/components/search/site-search-pagefind";
 import { SITE_LOADING_INDICATOR_DELAY_MS } from "@/lib/site-contracts";
 import { hideSiteTooltip } from "./site-tooltips.js";
+import { loadMaterialCustomElements } from "./material-custom-elements.js";
 import { renderSearchResults } from "./site-search-renderer.js";
 import {
   dateValue,
@@ -23,13 +24,23 @@ const QUERY_DEBOUNCE_MS = 160;
 const MAX_PRIORITY = 100;
 const RELEVANCE_PRIORITY_WEIGHT = 0.01;
 const INTERNAL_PAGEFIND_PATH = "/posts/pagefind-index-placeholder/";
+const SEARCH_MATERIAL_TAG_NAMES = [
+  "md-chip-set",
+  "md-dialog",
+  "md-filled-select",
+  "md-filled-text-field",
+  "md-select-option",
+];
 
 const panelControllers = new WeakMap();
 let filterChipModule;
 let searchMaterialModule;
 
 function loadSearchMaterialModule() {
-  searchMaterialModule ??= import("@/assets/js/material-web/search.js").catch((error) => {
+  searchMaterialModule ??= loadMaterialCustomElements({
+    load: () => import("@/assets/js/material-web/search.js"),
+    tagNames: SEARCH_MATERIAL_TAG_NAMES,
+  }).catch((error) => {
     searchMaterialModule = undefined;
     throw error;
   });
@@ -37,7 +48,10 @@ function loadSearchMaterialModule() {
 }
 
 function loadFilterChipModule() {
-  filterChipModule ??= import("@material/web/chips/filter-chip.js").catch((error) => {
+  filterChipModule ??= loadMaterialCustomElements({
+    load: () => import("@material/web/chips/filter-chip.js"),
+    tagNames: ["md-filter-chip"],
+  }).catch((error) => {
     filterChipModule = undefined;
     throw error;
   });

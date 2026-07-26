@@ -212,6 +212,9 @@ test("keeps the official Material filled select and its complete sort menu", asy
   await expect
     .poll(() => sortSelect.evaluate((select) => (select as HTMLInputElement).value))
     .toBe("relevance");
+  await expect
+    .poll(() => sortSelect.evaluate((select) => getComputedStyle(select).minWidth))
+    .toBe("192px");
   await openMaterialSelect(sortSelect);
 
   const sortOptions = sortSelect.locator("md-select-option");
@@ -317,6 +320,15 @@ test("keeps the official Material filled select and its complete sort menu", asy
   await expect
     .poll(() => sortSelect.evaluate((select) => select.matches(":focus-within")))
     .toBe(true);
+
+  const newestLabelFits = await sortSelect.evaluate(async (select) => {
+    const control = select as HTMLElement & { updateComplete: Promise<unknown>; value: string };
+    control.value = "created-desc";
+    await control.updateComplete;
+    const label = control.shadowRoot?.querySelector<HTMLElement>("#label");
+    return Boolean(label && label.scrollWidth <= label.clientWidth);
+  });
+  expect(newestLabelFits).toBe(true);
 });
 
 test("never exposes the internal Pagefind placeholder", async ({ page }) => {

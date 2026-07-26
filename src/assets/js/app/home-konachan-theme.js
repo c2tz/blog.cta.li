@@ -15,84 +15,24 @@ import { MATERIAL_DYNAMIC_COLOR_ROLES, SITE_EVENTS } from "@/lib/site-contracts"
 const MATERIAL_DYNAMIC_COLORS = new MaterialDynamicColors();
 const MATERIAL_DYNAMIC_SPEC_VERSION = "2021";
 const MATERIAL_DYNAMIC_VARIANT = SchemeTonalSpot;
+const MATERIAL_DYNAMIC_COLOR_METHODS = MATERIAL_DYNAMIC_COLOR_ROLES.map((name) => [
+  name,
+  name.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase()),
+]);
 
 export function createHomeKonachanThemeController({ imageThemeCacheKey, landingSelector, state }) {
   const LANDING_SELECTOR = landingSelector;
-  const DYNAMIC_HERO_COLOR_PROPERTIES = [
-    "--home-hero-on-image",
-    "--home-hero-on-image-muted",
-    "--home-hero-accent",
-    "--home-hero-tonal-container",
-    "--home-hero-tonal-label",
-    "--home-hero-tonal-hover",
-  ];
-  const HOME_DYNAMIC_TOKEN_NAMES = MATERIAL_DYNAMIC_COLOR_ROLES;
-  const HOME_DYNAMIC_ROLE_METHODS = {
-    background: "background",
-    error: "error",
-    "error-container": "errorContainer",
-    "inverse-on-surface": "inverseOnSurface",
-    "inverse-primary": "inversePrimary",
-    "inverse-surface": "inverseSurface",
-    "on-background": "onBackground",
-    "on-error": "onError",
-    "on-error-container": "onErrorContainer",
-    "on-primary": "onPrimary",
-    "on-primary-container": "onPrimaryContainer",
-    "on-primary-fixed": "onPrimaryFixed",
-    "on-primary-fixed-variant": "onPrimaryFixedVariant",
-    "on-secondary": "onSecondary",
-    "on-secondary-container": "onSecondaryContainer",
-    "on-secondary-fixed": "onSecondaryFixed",
-    "on-secondary-fixed-variant": "onSecondaryFixedVariant",
-    "on-surface": "onSurface",
-    "on-surface-variant": "onSurfaceVariant",
-    "on-tertiary": "onTertiary",
-    "on-tertiary-container": "onTertiaryContainer",
-    "on-tertiary-fixed": "onTertiaryFixed",
-    "on-tertiary-fixed-variant": "onTertiaryFixedVariant",
-    outline: "outline",
-    "outline-variant": "outlineVariant",
-    primary: "primary",
-    "primary-container": "primaryContainer",
-    "primary-fixed": "primaryFixed",
-    "primary-fixed-dim": "primaryFixedDim",
-    scrim: "scrim",
-    secondary: "secondary",
-    "secondary-container": "secondaryContainer",
-    "secondary-fixed": "secondaryFixed",
-    "secondary-fixed-dim": "secondaryFixedDim",
-    shadow: "shadow",
-    surface: "surface",
-    "surface-bright": "surfaceBright",
-    "surface-container": "surfaceContainer",
-    "surface-container-high": "surfaceContainerHigh",
-    "surface-container-highest": "surfaceContainerHighest",
-    "surface-container-low": "surfaceContainerLow",
-    "surface-container-lowest": "surfaceContainerLowest",
-    "surface-dim": "surfaceDim",
-    "surface-tint": "surfaceTint",
-    "surface-variant": "surfaceVariant",
-    tertiary: "tertiary",
-    "tertiary-container": "tertiaryContainer",
-    "tertiary-fixed": "tertiaryFixed",
-    "tertiary-fixed-dim": "tertiaryFixedDim",
-  };
+  const DYNAMIC_HERO_COLOR_PROPERTIES = ["--home-hero-on-image", "--home-hero-on-image-muted"];
 
   function cssColor(argb) {
     return hexFromArgb(argb);
-  }
-
-  function isDarkTheme() {
-    return document.documentElement.dataset.theme === "dark";
   }
 
   function tokensFromTheme(theme, { dark }) {
     const scheme = dark ? theme.dark : theme.light;
     const tokens = {};
 
-    for (const name of HOME_DYNAMIC_TOKEN_NAMES) {
-      const method = HOME_DYNAMIC_ROLE_METHODS[name];
+    for (const [name, method] of MATERIAL_DYNAMIC_COLOR_METHODS) {
       tokens[name] = cssColor(scheme.getArgb(MATERIAL_DYNAMIC_COLORS[method]()));
     }
 
@@ -117,32 +57,29 @@ export function createHomeKonachanThemeController({ imageThemeCacheKey, landingS
   }
 
   function applyHomeDynamicTokens(theme, image, loadedUrl) {
-    const palette = storeMaterialDynamicColorPalette({
-      version: 1,
-      imageId: typeof image === "object" ? image?.id : null,
-      imageUrl: loadedUrl,
-      sourceColor: cssColor(theme.sourceColor),
-      updatedAt: new Date().toISOString(),
-      schemes: {
-        dark: tokensFromTheme(theme, { dark: true }),
-        light: tokensFromTheme(theme, { dark: false }),
-      },
-    });
-
-    return palette ? tokensFromTheme(theme, { dark: isDarkTheme() }) : null;
+    return Boolean(
+      storeMaterialDynamicColorPalette({
+        version: 1,
+        imageId: typeof image === "object" ? image?.id : null,
+        imageUrl: loadedUrl,
+        sourceColor: cssColor(theme.sourceColor),
+        updatedAt: new Date().toISOString(),
+        schemes: {
+          dark: tokensFromTheme(theme, { dark: true }),
+          light: tokensFromTheme(theme, { dark: false }),
+        },
+      }),
+    );
   }
 
   function applyHeroDynamicTokens(landing, theme) {
     if (!landing) return;
 
-    const tokens = tokensFromTheme(theme, { dark: true });
+    const primary = cssColor(theme.dark.getArgb(MATERIAL_DYNAMIC_COLORS.primary()));
+    const secondary = cssColor(theme.dark.getArgb(MATERIAL_DYNAMIC_COLORS.secondary()));
     landing.dataset.heroDynamicColor = "true";
-    landing.style.setProperty("--home-hero-on-image", tokens.primary);
-    landing.style.setProperty("--home-hero-on-image-muted", tokens.secondary);
-    landing.style.setProperty("--home-hero-accent", tokens.primary);
-    landing.style.setProperty("--home-hero-tonal-container", tokens["primary-container"]);
-    landing.style.setProperty("--home-hero-tonal-label", tokens["on-primary-container"]);
-    landing.style.setProperty("--home-hero-tonal-hover", tokens["primary-container"]);
+    landing.style.setProperty("--home-hero-on-image", primary);
+    landing.style.setProperty("--home-hero-on-image-muted", secondary);
   }
 
   function clearDynamicHeroColor(landing) {
@@ -157,11 +94,10 @@ export function createHomeKonachanThemeController({ imageThemeCacheKey, landingS
   function syncDynamicHeroColor(landing) {
     if (!state.dynamicTheme || !isMaterialDynamicColorActive()) {
       clearDynamicHeroColor(landing);
-      return null;
+      return;
     }
 
     applyHeroDynamicTokens(landing, state.dynamicTheme);
-    return tokensFromTheme(state.dynamicTheme, { dark: true });
   }
 
   function initHomeDynamicThemeSync() {
@@ -189,7 +125,7 @@ export function createHomeKonachanThemeController({ imageThemeCacheKey, landingS
     return theme;
   }
 
-  async function applyDynamicHeroColor(target, image, loadedUrl) {
+  function applyDynamicHeroColor(target, image, loadedUrl) {
     const landing = target.closest(LANDING_SELECTOR);
     if (!landing) return;
 
@@ -199,8 +135,7 @@ export function createHomeKonachanThemeController({ imageThemeCacheKey, landingS
       if (!dynamicTheme) throw new Error("konachan_dynamic_theme_unavailable");
 
       state.dynamicTheme = dynamicTheme;
-      const tokens = applyHomeDynamicTokens(dynamicTheme, image, loadedUrl);
-      if (!tokens) return;
+      if (!applyHomeDynamicTokens(dynamicTheme, image, loadedUrl)) return;
       syncDynamicHeroColor(landing);
     } catch {
       state.dynamicTheme = null;

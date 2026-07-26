@@ -872,22 +872,16 @@ test("keeps one Giscus progress bar until its iframe has loaded", async ({ page 
     };
     const timing: { busyAt?: number; clientAt?: number; visibleAt?: number } = {};
     testWindow.__giscusTiming = timing;
-    const recordProgress = () => {
-      const panel = document.querySelector<HTMLElement>("[data-giscus-panel]");
-      const progress = document.querySelector<HTMLElement>("[data-giscus-progress]");
-      if (panel?.getAttribute("aria-busy") === "true" && timing.busyAt === undefined) {
-        timing.busyAt = performance.now();
+    const setAttribute = Element.prototype.setAttribute;
+    Element.prototype.setAttribute = function (this: Element, name: string, value: string): void {
+      if (name === "aria-busy" && value === "true" && this.matches("[data-giscus-panel]")) {
+        timing.busyAt ??= performance.now();
       }
-      if (progress?.hasAttribute("data-loading-active") && timing.visibleAt === undefined) {
-        timing.visibleAt = performance.now();
+      if (name === "data-loading-active" && this.matches("[data-giscus-progress]")) {
+        timing.visibleAt ??= performance.now();
       }
+      setAttribute.call(this, name, value);
     };
-    new MutationObserver(recordProgress).observe(document, {
-      attributeFilter: ["aria-busy", "data-loading-active", "hidden"],
-      attributes: true,
-      childList: true,
-      subtree: true,
-    });
     const updatedAt = new Date().toISOString();
     localStorage.setItem(
       "ct-cookie-consent-v2",
@@ -942,10 +936,8 @@ test("keeps one Giscus progress bar until its iframe has loaded", async ({ page 
     ).__giscusTiming;
     return (timing?.visibleAt ?? 0) - (timing?.busyAt ?? 0);
   });
-  // MutationObserver records `busyAt` after the loading task has started, so
-  // allow one busy runner task while still proving that the 200 ms indicator
-  // delay is not bypassed.
-  expect(progressDelay).toBeGreaterThanOrEqual(150);
+  // Synchronous hooks avoid observer delay on a busy WebKit task.
+  expect(progressDelay).toBeGreaterThanOrEqual(180);
 
   releaseFrameResponse();
   await expect(panel).toHaveAttribute("aria-busy", "false");

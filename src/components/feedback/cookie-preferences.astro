@@ -80,16 +80,6 @@ const { labelledby = "modifier-vos-choix-cookies" } = Astro.props;
       aria-label="Actions sur les services optionnels"
     >
       <div class="cookie-preferences-choice-actions">
-        <md-filled-tonal-button
-          class="cookie-preferences-choice cookie-preferences-allow"
-          type="button"
-          aria-label="Autoriser les services optionnels"
-          data-cookie-preference-action="accept-all"
-          has-icon
-        >
-          <md-icon slot="icon" aria-hidden="true">&#xE5CA;</md-icon>
-          Tout autoriser
-        </md-filled-tonal-button>
         <md-filled-button
           class="cookie-preferences-choice cookie-preferences-reject"
           type="button"
@@ -100,6 +90,16 @@ const { labelledby = "modifier-vos-choix-cookies" } = Astro.props;
           <md-icon slot="icon" aria-hidden="true">&#xE5CD;</md-icon>
           Tout refuser
         </md-filled-button>
+        <md-filled-tonal-button
+          class="cookie-preferences-choice cookie-preferences-allow"
+          type="button"
+          aria-label="Autoriser les services optionnels"
+          data-cookie-preference-action="accept-all"
+          has-icon
+        >
+          <md-icon slot="icon" aria-hidden="true">&#xE5CA;</md-icon>
+          Tout autoriser
+        </md-filled-tonal-button>
       </div>
       <md-text-button
         class="cookie-preferences-reset"

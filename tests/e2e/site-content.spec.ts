@@ -164,8 +164,6 @@ test("keeps consent actions uppercase and the privacy banner below the search sc
     .filter({ hasText: "PLUS DE DÉTAILS" });
   await expect(detailsLink).toHaveCount(1);
   await expect(detailsLink).toHaveAttribute("href", "/#modifier-vos-choix-cookies");
-  if (test.info().project.name.includes("mobile")) await expect(detailsLink).toBeHidden();
-  else await expect(detailsLink).toBeVisible();
   await expect(
     privacyBanner.locator("md-text-button").filter({ hasText: "PERSONNALISER" }),
   ).toHaveCount(0);
@@ -174,31 +172,51 @@ test("keeps consent actions uppercase and the privacy banner below the search sc
 
   await page.setViewportSize({ width: 601, height: 720 });
   await expect(detailsLink).toBeVisible();
+  const wideDesktopLayout = await measureConsentActionLayout(privacyBanner, "desktop");
+  expect(wideDesktopLayout.bannerWidth).toBeCloseTo(430, 0);
+  expect(wideDesktopLayout.buttonsFit).toBe(true);
+  expect(wideDesktopLayout.count).toBe(3);
+  expect(wideDesktopLayout.detailsTextOverflow).toBe("ellipsis");
+  expect(wideDesktopLayout.detailsTruncated).toBe(false);
+  expect(wideDesktopLayout.labelsUnclipped).toBe(true);
+  expect(wideDesktopLayout.leadingGap).toBeGreaterThanOrEqual(8);
+  expect(wideDesktopLayout.oneRow).toBe(true);
+  expect(wideDesktopLayout.orderedWithoutOverlap).toBe(true);
+
+  await page.setViewportSize({ width: 431, height: 720 });
+  await expect(detailsLink).toBeVisible();
   const narrowDesktopLayout = await measureConsentActionLayout(privacyBanner, "desktop");
+  expect(narrowDesktopLayout.bannerWidth).toBeLessThanOrEqual(wideDesktopLayout.bannerWidth);
+  expect(narrowDesktopLayout.bannerHeight).toBeLessThanOrEqual(wideDesktopLayout.bannerHeight + 1);
   expect(narrowDesktopLayout.buttonsFit).toBe(true);
   expect(narrowDesktopLayout.count).toBe(3);
-  expect(narrowDesktopLayout.labelsUnclipped).toBe(true);
+  expect(narrowDesktopLayout.detailsTextOverflow).toBe("ellipsis");
+  expect(narrowDesktopLayout.detailsTruncated).toBe(true);
   expect(narrowDesktopLayout.leadingGap).toBeGreaterThanOrEqual(8);
   expect(narrowDesktopLayout.oneRow).toBe(true);
   expect(narrowDesktopLayout.orderedWithoutOverlap).toBe(true);
   expect(narrowDesktopLayout.left).toBeGreaterThanOrEqual(7);
   expect(narrowDesktopLayout.right).toBeLessThanOrEqual(narrowDesktopLayout.viewportWidth - 7);
 
-  if (test.info().project.name.includes("mobile")) {
-    await page.setViewportSize({ width: 320, height: 720 });
-    await expect(detailsLink).toBeHidden();
-    await expect(privacyBanner.locator("md-text-button[href]:visible")).toHaveCount(0);
-    await expect(privacyBanner.locator("[data-cookie-action]:visible")).toHaveCount(2);
-    const compactLayout = await measureConsentActionLayout(privacyBanner, "mobile");
-    expect(compactLayout.buttonsFit).toBe(true);
-    expect(compactLayout.count).toBe(2);
-    expect(compactLayout.equalWidth).toBe(true);
-    expect(compactLayout.labelsUnclipped).toBe(true);
-    expect(compactLayout.oneRow).toBe(true);
-    expect(compactLayout.orderedWithoutOverlap).toBe(true);
-    expect(compactLayout.left).toBeGreaterThanOrEqual(7);
-    expect(compactLayout.right).toBeLessThanOrEqual(compactLayout.viewportWidth - 7);
-  }
+  await page.setViewportSize({ width: 430, height: 720 });
+  await expect(detailsLink).toBeHidden();
+  await expect(privacyBanner.locator("md-text-button[href]:visible")).toHaveCount(0);
+  const mobileActions = privacyBanner.locator(".cookie-consent-actions--mobile");
+  await expect(mobileActions.locator("md-text-button[data-cookie-action]")).toHaveCount(2);
+  await expect(mobileActions.locator(":is(md-filled-button, md-filled-tonal-button)")).toHaveCount(
+    0,
+  );
+  await expect(privacyBanner.locator("[data-cookie-action]:visible")).toHaveCount(2);
+  const compactLayout = await measureConsentActionLayout(privacyBanner, "mobile");
+  expect(compactLayout.bannerHeight).toBeLessThanOrEqual(wideDesktopLayout.bannerHeight + 1);
+  expect(compactLayout.buttonsFit).toBe(true);
+  expect(compactLayout.count).toBe(2);
+  expect(compactLayout.equalWidth).toBe(true);
+  expect(compactLayout.labelsUnclipped).toBe(true);
+  expect(compactLayout.oneRow).toBe(true);
+  expect(compactLayout.orderedWithoutOverlap).toBe(true);
+  expect(compactLayout.left).toBeGreaterThanOrEqual(7);
+  expect(compactLayout.right).toBeLessThanOrEqual(compactLayout.viewportWidth - 7);
 
   await page.getByRole("button", { name: "Rechercher" }).click();
   await expect(page.getByRole("dialog", { name: "Recherche" })).toBeVisible();

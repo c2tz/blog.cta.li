@@ -237,12 +237,20 @@ export async function measureConsentActionLayout(banner: Locator, variant: "desk
       : [];
     const buttonRects = buttons.map((button) => button.getBoundingClientRect());
     const firstRect = buttonRects[0];
+    const detailsButton = buttons.find((button) => button.matches("md-text-button[href]"));
+    const detailsLabel = detailsButton?.shadowRoot?.querySelector(".label");
 
     return {
+      bannerHeight: bannerRect.height,
+      bannerWidth: bannerRect.width,
       buttonsFit: buttonRects.every(
         (rect) => rect.left >= bannerRect.left - 1 && rect.right <= bannerRect.right + 1,
       ),
       count: buttonRects.length,
+      detailsTextOverflow: detailsButton ? getComputedStyle(detailsButton).textOverflow : null,
+      detailsTruncated: Boolean(
+        detailsLabel && detailsLabel.scrollWidth > detailsLabel.clientWidth + 1,
+      ),
       equalWidth: Boolean(
         firstRect && buttonRects.every((rect) => Math.abs(rect.width - firstRect.width) <= 1),
       ),

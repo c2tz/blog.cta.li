@@ -17,27 +17,6 @@ body.home-page::after {
 
 :root[data-theme="dark"] body.home-page {
   --home-image-filter: brightness(0.72) saturate(0.88) contrast(1);
-  --home-media-surface: var(--m3-surface-container-lowest);
-}
-
-body.home-page {
-  --site-bg: var(--md-sys-color-background);
-  --site-text: var(--m3-on-surface);
-  --site-border: var(--m3-outline-variant);
-  --site-muted: var(--m3-on-surface-variant);
-  --site-link: var(--m3-primary);
-  --site-link-contrast: var(--m3-on-primary);
-  --site-link-container: var(--m3-primary-container);
-  --site-on-link-container: var(--m3-on-primary-container);
-  --site-warning-container: var(--m3-tertiary-container);
-  --site-on-warning-container: var(--m3-on-tertiary-container);
-  --site-mark-bg: var(--m3-tertiary-container);
-  --site-mark-text: var(--m3-on-tertiary-container);
-  --site-tonal-container: var(--m3-secondary-container);
-  --site-on-tonal-container: var(--m3-on-secondary-container);
-  --code-surface: var(--m3-surface-container-high);
-  --code-block-surface: var(--site-bg);
-  --home-media-surface: var(--m3-surface-container-lowest);
 }
 
 .home-section {

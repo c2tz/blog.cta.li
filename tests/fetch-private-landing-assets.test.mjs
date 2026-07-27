@@ -83,12 +83,12 @@ test("stages fixtures through the source-selection wrapper", async (t) => {
   });
 
   assert.equal(result.sourceKind, "fixtures");
-  assert.equal(result.imageCount, 3);
-  assert.equal(result.files.size, 6);
+  assert.equal(result.imageCount, 4);
+  assert.equal(result.files.size, 8);
   assert.equal(
     JSON.parse(await readFile(resolve(directory, "konachan-backgrounds.runtime.json"), "utf8"))
       .images.length,
-    3,
+    4,
   );
-  assert.equal((await readdir(resolve(directory, "konachan-backgrounds"))).length, 6);
+  assert.equal((await readdir(resolve(directory, "konachan-backgrounds"))).length, 8);
 });

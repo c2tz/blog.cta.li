@@ -41,8 +41,6 @@ class HomeLatestPostsTableElement extends HTMLElement {
   private sortColumn: HomeSortColumn | null = null;
   private sortDirection: SortDirection = "asc";
   private detailRequest: Promise<void> | null = null;
-  private dateColumnResizeObserver: ResizeObserver | null = null;
-  private dateColumnMeasureFrame = 0;
   private loadingIndicatorTimer = 0;
 
   connectedCallback() {
@@ -61,9 +59,6 @@ class HomeLatestPostsTableElement extends HTMLElement {
       document.body.dataset.homeDetailView === "true";
     this.syncDetailedPresentation();
     this.updateSortPresentation();
-    this.renderRows();
-    this.watchDateColumnWidth();
-    this.queueDateColumnMeasure();
 
     if (this.detailed) void this.loadDetailedPosts();
   }
@@ -76,9 +71,6 @@ class HomeLatestPostsTableElement extends HTMLElement {
       button.removeEventListener("click", this.handleSortClick);
     }
     document.removeEventListener(SITE_EVENTS.homeDetailViewChange, this.handleDetailViewChange);
-    this.dateColumnResizeObserver?.disconnect();
-    this.dateColumnResizeObserver = null;
-    this.cancelDateColumnMeasure();
     this.endLoading();
   }
 
@@ -130,10 +122,11 @@ class HomeLatestPostsTableElement extends HTMLElement {
   }
 
   private setDetailed(detailed: boolean) {
+    if (this.detailed === detailed) return;
+
     this.detailed = detailed;
     this.syncDetailedPresentation();
     this.renderRows();
-    this.queueDateColumnMeasure();
 
     if (detailed) void this.loadDetailedPosts();
   }
@@ -241,7 +234,6 @@ class HomeLatestPostsTableElement extends HTMLElement {
     }
 
     body.replaceChildren(fragment);
-    this.queueDateColumnMeasure();
   }
 
   private createPostRow(post: HomeLatestPost) {
@@ -335,41 +327,6 @@ class HomeLatestPostsTableElement extends HTMLElement {
     if (!this.loadingIndicatorTimer) return;
     window.clearTimeout(this.loadingIndicatorTimer);
     this.loadingIndicatorTimer = 0;
-  }
-
-  private watchDateColumnWidth() {
-    if (typeof ResizeObserver === "undefined") return;
-
-    const dateHeader = this.querySelector<HTMLElement>(".home-posts-table .home-posts-date-column");
-    if (!dateHeader) return;
-
-    this.dateColumnResizeObserver = new ResizeObserver(() => this.queueDateColumnMeasure());
-    this.dateColumnResizeObserver.observe(dateHeader);
-  }
-
-  private queueDateColumnMeasure() {
-    this.cancelDateColumnMeasure();
-    this.dateColumnMeasureFrame = window.requestAnimationFrame(() => {
-      this.dateColumnMeasureFrame = 0;
-      this.measureDateColumn();
-    });
-  }
-
-  private cancelDateColumnMeasure() {
-    if (!this.dateColumnMeasureFrame) return;
-    window.cancelAnimationFrame(this.dateColumnMeasureFrame);
-    this.dateColumnMeasureFrame = 0;
-  }
-
-  private measureDateColumn() {
-    const scroller = this.scroller;
-    const dateHeader = this.querySelector<HTMLElement>(".home-posts-table .home-posts-date-column");
-    if (!scroller || !dateHeader) return;
-
-    const width = dateHeader.getBoundingClientRect().width;
-    if (width > 0) {
-      scroller.style.setProperty("--home-posts-date-column-measured-width", `${width}px`);
-    }
   }
 }
 

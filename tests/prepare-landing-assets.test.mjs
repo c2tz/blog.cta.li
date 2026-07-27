@@ -20,11 +20,12 @@ async function temporaryDirectory(t) {
 test("validates the complete neutral landing fixture package", async () => {
   const result = await validateLandingAssetSource({ sourceDirectory: FIXTURE_DIRECTORY });
 
-  assert.equal(result.imageCount, 3);
-  assert.equal(result.files.size, 6);
+  assert.equal(result.imageCount, 4);
+  assert.equal(result.files.size, 8);
   assert.deepEqual(
     result.manifest.images.map(({ id, rating }) => ({ id, rating })),
     [
+      { id: 405393, rating: "s" },
       { id: 910001, rating: "s" },
       { id: 910002, rating: "q" },
       { id: 910003, rating: "e" },

@@ -47,6 +47,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
   const KONACHAN_CACHE_TTL_MS = 14 * 24 * 60 * 60 * 1000;
   const KONACHAN_MANIFEST_RELOAD_MS = 24 * 60 * 60 * 1000;
   const INITIAL_BACKGROUND = initialBackground;
+  const INITIAL_BACKGROUND_ID = Number(INITIAL_BACKGROUND?.id) || null;
   const RATING_RANK = {
     safe: 0,
     questionable: 1,
@@ -98,7 +99,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
         return null;
       }
 
-      return { ...cached, currentImage, images };
+      return { ...cached, currentImage, images: rotatingImages(images) };
     } catch {
       return null;
     }
@@ -110,7 +111,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
         KONACHAN_CACHE_KEY,
         JSON.stringify({
           storedAt: Date.now(),
-          images: images.slice(0, 96),
+          images: rotatingImages(images).slice(0, 96),
           currentImage: normalizeImage(currentImage),
         }),
       );
@@ -127,7 +128,10 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
       ...normalizedImage,
       loadedUrl: normalizeUrl(loadedUrl) || normalizedImage.loadedUrl,
     };
-    writeStoredImages(mergeImages(rememberedImage, cachedImages), rememberedImage);
+    const rotatingPool = isInitialBackground(rememberedImage)
+      ? cachedImages
+      : mergeImages(rememberedImage, cachedImages);
+    writeStoredImages(rotatingPool, rememberedImage);
   }
 
   function readStoredCurrentImage() {
@@ -182,7 +186,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
       throw new Error("konachan_manifest_invalid_json");
     }
 
-    const images = expandKonachanRuntimeManifest(manifest);
+    const images = rotatingImages(expandKonachanRuntimeManifest(manifest));
     if (images.length === 0) throw new Error("konachan_manifest_invalid_contract");
 
     await cacheJsonResponse(MANIFEST_URL, text);
@@ -197,9 +201,6 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
       });
 
       const images = await readManifestResponse(response);
-      if (images.length === 0) {
-        console.warn("[Konachan] The deployed manifest contains no images.");
-      }
       return images;
     } catch (error) {
       console.warn(
@@ -207,7 +208,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
         error instanceof Error ? error.message : error,
       );
       const cached = await readCachedJson(MANIFEST_URL);
-      return expandKonachanRuntimeManifest(cached);
+      return rotatingImages(expandKonachanRuntimeManifest(cached));
     }
   }
 
@@ -255,8 +256,15 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
   }
 
   function normalizeRatingPreference(value) {
-    const rating = normalizeRating(value);
-    return rating in RATING_RANK ? rating : "safe";
+    return normalizeRating(value);
+  }
+
+  function isInitialBackground(image) {
+    return INITIAL_BACKGROUND_ID !== null && Number(image?.id) === INITIAL_BACKGROUND_ID;
+  }
+
+  function rotatingImages(images) {
+    return images.filter((image) => !isInitialBackground(image));
   }
 
   function readRatingPreference() {
@@ -293,8 +301,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     const byKey = new Map();
 
     for (const image of groups.flat().map(normalizeImage).filter(Boolean)) {
-      const key =
-        typeof image === "string" ? image : String(image.id || image.originalUrl || image.url);
+      const key = String(image.id || image.originalUrl || image.url);
       if (!byKey.has(key)) byKey.set(key, image);
     }
 
@@ -395,8 +402,9 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
   }
 
   function refreshCandidates(images) {
-    const preferred = preferredImages(images);
-    return preferred.length > 0 ? preferred : allowedImages(images);
+    const rotating = rotatingImages(images);
+    const preferred = preferredImages(rotating);
+    return preferred.length > 0 ? preferred : allowedImages(rotating);
   }
 
   function readLocalImagePool() {
@@ -497,7 +505,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     target.dataset.konachanCurrentUrl = loadedUrl;
     state.currentImage = image;
     state.currentUrl = loadedUrl;
-    await applyDynamicHeroColor(target, image, loadedUrl);
+    applyDynamicHeroColor(target, image, loadedUrl);
     setCredit(image);
     rememberLoadedImage(image, loadedUrl);
     return true;
@@ -513,7 +521,7 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
       return await setBackground(target, selected);
     } catch {
       state.images = state.images.filter((image) => image !== selected);
-      const next = pickRandom(allowedImages(state.images));
+      const next = pickRandom(refreshCandidates(state.images));
       return next ? setBackground(target, next).catch(() => false) : false;
     }
   }

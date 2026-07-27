@@ -63,7 +63,7 @@ export async function seedFixedKonachanImage(page: Page, sourceColor = "#5BC3D6"
     };
 
     localStorage.setItem(
-      "home-konachan-backgrounds-v8",
+      "home-konachan-backgrounds-v9",
       JSON.stringify({ currentImage: image, images: [image], storedAt: Date.now() }),
     );
   }, sourceColor);

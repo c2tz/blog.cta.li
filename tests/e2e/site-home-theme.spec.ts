@@ -48,10 +48,25 @@ test("shows the published introduction while keeping unlisted posts out of the h
   expect(tagLinks.every(({ href, upgraded }) => upgraded && href?.startsWith("/tags/"))).toBe(true);
 });
 
-test("starts with the neutral landing fallback when no cached image exists", async ({ page }) => {
+test("starts with the permanent landing image outside the rotating pool", async ({ page }) => {
   await page.addInitScript(() => {
     if (sessionStorage.getItem("test-konachan-cache-cleared")) return;
-    localStorage.removeItem("home-konachan-backgrounds-v8");
+    const previousImage = {
+      id: 910001,
+      url: "/konachan-backgrounds/910001.webp",
+      originalUrl: "https://www.cta.li/",
+      rating: "safe",
+      sourceColor: "#5BC3D6",
+    };
+    localStorage.setItem(
+      "home-konachan-backgrounds-v8",
+      JSON.stringify({
+        currentImage: previousImage,
+        images: [previousImage],
+        storedAt: Date.now(),
+      }),
+    );
+    localStorage.removeItem("home-konachan-backgrounds-v9");
     sessionStorage.setItem("test-konachan-cache-cleared", "true");
   });
   await gotoRoute(page, "/");
@@ -59,10 +74,10 @@ test("starts with the neutral landing fallback when no cached image exists", asy
   const background = page.locator("[data-konachan-background]");
   const credit = page.locator("[data-konachan-credit-link]");
   await expect(background).toHaveAttribute("data-loaded", "true", { timeout: 15_000 });
-  await expect(credit).toHaveAttribute("href", "https://www.cta.li/");
+  await expect(credit).toHaveAttribute("href", "https://konachan.com/post/show/405393");
 
   const firstUrl = await background.getAttribute("data-konachan-current-url");
-  expect(firstUrl).toContain("910001");
+  expect(firstUrl).toContain("405393");
   const manifestRequests = await page.evaluate(() =>
     performance
       .getEntriesByType("resource")
@@ -74,11 +89,14 @@ test("starts with the neutral landing fallback when no cached image exists", asy
   await expect
     .poll(() =>
       page.evaluate(() => {
-        const stored = JSON.parse(localStorage.getItem("home-konachan-backgrounds-v8") || "null");
-        return stored?.currentImage?.id;
+        const stored = JSON.parse(localStorage.getItem("home-konachan-backgrounds-v9") || "null");
+        return {
+          currentId: stored?.currentImage?.id,
+          rotatingIds: stored?.images?.map((image: { id?: number }) => image.id) ?? [],
+        };
       }),
     )
-    .toBe(910001);
+    .toEqual({ currentId: 405393, rotatingIds: expect.not.arrayContaining([405393]) });
 
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.locator("[data-konachan-background]")).toHaveAttribute(
@@ -88,13 +106,20 @@ test("starts with the neutral landing fallback when no cached image exists", asy
 
   await page.evaluate(() => {
     const cachedImage = {
-      id: 999999,
-      url: "/konachan-backgrounds/999999.webp",
+      id: 910001,
+      url: "/konachan-backgrounds/910001.webp",
       originalUrl: "https://www.cta.li/",
       rating: "safe",
+      sourceColor: "#5BC3D6",
+      variants: [
+        {
+          url: "/konachan-backgrounds/910001-960.webp",
+          width: 960,
+        },
+      ],
     };
     localStorage.setItem(
-      "home-konachan-backgrounds-v8",
+      "home-konachan-backgrounds-v9",
       JSON.stringify({ currentImage: cachedImage, images: [cachedImage], storedAt: Date.now() }),
     );
   });
@@ -106,7 +131,7 @@ test("starts with the neutral landing fallback when no cached image exists", asy
   await expect
     .poll(() =>
       page.evaluate(() => {
-        const stored = JSON.parse(localStorage.getItem("home-konachan-backgrounds-v8") || "null");
+        const stored = JSON.parse(localStorage.getItem("home-konachan-backgrounds-v9") || "null");
         return {
           currentId: stored?.currentImage?.id,
           allColorsValid:
@@ -137,7 +162,7 @@ test("chooses 960 or full Konachan assets from cover geometry times DPR", async 
   await expect
     .poll(() =>
       page.evaluate(() => {
-        const stored = JSON.parse(localStorage.getItem("home-konachan-backgrounds-v8") || "null");
+        const stored = JSON.parse(localStorage.getItem("home-konachan-backgrounds-v9") || "null");
         return {
           loadedUrl: stored?.currentImage?.loadedUrl,
           url: stored?.currentImage?.url,

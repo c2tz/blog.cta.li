@@ -75,8 +75,8 @@ test("rejects stale or incomplete public runtime manifests", () => {
 
 test("validates the neutral fixture manifest and every declared WebP", async () => {
   const result = await checkKonachanRuntimeManifest({ sourceDirectory: FIXTURE_DIRECTORY });
-  assert.equal(result.images, 3);
-  assert.equal(result.files, 6);
+  assert.equal(result.images, 4);
+  assert.equal(result.files, 8);
   assert.ok(result.bytes > 0);
 });
 

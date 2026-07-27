@@ -20,7 +20,10 @@ type SearchControllers = {
 
 let baseModulesPromise: Promise<BaseInitializers> | undefined;
 let homeUiPromise: Promise<unknown> | undefined;
+let ipGeolocationModulePromise: Promise<typeof import("@/assets/js/ip-geolocation.js")> | undefined;
 let searchModulePromise: Promise<SearchControllers> | undefined;
+let speedInsightsModulePromise:
+  Promise<typeof import("@/assets/js/optional-services.js")> | undefined;
 let consentServicesListenerInstalled = false;
 let consentResyncInstalled = false;
 let explicitContentListenerInstalled = false;
@@ -74,19 +77,24 @@ function loadConsentServices() {
 
   if (
     document.body?.dataset.speedInsightsEnabled === "true" &&
-    hasFunctionalityConsent("speed-insights")
+    (hasFunctionalityConsent("speed-insights") || speedInsightsModulePromise)
   ) {
-    modules.push(
-      import("@/assets/js/optional-services.js").then(({ syncSpeedInsights }) =>
-        syncSpeedInsights(),
-      ),
-    );
+    speedInsightsModulePromise ??= import("@/assets/js/optional-services.js").catch((error) => {
+      speedInsightsModulePromise = undefined;
+      throw error;
+    });
+    modules.push(speedInsightsModulePromise.then(({ syncSpeedInsights }) => syncSpeedInsights()));
   }
 
-  if (document.querySelector("#ip-wrapper") && hasFunctionalityConsent("ipgeo")) {
-    modules.push(
-      import("@/assets/js/ip-geolocation.js").then(({ updateLocation }) => updateLocation()),
-    );
+  if (
+    document.querySelector("#ip-wrapper") &&
+    (hasFunctionalityConsent("ipgeo") || ipGeolocationModulePromise)
+  ) {
+    ipGeolocationModulePromise ??= import("@/assets/js/ip-geolocation.js").catch((error) => {
+      ipGeolocationModulePromise = undefined;
+      throw error;
+    });
+    modules.push(ipGeolocationModulePromise.then(({ updateLocation }) => updateLocation()));
   }
 
   return Promise.all(modules);
@@ -189,7 +197,6 @@ function armSearchShortcut() {
 }
 
 function armSearch() {
-  armSearchShortcut();
   const eagerPanel = document.querySelector('[data-site-search-panel]:not([data-deferred="true"])');
   if (eagerPanel) void loadSearchControllers().catch(() => undefined);
 
@@ -231,8 +238,9 @@ function loadHomeUi() {
 
 async function loadHomeEnhancements() {
   if (!document.querySelector("[data-konachan-background]")) return;
-  const [, background, controls] = await Promise.all([
+  const [, , background, controls] = await Promise.all([
     loadHomeUi(),
+    import("@/assets/js/material-web/home-konachan.js"),
     import("@/assets/js/app/home-konachan-background.js"),
     import("@/assets/js/app/home-konachan-controls.js"),
   ]);

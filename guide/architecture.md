@@ -98,7 +98,7 @@ Examples:
 - `ct-cookie-consent-v2`: individual optional-services consent payload.
 - `ct-explicit-content-ack-v1`: explicit image warning acknowledgement.
 - `site-ip-geolocation-v3`: IP geolocation cache format.
-- `home-konachan-backgrounds-v8`: selected home background manifest cache format.
+- `home-konachan-backgrounds-v9`: selected home background manifest cache format.
 - `home-konachan-backgrounds-v4`: Cache Storage bucket for fetched Konachan JSON responses.
 
 When renaming a persisted key, keep a legacy key and migrate on read before deleting the old value.
@@ -125,6 +125,11 @@ Local builds automatically use a neighboring private checkout when present; pull
 machines without that checkout use abstract fixtures. Generated assets remain ignored, so no
 private asset or credential is committed to this public repository. Every build fails if the
 runtime contract, dimensions, file set, or 40 KiB manifest budget is invalid.
+
+Konachan image `405393` is the permanent bundled first-run fallback. It is deliberately excluded
+from the private manifest rotation and from refresh selection, so scheduled private asset updates
+cannot replace or remove it. A valid browser-cached selection still takes precedence on later
+visits.
 
 ## Checks
 

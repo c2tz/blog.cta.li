@@ -1,3 +1,4 @@
+import siteSearchStyles from "@/assets/css/components/site-search.scss?inline";
 import { isSearchSortMode } from "@/components/search/site-search-model";
 import { loadPagefindModule } from "@/components/search/site-search-pagefind";
 import { SITE_LOADING_INDICATOR_DELAY_MS } from "@/lib/site-contracts";
@@ -31,6 +32,15 @@ const SEARCH_MATERIAL_TAG_NAMES = [
   "md-filled-text-field",
   "md-select-option",
 ];
+
+function ensureSiteSearchStyles() {
+  if (document.querySelector("style[data-site-search-styles]")) return;
+
+  const stylesheet = document.createElement("style");
+  stylesheet.dataset.siteSearchStyles = "";
+  stylesheet.textContent = siteSearchStyles;
+  document.head.append(stylesheet);
+}
 
 const panelControllers = new WeakMap();
 let filterChipModule;
@@ -290,7 +300,8 @@ class SearchPanelController {
 
   clearFilters() {
     this.selectedTags = [];
-    this.render();
+    this.renderFilters();
+    this.renderStatus();
     void this.search(this.query.trim());
   }
 
@@ -340,7 +351,8 @@ class SearchPanelController {
     }
 
     this.selectedTags = nextTags;
-    this.render();
+    this.renderFilters();
+    this.renderStatus();
     void this.search(this.query.trim());
   }
 
@@ -426,6 +438,8 @@ class SearchPanelController {
       const [filters] = await Promise.all([pagefind.filters(), this.filterChipReady]);
       this.allTagFilterCounts = filters.tag;
       this.setTagFilterCounts(filters.tag);
+      this.renderFilters();
+      this.renderStatus();
     } catch {
       this.tagFilters = [];
       this.renderFilters();
@@ -458,8 +472,6 @@ class SearchPanelController {
       .slice(0, remainingSlots);
 
     this.tagFilters = [...selectedTagFilters, ...unselectedTagFilters];
-    this.renderFilters();
-    this.renderStatus();
   }
 
   async search(query) {
@@ -682,6 +694,7 @@ function initSiteSearchPanel(root, { includeDeferred = false } = {}) {
 }
 
 export function initSiteSearchPanels() {
+  ensureSiteSearchStyles();
   document.querySelectorAll("[data-site-search-panel]").forEach((root) => {
     if (root.dataset.deferred === "true" && !root.closest("md-dialog[open]")) return;
     void loadSearchMaterialModule().then(() => initSiteSearchPanel(root));
@@ -693,6 +706,7 @@ function focusSiteSearchPanel(root) {
 }
 
 export function initSiteSearchTriggers() {
+  ensureSiteSearchStyles();
   document.querySelectorAll("[data-site-search-trigger]").forEach((root) => {
     if (root.dataset.searchEnhanced === "true") return;
     root.dataset.searchEnhanced = "true";

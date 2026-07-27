@@ -1,5 +1,5 @@
+import siteTooltipStyles from "@/assets/css/components/site-tooltips.scss?inline";
 import { SITE_EVENTS } from "@/lib/site-contracts";
-import { positionFloatingSurface, trackFloatingSurface } from "./site-floating-surface.js";
 
 const TOOLTIP_SELECTOR =
   "[data-tooltip]:not([data-context-popover-trigger]):not([data-rich-tooltip-trigger])";
@@ -10,6 +10,24 @@ const TOUCH_HIDE_DELAY_MS = 3000;
 const TOUCH_FOCUS_GUARD_MS = 500;
 
 let controller;
+let floatingSurfacePromise;
+
+function ensureSiteTooltipStyles() {
+  if (document.querySelector("style[data-site-tooltip-styles]")) return;
+
+  const style = document.createElement("style");
+  style.dataset.siteTooltipStyles = "";
+  style.textContent = siteTooltipStyles;
+  document.head.append(style);
+}
+
+function loadFloatingSurface() {
+  floatingSurfacePromise ??= import("./site-floating-surface.js").catch((error) => {
+    floatingSurfacePromise = undefined;
+    throw error;
+  });
+  return floatingSurfacePromise;
+}
 
 function tooltipTarget(start) {
   if (!(start instanceof Element)) return null;
@@ -88,6 +106,7 @@ class SiteTooltipController {
     this.lastPointerPoint = null;
     this.virtualSuppressedUntilMove = false;
     this.stopTracking = null;
+    this.showRequest = 0;
     this.finePointer = matchMedia("(hover: hover) and (pointer: fine)");
     this.bindEvents();
     this.observeDocument();
@@ -357,6 +376,7 @@ class SiteTooltipController {
   scheduleVirtualShow(target, event) {
     this.clearShowTimer();
     this.clearHideTimer();
+    void loadFloatingSurface().catch(() => undefined);
     if (this.activeMode === "virtual") this.hide();
     this.pendingVirtualTarget = target;
     this.pendingVirtualPoint = { x: event.clientX, y: event.clientY };
@@ -373,6 +393,7 @@ class SiteTooltipController {
   scheduleShow(target, delay, reason) {
     this.clearShowTimer();
     this.clearHideTimer();
+    void loadFloatingSurface().catch(() => undefined);
     this.pendingVirtualTarget = null;
     this.pendingVirtualPoint = null;
     this.showTimer = window.setTimeout(() => {
@@ -394,11 +415,22 @@ class SiteTooltipController {
     }, HIDE_DELAY_MS);
   }
 
-  show(target, { point, reason = "touch" } = {}) {
+  async show(target, { point, reason = "touch" } = {}) {
     const message = target.dataset.tooltip?.trim();
     if (!message || !target.isConnected || ownsOpenInteractiveSurface(target)) return;
     this.clearTimers();
     if (this.activeTarget && this.activeTarget !== target) this.hide();
+    const request = ++this.showRequest;
+
+    let floatingSurface;
+    try {
+      floatingSurface = await loadFloatingSurface();
+    } catch {
+      return;
+    }
+    if (request !== this.showRequest || !target.isConnected || ownsOpenInteractiveSurface(target)) {
+      return;
+    }
 
     const reference = point ? virtualReference(target, point) : target;
     const activeReason =
@@ -423,17 +455,18 @@ class SiteTooltipController {
     this.stopTracking?.();
     this.stopTracking = point
       ? null
-      : trackFloatingSurface(this.surface, reference, {
+      : floatingSurface.trackFloatingSurface(this.surface, reference, {
           gap: 6,
           placement: target.dataset.tooltipPlacement || "top",
         });
-    void positionFloatingSurface(this.surface, reference, {
+    void floatingSurface.positionFloatingSurface(this.surface, reference, {
       gap: point ? 8 : 6,
       placement: target.dataset.tooltipPlacement || "top",
     });
   }
 
   hide() {
+    this.showRequest += 1;
     this.clearTimers();
     this.stopTracking?.();
     this.stopTracking = null;
@@ -462,10 +495,16 @@ class SiteTooltipController {
     }
     this.surface.textContent = message;
     if (this.activeMode === "anchor") {
-      void positionFloatingSurface(this.surface, this.activeTarget, {
-        gap: 6,
-        placement: this.activeTarget.dataset.tooltipPlacement || "top",
-      });
+      const target = this.activeTarget;
+      void loadFloatingSurface()
+        .then(({ positionFloatingSurface }) => {
+          if (this.activeTarget !== target) return;
+          return positionFloatingSurface(this.surface, target, {
+            gap: 6,
+            placement: target.dataset.tooltipPlacement || "top",
+          });
+        })
+        .catch(() => undefined);
     }
   }
 
@@ -513,6 +552,7 @@ export function showSiteTooltip(target) {
 export function initSiteTooltips() {
   const surface = document.getElementById("site-tooltip");
   if (!(surface instanceof HTMLElement)) return;
+  ensureSiteTooltipStyles();
   if (controller?.surface !== surface) {
     controller?.destroy();
     controller = new SiteTooltipController(surface);

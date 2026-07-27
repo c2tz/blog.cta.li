@@ -88,7 +88,6 @@ export function syncMaterialDynamicColor({ palette: paletteInput } = {}) {
   const theme = root.dataset.theme === "dark" ? "dark" : "light";
   const active = Boolean(enabled && detailed && palette);
 
-  clearMaterialDynamicColorProperties(root);
   root.toggleAttribute("data-material-dynamic-color-preference", enabled);
 
   if (active && palette) {
@@ -101,6 +100,7 @@ export function syncMaterialDynamicColor({ palette: paletteInput } = {}) {
       root.style.setProperty(`--md-sys-color-${role}`, palette.schemes[theme][role]);
     }
   } else {
+    clearMaterialDynamicColorProperties(root);
     delete root.dataset.materialDynamicColor;
     delete root.dataset.materialDynamicColorSource;
   }

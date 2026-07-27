@@ -111,13 +111,6 @@ const initialPosts = posts.slice(0, 3);
 
   site-home-latest-posts-table .home-posts-table-scroll {
     --home-posts-date-column-content-width: 8rem;
-    --home-posts-date-column-fallback-width: calc(
-      var(--home-posts-date-column-content-width) + 3rem
-    );
-    --home-posts-date-column-width: var(
-      --home-posts-date-column-measured-width,
-      var(--home-posts-date-column-fallback-width)
-    );
 
     position: relative;
     max-width: 100%;
@@ -195,8 +188,10 @@ const initialPosts = posts.slice(0, 3);
     top: 0;
     left: 0;
     z-index: 3;
+    display: flex;
     width: 100%;
     min-width: 100%;
+    block-size: var(--md-linear-progress-track-height);
   }
 
   site-home-latest-posts-table .home-posts-table-progress:not([data-loading-active]) {

@@ -125,6 +125,8 @@ class SiteTagPostsElement extends HTMLElement {
     }
 
     this.pageIndex = 0;
+    this.reorderItems();
+    this.updateSortState();
     const status = this.querySelector<HTMLElement>("[data-sort-status]");
     if (status) {
       if (!this.sortColumn) {
@@ -141,15 +143,12 @@ class SiteTagPostsElement extends HTMLElement {
 
   private filteredItems() {
     const filter = this.filterValue.trim().toLocaleLowerCase("fr");
-    const filtered = filter
-      ? this.items.filter((item) => item.search.includes(filter))
-      : this.items;
-    return this.sortItems(filtered);
+    return filter ? this.items.filter((item) => item.search.includes(filter)) : this.items;
   }
 
   private sortItems(items: TagPostDomItem[]) {
     if (this.view !== "table" || !this.sortColumn) {
-      return [...items].sort((left, right) => left.index - right.index);
+      return [...items];
     }
 
     const direction = this.sortDirection === "asc" ? 1 : -1;
@@ -173,12 +172,6 @@ class SiteTagPostsElement extends HTMLElement {
     const pageCount = this.pageCount(filtered.length);
     this.pageIndex = Math.min(this.pageIndex, pageCount - 1);
 
-    const orderedItems = this.sortItems(this.items);
-    if (this.itemsContainer) {
-      this.itemsContainer.append(...orderedItems.map((item) => item.element));
-      if (this.emptyRow) this.itemsContainer.append(this.emptyRow);
-    }
-
     const start = this.pageIndex * this.pageSize;
     const visiblePage = filtered.slice(start, start + this.pageSize);
     const visibleItems = new Set(visiblePage);
@@ -189,8 +182,18 @@ class SiteTagPostsElement extends HTMLElement {
     });
     if (this.emptyRow) this.emptyRow.hidden = filtered.length > 0;
 
-    this.updateSortState();
     this.updatePagination(filtered.length, pageCount);
+  }
+
+  private reorderItems() {
+    if (!this.itemsContainer) return;
+
+    const orderedItems = this.sortColumn
+      ? this.sortItems(this.items)
+      : [...this.items].sort((left, right) => left.index - right.index);
+    this.items = orderedItems;
+    this.itemsContainer.append(...orderedItems.map((item) => item.element));
+    if (this.emptyRow) this.itemsContainer.append(this.emptyRow);
   }
 
   private updateSortState() {

@@ -1,5 +1,3 @@
-import { SITE_EVENTS } from "@/lib/site-contracts";
-
 const SCRIPT_SELECTOR = 'script[data-site-service="speed-insights"]';
 let reloadRequested = false;
 
@@ -45,6 +43,3 @@ export function syncSpeedInsights() {
   );
   document.body.append(script);
 }
-
-syncSpeedInsights();
-document.addEventListener(SITE_EVENTS.consentChange, syncSpeedInsights);

@@ -1,0 +1,17 @@
+.site-search-trigger {
+  display: block;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 2.5rem;
+}
+
+.site-search-trigger-progress {
+  --md-circular-progress-color: var(--md-sys-color-on-surface-variant);
+  --md-circular-progress-active-indicator-color: var(--md-sys-color-on-surface-variant);
+  --md-circular-progress-active-indicator-width: 12;
+  --md-circular-progress-size: 24px;
+}
+
+.site-search-trigger [hidden] {
+  display: none !important;
+}

@@ -1,5 +1,5 @@
 ---
-import { getCollection, getEntry } from "astro:content";
+import { getEntry } from "astro:content";
 
 import HomeLatestPostsTable from "@/components/home/home-latest-posts-table.astro";
 import HomeKonachanBackground from "@/components/home/home-konachan-background.astro";
@@ -10,19 +10,10 @@ import "@/assets/css/pages/home-hero.scss";
 import "@/assets/css/pages/home-index.scss";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/site-config";
 import type { InfoData } from "@/lib/content-schemas";
-import { isListedBlogPost } from "@/lib/blog-posts";
+import { getListedBlogPostsWithGitDates } from "@/lib/blog-posts";
 import { formatFrenchDate, formatFrenchDateTime, toDate } from "@/lib/date-format.mjs";
-import { getContentEntryGitDates } from "@/lib/git-dates.mjs";
 
-const posts = (await getCollection("blog"))
-  .filter(isListedBlogPost)
-  .map((post) => ({
-    ...post,
-    gitDates: getContentEntryGitDates("blog", post),
-  }))
-  .sort(
-    (a, b) => new Date(b.gitDates.createdAt).valueOf() - new Date(a.gitDates.createdAt).valueOf(),
-  );
+const posts = await getListedBlogPostsWithGitDates();
 
 const latestPosts = posts.slice(0, 3);
 const latestPostSummaries = latestPosts.map((post) => ({

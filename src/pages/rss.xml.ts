@@ -1,28 +1,11 @@
 import type { APIRoute } from "astro";
 import rss from "@astrojs/rss";
-import { getCollection, type CollectionEntry } from "astro:content";
 
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/site-config";
-import { isListedBlogPost } from "@/lib/blog-posts";
-import { getContentEntryGitDates, type GitDates } from "@/lib/git-dates.mjs";
-
-interface RssPost {
-  data: CollectionEntry<"blog">["data"];
-  gitDates: GitDates;
-  id: string;
-}
+import { getListedBlogPostsWithGitDates } from "@/lib/blog-posts";
 
 export const GET: APIRoute = async (context) => {
-  const collection = ((await getCollection("blog")) as CollectionEntry<"blog">[]).filter(
-    isListedBlogPost,
-  );
-  const posts: RssPost[] = collection.map((post) => ({
-    ...post,
-    gitDates: getContentEntryGitDates("blog", post),
-  }));
-  posts.sort(
-    (a, b) => new Date(b.gitDates.createdAt).valueOf() - new Date(a.gitDates.createdAt).valueOf(),
-  );
+  const posts = await getListedBlogPostsWithGitDates();
 
   return rss({
     title: SITE_TITLE,

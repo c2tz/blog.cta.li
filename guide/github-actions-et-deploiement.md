@@ -93,11 +93,26 @@ si elle ne s'applique pas ou ne peut pas être effectuée. Suivez la liste de
 [vérification sur appareils physiques](physical-device-qa.md) ; les tests WebKit automatisés la
 complètent mais ne remplacent pas Safari sur un vrai appareil.
 
+### Mises à jour Dependabot
+
+Dependabot ouvre automatiquement ses propositions vers `develop`, mais elles restent toujours à
+décider par `c2tz` : elles lui sont assignées, demandent sa revue de propriétaire du code et ne
+sont jamais fusionnées automatiquement.
+
 ### Refresh Konachan backgrounds
 
-Chaque mois, il télécharge une nouvelle sélection, valide le nombre d'images, les variantes, les
-manifestes et leurs tailles, puis ouvre une pull request si quelque chose a changé. Il utilise le
-secret `BOT_TOKEN` uniquement pour créer cette proposition.
+Le dépôt privé `c2tz/ct-blog-landing-img` renouvelle automatiquement les fonds le premier jour du
+mois à 20:17 UTC. Il récupère une sélection, construit les variantes, puis exécute les vérifications
+des images, manifestes et tailles.
+
+Si et seulement si ces vérifications réussissent, le workflow crée ou met à jour une proposition
+technique dédiée. Il vérifie que son diff ne contient que les manifestes et images Konachan attendus,
+la fusionne automatiquement, puis appelle le workflow réutilisable qui déclenche le hook de
+déploiement Vercel. Aucun secret `BOT_TOKEN` permanent n’est nécessaire : le workflow utilise son
+jeton GitHub éphémère.
+
+Un lancement manuel en mode *dry run* valide la chaîne sans créer de proposition, fusionner de
+changement ni déclencher Vercel.
 
 ## Lire un échec GitHub Actions
 

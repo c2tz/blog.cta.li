@@ -1,4 +1,4 @@
-import { SITE_EVENTS, SITE_LEGACY_STORAGE_KEYS, SITE_STORAGE_KEYS } from "@/lib/site-contracts";
+import { SITE_LEGACY_STORAGE_KEYS, SITE_STORAGE_KEYS } from "@/lib/site-contracts";
 
 const API_URL = "https://api.ipapi.is";
 const CACHE_KEY = SITE_STORAGE_KEYS.ipGeolocation;
@@ -187,7 +187,5 @@ function handleVisibilityChange() {
   if (document.visibilityState === "visible") updateLocation();
 }
 
-updateLocation();
-document.addEventListener(SITE_EVENTS.consentChange, updateLocation);
 document.addEventListener("visibilitychange", handleVisibilityChange);
 window.addEventListener("online", updateLocation);

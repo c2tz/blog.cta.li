@@ -1,3 +1,4 @@
+import cookieConsentStyles from "@/assets/css/components/cookie-consent.scss?inline";
 import {
   SITE_COOKIE_NAMES,
   SITE_EVENTS,
@@ -38,6 +39,16 @@ const MATERIAL_BUTTON_TAG_NAMES = new Set([
   "md-outlined-button",
   "md-text-button",
 ]);
+
+function ensureCookieConsentStyles() {
+  if (document.querySelector("style[data-cookie-consent-styles]")) return;
+
+  const style = document.createElement("style");
+  style.dataset.cookieConsentStyles = "";
+  style.textContent = cookieConsentStyles;
+  document.head.append(style);
+}
+
 function readCookie(name) {
   return readCookieValue(document.cookie, name);
 }
@@ -447,7 +458,6 @@ class SiteCookieConsentBanner extends HTMLElement {
 
 class SiteCookiePreferences extends HTMLElement {
   #services = null;
-  #feedbackTimer = 0;
 
   #handleClick = (event) => {
     const actionControl =
@@ -500,12 +510,10 @@ class SiteCookiePreferences extends HTMLElement {
   disconnectedCallback() {
     this.removeEventListener("click", this.#handleClick);
     this.removeEventListener("change", this.#handleChange);
-    this.#clearFeedbackTimer();
     delete this.dataset.cookiePreferencesReady;
   }
 
   #writeServices(services, feedback) {
-    this.#clearFeedbackTimer();
     const consent = writeConsentServices(services);
     if (!consent) return;
 
@@ -516,7 +524,6 @@ class SiteCookiePreferences extends HTMLElement {
   }
 
   #resetChoice() {
-    this.#clearFeedbackTimer();
     resetConsent();
     this.#services = null;
     exposeConsentApi();
@@ -555,15 +562,11 @@ class SiteCookiePreferences extends HTMLElement {
       control.selected = selected;
     }
   }
-
-  #clearFeedbackTimer() {
-    if (!this.#feedbackTimer) return;
-    window.clearTimeout(this.#feedbackTimer);
-    this.#feedbackTimer = 0;
-  }
 }
 
 export function defineCookieConsentControls() {
+  ensureCookieConsentStyles();
+
   if (!customElements.get("site-cookie-consent-banner")) {
     customElements.define("site-cookie-consent-banner", SiteCookieConsentBanner);
   }

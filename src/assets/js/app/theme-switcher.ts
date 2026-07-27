@@ -1,3 +1,4 @@
+import themeMenuStyles from "@/assets/css/components/theme-menu.scss?inline";
 import { bindMaterialMenuSelection } from "@/assets/js/app/material-menu";
 import {
   readMaterialDynamicColorEnabled,
@@ -28,11 +29,21 @@ const icons: Record<ThemePreference, string> = {
   dark: "\uE3A6",
 };
 
+function ensureThemeMenuStyles() {
+  if (document.querySelector("style[data-theme-menu-styles]")) return;
+
+  const style = document.createElement("style");
+  style.dataset.themeMenuStyles = "";
+  style.textContent = themeMenuStyles;
+  document.head.append(style);
+}
+
 const isPreference = (value: string | null): value is ThemePreference =>
   value === "system" || value === "light" || value === "dark";
 
 async function enhanceThemeSwitcher(root: HTMLElement) {
   if (root.dataset.enhanced === "true" || root.dataset.enhancing === "true") return;
+  ensureThemeMenuStyles();
   root.dataset.enhancing = "true";
 
   await Promise.all([

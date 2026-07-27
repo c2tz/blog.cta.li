@@ -1,27 +1,11 @@
 import { expect, test as base, type Locator, type Page } from "@playwright/test";
 import { observePageRuntime } from "./runtime-observer";
+import { seedLocalPreferences } from "./shared-fixture-helpers";
 export { expect };
+export { expectPopoverOpen } from "./shared-fixture-helpers";
 
 export const SOURCE_IMAGE_SELECTOR = ".site-prose img[data-image-dialog]";
 export const DIALOG_SELECTOR = "md-dialog[data-site-image-dialog]";
-
-async function seedLocalPreferences(page: Page) {
-  await page.addInitScript(() => {
-    const updatedAt = new Date().toISOString();
-    localStorage.setItem(
-      "ct-explicit-content-ack-v1",
-      JSON.stringify({ acknowledged: true, updatedAt, version: 1 }),
-    );
-    localStorage.setItem(
-      "ct-cookie-consent-v2",
-      JSON.stringify({
-        services: { giscus: false, ipgeo: false, "speed-insights": false },
-        updatedAt,
-        version: 2,
-      }),
-    );
-  });
-}
 
 export async function expectFocusWithin(locator: Locator) {
   await expect
@@ -48,12 +32,6 @@ export async function pressTabAndExpectFocus(
   // boundary so a late autofocus cannot silently undo the keyboard move.
   await current.page().waitForTimeout(360);
   await expectFocusWithin(expected);
-}
-
-export async function expectPopoverOpen(locator: Locator, open: boolean) {
-  await expect
-    .poll(() => locator.evaluate((element) => element.matches(":popover-open")))
-    .toBe(open);
 }
 
 export async function expectMaterialAria(locator: Locator, name: string, value: string) {

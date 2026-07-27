@@ -11,6 +11,12 @@ Depuis la racine du dépôt :
 pnpm new:post "Mon premier article"
 ```
 
+Pour remplir directement ses tags, répétez l'option `--tag` :
+
+```sh
+pnpm new:post "Mon premier article" --tag astro --tag debutant
+```
+
 La commande crée `src/content/blog/mon-premier-article.md`. Elle refuse d'écraser un fichier déjà
 présent. Un brouillon ressemble à ceci :
 
@@ -64,6 +70,7 @@ N'ajoutez pas un titre Markdown `#` identique au titre. Astro produit déjà le 
 
 Un tag :
 
+- contient de 1 à 48 caractères ;
 - commence par une lettre ou un chiffre ;
 - ne contient pas d'espace ;
 - peut contenir lettres, chiffres, points, tirets, `_` et `+` ;

@@ -14,6 +14,10 @@ updates:
     labels:
       - "type: dependencies"
       - "status: needs-review"
+    reviewers:
+      - "c2tz"
+    assignees:
+      - "c2tz"
     commit-message:
       prefix: "chore"
       include: "scope"
@@ -44,6 +48,10 @@ updates:
       - "type: dependencies"
       - "area: tooling"
       - "status: needs-review"
+    reviewers:
+      - "c2tz"
+    assignees:
+      - "c2tz"
     commit-message:
       prefix: "chore"
       include: "scope"

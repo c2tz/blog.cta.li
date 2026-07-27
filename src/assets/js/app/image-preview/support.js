@@ -1,3 +1,5 @@
+import { fileNameFromURL as resolveFileNameFromURL } from "../url.js";
+
 export const DOUBLE_TAP_DISTANCE = 34;
 export const DOUBLE_TAP_MS = 280;
 export const CHECK_ICON = "\uE5CA";
@@ -74,17 +76,7 @@ export const INFORMATION_DIALOG_CLOSE_ANIMATION = {
 };
 
 export function fileNameFromURL(src, baseURI = document.baseURI) {
-  try {
-    const parsed = new URL(src, baseURI);
-    const sourceUrl = parsed.searchParams.get("href");
-    if (sourceUrl && parsed.pathname.endsWith("/_image")) {
-      return fileNameFromURL(sourceUrl, baseURI);
-    }
-
-    return decodeURIComponent(parsed.pathname.split("/").filter(Boolean).at(-1) ?? "image");
-  } catch {
-    return "image";
-  }
+  return resolveFileNameFromURL(src, baseURI, { trailingSlash: "last-segment" });
 }
 
 export function requiredElement(root, selector) {

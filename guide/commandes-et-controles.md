@@ -230,14 +230,13 @@ build` prépare d'abord les assets puis exécute déjà ce contrôle.
 
 Prépare transactionnellement les arrière-plans. Les builds Vercel fiables de `main` et `develop`
 lisent le dépôt privé avec une clé de déploiement en lecture seule. En local, le script utilise
-automatiquement le dossier `public/` d'un checkout voisin nommé `ct-blog-landing-img`. Il conserve
-les fixtures abstraites sans contenu sensible si ce checkout est absent. Pour utiliser un autre
-emplacement local, définissez `LANDING_ASSETS_SOURCE_DIR` vers son dossier `public/`.
+toujours les quatre fixtures abstraites sans contenu sensible. Ce choix évite de recopier les
+centaines de WebP du dépôt privé à chaque démarrage et rend le résultat local déterministe.
 
-Les validations automatisées appellent `pnpm build:test`, qui force les trois fixtures abstraites
-pour rester déterministe même si le checkout privé voisin est présent. `pnpm dev` et `pnpm build`
-gardent les images privées locales, tandis que `pnpm build:vercel` laisse `main` et `develop`
-récupérer le dépôt privé avec leur clé de déploiement autorisée.
+Pour tester volontairement le jeu privé local, définissez `LANDING_ASSETS_SOURCE_DIR` vers son
+dossier `public/` avant `pnpm dev` ou `pnpm build`. Les validations automatisées appellent
+`pnpm build:test`, qui force également les quatre fixtures abstraites. `pnpm build:vercel` laisse
+`main` et `develop` récupérer le dépôt privé avec leur clé de déploiement autorisée.
 
 ### `pnpm index:search`
 
@@ -255,6 +254,7 @@ Réduit la taille des fichiers HTML dans `dist`. Cette opération ne modifie pas
 Crée un fichier Markdown non listé. Les options sont :
 
 ```sh
+pnpm new:post "Titre" --tag astro --tag material-web
 pnpm new:post "Titre" --description "Résumé" --publish
 pnpm new:post --help
 ```

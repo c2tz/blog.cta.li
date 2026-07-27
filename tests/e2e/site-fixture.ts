@@ -1,6 +1,8 @@
 import { expect, test as base, type Locator, type Page } from "@playwright/test";
 import { observePageRuntime } from "./runtime-observer";
+import { seedLocalPreferences } from "./shared-fixture-helpers";
 export { expect };
+export { expectPopoverOpen } from "./shared-fixture-helpers";
 
 export const ROUTES = [
   "/",
@@ -12,26 +14,6 @@ export const ROUTES = [
 
 export const pageRuntimeErrors = new WeakMap<Page, string[]>();
 export const geoRequestCounts = new WeakMap<Page, { count: number }>();
-
-async function seedLocalPreferences(page: Page) {
-  await page.addInitScript(() => {
-    const updatedAt = new Date().toISOString();
-
-    localStorage.setItem(
-      "ct-explicit-content-ack-v1",
-      JSON.stringify({ acknowledged: true, updatedAt, version: 1 }),
-    );
-    localStorage.setItem(
-      "ct-cookie-consent-v2",
-      JSON.stringify({
-        services: { giscus: false, ipgeo: false, "speed-insights": false },
-        updatedAt,
-        version: 2,
-      }),
-    );
-    localStorage.setItem("site-theme-preference", "system");
-  });
-}
 
 export function clearConsentState() {
   localStorage.removeItem("ct-explicit-content-ack-v1");
@@ -177,12 +159,6 @@ export async function waitForNativeEnhancement(page: Page, selector: string) {
   await expect.poll(() => page.locator(selector).getAttribute("data-enhanced")).toBe("true");
 }
 
-export async function expectPopoverOpen(locator: Locator, open: boolean) {
-  await expect
-    .poll(() => locator.evaluate((element) => element.matches(":popover-open")))
-    .toBe(open);
-}
-
 export async function expectKeyboardFocusOverridesPendingPointerFrame(dialog: Locator) {
   const focusState = await dialog.evaluate(async (element) => {
     const backdrop = element.parentElement?.querySelector(".cookie-consent-backdrop");
@@ -294,7 +270,7 @@ export const test = base.extend({
       });
     });
 
-    await seedLocalPreferences(page);
+    await seedLocalPreferences(page, { includeThemePreference: true });
     await use(page);
     expect(pageRuntimeErrors.get(page) ?? [], "browser console warnings and errors").toEqual([]);
   },

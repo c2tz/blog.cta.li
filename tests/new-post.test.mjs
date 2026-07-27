@@ -19,6 +19,7 @@ test("crée un article non listé avec son frontmatter", async (t) => {
 
   assert.match(filePath, /un-test-mdx\.md$/);
   assert.match(content, /^title: "Un test MDX"$/m);
+  assert.match(content, /^tags: \[\]$/m);
   assert.match(content, /^listed: false$/m);
   assert.doesNotMatch(content, /^description: ""$/m);
   assert.doesNotMatch(content, /^# /m);
@@ -64,4 +65,54 @@ test("analyse les options de publication sans confondre le titre et la descripti
   );
   assert.throws(() => parsePostArguments(["Article", "--inconnue"]), /Option inconnue/);
   assert.throws(() => parsePostArguments(["Article", "--description"]), /attend un résumé/);
+});
+
+test("ajoute des tags répétés au frontmatter après les avoir normalisés", async (t) => {
+  const postsDirectory = await mkdtemp(join(tmpdir(), "ct-blog-tagged-post-"));
+  t.after(() => rm(postsDirectory, { force: true, recursive: true }));
+
+  const postOptions = parsePostArguments([
+    "Article balisé",
+    "--tag",
+    " astro ",
+    "--tag",
+    "material-web",
+  ]);
+  assert.deepEqual(postOptions, {
+    description: undefined,
+    listed: false,
+    tags: ["astro", "material-web"],
+    title: "Article balisé",
+  });
+
+  const filePath = await createPost({ ...postOptions, postsDirectory });
+  const content = await readFile(filePath, "utf8");
+
+  assert.match(content, /^tags: \["astro", "material-web"\]$/m);
+});
+
+test("refuse les tags incompatibles avec le schéma de contenu", () => {
+  const invalidTagCases = [
+    { args: ["Article", "--tag"], error: /attend un tag non vide/ },
+    { args: ["Article", "--tag", "   "], error: /au moins un caractère/ },
+    { args: ["Article", "--tag", "a".repeat(49)], error: /48 caractères/ },
+    { args: ["Article", "--tag", "-astro"], error: /commencer par une lettre ou un chiffre/ },
+    { args: ["Article", "--tag", "astro web"], error: /ne contenir que/ },
+    { args: ["Article", "--tag", "all"], error: /réservé/ },
+    {
+      args: ["Article", "--tag", "astro", "--tag", " astro "],
+      error: /doivent être uniques/,
+    },
+    {
+      args: [
+        "Article",
+        ...Array.from({ length: 13 }, (_, index) => ["--tag", `tag${index}`]).flat(),
+      ],
+      error: /plus de 12 tags/,
+    },
+  ];
+
+  for (const { args, error } of invalidTagCases) {
+    assert.throws(() => parsePostArguments(args), error);
+  }
 });

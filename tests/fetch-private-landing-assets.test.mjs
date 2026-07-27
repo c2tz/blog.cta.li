@@ -12,30 +12,26 @@ import {
 const OPENSSH_TEST_KEY =
   "-----BEGIN OPENSSH PRIVATE KEY-----\nfixture\n-----END OPENSSH PRIVATE KEY-----\n";
 
-test("uses neutral fixtures when no private source is authorized", () => {
-  const selected = selectLandingAssetSource({}, { pathExists: () => false });
+test("keeps local builds deterministic unless a private source is explicitly selected", () => {
+  const selected = selectLandingAssetSource({});
   assert.equal(selected.kind, "fixtures");
   assert.match(selected.directory, /tests\/fixtures\/landing-assets$/);
 });
 
-test("automatically uses the neighboring private checkout when it is available", () => {
-  const localPrivateDirectory = resolve("../ct-blog-landing-img/public");
-  const selected = selectLandingAssetSource(
-    {},
-    { localPrivateDirectory, pathExists: (path) => path === localPrivateDirectory },
-  );
-  assert.deepEqual(selected, {
-    directory: localPrivateDirectory,
-    kind: "local-directory",
-  });
-});
-
-test("allows an explicit local source without accepting a private key", () => {
+test("recognizes the explicit fixture source without accepting a private key", () => {
   const selected = selectLandingAssetSource({
     LANDING_ASSETS_SOURCE_DIR: "tests/fixtures/landing-assets",
   });
-  assert.equal(selected.kind, "local-directory");
+  assert.equal(selected.kind, "fixtures");
   assert.match(selected.directory, /tests\/fixtures\/landing-assets$/);
+});
+
+test("allows an explicit private local source without accepting a private key", () => {
+  const selected = selectLandingAssetSource({
+    LANDING_ASSETS_SOURCE_DIR: "../ct-blog-landing-img/public",
+  });
+  assert.equal(selected.kind, "local-directory");
+  assert.match(selected.directory, /ct-blog-landing-img\/public$/);
 });
 
 test("fails closed on trusted Vercel builds when the deploy key is missing", () => {
@@ -79,7 +75,6 @@ test("stages fixtures through the source-selection wrapper", async (t) => {
   const result = await fetchAndPrepareLandingAssets({
     destinationDirectory: directory,
     environment: {},
-    sourceSelectionOptions: { pathExists: () => false },
   });
 
   assert.equal(result.sourceKind, "fixtures");

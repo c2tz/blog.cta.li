@@ -121,10 +121,12 @@ script stay decoupled.
 The authoring manifest, downloader, and generated images live in the private
 `c2tz/ct-blog-landing-img` repository. Trusted Vercel builds clone it through a read-only deploy
 key, validate every declared WebP, and stage only the compact runtime manifest plus browser assets.
-Local builds automatically use a neighboring private checkout when present; pull requests and
-machines without that checkout use abstract fixtures. Generated assets remain ignored, so no
-private asset or credential is committed to this public repository. Every build fails if the
-runtime contract, dimensions, file set, or 40 KiB manifest budget is invalid.
+Local builds use the four abstract fixtures by default, even when a neighboring private checkout
+exists. A developer can opt into a private local source with `LANDING_ASSETS_SOURCE_DIR`; trusted
+`main` and `develop` Vercel builds remain the only automatic consumers of the private repository.
+Generated assets remain ignored, so no private asset or credential is committed to this public
+repository. Every build fails if the runtime contract, dimensions, file set, or 40 KiB manifest
+budget is invalid.
 
 Konachan image `405393` is the permanent bundled first-run fallback. It is deliberately excluded
 from the private manifest rotation and from refresh selection, so scheduled private asset updates

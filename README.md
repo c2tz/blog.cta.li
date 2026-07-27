@@ -36,6 +36,12 @@ Pour créer un brouillon :
 pnpm new:post "Titre de mon article"
 ```
 
+Les tags peuvent être ajoutés directement en répétant `--tag` :
+
+```sh
+pnpm new:post "Titre de mon article" --tag astro --tag material-web
+```
+
 Pour créer un article immédiatement publiable :
 
 ```sh

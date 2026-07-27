@@ -3,6 +3,9 @@ import { fileURLToPath } from "node:url";
 import { join, resolve } from "node:path";
 
 const DEFAULT_POSTS_DIRECTORY = resolve(process.cwd(), "src/content/blog");
+const MAX_POST_TAG_LENGTH = 48;
+const MAX_POST_TAGS = 12;
+const POST_TAG_PATTERN = /^[\p{L}\p{N}][\p{L}\p{N}._+-]*$/u;
 
 function escapeYamlDoubleQuotedString(value) {
   return value
@@ -25,9 +28,45 @@ export function slugifyPostTitle(title) {
     .replace(/^-+|-+$/g, "");
 }
 
-export function createPostContent(title, { description, listed = false } = {}) {
+export function normalizePostTags(tags = []) {
+  const normalizedTags = tags.map((tag) => {
+    if (typeof tag !== "string") {
+      throw new Error("Chaque tag doit être une chaîne de caractères.");
+    }
+
+    const normalizedTag = tag.trim();
+    if (!normalizedTag) {
+      throw new Error("Un tag doit contenir au moins un caractère.");
+    }
+    if (normalizedTag.length > MAX_POST_TAG_LENGTH) {
+      throw new Error(`Un tag ne peut pas dépasser ${MAX_POST_TAG_LENGTH} caractères.`);
+    }
+    if (!POST_TAG_PATTERN.test(normalizedTag)) {
+      throw new Error(
+        `Le tag "${normalizedTag}" doit commencer par une lettre ou un chiffre et ne contenir que des lettres, chiffres, points, tirets, _ ou +.`,
+      );
+    }
+    if (normalizedTag === "all") {
+      throw new Error('Le tag "all" est réservé et ajouté automatiquement.');
+    }
+
+    return normalizedTag;
+  });
+
+  if (normalizedTags.length > MAX_POST_TAGS) {
+    throw new Error(`Un article ne peut pas avoir plus de ${MAX_POST_TAGS} tags.`);
+  }
+  if (new Set(normalizedTags).size !== normalizedTags.length) {
+    throw new Error("Les tags d’un article doivent être uniques.");
+  }
+
+  return normalizedTags;
+}
+
+export function createPostContent(title, { description, listed = false, tags = [] } = {}) {
   const normalizedTitle = title.trim();
   const normalizedDescription = description?.trim();
+  const normalizedTags = normalizePostTags(tags);
   if (!normalizedTitle) {
     throw new Error("Le titre doit contenir au moins une lettre ou un chiffre.");
   }
@@ -38,10 +77,16 @@ export function createPostContent(title, { description, listed = false } = {}) {
   const descriptionFrontmatter = normalizedDescription
     ? `description: "${escapeYamlDoubleQuotedString(normalizedDescription)}"\n`
     : "";
+  const tagsFrontmatter =
+    normalizedTags.length === 0
+      ? "tags: []"
+      : `tags: [${normalizedTags
+          .map((tag) => `"${escapeYamlDoubleQuotedString(tag)}"`)
+          .join(", ")}]`;
 
   return `---
 title: "${escapeYamlDoubleQuotedString(normalizedTitle)}"
-${descriptionFrontmatter}tags: []
+${descriptionFrontmatter}${tagsFrontmatter}
 listed: ${listed}
 ---
 
@@ -54,6 +99,7 @@ export async function createPost({
   postsDirectory = DEFAULT_POSTS_DIRECTORY,
   description,
   listed = false,
+  tags = [],
 }) {
   const normalizedTitle = title.trim();
   const slug = slugifyPostTitle(normalizedTitle);
@@ -65,7 +111,7 @@ export async function createPost({
   await mkdir(postsDirectory, { recursive: true });
 
   try {
-    await writeFile(filePath, createPostContent(normalizedTitle, { description, listed }), {
+    await writeFile(filePath, createPostContent(normalizedTitle, { description, listed, tags }), {
       encoding: "utf8",
       flag: "wx",
     });
@@ -80,11 +126,14 @@ export async function createPost({
 }
 
 function printUsage() {
-  console.log('Usage : pnpm new:post "Titre de l’article" [--description "Résumé"] [--publish]');
+  console.log(
+    'Usage : pnpm new:post "Titre de l’article" [--description "Résumé"] [--tag "Tag"]... [--publish]',
+  );
 }
 
 export function parsePostArguments(args) {
   const titleParts = [];
+  const tags = [];
   let description;
   let listed = false;
 
@@ -103,6 +152,15 @@ export function parsePostArguments(args) {
       index += 1;
       continue;
     }
+    if (argument === "--tag") {
+      const value = args[index + 1];
+      if (!value || value.startsWith("--")) {
+        throw new Error("--tag attend un tag non vide.");
+      }
+      tags.push(value);
+      index += 1;
+      continue;
+    }
     if (argument.startsWith("--")) {
       throw new Error(`Option inconnue : ${argument}`);
     }
@@ -113,7 +171,11 @@ export function parsePostArguments(args) {
     throw new Error("Indiquez un titre unique pour le nouvel article.");
   }
 
-  return { description, listed, title: titleParts[0] };
+  const postOptions = { description, listed, title: titleParts[0] };
+  if (tags.length > 0) {
+    postOptions.tags = normalizePostTags(tags);
+  }
+  return postOptions;
 }
 
 export async function main(args = process.argv.slice(2)) {

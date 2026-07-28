@@ -2,10 +2,16 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { join, resolve } from "node:path";
 
+import {
+  BLOG_POST_DESCRIPTION_MAX_LENGTH,
+  BLOG_POST_MAX_TAGS,
+  BLOG_POST_RESERVED_TAG,
+  BLOG_POST_TAG_MAX_LENGTH,
+  BLOG_POST_TAG_PATTERN,
+  BLOG_POST_TITLE_MAX_LENGTH,
+} from "../src/lib/blog-content-contract.mjs";
+
 const DEFAULT_POSTS_DIRECTORY = resolve(process.cwd(), "src/content/blog");
-const MAX_POST_TAG_LENGTH = 48;
-const MAX_POST_TAGS = 12;
-const POST_TAG_PATTERN = /^[\p{L}\p{N}][\p{L}\p{N}._+-]*$/u;
 
 function escapeYamlDoubleQuotedString(value) {
   return value
@@ -38,23 +44,23 @@ export function normalizePostTags(tags = []) {
     if (!normalizedTag) {
       throw new Error("Un tag doit contenir au moins un caractère.");
     }
-    if (normalizedTag.length > MAX_POST_TAG_LENGTH) {
-      throw new Error(`Un tag ne peut pas dépasser ${MAX_POST_TAG_LENGTH} caractères.`);
+    if (normalizedTag.length > BLOG_POST_TAG_MAX_LENGTH) {
+      throw new Error(`Un tag ne peut pas dépasser ${BLOG_POST_TAG_MAX_LENGTH} caractères.`);
     }
-    if (!POST_TAG_PATTERN.test(normalizedTag)) {
+    if (!BLOG_POST_TAG_PATTERN.test(normalizedTag)) {
       throw new Error(
         `Le tag "${normalizedTag}" doit commencer par une lettre ou un chiffre et ne contenir que des lettres, chiffres, points, tirets, _ ou +.`,
       );
     }
-    if (normalizedTag === "all") {
+    if (normalizedTag === BLOG_POST_RESERVED_TAG) {
       throw new Error('Le tag "all" est réservé et ajouté automatiquement.');
     }
 
     return normalizedTag;
   });
 
-  if (normalizedTags.length > MAX_POST_TAGS) {
-    throw new Error(`Un article ne peut pas avoir plus de ${MAX_POST_TAGS} tags.`);
+  if (normalizedTags.length > BLOG_POST_MAX_TAGS) {
+    throw new Error(`Un article ne peut pas avoir plus de ${BLOG_POST_MAX_TAGS} tags.`);
   }
   if (new Set(normalizedTags).size !== normalizedTags.length) {
     throw new Error("Les tags d’un article doivent être uniques.");
@@ -69,6 +75,14 @@ export function createPostContent(title, { description, listed = false, tags = [
   const normalizedTags = normalizePostTags(tags);
   if (!normalizedTitle) {
     throw new Error("Le titre doit contenir au moins une lettre ou un chiffre.");
+  }
+  if (normalizedTitle.length > BLOG_POST_TITLE_MAX_LENGTH) {
+    throw new Error(`Le titre ne peut pas dépasser ${BLOG_POST_TITLE_MAX_LENGTH} caractères.`);
+  }
+  if (normalizedDescription && normalizedDescription.length > BLOG_POST_DESCRIPTION_MAX_LENGTH) {
+    throw new Error(
+      `La description ne peut pas dépasser ${BLOG_POST_DESCRIPTION_MAX_LENGTH} caractères.`,
+    );
   }
   if (listed && !normalizedDescription) {
     throw new Error("Un article publié doit avoir une description non vide.");

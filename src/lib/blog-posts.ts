@@ -2,6 +2,13 @@ import { getCollection, type CollectionEntry } from "astro:content";
 
 import { getContentEntryGitDates, type GitDates } from "@/lib/git-dates.mjs";
 
+export { BLOG_POST_RESERVED_TAG } from "@/lib/blog-content-contract.mjs";
+export {
+  collectVisibleBlogTags,
+  toHomeLatestPost,
+  toTagPostItem,
+} from "@/lib/blog-post-projections.mjs";
+
 type BlogPostWithVisibility = {
   data: {
     listed?: boolean;

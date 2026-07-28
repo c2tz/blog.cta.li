@@ -1,14 +1,7 @@
-import { getListedBlogPostsWithGitDates } from "@/lib/blog-posts";
-import { formatFrenchDate, formatFrenchDateTime, toDate } from "@/lib/date-format.mjs";
+import { getListedBlogPostsWithGitDates, toHomeLatestPost } from "@/lib/blog-posts";
 
 export const GET = async () => {
-  const latestPosts = (await getListedBlogPostsWithGitDates()).slice(0, 8).map((post) => ({
-    dateCompact: formatFrenchDate(post.gitDates.createdAt),
-    dateFull: formatFrenchDateTime(post.gitDates.createdAt),
-    datetime: toDate(post.gitDates.createdAt).toISOString(),
-    href: `/posts/${post.id}/`,
-    title: post.data.title,
-  }));
+  const latestPosts = (await getListedBlogPostsWithGitDates()).slice(0, 8).map(toHomeLatestPost);
 
   return new Response(JSON.stringify({ posts: latestPosts }), {
     headers: {

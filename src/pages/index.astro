@@ -10,26 +10,17 @@ import "@/assets/css/pages/home-hero.scss";
 import "@/assets/css/pages/home-index.scss";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/site-config";
 import type { InfoData } from "@/lib/content-schemas";
-import { getListedBlogPostsWithGitDates } from "@/lib/blog-posts";
-import { formatFrenchDate, formatFrenchDateTime, toDate } from "@/lib/date-format.mjs";
+import {
+  collectVisibleBlogTags,
+  getListedBlogPostsWithGitDates,
+  toHomeLatestPost,
+} from "@/lib/blog-posts";
 
 const posts = await getListedBlogPostsWithGitDates();
 
 const latestPosts = posts.slice(0, 3);
-const latestPostSummaries = latestPosts.map((post) => ({
-  dateCompact: formatFrenchDate(post.gitDates.createdAt),
-  dateFull: formatFrenchDateTime(post.gitDates.createdAt),
-  datetime: toDate(post.gitDates.createdAt).toISOString(),
-  href: `/posts/${post.id}/`,
-  title: post.data.title,
-}));
-const contentTags = [
-  ...new Set(
-    posts
-      .flatMap((post) => post.data.tags)
-      .filter((tag): tag is string => tag !== undefined && tag !== "all"),
-  ),
-].sort();
+const latestPostSummaries = latestPosts.map(toHomeLatestPost);
+const contentTags = collectVisibleBlogTags(posts);
 const intro = await getEntry("info", "intro");
 if (!intro) throw new Error("Missing required info/intro content entry");
 // Astro validates this data with infoSchema before exposing the content entry.

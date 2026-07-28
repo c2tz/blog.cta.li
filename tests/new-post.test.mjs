@@ -4,7 +4,19 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { createPost, parsePostArguments, slugifyPostTitle } from "../scripts/new-post.mjs";
+import {
+  createPost,
+  createPostContent,
+  normalizePostTags,
+  parsePostArguments,
+  slugifyPostTitle,
+} from "../scripts/new-post.mjs";
+import {
+  BLOG_POST_DESCRIPTION_MAX_LENGTH,
+  BLOG_POST_MAX_TAGS,
+  BLOG_POST_TAG_MAX_LENGTH,
+  BLOG_POST_TITLE_MAX_LENGTH,
+} from "../src/lib/blog-content-contract.mjs";
 
 test("génère un slug de fichier stable pour un titre français", () => {
   assert.equal(slugifyPostTitle("  Cœur d’été : MDX & Astro  "), "coeur-d-ete-mdx-astro");
@@ -54,6 +66,26 @@ test("exige une description avant de publier un article", async (t) => {
   assert.match(content, /^listed: true$/m);
 });
 
+test("applique les limites de longueur du contrat éditorial", () => {
+  assert.doesNotThrow(() =>
+    createPostContent("T".repeat(BLOG_POST_TITLE_MAX_LENGTH), {
+      description: "R".repeat(BLOG_POST_DESCRIPTION_MAX_LENGTH),
+      listed: true,
+    }),
+  );
+  assert.throws(
+    () => createPostContent("T".repeat(BLOG_POST_TITLE_MAX_LENGTH + 1)),
+    new RegExp(`${BLOG_POST_TITLE_MAX_LENGTH} caractères`),
+  );
+  assert.throws(
+    () =>
+      createPostContent("Titre", {
+        description: "R".repeat(BLOG_POST_DESCRIPTION_MAX_LENGTH + 1),
+      }),
+    new RegExp(`${BLOG_POST_DESCRIPTION_MAX_LENGTH} caractères`),
+  );
+});
+
 test("analyse les options de publication sans confondre le titre et la description", () => {
   assert.deepEqual(
     parsePostArguments(["Article sûr", "--description", "Résumé avec espaces", "--publish"]),
@@ -92,10 +124,22 @@ test("ajoute des tags répétés au frontmatter après les avoir normalisés", a
 });
 
 test("refuse les tags incompatibles avec le schéma de contenu", () => {
+  assert.deepEqual(normalizePostTags(["a".repeat(BLOG_POST_TAG_MAX_LENGTH)]), [
+    "a".repeat(BLOG_POST_TAG_MAX_LENGTH),
+  ]);
+  assert.equal(
+    normalizePostTags(Array.from({ length: BLOG_POST_MAX_TAGS }, (_, index) => `tag${index}`))
+      .length,
+    BLOG_POST_MAX_TAGS,
+  );
+
   const invalidTagCases = [
     { args: ["Article", "--tag"], error: /attend un tag non vide/ },
     { args: ["Article", "--tag", "   "], error: /au moins un caractère/ },
-    { args: ["Article", "--tag", "a".repeat(49)], error: /48 caractères/ },
+    {
+      args: ["Article", "--tag", "a".repeat(BLOG_POST_TAG_MAX_LENGTH + 1)],
+      error: new RegExp(`${BLOG_POST_TAG_MAX_LENGTH} caractères`),
+    },
     { args: ["Article", "--tag", "-astro"], error: /commencer par une lettre ou un chiffre/ },
     { args: ["Article", "--tag", "astro web"], error: /ne contenir que/ },
     { args: ["Article", "--tag", "all"], error: /réservé/ },
@@ -106,9 +150,12 @@ test("refuse les tags incompatibles avec le schéma de contenu", () => {
     {
       args: [
         "Article",
-        ...Array.from({ length: 13 }, (_, index) => ["--tag", `tag${index}`]).flat(),
+        ...Array.from({ length: BLOG_POST_MAX_TAGS + 1 }, (_, index) => [
+          "--tag",
+          `tag${index}`,
+        ]).flat(),
       ],
-      error: /plus de 12 tags/,
+      error: new RegExp(`plus de ${BLOG_POST_MAX_TAGS} tags`),
     },
   ];
 

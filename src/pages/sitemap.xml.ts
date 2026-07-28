@@ -1,7 +1,7 @@
-import { getCollection, type CollectionEntry } from "astro:content";
+import { getCollection } from "astro:content";
 import type { APIRoute } from "astro";
 
-import { isListedBlogPost } from "@/lib/blog-posts";
+import { BLOG_POST_RESERVED_TAG, collectVisibleBlogTags, isListedBlogPost } from "@/lib/blog-posts";
 
 const STATIC_PATHS = ["/", "/cookies/"] as const;
 
@@ -16,15 +16,11 @@ function escapeXml(value: string) {
 
 export const GET: APIRoute = async ({ site }) => {
   const posts = (await getCollection("blog")).filter(isListedBlogPost);
-  const rawTags: unknown[] = posts.flatMap((post: CollectionEntry<"blog">) => post.data.tags ?? []);
-  const contentTags = rawTags.filter(
-    (tag: unknown): tag is string => typeof tag === "string" && tag !== "all",
-  );
-  const tags: string[] = ["all", ...new Set(contentTags)];
+  const tags = [BLOG_POST_RESERVED_TAG, ...collectVisibleBlogTags(posts, { sort: false })];
   const paths = [
     ...STATIC_PATHS,
     ...tags.map((tag) => `/tags/${encodeURIComponent(tag)}/`),
-    ...posts.map((post: CollectionEntry<"blog">) => `/posts/${post.id}/`),
+    ...posts.map((post) => `/posts/${post.id}/`),
   ];
   const urls = paths
     .map((path) => `  <url><loc>${escapeXml(new URL(path, site).toString())}</loc></url>`)

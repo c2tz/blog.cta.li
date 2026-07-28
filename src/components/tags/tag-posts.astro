@@ -1,13 +1,6 @@
 ---
 import "@/assets/css/components/tag-posts.scss";
-
-interface TagPostItem {
-  createdIso: string;
-  createdLabelCompact: string;
-  createdLabelFull: string;
-  title: string;
-  url: string;
-}
+import type { TagPostItem } from "@/lib/blog-post-projections.mjs";
 
 interface Props {
   posts: TagPostItem[];

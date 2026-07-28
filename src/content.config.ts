@@ -2,30 +2,38 @@ import { glob } from "astro/loaders";
 import { defineCollection } from "astro:content";
 import { z } from "astro/zod";
 
+import {
+  BLOG_POST_DESCRIPTION_MAX_LENGTH,
+  BLOG_POST_MAX_TAGS,
+  BLOG_POST_RESERVED_TAG,
+  BLOG_POST_TAG_MAX_LENGTH,
+  BLOG_POST_TAG_PATTERN,
+  BLOG_POST_TITLE_MAX_LENGTH,
+} from "@/lib/blog-content-contract.mjs";
 import { infoSchema } from "@/lib/content-schemas";
 
 const blogTagSchema = z
   .string()
   .trim()
   .min(1, "A blog tag cannot be empty")
-  .max(48, "A blog tag cannot exceed 48 characters")
-  .regex(
-    /^[\p{L}\p{N}][\p{L}\p{N}._+-]*$/u,
-    "A blog tag must be URL-safe and cannot contain spaces",
-  )
-  .refine((tag) => tag !== "all", 'The reserved "all" tag is added automatically');
+  .max(BLOG_POST_TAG_MAX_LENGTH, `A blog tag cannot exceed ${BLOG_POST_TAG_MAX_LENGTH} characters`)
+  .regex(BLOG_POST_TAG_PATTERN, "A blog tag must be URL-safe and cannot contain spaces")
+  .refine(
+    (tag) => tag !== BLOG_POST_RESERVED_TAG,
+    `The reserved "${BLOG_POST_RESERVED_TAG}" tag is added automatically`,
+  );
 
 const blog = defineCollection({
   loader: glob({ base: "./src/content/blog", pattern: "**/*.{md,mdx}" }),
   schema: z
     .object({
-      title: z.string().trim().min(1).max(160),
-      description: z.string().trim().min(1).max(320).optional(),
+      title: z.string().trim().min(1).max(BLOG_POST_TITLE_MAX_LENGTH),
+      description: z.string().trim().min(1).max(BLOG_POST_DESCRIPTION_MAX_LENGTH).optional(),
       listed: z.boolean().default(true),
       priority: z.number().int().min(0).max(100).optional(),
       tags: z
         .array(blogTagSchema)
-        .max(12)
+        .max(BLOG_POST_MAX_TAGS)
         .refine((tags) => new Set(tags).size === tags.length, "Blog tags must be unique")
         .default([]),
     })

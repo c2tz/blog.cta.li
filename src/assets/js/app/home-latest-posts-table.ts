@@ -1,12 +1,5 @@
 import { SITE_EVENTS, SITE_LOADING_INDICATOR_DELAY_MS } from "@/lib/site-contracts";
-
-interface HomeLatestPost {
-  readonly dateCompact: string;
-  readonly dateFull: string;
-  readonly datetime: string;
-  readonly href: string;
-  readonly title: string;
-}
+import type { HomeLatestPost } from "@/lib/blog-post-projections.mjs";
 
 interface LatestPostsResponse {
   readonly posts?: readonly unknown[];

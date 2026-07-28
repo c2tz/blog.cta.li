@@ -1,24 +1,22 @@
 ---
 import TagPosts from "@/components/tags/tag-posts.astro";
 import Layout from "@/layouts/site-layout.astro";
-import { getListedBlogPostsWithGitDates } from "@/lib/blog-posts";
-import { formatFrenchDate, formatFrenchDateTime, toDate } from "@/lib/date-format.mjs";
+import {
+  BLOG_POST_RESERVED_TAG,
+  collectVisibleBlogTags,
+  getListedBlogPostsWithGitDates,
+  toTagPostItem,
+} from "@/lib/blog-posts";
 
 export async function getStaticPaths() {
   const allPosts = await getListedBlogPostsWithGitDates();
 
-  const contentTags = [
-    ...new Set(
-      allPosts
-        .flatMap((post) => post.data.tags)
-        .filter((tag): tag is string => tag !== undefined && tag !== "all"),
-    ),
-  ].sort();
-  const uniqueTags = ["all", ...contentTags];
+  const contentTags = collectVisibleBlogTags(allPosts);
+  const uniqueTags = [BLOG_POST_RESERVED_TAG, ...contentTags];
 
   return uniqueTags.map((tag) => {
     const filteredPosts =
-      tag === "all"
+      tag === BLOG_POST_RESERVED_TAG
         ? allPosts
         : allPosts.filter((post) => post.data.tags && post.data.tags.includes(tag));
 
@@ -29,17 +27,11 @@ export async function getStaticPaths() {
   });
 }
 
-const tag = Astro.params.tag ?? "all";
+const tag = Astro.params.tag ?? BLOG_POST_RESERVED_TAG;
 const { posts } = Astro.props;
-const isAllPosts = tag === "all";
+const isAllPosts = tag === BLOG_POST_RESERVED_TAG;
 const pageTitle = isAllPosts ? "Tous les articles" : `Articles avec le tag « ${tag} »`;
-const tagPosts = posts.map((post) => ({
-  createdIso: toDate(post.gitDates.createdAt).toISOString(),
-  createdLabelCompact: formatFrenchDate(post.gitDates.createdAt),
-  createdLabelFull: formatFrenchDateTime(post.gitDates.createdAt),
-  title: post.data.title,
-  url: `/posts/${post.id}/`,
-}));
+const tagPosts = posts.map(toTagPostItem);
 ---
 
 <Layout title={pageTitle} bodyClass="tag-page" readingProgress={false}>

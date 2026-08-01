@@ -463,6 +463,7 @@ test("applies and persists the Konachan Material palette across the site", async
   await expect(background).toHaveAttribute("data-loaded", "true");
   const currentImageUrl = await background.getAttribute("data-konachan-current-url");
   expect(currentImageUrl).toBeTruthy();
+  await waitForAppReady(page);
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.locator("[data-konachan-background]")).toHaveAttribute(
     "data-konachan-current-url",
@@ -559,6 +560,7 @@ test("applies and persists the Konachan Material palette across the site", async
     .toEqual({ active: "true", source: activePalette.source });
 
   await gotoRoute(page, "/posts/mdx-smoke-test/");
+  await waitForAppReady(page);
   await expectResolvedTheme(page);
   await expect
     .poll(() => page.evaluate(() => document.documentElement.dataset.materialDynamicColor))

@@ -280,10 +280,21 @@ test("opens a virtual tooltip only after the cursor stops", async ({ page }) => 
   expect(await tooltip.evaluate((element) => element.matches(":popover-open"))).toBe(false);
   await expectPopoverOpen(tooltip, true);
 
-  const scrollBeforeWheel = await page.evaluate(() => window.scrollY);
+  await page.evaluate(() => {
+    Reflect.set(window, "__playwrightWheelDefaultPrevented", "pending");
+    window.addEventListener(
+      "wheel",
+      (event) => {
+        Reflect.set(window, "__playwrightWheelDefaultPrevented", event.defaultPrevented);
+      },
+      { once: true },
+    );
+  });
   await page.mouse.wheel(0, -120);
   await expectPopoverOpen(tooltip, false);
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(scrollBeforeWheel);
+  await expect
+    .poll(() => page.evaluate(() => Reflect.get(window, "__playwrightWheelDefaultPrevented")))
+    .toBe(false);
   await page.waitForTimeout(220);
   await expectPopoverOpen(tooltip, false);
 

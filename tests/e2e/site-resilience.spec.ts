@@ -10,7 +10,9 @@ import {
 test.describe("nightly browser resilience", () => {
   test.skip(process.env.PLAYWRIGHT_NIGHTLY !== "1", "Covered by the nightly browser matrix.");
 
-  test("captures CSP, promise rejection and request failure diagnostics", async ({ page }) => {
+  test("captures runtime failures while ignoring the WebKit ResizeObserver diagnostic", async ({
+    page,
+  }) => {
     await gotoRoute(page, "/cookies/");
     await page.route("**/__nightly-request-failure", (route) => route.abort("failed"));
     await page.evaluate(() => {
@@ -27,6 +29,10 @@ test.describe("nightly browser resilience", () => {
         value: new Error("synthetic nightly rejection"),
       });
       window.dispatchEvent(rejectionEvent);
+
+      setTimeout(() => {
+        throw new Error("ResizeObserver loop completed with undelivered notifications.");
+      });
     });
     await page.evaluate(() => fetch("/__nightly-request-failure").catch(() => undefined));
 

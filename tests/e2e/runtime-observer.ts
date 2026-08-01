@@ -12,6 +12,11 @@ const EXPECTED_CONSOLE_WARNING_PATTERNS = [
   // Roboto Mono font even though the used glyphs render and the font loads.
   /downloadable font: glyf: empty gid \d+ used as component.*font-family: "Roboto Mono"/i,
 ];
+const EXPECTED_PAGE_ERROR_PATTERNS = [
+  // WebKit can surface this ResizeObserver delivery diagnostic as a page error
+  // even though the remaining observations are delivered on the next frame.
+  /^ResizeObserver loop completed with undelivered notifications\.$/,
+];
 
 function isExpectedRequestCancellation(failureText: string) {
   return EXPECTED_CANCELLATION_PATTERNS.some((pattern) => pattern.test(failureText));
@@ -27,7 +32,10 @@ export async function observePageRuntime(page: Page, issues: string[]) {
     if (!issues.includes(issue)) issues.push(issue);
   };
 
-  page.on("pageerror", (error) => record(error.message));
+  page.on("pageerror", (error) => {
+    if (EXPECTED_PAGE_ERROR_PATTERNS.some((pattern) => pattern.test(error.message))) return;
+    record(error.message);
+  });
   page.on("console", (message) => {
     if (message.type() === "error" || message.type() === "warning") {
       const text = message.text();

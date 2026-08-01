@@ -537,6 +537,16 @@ test("keeps all required check names aligned and every external action pinned by
   );
   assert.match(
     verifyWorkflow,
+    /^ {4}name: Playwright shards$/m,
+    "the matrix job name must stay readable when the job is skipped before matrix expansion",
+  );
+  assert.doesNotMatch(
+    verifyWorkflow,
+    /^ {4}name: .*\$\{\{\s*matrix\./m,
+    "a skipped matrix job must not expose an unevaluated expression in the GitHub UI",
+  );
+  assert.match(
+    verifyWorkflow,
     /--shard=\$\{\{ matrix\.shardIndex \}\}\/\$\{\{ matrix\.shardTotal \}\}\s+--workers=1\s+--reporter=list,blob/,
     "each runner must execute exactly one mergeable shard with one worker",
   );

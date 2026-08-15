@@ -85,6 +85,58 @@ export async function expectNoPageOverflow(page: Page) {
   expect(overflow).toBeLessThanOrEqual(2);
 }
 
+export async function measureSearchDialogLayout(dialog: Locator) {
+  return dialog.evaluate((element) => {
+    const container = element.shadowRoot?.querySelector(".container");
+    const scroller = element.shadowRoot?.querySelector(".scroller");
+    const content = element.querySelector(".site-search-dialog-content");
+    const field = element.querySelector(".site-search-panel-field");
+    const query = element.querySelector(".site-search-panel-query");
+    const sortControl = element.querySelector("[data-sort-control]");
+    const close = element.querySelector("[data-search-close]");
+    if (!container || !scroller || !content || !field || !query || !sortControl || !close) {
+      return null;
+    }
+
+    const containerRect = container.getBoundingClientRect();
+    const scrollerRect = scroller.getBoundingClientRect();
+    const contentRect = content.getBoundingClientRect();
+    const fieldRect = field.getBoundingClientRect();
+    const queryRect = query.getBoundingClientRect();
+    const sortRect = sortControl.getBoundingClientRect();
+    const closeRect = close.getBoundingClientRect();
+    const sortVisible = sortRect.width > 0 && sortRect.height > 0;
+    const containsHorizontally = (outer: DOMRect, inner: DOMRect) =>
+      inner.left >= outer.left - 1 && inner.right <= outer.right + 1;
+    const contains = (outer: DOMRect, inner: DOMRect) =>
+      containsHorizontally(outer, inner) &&
+      inner.top >= outer.top - 1 &&
+      inner.bottom <= outer.bottom + 1;
+
+    return {
+      closeInsideContainer: contains(containerRect, closeRect),
+      containerFitsViewport:
+        containerRect.left >= -1 &&
+        containerRect.right <= innerWidth + 1 &&
+        containerRect.top >= -1 &&
+        containerRect.bottom <= innerHeight + 1,
+      contentFitsContainerWidth: containsHorizontally(containerRect, contentRect),
+      documentFitsViewport: document.documentElement.scrollWidth <= innerWidth + 1,
+      fieldFitsContentWidth: containsHorizontally(contentRect, fieldRect),
+      inline:
+        sortVisible &&
+        Math.abs(queryRect.top + queryRect.height / 2 - (sortRect.top + sortRect.height / 2)) <= 1,
+      sortHeight: sortRect.height,
+      scrollerClientHeight: scroller.clientHeight,
+      scrollerInsideContainer: contains(containerRect, scrollerRect),
+      scrollerOverflowY: getComputedStyle(scroller).overflowY,
+      scrollerScrollHeight: scroller.scrollHeight,
+      sortVisible,
+      stacked: sortVisible && sortRect.top >= queryRect.bottom - 1,
+    };
+  });
+}
+
 export async function gotoRoute(page: Page, route: string) {
   await page.goto(route, { waitUntil: "domcontentloaded" });
 }

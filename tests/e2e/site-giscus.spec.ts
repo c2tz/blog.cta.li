@@ -1,5 +1,16 @@
 import { expect, gotoRoute, test } from "./site-fixture";
 
+test("links to the plain-text Giscus code of conduct", async ({ page }) => {
+  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
+
+  const conductLink = page.getByRole("link", { name: "Code de conduite (nouvel onglet)" });
+  await expect(conductLink).toHaveAttribute(
+    "href",
+    "https://raw.githubusercontent.com/c2tz/ct-blog-comments/refs/heads/main/CODE_OF_CONDUCT.txt",
+  );
+  await expect(conductLink).toHaveAttribute("target", "_blank");
+});
+
 test("unloads Giscus on consent revocation and reloads it after consent returns", async ({
   page,
 }) => {

@@ -63,6 +63,49 @@ test("keeps post date and commit icons at 1.1rem inside their intended line box"
   }
 });
 
+test("keeps post dates on one horizontally scrollable line without a tab stop", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.addInitScript(() => localStorage.setItem("home-detail-view-v1", "true"));
+  await gotoRoute(page, "/posts/bienvenue-sur-ct-blog/");
+
+  const dates = page.locator("[data-post-git-dates]");
+  await expect(dates).toHaveAttribute("data-stacked", "true");
+  const metrics = await dates.evaluate((container) => {
+    const rows = [...container.querySelectorAll("[data-post-git-date]")];
+    const rowsStayOnOneLine = rows.every((row) => {
+      const label = row.querySelector(".post-git-date-label")?.getBoundingClientRect();
+      const visibleDate = [...row.querySelectorAll("time")]
+        .find((date) => getComputedStyle(date).display !== "none")
+        ?.getBoundingClientRect();
+      return label && visibleDate ? Math.abs(label.top - visibleDate.top) <= 1 : false;
+    });
+    const styles = getComputedStyle(container);
+    return {
+      documentFits: document.documentElement.scrollWidth <= window.innerWidth + 1,
+      overflowX: styles.overflowX,
+      rowsStayOnOneLine,
+      scrollable: container.scrollWidth > container.clientWidth + 1,
+      tabindex: container.getAttribute("tabindex"),
+    };
+  });
+
+  expect(metrics).toEqual({
+    documentFits: true,
+    overflowX: "auto",
+    rowsStayOnOneLine: true,
+    scrollable: true,
+    tabindex: null,
+  });
+
+  await dates.evaluate((container) => {
+    container.scrollLeft = container.scrollWidth;
+  });
+  await expect.poll(() => dates.evaluate((container) => container.scrollLeft)).toBeGreaterThan(0);
+  await expectNoPageOverflow(page);
+});
+
 test("renders the inverse-theme 404 artwork without site chrome", async ({ page }) => {
   const response = await page.goto("/page-absente-pour-test/", {
     waitUntil: "domcontentloaded",

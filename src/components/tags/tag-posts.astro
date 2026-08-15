@@ -55,11 +55,12 @@ const initialStatus =
 
   {
     isTable ? (
-      <div class="tag-posts-table-scroll" tabindex="0">
+      <div class="tag-posts-table-scroll" data-table-scroll>
         <table
           id={contentId}
           class="tag-posts-table"
           aria-label={isAllPosts ? "Tous les articles" : `Articles du tag ${tag}`}
+          data-posts-table
         >
           <thead>
             <tr>
@@ -173,6 +174,7 @@ const initialStatus =
             value={PAGE_SIZE_OPTIONS[0].toString()}
             aria-controls={contentId}
             menu-positioning="popover"
+            quick
             data-page-size
           >
             {PAGE_SIZE_OPTIONS.map((size, index) => (

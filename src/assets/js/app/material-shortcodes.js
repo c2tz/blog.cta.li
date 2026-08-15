@@ -151,7 +151,6 @@ function enhanceTable(host) {
   const headerControls = [];
 
   scroll.className = "material-shortcode-table-scroll";
-  scroll.tabIndex = 0;
   table.id = tableId;
   table.className = "material-shortcode-table";
   table.setAttribute("aria-label", source.getAttribute("aria-label") || "Tableau de données");
@@ -223,6 +222,7 @@ function enhanceTable(host) {
     pageSizeSelect.value = String(state.pageSize);
     pageSizeSelect.setAttribute("aria-controls", tableId);
     pageSizeSelect.setAttribute("menu-positioning", "popover");
+    pageSizeSelect.setAttribute("quick", "");
 
     pageSizeOptions.forEach((size) => {
       const option = document.createElement("md-select-option");

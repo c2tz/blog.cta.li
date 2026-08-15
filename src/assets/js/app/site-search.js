@@ -1,9 +1,14 @@
 import siteSearchStyles from "@/assets/css/components/site-search.scss?inline";
-import { isSearchSortMode } from "@/components/search/site-search-model";
+import { isSearchSortMode, SORT_OPTIONS } from "@/components/search/site-search-model";
 import { loadPagefindModule } from "@/components/search/site-search-pagefind";
-import { SITE_LOADING_INDICATOR_DELAY_MS } from "@/lib/site-contracts";
+import { SITE_EVENTS, SITE_LOADING_INDICATOR_DELAY_MS } from "@/lib/site-contracts";
 import { hideSiteTooltip } from "./site-tooltips.js";
 import { loadMaterialCustomElements } from "./material-custom-elements.js";
+import {
+  bindMaterialMenuAnchorTracking,
+  bindMaterialMenuSelection,
+  bindMaterialMenuTrigger,
+} from "./material-menu.js";
 import { renderSearchResults } from "./site-search-renderer.js";
 import {
   dateValue,
@@ -28,9 +33,10 @@ const INTERNAL_PAGEFIND_PATH = "/posts/pagefind-index-placeholder/";
 const SEARCH_MATERIAL_TAG_NAMES = [
   "md-chip-set",
   "md-dialog",
-  "md-filled-select",
   "md-filled-text-field",
-  "md-select-option",
+  "md-menu",
+  "md-menu-item",
+  "md-text-button",
 ];
 
 function ensureSiteSearchStyles() {
@@ -105,7 +111,10 @@ class SearchPanelController {
     this.form = root.querySelector("[data-search-form]");
     this.input = root.querySelector("[data-search-input]");
     this.clearSearchButton = root.querySelector("[data-clear-search]");
-    this.sortSelect = root.querySelector("[data-sort-select]");
+    this.sortControl = root.querySelector("[data-sort-control]");
+    this.sortTrigger = root.querySelector("[data-sort-trigger]");
+    this.sortMenu = root.querySelector("[data-sort-menu]");
+    this.sortValueLabel = root.querySelector("[data-sort-value-label]");
     this.statusElement = root.querySelector("[data-search-status]");
     this.filterActions = root.querySelector("[data-filter-actions]");
     this.clearFiltersButton = root.querySelector("[data-clear-filters]");
@@ -138,6 +147,7 @@ class SearchPanelController {
 
     this.handleInput = this.handleInput.bind(this);
     this.handleSearchInputKeydown = this.handleSearchInputKeydown.bind(this);
+    this.handleDetailViewChange = this.handleDetailViewChange.bind(this);
     this.handleSortControlMediaChange = this.handleSortControlMediaChange.bind(this);
     this.connect();
   }
@@ -167,18 +177,32 @@ class SearchPanelController {
     this.input.addEventListener("keydown", this.handleSearchInputKeydown, true);
     this.clearSearchButton.addEventListener("click", () => this.clearSearch());
     this.clearFiltersButton.addEventListener("click", () => this.clearFilters());
-    this.sortSelect.addEventListener("change", (event) => this.setSortMode(controlValue(event)));
+    bindMaterialMenuAnchorTracking(this.sortMenu);
+    bindMaterialMenuTrigger(this.sortTrigger, this.sortMenu);
+    this.sortMenu.addEventListener("opening", () => this.setSortMenuOpen(true));
+    this.sortMenu.addEventListener("closing", () => this.setSortMenuOpen(false));
+    this.sortMenu.addEventListener("closed", () => {
+      this.setSortMenuOpen(false);
+      const dialog = this.root.closest("md-dialog");
+      if (dialog?.open && this.isSortControlVisible()) {
+        this.sortTrigger.focus({ preventScroll: true });
+      }
+    });
+    bindMaterialMenuSelection(this.sortMenu, (item) => {
+      this.setSortMode(item.dataset.sortValue);
+    });
     this.sortControlMedia.addEventListener("change", this.handleSortControlMediaChange);
+    document.addEventListener(SITE_EVENTS.homeDetailViewChange, this.handleDetailViewChange);
     document.addEventListener(
       "astro:before-swap",
       () => {
         this.sortControlMedia.removeEventListener("change", this.handleSortControlMediaChange);
+        document.removeEventListener(SITE_EVENTS.homeDetailViewChange, this.handleDetailViewChange);
       },
       { once: true },
     );
 
     void this.connectMaterialTextField();
-    void this.connectSortMenuRepositioning();
     void this.loadTagFilters();
     void this.search(this.query.trim());
   }
@@ -193,66 +217,6 @@ class SearchPanelController {
     this.inputControl?.removeEventListener("input", this.handleInput);
     this.inputControl = control;
     control.addEventListener("input", this.handleInput);
-  }
-
-  async connectSortMenuRepositioning() {
-    await customElements.whenDefined("md-filled-select");
-    await this.sortSelect.updateComplete;
-
-    const dialog = this.root.closest("md-dialog");
-    if (!dialog) return;
-
-    await customElements.whenDefined("md-dialog");
-    await dialog.updateComplete;
-
-    const menu = this.sortSelect.shadowRoot?.querySelector("md-menu");
-    const dialogScroller = dialog.shadowRoot?.querySelector(".scroller");
-    if (!menu || !dialogScroller) return;
-
-    let repositionFrame = 0;
-    let settleTimer = 0;
-    let tracking = false;
-    const resizeObserver = new ResizeObserver(() => scheduleReposition());
-
-    const scheduleReposition = () => {
-      if (!menu.open) return;
-
-      window.clearTimeout(settleTimer);
-      window.cancelAnimationFrame(repositionFrame);
-      repositionFrame = window.requestAnimationFrame(() => {
-        repositionFrame = 0;
-        menu.reposition();
-
-        settleTimer = window.setTimeout(() => {
-          if (menu.open) menu.reposition();
-        }, 160);
-      });
-    };
-    const startTracking = () => {
-      if (tracking) return;
-      tracking = true;
-      dialogScroller.addEventListener("scroll", scheduleReposition, { passive: true });
-      window.addEventListener("resize", scheduleReposition, { passive: true });
-      window.visualViewport?.addEventListener("resize", scheduleReposition, { passive: true });
-      resizeObserver.observe(dialogScroller);
-      scheduleReposition();
-    };
-    const stopTracking = () => {
-      if (!tracking) return;
-      tracking = false;
-      dialogScroller.removeEventListener("scroll", scheduleReposition);
-      window.removeEventListener("resize", scheduleReposition);
-      window.visualViewport?.removeEventListener("resize", scheduleReposition);
-      resizeObserver.disconnect();
-      window.cancelAnimationFrame(repositionFrame);
-      window.clearTimeout(settleTimer);
-      repositionFrame = 0;
-      settleTimer = 0;
-    };
-
-    this.sortSelect.addEventListener("opened", startTracking);
-    this.sortSelect.addEventListener("closed", stopTracking);
-    document.addEventListener("astro:before-swap", stopTracking, { once: true });
   }
 
   handleInput(event) {
@@ -325,19 +289,30 @@ class SearchPanelController {
     void this.search(this.query.trim());
   }
 
+  setSortMenuOpen(open) {
+    this.sortControl.toggleAttribute("data-menu-open", open);
+    this.sortTrigger.setAttribute("aria-expanded", String(open));
+  }
+
   handleSortControlMediaChange() {
+    if (!this.isSortControlVisible()) this.sortMenu.close();
     this.syncSortControl();
   }
 
-  syncSortControl() {
-    // The sort control is intentionally absent from the compact/coarse layout.
-    // It is also display:none while its deferred dialog is closed. Updating
-    // its floating label in either state makes Material Web measure 0 / 0 and
-    // Chromium rejects the generated NaN animation keyframes.
-    const dialog = this.root.closest("md-dialog");
-    if (this.sortControlMedia.matches || (dialog && !dialog.open)) return;
+  handleDetailViewChange() {
+    if (!this.isSortControlVisible()) this.sortMenu.close();
+  }
 
-    if (this.sortSelect.value !== this.sortMode) this.sortSelect.value = this.sortMode;
+  isSortControlVisible() {
+    return (
+      document.documentElement.dataset.homeDetailView === "true" && !this.sortControlMedia.matches
+    );
+  }
+
+  syncSortControl() {
+    const option = SORT_OPTIONS.find(({ value }) => value === this.sortMode) ?? SORT_OPTIONS[0];
+    this.sortValueLabel.textContent = option.label;
+    this.sortTrigger.setAttribute("aria-label", `Trier les résultats, ${option.label}`);
     this.syncSortOptions();
   }
 
@@ -412,10 +387,13 @@ class SearchPanelController {
   }
 
   syncSortOptions() {
-    this.sortSelect.querySelectorAll("md-select-option").forEach((option) => {
-      const selected = option.value === this.sortMode;
-      option.selected = selected;
-      option.toggleAttribute("data-selected-option", selected);
+    this.sortMenu.querySelectorAll("[data-sort-value]").forEach((option) => {
+      const selected = option.dataset.sortValue === this.sortMode;
+      option.toggleAttribute("data-selected-sort", selected);
+      option.setAttribute(
+        "aria-label",
+        `${option.dataset.sortAccessibleLabel}${selected ? ", tri sélectionné" : ""}`,
+      );
     });
   }
 
@@ -759,11 +737,9 @@ export function initSiteSearchTriggers() {
           customElements.whenDefined("md-filled-text-field"),
           customElements.whenDefined("md-icon-button"),
         ]);
-        // Opening the deferred select while its dialog is display:none makes
-        // Material Web animate its floating label from zero-sized geometry and
-        // Chromium rejects the resulting NaN keyframes. Wait only until the
-        // native modal surface exists, then connect during (not after) the open
-        // animation so the panel is ready before the trigger is re-enabled.
+        // Wait only until the native modal surface exists, then connect during
+        // (not after) the open animation so the panel is ready before the
+        // trigger is re-enabled.
         const showPromise = dialog.show();
         let openFrame = 0;
         const openSurfacePromise = new Promise((resolve) => {
@@ -787,9 +763,7 @@ export function initSiteSearchTriggers() {
             window.requestAnimationFrame(resolve);
           });
           const controller = initSiteSearchPanel(panel, { includeDeferred: true });
-          // A controller may already exist when the dialog is reopened after a
-          // compact-to-wide resize. Synchronize only now that Material can
-          // measure the visible select safely.
+          // A controller may already exist when the dialog is reopened.
           controller?.syncSortControl();
         }
         await showPromise;

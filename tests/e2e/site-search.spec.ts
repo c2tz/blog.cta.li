@@ -2,7 +2,8 @@ import {
   expect,
   test,
   gotoRoute,
-  openMaterialSelect,
+  measureSearchDialogLayout,
+  openMaterialMenu,
   waitForNativeEnhancement,
 } from "./site-fixture";
 import type { Page } from "@playwright/test";
@@ -192,71 +193,52 @@ test("searches through the Material Web text field", async ({ page }) => {
   await expect(excerpt).not.toHaveText(/^\s*\./);
 });
 
-test("keeps the official Material filled select and its complete sort menu", async ({ page }) => {
-  test.skip(test.info().project.name.includes("mobile"), "The sort select is hidden on mobile.");
+test("uses an official standalone Material menu for the complete sort control", async ({
+  page,
+}) => {
+  test.skip(
+    test.info().project.name.includes("mobile"),
+    "Detailed keyboard geometry is desktop-only.",
+  );
 
+  await page.addInitScript(() => localStorage.setItem("home-detail-view-v1", "true"));
   await gotoRoute(page, "/");
   await openSearch(page);
   const searchDialog = page.locator("md-dialog.site-search-dialog[open]");
   await expect(searchDialog).toHaveCount(1);
 
-  const sortSelect = searchDialog.locator("[data-sort-select]");
+  const sortControl = searchDialog.locator("[data-sort-control]");
+  const sortTrigger = searchDialog.locator("[data-sort-trigger]");
+  const sortMenu = searchDialog.locator("[data-sort-menu]");
+  const sortOptions = sortMenu.locator("md-menu-item[data-sort-value]");
+  const relevanceOption = sortMenu.locator('[data-sort-value="relevance"]');
+  const newestOption = sortMenu.locator('[data-sort-value="created-desc"]');
+  const nameOption = sortMenu.locator('[data-sort-value="title-asc"]');
   await expect(searchDialog.locator("[data-search-input]")).toHaveAttribute("id", /-query$/);
   await expect(searchDialog.locator("[data-search-input]")).toHaveAttribute("name", "query");
-  await expect(sortSelect).toHaveAttribute("id", /-sort$/);
-  await expect(sortSelect).toHaveAttribute("name", "sort");
-  await expect(sortSelect).toHaveJSProperty("localName", "md-filled-select");
-  await expect(sortSelect.locator('[slot="trailing-icon"]')).toHaveCount(0);
-  await expect(sortSelect.locator(".site-material-menu-check")).toHaveCount(0);
-  await expect.poll(() => sortSelect.evaluate((select) => Boolean(select.shadowRoot))).toBe(true);
-  await expect
-    .poll(() => sortSelect.evaluate((select) => (select as HTMLInputElement).value))
-    .toBe("relevance");
-  await expect
-    .poll(() => sortSelect.evaluate((select) => getComputedStyle(select).minWidth))
-    .toBe("192px");
-  await openMaterialSelect(sortSelect);
-
-  const sortOptions = sortSelect.locator("md-select-option");
+  await expect(sortTrigger).toHaveAttribute("id", /-sort-trigger$/);
+  await expect(sortTrigger).toHaveAttribute("trailing-icon", "");
+  await expect(sortTrigger).toHaveJSProperty("localName", "md-text-button");
+  await expect(sortMenu).toHaveAttribute("id", /-sort-menu$/);
+  await expect(sortMenu).toHaveAttribute("positioning", "popover");
+  await expect(sortMenu).toHaveJSProperty("quick", true);
+  await expect(sortMenu).toHaveJSProperty("localName", "md-menu");
+  await expect(sortTrigger.getByRole("button")).toHaveAccessibleName(
+    "Trier les résultats, Pertinence",
+  );
   await expect(sortOptions).toHaveCount(3);
 
-  const relevanceOption = sortSelect.locator('md-select-option[value="relevance"]');
-  const newestOption = sortSelect.locator('md-select-option[value="created-desc"]');
-  const nameOption = sortSelect.locator('md-select-option[value="title-asc"]');
-  await expect(relevanceOption).toBeVisible();
-  await expect(relevanceOption).toHaveJSProperty("localName", "md-select-option");
-  await expect(relevanceOption).toHaveJSProperty("selected", true);
-  await expect(newestOption).toHaveJSProperty("selected", false);
-  await expect(nameOption).toHaveJSProperty("selected", false);
+  await expect(relevanceOption).toHaveAttribute("data-selected-sort", "");
+  await expect(newestOption).not.toHaveAttribute("data-selected-sort", "");
+  await expect(nameOption).not.toHaveAttribute("data-selected-sort", "");
 
-  const officialStructure = await sortSelect.evaluate((select) => {
-    const menu = select.shadowRoot?.querySelector("md-menu");
-    const field = select.shadowRoot?.querySelector('[part="field"]');
-    return {
-      fieldPart: field?.getAttribute("part"),
-      menuName: menu?.localName,
-      optionNames: Array.from(select.children, (option) => option.localName),
-    };
-  });
-  expect(officialStructure).toEqual({
-    fieldPart: "field",
-    menuName: "md-menu",
-    optionNames: ["md-select-option", "md-select-option", "md-select-option"],
-  });
-
-  await page.keyboard.press("Escape");
-  await expect
-    .poll(() => sortSelect.evaluate((select) => (select as HTMLElement & { open: boolean }).open))
-    .toBe(false);
-  await expect
-    .poll(() => sortSelect.evaluate((select) => (select as HTMLElement & { value: string }).value))
-    .toBe("relevance");
-  await expect
-    .poll(() => sortSelect.evaluate((select) => select.matches(":focus-within")))
-    .toBe(true);
-  await expect(sortSelect).not.toHaveAttribute("data-menu-open", "");
-  await openMaterialSelect(sortSelect);
+  await sortTrigger.focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(sortMenu).toHaveAttribute("open", "");
+  await expect(sortControl).toHaveAttribute("data-menu-open", "");
   await expect(relevanceOption).toBeVisible();
+  await expect(newestOption).toBeVisible();
+  await expect(nameOption).toBeVisible();
   await expect
     .poll(() => relevanceOption.evaluate((element) => element.matches(":focus-within")))
     .toBe(true);
@@ -278,19 +260,12 @@ test("keeps the official Material filled select and its complete sort menu", asy
           rect.top + rect.height / 2,
         );
 
-        return (
-          hit === option || option.contains(hit) || hit?.closest("md-select-option") === option
-        );
+        return hit === option || option.contains(hit) || hit?.closest("md-menu-item") === option;
       }),
     )
     .toBe(true);
 
-  await page.keyboard.press("ArrowDown");
-  await page.keyboard.press("ArrowDown");
-  await expect
-    .poll(() => nameOption.evaluate((element) => element.matches(":focus-within")))
-    .toBe(true);
-  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("End");
   await expect
     .poll(() => nameOption.evaluate((element) => element.matches(":focus-within")))
     .toBe(true);
@@ -308,43 +283,27 @@ test("keeps the official Material filled select and its complete sort menu", asy
     .toBe(true);
   await page.keyboard.press("Enter");
 
-  await expect
-    .poll(() => sortSelect.evaluate((select) => (select as HTMLElement & { value: string }).value))
-    .toBe("title-asc");
-  await expect
-    .poll(() =>
-      nameOption.evaluate((option) => (option as HTMLElement & { selected: boolean }).selected),
-    )
-    .toBe(true);
+  await expect(sortMenu).not.toHaveAttribute("open", "");
+  await expect(sortControl).not.toHaveAttribute("data-menu-open", "");
+  await expect(sortTrigger.getByRole("button")).toHaveAccessibleName(
+    "Trier les résultats, Titre A–Z",
+  );
+  await expect(nameOption).toHaveAttribute("data-selected-sort", "");
+  await expect(relevanceOption).not.toHaveAttribute("data-selected-sort", "");
   await expect(nameOption).toBeHidden();
-  await expect
-    .poll(() => sortSelect.evaluate((select) => select.matches(":focus-within")))
-    .toBe(true);
+  await expect(sortTrigger.getByRole("button")).toBeFocused();
 
-  const newestLabelFits = await sortSelect.evaluate(async (select) => {
-    const control = select as HTMLElement & { updateComplete: Promise<unknown>; value: string };
-    control.value = "created-desc";
-    await control.updateComplete;
-    const label = control.shadowRoot?.querySelector<HTMLElement>("#label");
-    return Boolean(label && label.scrollWidth <= label.clientWidth);
-  });
-  expect(newestLabelFits).toBe(true);
+  await openMaterialMenu(sortTrigger, sortMenu);
+  await page.keyboard.press("Escape");
+  await expect(sortMenu).not.toHaveAttribute("open", "");
+  await expect(sortTrigger.getByRole("button")).toBeFocused();
 });
 
 test("never exposes the internal Pagefind placeholder", async ({ page }) => {
-  test.skip(test.info().project.name.includes("mobile"), "The sort select is hidden on mobile.");
-
   await gotoRoute(page, "/");
   await openSearch(page);
   const dialog = page.locator("md-dialog.site-search-dialog[open]");
-  const sortSelect = dialog.locator("[data-sort-select]");
-  await sortSelect.evaluate((select) => {
-    const control = select as HTMLElement & { value: string };
-    control.value = "created-desc";
-    control.dispatchEvent(new Event("change", { bubbles: true }));
-  });
 
-  await expect(dialog.locator("[data-search-status]")).toHaveText(/résultat|Aucun article trouvé/);
   await expect(dialog.locator('a[href="/posts/pagefind-index-placeholder/"]')).toHaveCount(0);
 
   await dialog
@@ -413,18 +372,32 @@ test("renders only safe Pagefind markup and same-origin result links", async ({ 
     .toBe(false);
 });
 
-test("reconnects the desktop sort after a closed compact resize without console warnings", async ({
-  page,
-}) => {
+test("keeps the selected sort across a closed narrow-wide resize", async ({ page }) => {
   test.skip(test.info().project.name.includes("mobile"), "This exercises a desktop resize.");
 
-  await page.setViewportSize({ width: 700, height: 720 });
+  await page.addInitScript(() => localStorage.setItem("home-detail-view-v1", "true"));
+  await page.setViewportSize({ width: 900, height: 720 });
   await gotoRoute(page, "/");
   await openSearch(page);
   const dialog = page.locator("[data-search-dialog]");
-  const sortSelect = page.locator("[data-search-dialog] [data-sort-select]");
-  await expect(sortSelect).toBeHidden();
+  const sortControl = dialog.locator("[data-sort-control]");
+  const sortTrigger = dialog.locator("[data-sort-trigger]");
+  const sortMenu = dialog.locator("[data-sort-menu]");
+  const titleOption = sortMenu.locator('[data-sort-value="title-asc"]');
+  await expect(sortControl).toBeVisible();
+  await openMaterialMenu(sortTrigger, sortMenu);
+  await titleOption.click();
+  await expect(sortTrigger.getByRole("button")).toHaveAccessibleName(
+    "Trier les résultats, Titre A–Z",
+  );
 
+  await page.getByRole("button", { name: "Fermer la recherche" }).click();
+  await expect(dialog).toBeHidden();
+
+  await page.setViewportSize({ width: 700, height: 720 });
+  await page.getByRole("button", { name: "Rechercher" }).dispatchEvent("click");
+  await expect(dialog).toBeVisible();
+  await expect(sortControl).toBeHidden();
   await page.getByRole("button", { name: "Fermer la recherche" }).click();
   await expect(dialog).toBeHidden();
 
@@ -432,24 +405,57 @@ test("reconnects the desktop sort after a closed compact resize without console 
   await page.getByRole("button", { name: "Rechercher" }).dispatchEvent("click");
   await expect(dialog).toBeVisible();
   await expect(page.getByRole("button", { name: "Rechercher" })).toBeEnabled();
-  await expect(sortSelect).toBeVisible();
-  await expect
-    .poll(() => sortSelect.evaluate((select) => (select as HTMLInputElement).value))
-    .toBe("relevance");
+  await expect(sortControl).toBeVisible();
+  await expect(sortTrigger.getByRole("button")).toHaveAccessibleName(
+    "Trier les résultats, Titre A–Z",
+  );
+  await expect(titleOption).toHaveAttribute("data-selected-sort", "");
 });
 
-test("keeps the search sort menu anchored while the zoomed dialog scrolls", async ({ page }) => {
-  test.skip(test.info().project.name.includes("mobile"), "The sort select is hidden on mobile.");
+test("keeps sorting absent on mobile and coarse screens", async ({ page }) => {
+  test.skip(!test.info().project.name.includes("mobile"), "This exercises touch and coarse input.");
+
+  await page.addInitScript(() => localStorage.setItem("home-detail-view-v1", "true"));
+  await gotoRoute(page, "/");
+  await expect.poll(() => page.evaluate(() => matchMedia("(pointer: coarse)").matches)).toBe(true);
+  await openSearch(page);
+
+  const dialog = page.locator("[data-search-dialog]");
+  const sortControl = dialog.locator("[data-sort-control]");
+  const divider = dialog.locator(".site-search-panel-divider");
+  await expect(sortControl).toBeHidden();
+  await expect(divider).toBeHidden();
+  await expect
+    .poll(() => measureSearchDialogLayout(dialog))
+    .toMatchObject({
+      fieldFitsContentWidth: true,
+      sortVisible: false,
+    });
+  await page.setViewportSize({ width: 900, height: 720 });
+  await expect.poll(() => page.evaluate(() => matchMedia("(pointer: coarse)").matches)).toBe(true);
+  await expect(sortControl).toBeHidden();
+  await expect(divider).toBeHidden();
+  await expect.poll(() => measureSearchDialogLayout(dialog)).toMatchObject({ sortVisible: false });
+});
+
+test("keeps the top-layer search sort menu attached while its dialog scrolls", async ({ page }) => {
+  test.skip(test.info().project.name.includes("mobile"), "Desktop dialog scroll geometry.");
+  await page.addInitScript(() => localStorage.setItem("home-detail-view-v1", "true"));
   await page.setViewportSize({ width: 1000, height: 420 });
   await gotoRoute(page, "/");
   await openSearch(page);
 
   const searchDialog = page.locator("md-dialog.site-search-dialog[open]");
   await searchDialog.getByRole("searchbox", { name: "Mot-clé, titre ou contenu" }).fill("MDX");
+  await searchDialog.locator(".site-search-dialog-content").evaluate((content) => {
+    (content as HTMLElement).style.minHeight = "50rem";
+  });
 
-  const sortSelect = searchDialog.locator("[data-sort-select]");
-  await openMaterialSelect(sortSelect);
-  await expect(sortSelect.locator('md-select-option[value="relevance"]')).toBeVisible();
+  const sortTrigger = searchDialog.locator("[data-sort-trigger]");
+  const sortMenu = searchDialog.locator("[data-sort-menu]");
+  const relevanceOption = sortMenu.locator('[data-sort-value="relevance"]');
+  await openMaterialMenu(sortTrigger, sortMenu);
+  await expect(relevanceOption).toBeVisible();
 
   const scrollerState = await searchDialog.evaluate((dialog) => {
     const scroller = dialog.shadowRoot?.querySelector(".scroller");
@@ -458,7 +464,7 @@ test("keeps the search sort menu anchored while the zoomed dialog scrolls", asyn
       scrollHeight: scroller?.scrollHeight ?? 0,
     };
   });
-  expect(scrollerState.scrollHeight).toBeGreaterThanOrEqual(scrollerState.clientHeight);
+  expect(scrollerState.scrollHeight).toBeGreaterThan(scrollerState.clientHeight);
 
   await searchDialog.evaluate((dialog) => {
     const scroller = dialog.shadowRoot?.querySelector(".scroller");
@@ -467,52 +473,65 @@ test("keeps the search sort menu anchored while the zoomed dialog scrolls", asyn
 
   await expect
     .poll(() =>
-      sortSelect.evaluate((select) => {
-        const menuSurface = select.shadowRoot
-          ?.querySelector("md-menu")
-          ?.shadowRoot?.querySelector(".menu");
-        if (!menuSurface) return Number.POSITIVE_INFINITY;
+      searchDialog.evaluate(
+        (dialog) => dialog.shadowRoot?.querySelector(".scroller")?.scrollTop ?? 0,
+      ),
+    )
+    .toBeGreaterThan(0);
+  await expect(sortMenu).toHaveAttribute("open", "");
+  await expect(relevanceOption).toBeVisible();
+  await expect
+    .poll(() =>
+      sortMenu.evaluate((menu) => {
+        const surface = menu.shadowRoot?.querySelector(".menu");
+        const trigger = document.getElementById(menu.getAttribute("anchor") ?? "");
+        if (!surface || !trigger) return Number.POSITIVE_INFINITY;
         return Math.abs(
-          menuSurface.getBoundingClientRect().top - select.getBoundingClientRect().bottom,
+          surface.getBoundingClientRect().top - trigger.getBoundingClientRect().bottom,
         );
       }),
     )
     .toBeLessThanOrEqual(1);
-  await expect
-    .poll(() => sortSelect.evaluate((select) => (select as HTMLElement & { open: boolean }).open))
-    .toBe(true);
-
-  await page.keyboard.press("ArrowDown");
-  await expect
-    .poll(() =>
-      sortSelect
-        .locator('md-select-option[value="created-desc"]')
-        .evaluate((option) => option.matches(":focus-within")),
-    )
-    .toBe(true);
 });
 
-test("restores the complete search sort menu after browser dezoom", async ({ page }) => {
-  test.skip(test.info().project.name.includes("mobile"), "The sort select is hidden on mobile.");
+test("keeps the complete top-layer sort menu attached through viewport and pinch changes", async ({
+  page,
+}) => {
+  test.skip(test.info().project.name.includes("mobile"), "Desktop visual viewport geometry.");
+  await page.addInitScript(() => localStorage.setItem("home-detail-view-v1", "true"));
   await page.setViewportSize({ width: 1000, height: 300 });
   await gotoRoute(page, "/");
   await openSearch(page);
 
   const searchDialog = page.locator("md-dialog.site-search-dialog[open]");
-  const sortSelect = searchDialog.locator("[data-sort-select]");
-  await openMaterialSelect(sortSelect);
-  const titleOption = sortSelect.locator('md-select-option[value="title-asc"]');
+  const sortTrigger = searchDialog.locator("[data-sort-trigger]");
+  const sortMenu = searchDialog.locator("[data-sort-menu]");
+  await openMaterialMenu(sortTrigger, sortMenu);
+  const titleOption = sortMenu.locator('[data-sort-value="title-asc"]');
 
   const readMenuSize = () =>
-    sortSelect.evaluate((select) => {
-      const menu = select.shadowRoot?.querySelector("md-menu");
-      const surface = menu?.shadowRoot?.querySelector(".menu");
-      const items = menu?.shadowRoot?.querySelector(".items");
+    sortMenu.evaluate((menu) => {
+      const surface = menu.shadowRoot?.querySelector(".menu");
+      const items = menu.shadowRoot?.querySelector(".items");
+      const trigger = document.getElementById(menu.getAttribute("anchor") ?? "");
+      const surfaceRect = surface?.getBoundingClientRect();
+      const triggerRect = trigger?.getBoundingClientRect();
+      const belowGap =
+        surfaceRect && triggerRect
+          ? Math.abs(surfaceRect.top - triggerRect.bottom)
+          : Number.POSITIVE_INFINITY;
+      const aboveGap =
+        surfaceRect && triggerRect
+          ? Math.abs(surfaceRect.bottom - triggerRect.top)
+          : Number.POSITIVE_INFINITY;
       return {
+        anchorGap: Math.min(aboveGap, belowGap),
         clientHeight: items?.clientHeight ?? 0,
         inlineHeight: surface instanceof HTMLElement ? surface.style.height : "missing",
-        open: Boolean((menu as (Element & { open?: boolean }) | null)?.open),
+        open: menu.hasAttribute("open"),
+        placement: aboveGap < belowGap ? "above" : "below",
         scrollHeight: items?.scrollHeight ?? 0,
+        surfaceTop: surfaceRect?.top ?? -1,
       };
     });
 
@@ -520,12 +539,15 @@ test("restores the complete search sort menu after browser dezoom", async ({ pag
   await expect
     .poll(async () => {
       const size = await readMenuSize();
-      return size.scrollHeight - size.clientHeight;
+      return {
+        fullyExpanded: size.clientHeight === size.scrollHeight,
+        inlineHeight: size.inlineHeight,
+      };
     })
-    .toBeGreaterThan(0);
+    .toEqual({ fullyExpanded: true, inlineHeight: "" });
+  await expect.poll(async () => (await readMenuSize()).anchorGap).toBeLessThanOrEqual(1);
 
   await page.setViewportSize({ width: 1000, height: 800 });
-
   await expect
     .poll(async () => {
       const size = await readMenuSize();
@@ -533,37 +555,64 @@ test("restores the complete search sort menu after browser dezoom", async ({ pag
         fullyExpanded: size.clientHeight === size.scrollHeight,
         inlineHeight: size.inlineHeight,
         open: size.open,
+        placement: size.placement,
       };
     })
-    .toEqual({ fullyExpanded: true, inlineHeight: "", open: true });
+    .toEqual({ fullyExpanded: true, inlineHeight: "", open: true, placement: "below" });
   await expect(titleOption).toBeVisible();
 
-  await sortSelect.evaluate((select) => {
-    const menu = select.shadowRoot?.querySelector("md-menu") as
-      (HTMLElement & { reposition(): void }) | null;
-    if (!menu || !window.visualViewport) return;
-
-    const reposition = menu.reposition.bind(menu);
-    select.setAttribute("data-test-visual-viewport-repositions", "0");
-    menu.reposition = () => {
-      const count = Number(select.getAttribute("data-test-visual-viewport-repositions") ?? "0");
-      select.setAttribute("data-test-visual-viewport-repositions", String(count + 1));
-      reposition();
-    };
+  await sortMenu.evaluate((_menu) => {
+    if (!window.visualViewport) return;
+    Object.defineProperty(window.visualViewport, "scale", { configurable: true, value: 2 });
+    Object.defineProperty(window.visualViewport, "height", {
+      configurable: true,
+      value: 180,
+    });
     window.visualViewport.dispatchEvent(new Event("resize"));
   });
+  await expect.poll(async () => (await readMenuSize()).open).toBe(true);
+  await expect.poll(async () => (await readMenuSize()).anchorGap).toBeLessThanOrEqual(1);
+  await expect.poll(async () => (await readMenuSize()).placement).toBe("above");
+  await expect
+    .poll(async () => {
+      const size = await readMenuSize();
+      return size.clientHeight === size.scrollHeight;
+    })
+    .toBe(true);
+  await expect(titleOption).toBeVisible();
+  await expect(sortTrigger).toBeVisible();
+
+  await searchDialog.evaluate((dialog) => {
+    const container = dialog.shadowRoot?.querySelector(".container");
+    if (container instanceof HTMLElement) container.style.translate = "24px 18px";
+  });
+  await expect.poll(async () => (await readMenuSize()).anchorGap).toBeLessThanOrEqual(1);
   await expect
     .poll(() =>
-      sortSelect.evaluate((select) =>
-        Number(select.getAttribute("data-test-visual-viewport-repositions") ?? "0"),
-      ),
+      sortMenu.evaluate((menu) => {
+        const surface = menu.shadowRoot?.querySelector(".menu");
+        const trigger = (menu as HTMLElement & { anchorElement?: HTMLElement }).anchorElement;
+        if (!(surface instanceof HTMLElement) || !(trigger instanceof HTMLElement)) {
+          return Number.POSITIVE_INFINITY;
+        }
+        return Math.abs(
+          surface.getBoundingClientRect().right - trigger.getBoundingClientRect().right,
+        );
+      }),
     )
-    .toBeGreaterThan(0);
+    .toBeLessThanOrEqual(1);
 
-  await page.keyboard.press("End");
-  await expect
-    .poll(() => titleOption.evaluate((option) => option.matches(":focus-within")))
-    .toBe(true);
+  await sortMenu.evaluate((_menu) => {
+    if (!window.visualViewport) return;
+    Reflect.deleteProperty(window.visualViewport, "scale");
+    Reflect.deleteProperty(window.visualViewport, "height");
+    window.visualViewport.dispatchEvent(new Event("scroll"));
+  });
+  await expect.poll(async () => (await readMenuSize()).open).toBe(true);
+  await expect.poll(async () => (await readMenuSize()).anchorGap).toBeLessThanOrEqual(1);
+  await expect.poll(async () => (await readMenuSize()).placement).toBe("below");
+  await expect(sortTrigger).toBeVisible();
+  await expect(titleOption).toBeVisible();
 });
 
 test("delays and aggregates the linear search progress indicator", async ({ page }) => {

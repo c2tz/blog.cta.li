@@ -10,6 +10,11 @@ test("presents /tags/all/ as the article archive", async ({ page }) => {
   );
   await expect(page.locator("[data-page-status]")).toHaveText("Articles 1 à 1 sur 1.");
   await expect(page.getByRole("link", { name: "Bienvenue sur ct-blog" })).toHaveCount(1);
+
+  const scroller = page.locator(".tag-posts-table-scroll");
+  await expect(scroller).not.toHaveAttribute("tabindex");
+  await expect(scroller).not.toHaveAttribute("role");
+  await expect(scroller).not.toHaveAttribute("aria-label");
 });
 
 test("reuses the article archive table for individual tags", async ({ page }) => {

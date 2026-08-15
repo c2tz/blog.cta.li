@@ -11,6 +11,8 @@ const resultsId = `${idPrefix}-results`;
 const tagsId = `${idPrefix}-tags`;
 const statusId = `${idPrefix}-status`;
 const limitId = `${idPrefix}-filter-limit`;
+const sortTriggerId = `${idPrefix}-sort-trigger`;
+const sortMenuId = `${idPrefix}-sort-menu`;
 ---
 
 <section
@@ -50,30 +52,66 @@ const limitId = `${idPrefix}-filter-limit`;
         </md-icon-button>
       </div>
 
-      <span class="site-search-panel-divider" aria-hidden="true"></span>
-      <md-filled-select
-        id={`${idPrefix}-sort`}
-        name="sort"
-        class="site-search-panel-sort-select"
-        label="Tri par"
-        aria-label="Trier les résultats"
-        menu-positioning="popover"
-        value={deferred ? undefined : "relevance"}
-        data-sort-select
-      >
-        {
-          SORT_OPTIONS.map((option) => (
-            <md-select-option
-              value={option.value}
-              display-text={option.label}
-              aria-label={option.accessibleLabel}
-              selected={!deferred && option.value === "relevance" ? true : undefined}
-            >
-              <span slot="headline">{option.label}</span>
-            </md-select-option>
-          ))
-        }
-      </md-filled-select>
+      <md-divider class="site-search-panel-divider" aria-hidden="true"></md-divider>
+      <div class="site-search-panel-sort-control" data-sort-control>
+        <md-text-button
+          id={sortTriggerId}
+          class="site-search-panel-sort-trigger"
+          type="button"
+          trailing-icon
+          aria-label="Trier les résultats, Pertinence"
+          aria-haspopup="menu"
+          aria-expanded="false"
+          aria-controls={sortMenuId}
+          data-sort-trigger
+        >
+          <span class="site-search-panel-sort-copy">
+            <span class="site-search-panel-sort-label">Tri par</span>
+            <span class="site-search-panel-sort-value" data-sort-value-label>Pertinence</span>
+          </span>
+          <svg
+            slot="icon"
+            class="site-search-panel-sort-arrow"
+            viewBox="0 0 24 24"
+            width="24"
+            height="24"
+            focusable="false"
+            aria-hidden="true"
+          >
+            <path d="M7 10l5 5 5-5z"></path>
+          </svg>
+        </md-text-button>
+
+        <md-menu
+          id={sortMenuId}
+          class="site-material-menu site-search-panel-sort-menu"
+          anchor={sortTriggerId}
+          anchor-corner="end-end"
+          menu-corner="start-end"
+          positioning="popover"
+          quick
+          aria-label="Tri par"
+          data-sort-menu
+        >
+          {
+            SORT_OPTIONS.map((option) => (
+              <md-menu-item
+                type="button"
+                class="site-material-menu-item site-search-panel-sort-option"
+                aria-label={option.accessibleLabel}
+                data-sort-value={option.value}
+                data-sort-accessible-label={option.accessibleLabel}
+                data-selected-sort={!deferred && option.value === "relevance" ? "" : undefined}
+              >
+                <span slot="headline">{option.label}</span>
+                <md-icon slot="end" class="site-search-panel-sort-check" aria-hidden="true">
+                  &#xE5CA;
+                </md-icon>
+              </md-menu-item>
+            ))
+          }
+        </md-menu>
+      </div>
     </div>
   </form>
 

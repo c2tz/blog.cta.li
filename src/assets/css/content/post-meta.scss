@@ -174,8 +174,12 @@ abbr.site-tooltip {
 }
 
 .post-git-dates[data-stacked="true"] {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: max-content;
   row-gap: 0.75rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .post-git-dates[data-stacked="true"] .post-git-date-divider {
@@ -185,12 +189,12 @@ abbr.site-tooltip {
 }
 
 .post-git-dates[data-stacked="true"] .post-git-date {
-  min-width: 0;
-  white-space: normal;
+  min-width: max-content;
+  white-space: nowrap;
 }
 
 .post-git-dates[data-stacked="true"] .post-git-date-text {
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .post-git-dates time {

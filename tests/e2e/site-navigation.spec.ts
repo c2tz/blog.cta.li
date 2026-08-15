@@ -76,6 +76,7 @@ test("opens the Material Web theme menu from its icon button", async ({ page }) 
   const systemItem = page.locator('md-menu-item[data-theme-option="system"]');
   const darkItem = page.locator('md-menu-item[data-theme-option="dark"]');
   const themeMenu = page.locator("md-menu.site-theme-menu");
+  await expect(themeMenu).toHaveJSProperty("quick", true);
   await expect(darkItem).toBeVisible();
   await expect.poll(() => systemItem.evaluate((item) => item.matches(":focus-within"))).toBe(true);
   await darkItem.click();
@@ -460,6 +461,11 @@ test("uses the Material Web pagination menu with keyboard selection", async ({ p
 
   const tableFilter = table.locator("md-outlined-text-field");
   const pageSizeSelect = table.locator("md-outlined-select");
+  const tableScroller = table.locator(".material-shortcode-table-scroll");
+
+  await expect(tableScroller).not.toHaveAttribute("tabindex");
+  await expect(tableScroller).not.toHaveAttribute("role");
+  await expect(tableScroller).not.toHaveAttribute("aria-label");
 
   await expect(tableFilter).toHaveAttribute("id", /material-table-\d+-filter/);
   await expect(tableFilter).toHaveAttribute("name", /material-table-\d+-filter/);
@@ -483,6 +489,7 @@ test("uses the Material Web pagination menu with keyboard selection", async ({ p
   await expect(pageSizeSelect).toHaveAttribute("id", /material-table-\d+-page-size/);
   await expect(pageSizeSelect).toHaveAttribute("name", /material-table-\d+-page-size/);
   await expect(pageSizeSelect).toHaveAttribute("menu-positioning", "popover");
+  await expect(pageSizeSelect).toHaveJSProperty("quick", true);
   await expect
     .poll(() =>
       pageSizeSelect.evaluate((select) => {
@@ -507,15 +514,15 @@ test("uses the Material Web pagination menu with keyboard selection", async ({ p
     "visibility",
     "visible",
   );
-  const closed = pageSizeSelect.evaluate(
-    (select) =>
-      new Promise<void>((resolve) => {
-        select.addEventListener("closed", () => resolve(), { once: true });
-      }),
-  );
+  await pageSizeSelect.evaluate((select) => {
+    select.removeAttribute("data-test-menu-closed");
+    select.addEventListener("closed", () => select.setAttribute("data-test-menu-closed", ""), {
+      once: true,
+    });
+  });
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("Enter");
-  await closed;
+  await expect(pageSizeSelect).toHaveAttribute("data-test-menu-closed", "");
   await expect
     .poll(() => pageSizeSelect.evaluate((select) => String((select as HTMLInputElement).value)))
     .toBe("10");

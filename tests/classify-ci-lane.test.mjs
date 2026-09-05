@@ -510,6 +510,14 @@ test("the composite action converts malformed successful output to full", (conte
 });
 
 test("keeps all required check names aligned and every external action pinned by SHA", () => {
+  const codeqlWorkflow = readFileSync(".github/workflows/codeql.yml", "utf8");
+  const codeqlRefs = [...codeqlWorkflow.matchAll(/github\/codeql-action\/[^@\s]+@([a-f0-9]{40})/g)];
+  assert.ok(codeqlRefs.length >= 2, "CodeQL initialization and analysis must both be present");
+  assert.equal(
+    new Set(codeqlRefs.map((match) => match[1])).size,
+    1,
+    "all CodeQL steps must use the same release so their shared configuration stays compatible",
+  );
   const requiredChecks = REQUIRED_CHECK_NAMES;
   const workflowFiles = [
     ".github/workflows/codeql.yml",

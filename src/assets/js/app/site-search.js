@@ -4,7 +4,7 @@ import { loadPagefindModule } from "@/components/search/site-search-pagefind";
 import { SITE_EVENTS, SITE_LOADING_INDICATOR_DELAY_MS } from "@/lib/site-contracts";
 import { hideSiteTooltip } from "./site-tooltips.js";
 import { loadMaterialCustomElements } from "./material-custom-elements.js";
-import { renderSearchResults } from "./site-search-renderer.js";
+import { renderSearchFilters, renderSearchResults } from "./site-search-renderer.js";
 import {
   dateValue,
   formatDate,
@@ -396,27 +396,16 @@ class SearchPanelController {
   }
 
   renderFilters() {
-    this.tagsElement.replaceChildren();
-    this.tagsElement.hidden = this.tagFilters.length === 0;
-    const selectedTagLimitReached = this.selectedTags.length >= MAX_SELECTED_TAGS;
-
-    for (const tag of this.tagFilters) {
-      const chip = document.createElement("md-filter-chip");
-      const selected = this.selectedTags.includes(tag.value);
-      chip.textContent = `#${tag.value}`;
-      chip.selected = selected;
-      chip.disabled = selectedTagLimitReached && !selected;
-      chip.setAttribute(
-        "aria-label",
-        selected ? `Retirer le tag ${tag.value}` : `Ajouter le tag ${tag.value}`,
-      );
-      chip.addEventListener("click", (event) => this.toggleTag(tag.value, event));
-      this.tagsElement.append(chip);
-    }
+    renderSearchFilters(this.tagsElement, this.tagFilters, {
+      selectedTags: this.selectedTags,
+      maxSelectedTags: MAX_SELECTED_TAGS,
+      onToggle: (tag, event) => this.toggleTag(tag, event),
+      onFocusRemoved: () => this.focus(),
+    });
   }
 
   renderResults() {
-    renderSearchResults(this.resultsElement, this.results);
+    renderSearchResults(this.resultsElement, this.results, () => this.focus());
   }
 
   syncSortOptions() {

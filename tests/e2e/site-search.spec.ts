@@ -191,6 +191,41 @@ test("uses Escape to clear a search, then close its empty dialog", async ({ page
   await expect(openButton).toBeFocused();
 });
 
+test("keeps keyboard focus inside search when delayed results replace focused controls", async ({
+  page,
+}) => {
+  await gotoRoute(page, "/");
+  await openSearch(page);
+  const dialog = page.locator("md-dialog[data-search-dialog]");
+  const chip = dialog.locator("[data-search-tags] md-filter-chip").first();
+  const input = dialog.getByRole("searchbox");
+  await expect(chip).toBeVisible();
+
+  // Move focus during the debounce window, before the pending search replaces
+  // its filters. Both actions share one task so slow CI cannot miss the race.
+  await dialog.evaluate((element) => {
+    const control = element
+      .querySelector("[data-search-input]")!
+      .shadowRoot!.querySelector("input")!;
+    control.value = "bienvenue";
+    control.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
+    element.querySelector<HTMLElement>("[data-search-tags] md-filter-chip")!.focus();
+  });
+  const results = dialog.locator("[data-search-results] a");
+  await expect(results).toHaveCount(1);
+  await expect(chip).toBeFocused();
+
+  await results.first().evaluate((link) => {
+    const panel = link.closest("[data-site-search-panel]")!;
+    const control = panel.querySelector("[data-search-input]")!.shadowRoot!.querySelector("input")!;
+    control.value = "";
+    control.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
+    (link as HTMLElement).focus();
+  });
+  await expect(results).toHaveCount(0);
+  await expect(input).toBeFocused();
+});
+
 test("uses the search status as the only live result announcement", async ({ page }) => {
   await gotoRoute(page, "/");
   await openSearch(page);

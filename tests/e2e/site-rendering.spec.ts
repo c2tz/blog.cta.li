@@ -181,14 +181,7 @@ for (const route of ["/", "/tags/all/", "/tags/blog/"]) {
   });
 }
 
-test("offers the public RSS feed from every standard page footer", async ({ page, request }) => {
-  for (const route of ROUTES) {
-    await gotoRoute(page, route);
-    const link = page.locator(".site-footer").getByRole("link", { name: "Flux RSS", exact: true });
-    await expect(link).toBeVisible();
-    await expect(link).toHaveAttribute("href", "/rss.xml");
-    await expect(link).toHaveAttribute("type", "application/rss+xml");
-  }
+test("serves a valid public RSS feed", async ({ page, request }) => {
   const response = await request.get("/rss.xml");
   expect(response.ok()).toBe(true);
   const feed = await page.evaluate(
@@ -216,6 +209,12 @@ for (const route of ROUTES) {
     await expect(page.locator("astro-island")).toHaveCount(0);
     await expect(page.locator(".cookie-consent")).toHaveCount(0);
     await expectNoPageOverflow(page);
+    const rssLink = page
+      .locator(".site-footer")
+      .getByRole("link", { name: "Flux RSS", exact: true });
+    await expect(rssLink).toBeVisible();
+    await expect(rssLink).toHaveAttribute("href", "/rss.xml");
+    await expect(rssLink).toHaveAttribute("type", "application/rss+xml");
   });
 }
 

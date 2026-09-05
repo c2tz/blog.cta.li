@@ -2,6 +2,7 @@ export const SITE_EVENTS = Object.freeze({
   consentChange: "site:consent-change",
   explicitContentChange: "site:explicit-content-change",
   homeDetailViewChange: "home:detail-view-change",
+  motionChange: "site:motion-change",
   materialDynamicColorChange: "site:material-dynamic-color-change",
   loadingEnd: "site:loading-end",
   loadingStart: "site:loading-start",
@@ -19,6 +20,7 @@ export const SITE_STORAGE_KEYS = Object.freeze({
   cookieConsent: "ct-cookie-consent-v2",
   explicitContentAcknowledgement: "ct-explicit-content-ack-v1",
   homeDetailView: "home-detail-view-v1",
+  motionPreference: "site-motion-preference",
   homeKonachanBackgrounds: "home-konachan-backgrounds-v9",
   homeKonachanRatingPreference: "home-konachan-rating-preference-v1",
   ipGeolocation: "site-ip-geolocation-v3",
@@ -95,6 +97,7 @@ export const SITE_COOKIE_NAMES = Object.freeze({
   explicitContentAcknowledgement: "ct-explicit-content-ack",
   giscusCommentsEnabled: "site-giscus-comments-enabled",
   homeDetailView: "home-detail-view",
+  motionPreference: "site-motion-preference",
   homeKonachanRatingPreference: "home-konachan-rating-preference",
 });
 

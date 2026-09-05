@@ -1,7 +1,38 @@
+@use "data-table";
+
 @use "site-dates";
 
 site-tag-posts {
   display: block;
+}
+
+.tag-posts {
+  margin-block: 0;
+  padding: 0;
+  list-style-type: none;
+}
+
+.tag-post {
+  display: flex;
+  align-items: baseline;
+  gap: 0 0.5em;
+  margin-block: 0.25em;
+}
+
+.tag-post-date,
+.tag-separator {
+  color: var(--site-muted);
+}
+
+.tag-separator {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.tag-post > .tag-post-title {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
 }
 
 site-tag-posts [data-tag-post-item][hidden],
@@ -19,49 +50,20 @@ site-tag-posts [data-empty-row][hidden] {
 
 .tag-posts-table-scroll {
   --tag-posts-date-column-content-width: 16rem;
-
   position: relative;
-  max-width: 100%;
-  margin-block: 0 1rem;
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-}
 
-.tag-posts-table-scroll::-webkit-scrollbar {
-  height: 0.5rem;
-}
-
-.tag-posts-table-scroll::-webkit-scrollbar-thumb {
-  border-radius: 9999px;
-  background: color-mix(in srgb, var(--site-muted) 42%, transparent);
+  @include data-table.scroller;
 }
 
 .tag-posts-table {
   min-width: 42rem;
   width: max-content;
-  border-collapse: separate;
-  border-spacing: 0;
-  background: transparent;
-  color: var(--site-text);
-  font-family: var(--site-font);
+  @include data-table.table;
 }
 
 .tag-posts-table th,
 .tag-posts-table td {
-  height: 3rem;
-  padding: 0 2rem 0 1rem;
-  border: 0;
-  border-block-end: 1px solid var(--site-border);
-  background: var(--site-bg);
-  color: var(--site-text);
-  font-family: var(--site-font);
-  font-size: 1rem;
-  font-weight: 400;
-  letter-spacing: 0;
-  line-height: 1.5;
-  text-align: start;
-  white-space: nowrap;
+  @include data-table.cell;
 }
 
 .tag-posts-table th {
@@ -88,34 +90,7 @@ site-tag-posts [data-empty-row][hidden] {
 }
 
 .tag-posts-sort-button {
-  --md-ripple-hover-color: var(--site-link);
-  --md-ripple-pressed-color: var(--site-link);
-
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  width: 100%;
-  min-height: 3rem;
-  box-sizing: border-box;
-  padding: 0 2rem 0 1rem;
-  overflow: hidden;
-  border: 0;
-  background: var(--site-bg);
-  color: inherit;
-  cursor: pointer;
-  font: inherit;
-  font-weight: inherit;
-  text-align: start;
-}
-
-.tag-posts-sort-button md-icon {
-  --md-icon-size: 1.25rem;
-
-  width: 1.25rem;
-  height: 1.25rem;
-  flex-basis: 1.25rem;
-  font-size: 1.25rem;
+  @include data-table.sort-button;
 }
 
 .tag-posts-sort-active {
@@ -190,6 +165,10 @@ site-tag-posts [data-empty-row][hidden] {
 }
 
 @media (max-width: 720px) {
+  .tag-posts-table {
+    @include data-table.mobile-posts-table;
+  }
+
   .tag-posts-pagination {
     grid-template-columns: minmax(0, 1fr) max-content;
     justify-content: stretch;
@@ -202,18 +181,6 @@ site-tag-posts [data-empty-row][hidden] {
 }
 
 @media (max-width: 520px) {
-  .tag-posts-table-scroll {
-    --tag-posts-date-column-content-width: 13rem;
-  }
-
-  .tag-posts-table {
-    min-width: 36rem;
-  }
-
-  .tag-posts-table .tag-posts-title-column {
-    min-width: 20rem;
-  }
-
   .tag-posts-pagination {
     gap: 0.5rem;
   }

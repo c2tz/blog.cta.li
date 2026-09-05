@@ -1,3 +1,5 @@
+import { updateTableSortHeader } from "./table-sort";
+
 type TagPostsView = "list" | "table";
 type SortColumn = "created" | "title";
 type SortDirection = "asc" | "desc";
@@ -13,10 +15,6 @@ interface TagPostDomItem {
   search: string;
   title: string;
 }
-
-const UNSORTED_ICON = "\uE5D7";
-const SORT_ASC_ICON = "\uE5D8";
-const SORT_DESC_ICON = "\uE5DB";
 
 function materialValue(element: MaterialValueElement) {
   return typeof element.value === "string" ? element.value : (element.getAttribute("value") ?? "");
@@ -201,20 +199,9 @@ class SiteTagPostsElement extends HTMLElement {
       const column = header.getAttribute("data-sort-header");
       const active = column === this.sortColumn;
       const button = header.querySelector<HTMLElement>("[data-sort-column]");
-      const icon = header.querySelector<HTMLElement>("[data-sort-icon]");
-
-      if (active) {
-        header.setAttribute("aria-sort", this.sortDirection === "asc" ? "ascending" : "descending");
-      } else {
-        header.removeAttribute("aria-sort");
-      }
       button?.classList.toggle("tag-posts-sort-active", active);
-      if (icon) {
-        icon.textContent = active
-          ? this.sortDirection === "asc"
-            ? SORT_ASC_ICON
-            : SORT_DESC_ICON
-          : UNSORTED_ICON;
+      if (button) {
+        updateTableSortHeader(button, active ? this.sortDirection : null, this.sortColumn === null);
       }
     });
   }

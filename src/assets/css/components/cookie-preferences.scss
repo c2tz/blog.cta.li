@@ -13,7 +13,7 @@ site-cookie-preferences {
   color: var(--site-text);
 }
 
-.cookie-preferences-panel p {
+.cookie-preferences-panel :where(p) {
   margin: 0;
 }
 
@@ -32,7 +32,7 @@ site-cookie-preferences {
 
 .cookie-preferences-description {
   max-width: 38rem;
-  margin-block-start: 0.25rem !important;
+  margin-block-start: 0.25rem;
   color: var(--site-muted);
   font-size: 0.925rem;
 }
@@ -97,7 +97,7 @@ site-cookie-preferences {
 }
 
 .cookie-preferences-service-description {
-  margin-block-start: 0.25rem !important;
+  margin-block-start: 0.25rem;
   color: var(--md-sys-color-on-surface-variant);
   font-size: 0.9rem;
   line-height: 1.4;

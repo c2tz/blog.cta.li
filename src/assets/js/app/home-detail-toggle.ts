@@ -57,9 +57,7 @@ function enhanceDetailToggle(root: HTMLElement) {
 
   const apply = () => {
     button.selected = detailed;
-    const label = detailed ? "Mode détaillé" : "Mode simple";
-    button.dataset.tooltip = label;
-    button.setAttribute("aria-label", label);
+    button.dataset.tooltip = detailed ? "Passer en mode simple" : "Passer en mode détaillé";
     if (detailed) {
       document.documentElement.dataset.homeDetailView = "true";
       document.body.dataset.homeDetailView = "true";

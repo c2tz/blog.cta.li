@@ -1,0 +1,114 @@
+// The home, archive and shortcode tables keep their own selectors and layout
+// variants, but share the same cells, scrolling affordance and sort controls.
+@mixin scroller($margin-end: 1rem) {
+  max-width: 100%;
+  margin-block: 0 $margin-end;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+
+  &::-webkit-scrollbar {
+    height: 0.5rem;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--site-muted) 42%, transparent);
+  }
+}
+
+@mixin table {
+  border-collapse: separate;
+  border-spacing: 0;
+  background: transparent;
+  color: var(--site-text);
+  font-family: var(--site-font);
+}
+
+@mixin cell($height: 3rem) {
+  height: $height;
+  padding: 0 2rem 0 1rem;
+  border: 0;
+  border-block-end: 1px solid var(--site-border);
+  background: var(--site-bg);
+  color: var(--site-text);
+  font-family: var(--site-font);
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.5;
+  text-align: start;
+  white-space: nowrap;
+}
+
+@mixin sort-button($height: 3rem, $background: var(--site-bg)) {
+  --md-ripple-hover-color: var(--site-link);
+  --md-ripple-pressed-color: var(--site-link);
+
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  min-height: $height;
+  box-sizing: border-box;
+  padding: 0 2rem 0 1rem;
+  overflow: hidden;
+  border: 0;
+  background: $background;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: inherit;
+  text-align: start;
+}
+
+// Two-column article indexes keep full dates and titles readable on small screens.
+@mixin mobile-posts-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+
+  th,
+  td {
+    box-sizing: border-box;
+    padding: 0.625rem 0.5rem;
+    vertical-align: top;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  th {
+    padding: 0;
+    vertical-align: middle;
+  }
+
+  th:first-child,
+  td:first-child:not([colspan]) {
+    width: 38%;
+    min-width: 0;
+  }
+
+  th:nth-child(2),
+  td:nth-child(2) {
+    min-width: 0;
+  }
+
+  td:first-child:not([colspan]) {
+    font-size: 0.875rem;
+
+    time {
+      font-size: inherit;
+    }
+  }
+
+  th > button {
+    padding: 0.625rem 0.5rem;
+  }
+
+  td a {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}

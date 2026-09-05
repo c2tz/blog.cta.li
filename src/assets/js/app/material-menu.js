@@ -1,3 +1,5 @@
+import { initMaterialMotion } from "./material-motion.js";
+
 const MATERIAL_MENU_SELECTION_KEYS = new Set(["Enter", "Space"]);
 const materialSelectStateOwners = new WeakSet();
 const materialSelectIndicatorOwners = new WeakSet();
@@ -18,6 +20,7 @@ function bindMaterialSelectState(owner) {
   };
 
   owner.addEventListener("opening", onOpening);
+  owner.addEventListener("closing", onClosed);
   owner.addEventListener("closed", onClosed);
 }
 
@@ -56,6 +59,7 @@ function bindMaterialSelectIndicator(owner) {
  * @param {ParentNode} [root]
  */
 export function initMaterialMenuEnhancements(root = document) {
+  initMaterialMotion(root);
   root.querySelectorAll("md-menu, md-filled-select, md-outlined-select").forEach((owner) => {
     if (!(owner instanceof HTMLElement)) return;
     if (!materialSelectStateOwners.has(owner)) {

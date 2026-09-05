@@ -1,3 +1,4 @@
+import "@/assets/js/app/site-motion-effects.js";
 // Keep the all-route registry small; route-specific controls live in material-web/.
 import "@material/web/button/filled-button.js";
 import "@material/web/button/filled-tonal-button.js";

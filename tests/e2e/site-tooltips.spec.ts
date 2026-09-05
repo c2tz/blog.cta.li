@@ -31,6 +31,35 @@ test("loads rich and context tooltip controllers only for matching DOM", async (
   expect(conditionalRequests.some((url) => url.includes("site-rich-tooltips."))).toBe(true);
 });
 
+test("paints the complete simple tooltip on its first visible frames", async ({ page }) => {
+  await gotoRoute(page, "/");
+  await waitForAppReady(page);
+
+  const frames = await page.evaluate(async () => {
+    const surface = document.querySelector<HTMLElement>("[data-site-tooltip-surface]");
+    const trigger = document.querySelector<HTMLElement>(".site-search-trigger-button");
+    if (!surface || !trigger) throw new Error("Missing tooltip or trigger");
+
+    return new Promise<Array<{ text: string; opacity: string }>>((resolve, reject) => {
+      const samples: Array<{ text: string; opacity: string }> = [];
+      let attempts = 0;
+      const sample = () => {
+        const styles = getComputedStyle(surface);
+        if (surface.matches(":popover-open") && styles.visibility === "visible") {
+          samples.push({ text: surface.textContent ?? "", opacity: styles.opacity });
+        }
+        if (samples.length === 3) resolve(samples);
+        else if (++attempts >= 120) reject(new Error("Tooltip did not become visible"));
+        else requestAnimationFrame(sample);
+      };
+      requestAnimationFrame(sample);
+      trigger.focus();
+    });
+  });
+
+  expect(frames).toEqual(Array.from({ length: 3 }, () => ({ text: "Rechercher", opacity: "1" })));
+});
+
 test("shows one accessible simple tooltip without creating keyboard stops", async ({ page }) => {
   await gotoRoute(page, "/");
   await waitForAppReady(page);

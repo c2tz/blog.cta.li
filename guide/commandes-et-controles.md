@@ -134,24 +134,42 @@ lancent pas de navigateur.
 
 ### `pnpm test:e2e`
 
-Playwright construit le site, le sert sur le port 4322 et pilote de vrais moteurs de navigateur. La
+Playwright construit le site avec `build:test`, le sert sur le port 4322 et pilote de vrais moteurs de navigateur. La
 configuration normale couvre plusieurs tailles d'écran, les thèmes clair/sombre, Chromium et des
 parcours ciblés WebKit. Les captures et traces sont conservées lors d'un échec.
 
 La matrice Chromium évite le produit cartésien complet : le profil bureau clair exécute toutes les
 specs non nocturnes, le bureau sombre conserve les specs qui vérifient explicitement les thèmes, le
 mobile clair conserve les parcours responsive, tactiles ou critiques sur téléphone, et le mobile
-sombre couvre l'accueil thématique et le rendu. Les neuf specs WebKit ciblées restent exécutées dans
+sombre couvre l'accueil thématique et le rendu. Les specs WebKit ciblées restent exécutées dans
 les quatre combinaisons bureau/mobile et clair/sombre. `site-resilience.spec.ts` appartient
 exclusivement à la matrice nocturne Firefox/WebKit.
 
 Ces tests vérifient des interactions : recherche, consentement, commentaires, aperçu d'image,
 navigation, contenu et résilience. Ils sont plus lents que les tests unitaires.
 
+Les archives utilisent aussi quatre corpus déterministes de 0, 1, 11 et 101 articles. Les routes
+`/__test__/archives/…` sont injectées uniquement lorsque `SITE_TEST_FIXTURES=1`, activé par
+`build:test`. Elles ne font pas partie du build normal ni de l'index Pagefind. Les scénarios
+vérifient les limites de pagination, le changement de taille, le tri et le filtrage.
+
+`site-loading-recovery.spec.ts` couvre le rétablissement du chargeur Pagefind, de son module et de
+la liste détaillée après un échec HTTP, ainsi qu'une réponse invalide et un délai dépassé pour
+la liste. `site-performance-budget.spec.ts` mesure le HTML, le JavaScript et le CSS effectivement
+chargés après initialisation, pour une nouvelle visite et une visite avec consentement enregistré.
+Un scénario supplémentaire inclut le premier chargement de l'index de recherche. Les tailles sont
+recompressées en gzip pour rester comparables entre serveurs ; les images et polices sont exclues
+de ce budget. Chaque mesure produit une pièce jointe JSON Playwright avec le détail des ressources.
+
+`site-search-ranking.spec.ts` utilise un véritable index Pagefind de 101 articles, créé en mémoire
+et servi uniquement par l'interception réseau des tests. Il vérifie le classement complet et le
+chargement limité aux douze fiches affichées lors d'un tri alphabétique.
+
 ### `pnpm test:lighthouse`
 
-Nettoie les anciens rapports, puis exécute Lighthouse en mobile et en bureau. Chaque profil est
-mesuré trois fois. Les seuils actuels sont :
+Nettoie les anciens rapports, puis exécute Lighthouse en mobile et en bureau sur l'accueil,
+l'article de bienvenue et l'archive complète. Chaque route est mesurée trois fois par profil,
+soit dix-huit exécutions. Les seuils actuels sont :
 
 - performance : au moins 95 ;
 - accessibilité : 100 ;
@@ -242,6 +260,12 @@ dossier `public/` avant `pnpm dev` ou `pnpm build`. Les validations automatisée
 
 Nettoie l'ancien index Pagefind, indexe uniquement `dist/posts/**/index.html`, puis prépare le
 chargeur utilisé en développement. `pnpm build` l'exécute déjà.
+
+Le tri « Titre A–Z » utilise un rang calculé au build avec la collation française, les accents et
+les nombres. Pagefind applique ce rang à l'ensemble de l'index avant la sélection des douze
+résultats affichés. Le mode « Pertinence » conserve le reclassement des cent meilleurs résultats
+avec la priorité éditoriale. Le chargeur et les filtres permettent une nouvelle tentative après
+un échec, sans demander au visiteur de recharger toute la page.
 
 ### `pnpm minify:html`
 

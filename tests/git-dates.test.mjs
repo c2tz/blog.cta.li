@@ -4,6 +4,53 @@ import { mkdtemp, rm, utimes, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { hasDistinctModification } from "../src/lib/git-dates.mjs";
+
+test("post modification visibility gives commit identity priority over displayed dates", () => {
+  const createdCommit = "a".repeat(40);
+  const dates = {
+    createdAt: "2026-07-23T10:15:00.000Z",
+    lastModified: "2026-07-23T10:15:00.000Z",
+    createdCommit,
+    lastModifiedCommit: createdCommit,
+  };
+
+  assert.equal(hasDistinctModification(dates), false);
+  assert.equal(
+    hasDistinctModification({ ...dates, lastModified: "2026-07-24T10:15:00.000Z" }),
+    false,
+    "the same commit must not produce a separate modification date",
+  );
+  assert.equal(
+    hasDistinctModification({ ...dates, lastModifiedCommit: "b".repeat(40) }),
+    true,
+    "different commits record a modification even with identical timestamps",
+  );
+});
+
+test("post modification visibility falls back to the displayed Paris calendar date", () => {
+  const dates = {
+    createdAt: "2026-07-23T10:15:00.000Z",
+    lastModified: "2026-07-23T18:30:00.000Z",
+  };
+
+  assert.equal(hasDistinctModification(dates), false);
+  assert.equal(hasDistinctModification({ ...dates, createdCommit: "a".repeat(40) }), false);
+  assert.equal(hasDistinctModification({ ...dates, lastModifiedCommit: "b".repeat(40) }), false);
+  assert.equal(
+    hasDistinctModification({ ...dates, lastModified: "2026-07-23T22:30:00.000Z" }),
+    true,
+    "crossing midnight in Paris changes the displayed date, even within the same UTC day",
+  );
+  assert.equal(
+    hasDistinctModification({
+      createdAt: new Date("2026-07-23T22:15:00.000Z"),
+      lastModified: "2026-07-24T10:15:00.000+02:00",
+    }),
+    false,
+    "different date representations on the same Paris day must not create duplicates",
+  );
+});
 
 test("getFileGitDates caches by resolved stat signature and invalidates after a file change", async () => {
   const initialCwd = process.cwd();

@@ -52,6 +52,8 @@ const seoDescription = description ?? SITE_DESCRIPTION;
 const themeStorageKey = SITE_STORAGE_KEYS.themePreference;
 const legacyThemeStorageKey = SITE_LEGACY_STORAGE_KEYS.themePreference;
 const detailStorageKey = SITE_STORAGE_KEYS.homeDetailView;
+const motionStorageKey = SITE_STORAGE_KEYS.motionPreference;
+const motionCookieName = SITE_COOKIE_NAMES.motionPreference;
 const dynamicColorEnabledStorageKey = SITE_STORAGE_KEYS.materialDynamicColorEnabled;
 const dynamicColorPaletteStorageKey = SITE_STORAGE_KEYS.materialDynamicColorPalette;
 const dynamicColorRoles = MATERIAL_DYNAMIC_COLOR_ROLES;
@@ -72,7 +74,7 @@ const speedInsightsVersion = speedInsightsPackage.version;
 ---
 
 <!doctype html>
-<html lang={locale}>
+<html lang={locale} data-motion="off">
   <head>
     <meta charset="utf-8" />
     <script
@@ -80,6 +82,8 @@ const speedInsightsVersion = speedInsightsPackage.version;
       define:vars={{
         detailCookieName,
         detailStorageKey,
+        motionStorageKey,
+        motionCookieName,
         dynamicColorEnabledStorageKey,
         dynamicColorPaletteStorageKey,
         dynamicColorRoles,
@@ -91,6 +95,27 @@ const speedInsightsVersion = speedInsightsPackage.version;
     >
       (() => {
         const root = document.documentElement;
+        const readCookie = (name) => {
+          const encodedName = `${encodeURIComponent(name)}=`;
+          const cookie = document.cookie
+            .split(";")
+            .map((part) => part.trim())
+            .find((part) => part.startsWith(encodedName));
+
+          if (!cookie) return null;
+
+          try {
+            return decodeURIComponent(cookie.slice(encodedName.length));
+          } catch {
+            return null;
+          }
+        };
+        let motionPreference;
+        try {
+          motionPreference = localStorage.getItem(motionStorageKey);
+        } catch {}
+        root.dataset.motion =
+          (motionPreference ?? readCookie(motionCookieName)) === "on" ? "on" : "off";
         const colorPattern = /^#[0-9a-f]{6}$/i;
         const systemTheme = matchMedia("(prefers-color-scheme: dark)");
 
@@ -128,21 +153,6 @@ const speedInsightsVersion = speedInsightsPackage.version;
         };
 
         const syncDetailView = () => {
-          const readCookie = (name) => {
-            const encodedName = `${encodeURIComponent(name)}=`;
-            const cookie = document.cookie
-              .split(";")
-              .map((part) => part.trim())
-              .find((part) => part.startsWith(encodedName));
-
-            if (!cookie) return null;
-
-            try {
-              return decodeURIComponent(cookie.slice(encodedName.length));
-            } catch {
-              return null;
-            }
-          };
           const normalizeDetailView = (value) => {
             if (value === "true" || value === "detailed") return true;
             if (value === "false" || value === "compact") return false;

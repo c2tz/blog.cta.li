@@ -1,0 +1,77 @@
+// Angular Material's sort-header motion, shared by every sortable table.
+$sort-timing: 225ms cubic-bezier(0.4, 0, 0.2, 1);
+
+.site-sort-arrow {
+  position: relative;
+  display: block;
+  flex: 0 0 12px;
+  width: 12px;
+  height: 12px;
+  overflow: visible;
+  color: var(--site-muted);
+  opacity: 0;
+  transition:
+    transform $sort-timing,
+    opacity $sort-timing;
+
+  > md-icon {
+    --md-icon-size: 18px;
+
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 18px;
+    height: 18px;
+    margin: -9px 0 0 -9px;
+    font-size: 18px;
+    transform: translateZ(0);
+  }
+}
+
+button:is(:hover, :focus-visible) > .site-sort-arrow {
+  opacity: 0.54;
+}
+
+button[data-sort-direction] > .site-sort-arrow {
+  opacity: 1;
+}
+
+button[data-sort-direction="desc"] > .site-sort-arrow {
+  transform: rotate(180deg);
+}
+
+button[data-sort-cleared="asc"] > .site-sort-arrow {
+  opacity: 0;
+  transform: translateY(-25%);
+  transition: none;
+  animation: site-sort-clear-asc $sort-timing forwards;
+}
+
+button[data-sort-cleared="desc"] > .site-sort-arrow {
+  opacity: 0;
+  transform: translateY(25%) rotate(180deg);
+  transition: none;
+  animation: site-sort-clear-desc $sort-timing forwards;
+}
+
+@keyframes site-sort-clear-asc {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-25%);
+  }
+}
+
+@keyframes site-sort-clear-desc {
+  from {
+    opacity: 1;
+    transform: translateY(0) rotate(180deg);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(25%) rotate(180deg);
+  }
+}

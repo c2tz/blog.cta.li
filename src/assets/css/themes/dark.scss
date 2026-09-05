@@ -4,18 +4,6 @@
   --code-block-surface: var(--site-bg);
 }
 
-:root[data-theme="dark"] kbd {
-  border-color: var(--m3-outline);
-  background-color: var(--m3-surface-container-highest);
-  color: var(--m3-on-surface);
-  box-shadow: none;
-}
-
-:root[data-theme="dark"] .site-footer-link,
-:root[data-theme="dark"] .site-footer-link:visited {
-  color: var(--site-muted);
-}
-
 :root[data-theme="dark"] :where(.code-shell, pre.astro-code) {
   --code-line-info: #64b5f6;
   --code-line-info-text: #90caf9;

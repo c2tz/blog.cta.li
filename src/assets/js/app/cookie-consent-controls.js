@@ -243,14 +243,13 @@ function setBackgroundInteractionDisabled(disabled) {
 }
 
 function isFocusableElement(element) {
-  const style = getComputedStyle(element);
-
   return (
     (element.tabIndex >= 0 || MATERIAL_BUTTON_TAG_NAMES.has(element.localName)) &&
     !element.hasAttribute("disabled") &&
-    element.getAttribute("aria-hidden") !== "true" &&
-    style.display !== "none" &&
-    style.visibility !== "hidden"
+    !element.matches(":disabled") &&
+    element.getAttribute("aria-disabled") !== "true" &&
+    !element.closest('[inert], [hidden], [aria-hidden="true"]') &&
+    element.checkVisibility({ checkVisibilityCSS: true })
   );
 }
 
@@ -272,12 +271,14 @@ class SiteCookieConsentBanner extends HTMLElement {
   #handleKeydown = (event) => {
     if (!this.#activeNotice) return;
 
-    if (event.key === "Tab" && this.#activeNotice === "explicit-content") {
+    if (
+      ["Tab", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)
+    ) {
       // A backdrop pointerdown may still have an initial-focus frame queued.
-      // Once the user presses Tab, keyboard navigation is authoritative: do
+      // Once the user navigates, keyboard navigation is authoritative: do
       // not let that older frame move focus back to the first action.
       this.#cancelFocusRequest();
-      this.#trapFocus(event);
+      if (event.key === "Tab" && this.#activeNotice === "explicit-content") this.#trapFocus(event);
     }
   };
 
@@ -316,6 +317,9 @@ class SiteCookieConsentBanner extends HTMLElement {
   }
 
   #showNextNotice() {
+    const continueKeyboardFocus =
+      document.documentElement.dataset.focusModality === "keyboard" &&
+      this.contains(document.activeElement);
     const nextNotice = this.#explicitContentPending
       ? "explicit-content"
       : this.#cookieConsentPending
@@ -328,6 +332,8 @@ class SiteCookieConsentBanner extends HTMLElement {
 
     if (!nextNotice) {
       this.#unlockPage();
+      this.#cancelFocusRequest();
+      if (continueKeyboardFocus) document.querySelector("#main-content")?.focus();
       return;
     }
 
@@ -347,6 +353,7 @@ class SiteCookieConsentBanner extends HTMLElement {
       this.#focusInitialAction();
     } else {
       this.#unlockPage();
+      if (continueKeyboardFocus) this.#focusInitialAction();
     }
   }
 
@@ -406,12 +413,14 @@ class SiteCookieConsentBanner extends HTMLElement {
   #focusInitialAction() {
     this.#cancelFocusRequest();
     const focusRequest = this.#focusRequest;
+    const notice = this.#activeNotice;
+    if (!notice) return;
 
     customElements.whenDefined("md-text-button").then(() => {
       if (
         focusRequest !== this.#focusRequest ||
         !this.isConnected ||
-        this.#activeNotice !== "explicit-content"
+        this.#activeNotice !== notice
       ) {
         return;
       }
@@ -421,7 +430,7 @@ class SiteCookieConsentBanner extends HTMLElement {
         if (
           focusRequest !== this.#focusRequest ||
           !this.isConnected ||
-          this.#activeNotice !== "explicit-content"
+          this.#activeNotice !== notice
         ) {
           return;
         }

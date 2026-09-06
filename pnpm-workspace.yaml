@@ -11,6 +11,7 @@ overrides:
   esbuild: 0.28.1
   fast-uri: 3.1.6
   fast-xml-parser: 5.10.1
+  fflate@0.7.3: 0.7.5
   immutable: 5.1.8
   lighthouse@12.6.1: 13.4.1
   qs: 6.16.0

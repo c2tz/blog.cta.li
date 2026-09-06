@@ -636,3 +636,55 @@ test("keeps the latest-posts table interactive without exposing hidden posts", a
   await expect(page.getByRole("link", { name: "Vérification MDX" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Shortcodes Astro et Material Web" })).toHaveCount(0);
 });
+
+for (const route of ["/", "/posts/bienvenue-sur-ct-blog/"]) {
+  test(`reopens the theme menu after disabling motion on ${route}`, async ({ page }) => {
+    await gotoRoute(page, route);
+    await waitForAppReady(page);
+    const trigger = page.locator(".site-theme-trigger");
+    const menu = page.locator("#site-theme-menu");
+    const motion = page.locator(".site-motion-trigger");
+    await motion.click();
+    await openMaterialMenu(trigger, menu);
+    // The outside click closes the menu while the same click disables motion.
+    await motion.click();
+    await expect(menu).toBeHidden();
+    await openMaterialMenu(trigger, menu);
+    await expect(menu.locator('[data-theme-option="light"]')).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(menu).toBeHidden();
+    await motion.click();
+    await openMaterialMenu(trigger, menu);
+    await menu.evaluate((element) => {
+      element.addEventListener(
+        "closing",
+        () => {
+          document.querySelector<HTMLElement>(".site-motion-trigger")?.click();
+        },
+        { once: true },
+      );
+    });
+    await page.keyboard.press("Escape");
+    await expect(menu).toBeHidden();
+    await openMaterialMenu(trigger, menu);
+    await expect(menu.locator('[data-theme-option="light"]')).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(menu).toBeHidden();
+    for (const detailed of [false, true]) {
+      if (detailed) await page.locator(".home-detail-trigger").click();
+      for (const enabled of [false, true, false]) {
+        if (enabled !== ((await page.locator("html").getAttribute("data-motion")) === "on")) {
+          await motion.click();
+        }
+        for (const theme of ["light", "dark", "system"]) {
+          await openMaterialMenu(trigger, menu);
+          const option = menu.locator(`[data-theme-option="${theme}"]`);
+          await expect(option).toBeVisible();
+          await option.click();
+          await expect(menu).toBeHidden();
+          await expect(page.locator("html")).toHaveAttribute("data-theme-preference", theme);
+        }
+      }
+    }
+  });
+}

@@ -56,7 +56,7 @@ test("renders granular cookie preference controls", async ({ page }) => {
 
   await expect(panel).toHaveAttribute("data-cookie-preference-state", "rejected");
   await expect(panel.getByText("Aucun service autorisé", { exact: true })).toBeVisible();
-  await expect(serviceSwitches).toHaveCount(3);
+  await expect(serviceSwitches).toHaveCount(4);
   for (const serviceSwitch of await serviceSwitches.all()) {
     await expect(serviceSwitch).toHaveJSProperty("selected", false);
   }

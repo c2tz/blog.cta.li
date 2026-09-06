@@ -917,6 +917,14 @@ test("keeps one Giscus progress bar until its iframe has loaded", async ({ page 
     "data-theme",
     /^data:text\/css;charset=utf-8,/,
   );
+  // Giscus can restore its native title after the frame has loaded.
+  await page.locator("iframe.giscus-frame").evaluate((iframe) => {
+    iframe.setAttribute("title", "Comments");
+  });
+  await expect(page.locator("iframe.giscus-frame")).not.toHaveAttribute("title");
+  await expect(page.locator("iframe.giscus-frame")).not.toHaveAttribute("data-tooltip");
+  await expect(page.locator("iframe.giscus-frame")).toHaveAttribute("aria-label", "Commentaires");
+
   const firstLiveTheme = await giscusFrame.locator("body").getAttribute("data-theme");
 
   await page.evaluate(() => {

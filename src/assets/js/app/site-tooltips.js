@@ -218,6 +218,16 @@ class SiteTooltipController {
   prepareTarget(element) {
     if (!document.body?.contains(element)) return;
 
+    // An embedded comments document needs an accessible name, not a tooltip
+    // spanning the iframe. Giscus can restore its title after initialization.
+    if (element.matches("iframe.giscus-frame")) {
+      element.setAttribute("aria-label", "Commentaires");
+      element.removeAttribute("title");
+      element.removeAttribute("data-tooltip");
+      element.classList.remove("site-tooltip");
+      return;
+    }
+
     if (
       element.hasAttribute("data-context-popover-trigger") ||
       element.hasAttribute("data-rich-tooltip-trigger")

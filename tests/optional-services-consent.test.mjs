@@ -17,7 +17,7 @@ test("creates and validates a granular optional-services consent payload", () =>
   const state = createOptionalServicesConsent(services, "2026-07-22T00:00:00.000Z");
 
   assert.deepEqual(state, {
-    services: { giscus: true, ipgeo: false, "speed-insights": false },
+    services: { giscus: true, ipgeo: false, "speed-insights": false, "web-analytics": false },
     updatedAt: "2026-07-22T00:00:00.000Z",
     version: 2,
   });
@@ -50,11 +50,33 @@ test("migrates a v1 global decision to the three individual services", () => {
     giscus: true,
     ipgeo: true,
     "speed-insights": true,
+    "web-analytics": false,
   });
   assert.deepEqual(optionalServicesFromLegacyConsent({ functionality: false, version: 1 }), {
     giscus: false,
     ipgeo: false,
     "speed-insights": false,
+    "web-analytics": false,
   });
   assert.equal(optionalServicesFromLegacyConsent({ functionality: true, version: 2 }), null);
+});
+
+test("preserves existing v2 permissions without consenting to new Analytics", () => {
+  const old = {
+    version: 2,
+    updatedAt: "2026-07-22T00:00:00.000Z",
+    services: { giscus: true, ipgeo: true, "speed-insights": true },
+  };
+  const migrated = normalizeOptionalServicesConsent(old);
+  assert.deepEqual(migrated.services, { ...old.services, "web-analytics": false });
+  assert.equal(areAllOptionalServicesEnabled(migrated.services), false);
+  assert.equal(
+    normalizeOptionalServicesConsent({
+      ...old,
+      services: { ...old.services, "web-analytics": "true" },
+    }),
+    null,
+  );
+  const accepted = createOptionalServicesConsent(createOptionalServices(true));
+  assert.equal(accepted.services["web-analytics"], true);
 });

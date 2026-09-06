@@ -1,3 +1,7 @@
+---
+import "@/assets/css/components/cookie-consent.scss";
+---
+
 <site-cookie-consent-banner>
   <template data-cookie-template="explicit-content">
     <div data-cookie-active-notice>
@@ -83,3 +87,17 @@
     </div>
   </template>
 </site-cookie-consent-banner>
+
+<script is:inline>
+  (() => {
+    if (!document.documentElement.classList.contains("consent-prelock")) return;
+    const banner = document.currentScript?.previousElementSibling;
+    if (!banner || banner.querySelector("[data-cookie-active-notice]")) return;
+    const template = banner.querySelector('[data-cookie-template="explicit-content"]');
+    if (!(template instanceof HTMLTemplateElement)) return;
+    const notice = template.content.firstElementChild?.cloneNode(true);
+    if (!(notice instanceof HTMLElement)) return;
+    notice.setAttribute("data-cookie-boot-notice", "");
+    banner.append(notice);
+  })();
+</script>

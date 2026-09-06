@@ -242,7 +242,8 @@ const initialStatus =
   }
 </site-tag-posts>
 
-{(isTable || hasPagination) && <script>import "@/assets/js/material-web/tags.js";</script>}
+{isTable && <script>import "@/assets/js/material-web/tags.js";</script>}
+{hasPagination && <script>import "@/assets/js/material-web/tag-pagination.js";</script>}
 
 <script>
   import "@/assets/js/app/tag-posts";

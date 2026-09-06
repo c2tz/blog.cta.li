@@ -1,9 +1,11 @@
-import { readdir, readFile } from "node:fs/promises";
-import { dirname, extname, posix, relative, resolve, sep } from "node:path";
+import { readFile } from "node:fs/promises";
+import { dirname, extname, posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { brotliCompressSync, gzipSync } from "node:zlib";
 
 import { parse } from "parse5";
+import { listFiles } from "./lib/file-listing.mjs";
+import { getAttribute, walkElements } from "./lib/html-nodes.mjs";
 
 const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_DIST_DIRECTORY = resolve(ROOT_DIRECTORY, "dist");
@@ -11,6 +13,12 @@ const ASTRO_DIRECTORY = "_astro";
 const SITE_ORIGIN = "https://ct-blog.cta.li";
 const KIBIBYTE = 1024;
 const SIZE_FIELDS = Object.freeze(["rawBytes", "gzipBytes", "brotliBytes"]);
+const FONT_SIGNATURES = new Map([
+  [".woff2", "wOF2"],
+  [".woff", "wOFF"],
+  [".otf", "OTTO"],
+  [".ttf", "\u0000\u0001\u0000\u0000"],
+]);
 
 const ROUTES = Object.freeze({
   article: "posts/bienvenue-sur-ct-blog/index.html",
@@ -44,6 +52,7 @@ export const BUNDLE_BUDGETS = Object.freeze({
   largestJavaScript: sizeBudget(112, 32, 28),
   totalJavaScript: sizeBudget(768, 200, 176),
   totalStylesheet: sizeBudget(128, 32, 28),
+  totalFonts: sizeBudget(128, 128, 128),
   pagefind: sizeBudget(256, 184, 176),
   notFoundImage: sizeBudget(56, 57, 57),
   deferredJourneys: Object.freeze({
@@ -53,41 +62,14 @@ export const BUNDLE_BUDGETS = Object.freeze({
   }),
 });
 
-async function listFiles(directory, root = directory) {
-  const entries = await readdir(directory, { withFileTypes: true });
-  const files = [];
-
-  for (const entry of entries) {
-    const absolutePath = resolve(directory, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...(await listFiles(absolutePath, root)));
-    } else if (entry.isFile()) {
-      files.push(relative(root, absolutePath).split(sep).join("/"));
-    }
-  }
-
-  return files;
-}
-
-function walkElements(node, elements = []) {
-  if (node && typeof node === "object" && "tagName" in node) elements.push(node);
-  for (const child of node?.childNodes ?? []) walkElements(child, elements);
-  if (node?.content) walkElements(node.content, elements);
-  return elements;
-}
-
-function getAttribute(element, name) {
-  return element.attrs?.find((attribute) => attribute.name === name)?.value;
-}
-
 function textContent(node) {
   if (node?.nodeName === "#text") return node.value ?? "";
   return (node?.childNodes ?? []).map(textContent).join("");
 }
 
-function localAssetPath(value) {
+function localAssetPath(value, importer = "/") {
   try {
-    const url = new URL(value, SITE_ORIGIN);
+    const url = new URL(value, new URL(importer, SITE_ORIGIN));
     if (url.origin !== SITE_ORIGIN || url.pathname === "/") return null;
 
     const path = decodeURIComponent(url.pathname).replace(/^\/+/, "");
@@ -152,6 +134,62 @@ async function collectRoute(distDirectory, htmlPath, measurementCache) {
     .filter(Boolean);
 
   return measureFiles(distDirectory, [htmlPath, ...initialPaths], measurementCache);
+}
+
+async function collectFontPaths(distDirectory, stylesheetPaths, initialPaths) {
+  const fonts = new Set();
+  const fontChecks = new Map();
+  const isFont = (path) => {
+    const extension = extname(path).toLowerCase();
+    const signature = FONT_SIGNATURES.get(extension);
+    if (!signature) return Promise.resolve(false);
+    if (!fontChecks.has(path)) {
+      fontChecks.set(
+        path,
+        readFile(resolve(distDirectory, path)).then((buffer) => {
+          const webFont = extension === ".woff2" || extension === ".woff";
+          const minimumLength = webFont ? (extension === ".woff2" ? 48 : 44) : 12;
+          return (
+            buffer.length >= minimumLength &&
+            buffer.toString("latin1", 0, 4) === signature &&
+            (!webFont || buffer.readUInt32BE(8) === buffer.length)
+          );
+        }),
+      );
+    }
+    return fontChecks.get(path);
+  };
+
+  // An as="font" attribute alone must never exempt JavaScript or other assets.
+  for (const path of initialPaths) {
+    if (await isFont(path)) fonts.add(path);
+  }
+
+  const pending = [...stylesheetPaths];
+  const visited = new Set();
+  while (pending.length > 0) {
+    const path = pending.pop();
+    if (visited.has(path)) continue;
+    visited.add(path);
+    const source = (await readFile(resolve(distDirectory, path), "utf8")).replace(
+      /\/\*[\s\S]*?\*\//g,
+      "",
+    );
+    const references = [
+      ...source.matchAll(/\burl\(\s*(?:"([^"]*)"|'([^']*)'|([^)]*?))\s*\)/gi),
+      ...source.matchAll(/@import\s+(?:"([^"]*)"|'([^']*)')/gi),
+    ];
+    for (const match of references) {
+      const asset = localAssetPath(match[1] ?? match[2] ?? match[3], `/${path}`);
+      if (!asset) continue;
+      const extension = extname(asset).toLowerCase();
+      if (extension === ".css") pending.push(asset);
+      if (!FONT_SIGNATURES.has(extension)) continue;
+      if (!(await isFont(asset))) throw new Error(`Invalid local font file: ${asset}.`);
+      fonts.add(asset);
+    }
+  }
+  return [...fonts];
 }
 
 function generatedEntry(assetPaths, stem) {
@@ -258,24 +296,44 @@ export async function collectBundleStats({ distDirectory = DEFAULT_DIST_DIRECTOR
     listFiles(resolve(distDirectory, "pagefind")),
     readFile(resolve(distDirectory, ROUTES.home), "utf8"),
   ]);
-  const astroAssets = await measureFiles(
+  const codeAssets = await measureFiles(
     distDirectory,
-    assetPaths.map((path) => `${ASTRO_DIRECTORY}/${path}`),
+    assetPaths
+      .filter((path) => [".js", ".mjs", ".css"].includes(extname(path).toLowerCase()))
+      .map((path) => `${ASTRO_DIRECTORY}/${path}`),
     measurementCache,
   );
-  const javascriptAssets = astroAssets.files.filter(({ path }) =>
+  const javascriptAssets = codeAssets.files.filter(({ path }) =>
     [".js", ".mjs"].includes(extname(path).toLowerCase()),
   );
-  const stylesheetAssets = astroAssets.files.filter(
+  const stylesheetAssets = codeAssets.files.filter(
     ({ path }) => extname(path).toLowerCase() === ".css",
   );
-  const routes = Object.fromEntries(
+  const routeMeasurements = Object.fromEntries(
     await Promise.all(
       Object.entries(ROUTES).map(async ([name, htmlPath]) => [
         name,
         await collectRoute(distDirectory, htmlPath, measurementCache),
       ]),
     ),
+  );
+  const initialFiles = Object.values(routeMeasurements).flatMap(({ files }) => files);
+  const fontPaths = await collectFontPaths(
+    distDirectory,
+    new Set(
+      [...stylesheetAssets, ...initialFiles]
+        .filter(({ path }) => extname(path).toLowerCase() === ".css")
+        .map(({ path }) => path),
+    ),
+    new Set(initialFiles.map(({ path }) => path)),
+  );
+  const fontPathSet = new Set(fontPaths);
+  const totalFonts = await measureFiles(distDirectory, fontPaths, measurementCache);
+  const routes = Object.fromEntries(
+    Object.entries(routeMeasurements).map(([name, measurement]) => {
+      const files = measurement.files.filter(({ path }) => !fontPathSet.has(path));
+      return [name, { files, ...sumMeasurements(files) }];
+    }),
   );
 
   const notFoundImageCandidates = await Promise.all(
@@ -351,6 +409,7 @@ export async function collectBundleStats({ distDirectory = DEFAULT_DIST_DIRECTOR
     largestJavaScript: largestFile(javascriptAssets),
     totalJavaScript: { ...sumMeasurements(javascriptAssets), files: javascriptAssets },
     totalStylesheet: { ...sumMeasurements(stylesheetAssets), files: stylesheetAssets },
+    totalFonts,
     pagefind,
     notFoundImage,
     notFoundImages: notFoundImageCandidates,
@@ -385,6 +444,7 @@ export async function checkBundleBudget({
     ["route 404, HTML inclus", stats.routes.notFound, budgets.routes.notFound],
     ["total JavaScript applicatif", stats.totalJavaScript, budgets.totalJavaScript],
     ["total CSS", stats.totalStylesheet, budgets.totalStylesheet],
+    ["polices locales", stats.totalFonts, budgets.totalFonts],
     ["Pagefind", stats.pagefind, budgets.pagefind],
     ["parcours différé recherche", stats.deferredJourneys.search, budgets.deferredJourneys.search],
     [
@@ -434,6 +494,7 @@ async function main() {
     [
       `Budgets de bundles vérifiés : JS ${formatMeasurement(stats.totalJavaScript)};`,
       `CSS ${formatMeasurement(stats.totalStylesheet)};`,
+      `polices ${formatMeasurement(stats.totalFonts)};`,
       `Pagefind ${formatMeasurement(stats.pagefind)};`,
       `accueil ${formatMeasurement(stats.routes.home)}.`,
     ].join(" "),

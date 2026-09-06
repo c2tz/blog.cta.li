@@ -1,4 +1,6 @@
 import { schedulePostPaint } from "@/assets/js/app/post-paint";
+import { defineCookieConsentControls } from "@/assets/js/app/cookie-consent-controls.js";
+import { isPageUnloading, rethrowPageLoadError } from "@/assets/js/app/page-lifecycle.js";
 import { initMotionToggles } from "@/assets/js/app/site-motion.js";
 import { parseVersionedState, readCookieValue } from "@/assets/js/app/site-persistence.js";
 import {
@@ -9,7 +11,6 @@ import {
 } from "@/lib/site-contracts";
 
 type BaseInitializers = {
-  defineCookieConsentControls(): void;
   initHomeDetailToggles(): void;
   initPageLoadingIndicators(): void;
 };
@@ -29,7 +30,6 @@ let consentServicesListenerInstalled = false;
 let consentResyncInstalled = false;
 let explicitContentListenerInstalled = false;
 let searchShortcutInstalled = false;
-let pageIsUnloading = false;
 
 type CookieConsentWindow = Window & {
   cookieConsent?: {
@@ -43,12 +43,10 @@ async function loadBaseModules() {
     import("@/assets/js/material-web.js"),
     import("@/assets/js/app-init.js"),
     import("@/assets/js/app/theme-switcher"),
-    import("@/assets/js/app/cookie-consent-controls.js"),
     import("@/assets/js/app/home-detail-toggle"),
     import("@/assets/js/app/page-loading-indicator"),
   ])
-    .then(([, , , consent, homeDetail, loadingIndicator]) => ({
-      defineCookieConsentControls: consent.defineCookieConsentControls,
+    .then(([, , , homeDetail, loadingIndicator]) => ({
       initHomeDetailToggles: homeDetail.initHomeDetailToggles,
       initPageLoadingIndicators: loadingIndicator.initPageLoadingIndicators,
     }))
@@ -57,9 +55,7 @@ async function loadBaseModules() {
       throw error;
     });
 
-  const { defineCookieConsentControls, initHomeDetailToggles, initPageLoadingIndicators } =
-    await baseModulesPromise;
-  defineCookieConsentControls();
+  const { initHomeDetailToggles, initPageLoadingIndicators } = await baseModulesPromise;
   initHomeDetailToggles();
   initMotionToggles();
   initPageLoadingIndicators();
@@ -281,15 +277,15 @@ async function bootstrapPage() {
 }
 
 function scheduleBootstrap() {
-  pageIsUnloading = false;
   delete document.documentElement.dataset.appReady;
+  // Render first-visit notice text before the deferred Material registry.
+  // Its focus handler already waits for the buttons to finish upgrading.
+  defineCookieConsentControls();
   schedulePostPaint(() => {
     void bootstrapPage().catch((error) => {
-      if (pageIsUnloading) return;
+      if (isPageUnloading()) return;
       document.documentElement.dataset.appReady = "error";
-      queueMicrotask(() => {
-        throw error;
-      });
+      rethrowPageLoadError(error);
     });
   });
 }
@@ -297,7 +293,4 @@ function scheduleBootstrap() {
 armConsentResync();
 armSearchShortcut();
 scheduleBootstrap();
-window.addEventListener("pagehide", () => {
-  pageIsUnloading = true;
-});
 document.addEventListener("astro:page-load", scheduleBootstrap);

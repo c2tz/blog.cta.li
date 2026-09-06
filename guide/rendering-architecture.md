@@ -4,7 +4,8 @@
 > le [guide du débutant](guide-du-debutant.md) si vous découvrez Astro ou ce dépôt.
 
 This document describes the production rendering path at the `2c73092a` baseline and the
-performance migration applied on `develop` in July 2026. It is a regression contract: a new
+performance migration applied on `develop` in July 2026, with the September 2026 loading changes
+reflected in the execution contract. Dated measurements remain historical snapshots. A new
 feature should be placed in the latest possible loading phase that still preserves its first
 interaction.
 
@@ -22,24 +23,34 @@ state and tests the equivalent image-preview behavior on the replacement fixture
 
 ## Execution map
 
-| Surface                 | Static HTML/CSS                                                                   | Initial post-paint code                                                               | Lazy code/network                                                                                                                                                          | Consent boundary                                                   |
-| ----------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| Astro shell             | Header, footer, navigation, post markup, tags, cookie templates and dialog markup | Small base Material registry, theme, cookie controls, tooltips, loading/focus helpers | Route registries selected by DOM presence                                                                                                                                  | Explicit-content notice pre-locks the page before interactive code |
-| Material 3              | Real `md-*` hosts and local Material Symbols are emitted by Astro                 | Only controls shared by the current shell are registered                              | Search, tags, content, home and image-preview registries are split                                                                                                         | None; the components themselves are local                          |
-| Search                  | Closed dialog and trigger are static                                              | A small trigger loader only                                                           | Search controller and search Material controls on focus/hover/first click; Pagefind Worker/WASM and index on opening/query                                                 | None                                                               |
-| Markdown and shortcodes | Shiki HTML, prose and shortcode source markup                                     | A selector gate inspects the rendered prose                                           | Copy controls only for code blocks; shortcode Material runtime only when complex controls exist                                                                            | None                                                               |
-| Image preview           | Two Material dialog hosts and the source images                                   | A small capture-phase loader only                                                     | Full controller, dialogs and buttons on focus/hover/first click; share-file fetch after preview intent                                                                     | None                                                               |
-| Konachan home           | Hero structure and local manifest URL                                             | Lightweight home table and controls required for the visible shell                    | Background controller, compact manifest and selected images after explicit-content acknowledgement; mandatory precomputed source colors remove browser extraction entirely | Explicit-content acknowledgement                                   |
-| Giscus                  | Local consent UI and placeholder                                                  | Local controller on post routes                                                       | `giscus.app/client.js` and iframe only after the Giscus switch plus the separate comments opt-in                                                                           | Giscus consent and comments opt-in                                 |
-| Optional services       | Static IP placeholder and Vercel metadata                                         | No optional service module before consent                                             | IP geolocation and Speed Insights modules/services only after their individual switch; any inserted third-party script is purged by one consent-revocation reload          | Individual service consent                                         |
-| CSP/Vercel              | CSP hashes and headers are generated from the built HTML                          | No runtime policy relaxation                                                          | Pagefind Worker/WASM and approved external Giscus/IP origins                                                                                                               | Deployment checks gate alias promotion                             |
+| Surface                 | Static HTML/CSS                                                                   | Initial client code                                                                                   | Lazy code/network                                                                                                                                                          | Consent boundary                                                   |
+| ----------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Astro shell             | Header, footer, navigation, post markup, tags, cookie templates and dialog markup | Early cookie controller; post-paint base Material registry, theme, tooltips and loading/focus helpers | Route registries selected by DOM presence                                                                                                                                  | Explicit-content notice pre-locks the page before interactive code |
+| Material 3              | Real `md-*` hosts and local Material Symbols are emitted by Astro                 | Only controls shared by the current shell are registered                                              | Search, tags, content, home and image-preview registries are split                                                                                                         | None; the components themselves are local                          |
+| Search                  | Closed dialog and trigger are static                                              | A small trigger loader only                                                                           | Search controller and search Material controls on focus/hover/first click; Pagefind Worker/WASM and index on opening/query                                                 | None                                                               |
+| Markdown and shortcodes | Shiki HTML, prose and shortcode source markup                                     | A selector gate inspects the rendered prose                                                           | Copy controls only for code blocks; shortcode Material runtime only when complex controls exist                                                                            | None                                                               |
+| Image preview           | Two Material dialog hosts and the source images                                   | A small capture-phase loader only                                                                     | Full controller, dialogs and buttons on focus/hover/first click; share-file fetch after preview intent                                                                     | None                                                               |
+| Konachan home           | Hero structure and local manifest URL                                             | Lightweight home table and controls required for the visible shell                                    | Background controller, compact manifest and selected images after explicit-content acknowledgement; mandatory precomputed source colors remove browser extraction entirely | Explicit-content acknowledgement                                   |
+| Giscus                  | Local consent UI and placeholder                                                  | Local controller on post routes                                                                       | `giscus.app/client.js` and iframe only after the Giscus switch plus the separate comments opt-in                                                                           | Giscus consent and comments opt-in                                 |
+| Optional services       | Static IP placeholder and Vercel metadata                                         | No optional service module before consent                                                             | IP geolocation and Speed Insights modules/services only after their individual switch; any inserted third-party script is purged by one consent-revocation reload          | Individual service consent                                         |
+| CSP/Vercel              | CSP hashes and headers are generated from the built HTML                          | No runtime policy relaxation                                                                          | Pagefind Worker/WASM and approved external Giscus/IP origins                                                                                                               | Deployment checks gate alias promotion                             |
+
+The consent banner precedes the header and content. After the inline pre-lock checks the stored
+acknowledgement, a small inline script clones the explicit-content template when the page is
+locked, before any module is needed. Its CSS is imported by the Astro banner and delivered as
+cacheable external CSS. The bootstrap module adopts that same notice node and binds its actions;
+the buttons stay hidden until their handlers and Material definitions are ready. Initial focus
+waits for Material, and an early Tab does not cancel that pending focus. Saved consent is checked
+again before adoption. Changing the inline script requires regenerating the production CSP hashes.
 
 ## Target invariants
 
 1. Astro owns the first render. Custom elements enhance existing markup and never replace the
    page shell with client-rendered HTML.
 2. A route loads only the Material registry it uses. Shared controls stay in `material-web.js`;
-   search, home, tags, content and image preview have separate entries.
+   search, home, tags, content and image preview have separate entries. Archive tables load the
+   text-field registry in `material-web/tags.js`; only archives with more than ten posts load
+   `material-web/tag-pagination.js`, using the same `hasPagination` condition as the select markup.
 3. A deferred feature has a tiny loader that catches the first pointer or keyboard activation.
    Image preview passes the original target and focus intent directly to its controller, without
    redispatching an event. Search currently finishes its import and replays the requested open
@@ -88,7 +99,7 @@ state and tests the equivalent image-preview behavior on the replacement fixture
 ### 2. Split route and interaction registries
 
 - Extracted search and image-preview Material registries.
-- Restored `md-select-option` to the content and tags entries that own it.
+- Restored `md-select-option` to the content and archive pagination entries that own it.
 - Selected code-block and complex-shortcode enhancement by rendered DOM.
 - Deferred the search controller and full image-preview controller until user intent.
 - Disabled Vite's JavaScript dependency preloads for deferred entries. Intent warming still starts
@@ -167,6 +178,30 @@ the selected 404 image and ambiguous generated entries. The thresholds in
 `scripts/check-bundle-budget.mjs` retain practical headroom instead of tracking the current output
 byte for byte.
 
+Local browser fonts have a separate 128 KiB budget in each encoding. The check follows local
+font URLs in generated stylesheets and their CSS imports, and includes direct font preloads,
+counting each file once. Recognized font extensions and binary signatures are required before a
+preload is separated from the existing route totals; `as="font"` alone cannot bypass them.
+The existing route thresholds remain unchanged. Fonts discovered through CSS were previously
+outside those totals, so the separate guard makes font preloading comparable with CSS discovery
+while also detecting growth in the complete declared font set, including faces not used by a
+particular page. This is a deployment-size bound rather than an estimate of fonts actually fetched.
+
+Non-bare pages preload Roboto 400, Roboto 700 and the Material Symbols subset using the exact
+versioned URLs from their CSS faces. Roboto Mono stays CSS-discovered: its normal and italic
+files now contain the static 400 instance already exposed by the CSS, preserving glyphs, advances
+and hinting while removing unused weight variations. Conversion details and hashes are recorded
+in [the Roboto Mono source note](../public/fonts/roboto-mono-SOURCE.txt).
+
+Local Astro preview sets `vite.preview.cors: false` while retaining the fixed
+`Access-Control-Allow-Origin: https://giscus.app` header. This removes Vite's unnecessary
+`Vary: Origin` from invariant responses: WebKit otherwise downloads each font again when its
+CSS request omits the Origin sent by the preload. In the September 7, 2026 isolated article
+navigation with the Playwright routing fixture and a 4.1-second observation window, WebKit
+went from six font requests and three unused-preload warnings to three requests and no warnings.
+Chromium also made three requests without warnings; both engines loaded all three faces.
+The production header policy is unchanged.
+
 Since the September 2026 audit, `tests/e2e/site-performance-budget.spec.ts` also bounds actual
 same-origin HTML/JS/CSS responses after application initialization, including automatic module
 imports. It covers home, article and archive routes with fresh and saved consent, plus the first
@@ -197,9 +232,9 @@ lets hashed `/_astro/*` files use the existing one-year immutable cache.
 | Six-route traversal with CSS cache      | 742,801 B | 278,927 B | −62.5% |
 | Shared CSS                              |  93,495 B |  45,533 B | −51.3% |
 
-There are seven hashed stylesheets. `inlineStylesheets: "never"` controls Astro's bundled CSS
+That July build had seven hashed stylesheets. `inlineStylesheets: "never"` controls Astro's bundled CSS
 delivery; it is not a blanket assertion that component markup or runtime code never uses an
-inline style attribute. Initial CSS is 61,164 B on home, 46,648 B on 404, 52,598 B on cookies,
+inline style attribute. Its initial CSS was 61,164 B on home, 46,648 B on 404, 52,598 B on cookies,
 79,764 B on a post and 49,243 B on tags. A standalone `pnpm test:e2e` still builds its own
 production output; `verify:quality` sets
 `PLAYWRIGHT_REUSE_BUILD=1` after its explicit build so Playwright serves the validated `dist`
@@ -409,11 +444,14 @@ Pagefind, Giscus or image-preview interactions, so those paths remain Playwright
   reused from the immutable browser cache on subsequent navigation. Keep the per-route imports and
   verify the generated external stylesheet links when changing Astro or Vite; the configuration
   value alone is not a general no-inline-style assertion.
+- Consent CSS now participates in initial stylesheet loading even when consent is already stored.
+  This lets the first-visit notice render before the module graph and reuses the immutable CSS
+  cache on later visits; the controller no longer carries and injects that stylesheet.
 - The current build contains only two unlisted technical posts, so the Pagefind index is nearly
   empty and its search measurements are not representative of a production corpus.
-- The same small corpus does not exercise list-view tag pagination above ten posts in a rendered
-  browser route. Its Material import is tied to the shared `hasPagination` condition, but a larger
-  production-like fixture would give stronger regression coverage.
+- Deterministic archive fixtures cover table filtering, sorting and pagination through 101 posts.
+  List-view tag pagination above ten posts still lacks a rendered browser fixture; its select
+  registry uses the same `hasPagination` condition as the tested table view.
 - The Konachan set dominates `dist` (300 WebP files, 23,727,528 B, or 22.6 MiB), but its runtime
   manifest, controller and chosen images are outside the fresh initial path. The browser reads the
   compact runtime manifest rather than the authoring manifest; every version 2 entry must contain

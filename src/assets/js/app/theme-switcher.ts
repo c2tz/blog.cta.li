@@ -109,7 +109,6 @@ async function enhanceThemeSwitcher(root: HTMLElement) {
       const selectedLabel = item.querySelector<HTMLElement>("[data-theme-selected-label]");
       if (selectedLabel) selectedLabel.hidden = !selected;
     });
-    renderDynamicColor();
   };
 
   const apply = (persist: boolean) => {
@@ -242,7 +241,6 @@ async function enhanceThemeSwitcher(root: HTMLElement) {
     if (!dynamicColorSwitch || dynamicColorSwitch.disabled) return;
     event.preventDefault();
     const state = setMaterialDynamicColorEnabled(!readMaterialDynamicColorEnabled());
-    renderDynamicColor();
     if (status) {
       status.textContent = state.active
         ? "Couleur dynamique activée"
@@ -254,7 +252,6 @@ async function enhanceThemeSwitcher(root: HTMLElement) {
   });
   document.addEventListener(SITE_EVENTS.homeDetailViewChange, () => {
     syncMaterialDynamicColor();
-    renderDynamicColor();
   });
   document.addEventListener(SITE_EVENTS.materialDynamicColorChange, renderDynamicColor);
   window.addEventListener("pageshow", sync);

@@ -1,4 +1,5 @@
 import { createGiscusThemeUrl } from "@/assets/js/app/giscus-theme.js";
+import { markPageUnloading } from "@/assets/js/app/page-lifecycle.js";
 import {
   parseVersionedState,
   readCookieValue,
@@ -108,7 +109,10 @@ function enhanceGiscus(root: HTMLElement) {
     const hadThirdPartyRuntime =
       loading || loaded || Boolean(frame.querySelector("script, iframe"));
     loadGeneration += 1;
-    if (hadThirdPartyRuntime) window.stop();
+    if (hadThirdPartyRuntime) {
+      markPageUnloading();
+      window.stop();
+    }
     stopFrameWatch();
     if (themeAnimationFrame) cancelAnimationFrame(themeAnimationFrame);
     themeAnimationFrame = 0;

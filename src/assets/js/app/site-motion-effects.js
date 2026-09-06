@@ -47,6 +47,13 @@ function syncMotionEffects() {
 }
 
 function trackShadowRoot(root) {
+  const media = areSiteAnimationsEnabled() ? "not all" : "all";
+  const trackedStyle = shadowStyles.get(root);
+  if (trackedStyle?.parentNode === root) {
+    if (trackedStyle.media !== media) trackedStyle.media = media;
+    return;
+  }
+
   let style = root.querySelector("style[data-site-motion]");
   if (!style) {
     style = document.createElement("style");
@@ -54,7 +61,7 @@ function trackShadowRoot(root) {
     style.textContent = disabledMotionStyles;
     root.prepend(style);
   }
-  style.media = areSiteAnimationsEnabled() ? "not all" : "all";
+  if (style.media !== media) style.media = media;
   shadowStyles.set(root, style);
   observer.observe(root, { childList: true, subtree: true });
 }

@@ -108,6 +108,21 @@ test("prevents an in-flight Giscus client from executing after consent is revoke
   const routeGate = new Promise<void>((resolve) => {
     routeSettled = resolve;
   });
+  let contentRequestStarted = () => {};
+  const contentRequestGate = new Promise<void>((resolve) => {
+    contentRequestStarted = resolve;
+  });
+  let delayContentRequest = true;
+
+  // Revocation also aborts this unrelated first-party import. Keep it pending
+  // deterministically so the test covers the page's cancellation handling.
+  await page.route("**/_astro/content.*.js", async (route) => {
+    if (!delayContentRequest) return route.continue();
+    delayContentRequest = false;
+    contentRequestStarted();
+    await responseGate;
+    await route.continue().catch(() => undefined);
+  });
 
   await page.route("https://giscus.app/client.js", async (route) => {
     requestStarted();
@@ -143,30 +158,34 @@ test("prevents an in-flight Giscus client from executing after consent is revoke
     );
   });
 
-  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
-  await requestGate;
-  const frame = page.locator("[data-giscus-frame]");
-  await expect(frame.locator("script[src='https://giscus.app/client.js']")).toHaveCount(1);
+  try {
+    await gotoRoute(page, "/posts/hugo-material-shortcodes/");
+    await Promise.all([requestGate, contentRequestGate]);
+    const frame = page.locator("[data-giscus-frame]");
+    await expect(frame.locator("script[src='https://giscus.app/client.js']")).toHaveCount(1);
 
-  const reloaded = page.waitForEvent("domcontentloaded");
-  await page.evaluate(() => {
-    localStorage.setItem(
-      "ct-cookie-consent-v2",
-      JSON.stringify({
-        services: { giscus: false, ipgeo: true, "speed-insights": true },
-        updatedAt: new Date().toISOString(),
-        version: 2,
-      }),
-    );
-    window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true }));
-  });
-  await reloaded;
-  releaseResponse();
-  await routeGate;
-  await page.waitForTimeout(250);
+    const reloaded = page.waitForEvent("domcontentloaded");
+    await page.evaluate(() => {
+      localStorage.setItem(
+        "ct-cookie-consent-v2",
+        JSON.stringify({
+          services: { giscus: false, ipgeo: true, "speed-insights": true },
+          updatedAt: new Date().toISOString(),
+          version: 2,
+        }),
+      );
+      window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true }));
+    });
+    await reloaded;
+    releaseResponse();
+    await routeGate;
+    await page.waitForTimeout(250);
 
-  await expect(frame.locator("script, iframe")).toHaveCount(0);
-  await expect(page.locator("[data-giscus-panel]")).toBeHidden();
-  await expect(page.locator("[data-giscus-privacy]")).toBeVisible();
-  expect(await page.evaluate(() => localStorage.getItem("giscus-late-execution"))).toBeNull();
+    await expect(frame.locator("script, iframe")).toHaveCount(0);
+    await expect(page.locator("[data-giscus-panel]")).toBeHidden();
+    await expect(page.locator("[data-giscus-privacy]")).toBeVisible();
+    expect(await page.evaluate(() => localStorage.getItem("giscus-late-execution"))).toBeNull();
+  } finally {
+    releaseResponse();
+  }
 });

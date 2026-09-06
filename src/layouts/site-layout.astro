@@ -19,6 +19,7 @@ import {
 import { computeRoute } from "@vercel/speed-insights";
 import speedInsightsPackage from "@vercel/speed-insights/package.json";
 import "@/assets/css/global.scss";
+import materialSymbols from "../../public/fonts/material-symbols-rounded-subset.codepoints.json";
 
 interface Props {
   locale?: string;
@@ -259,6 +260,29 @@ const speedInsightsVersion = speedInsightsPackage.version;
     </script>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
+    {
+      !barePage &&
+        [400, 700].map((weight) => (
+          <link
+            rel="preload"
+            href={`/fonts/roboto-latin-${weight}-normal.woff2?v=${STATIC_ASSET_VERSION}`}
+            as="font"
+            type="font/woff2"
+            crossorigin="anonymous"
+          />
+        ))
+    }
+    {
+      !barePage && (
+        <link
+          rel="preload"
+          href={`/fonts/material-symbols-rounded-subset.woff2?v=${materialSymbols.fontSha256.slice(0, 12)}`}
+          as="font"
+          type="font/woff2"
+          crossorigin="anonymous"
+        />
+      )
+    }
     <link rel="icon" type="image/x-icon" href={`/favicon.ico?v=${STATIC_ASSET_VERSION}`} />
     <link
       rel="alternate"
@@ -342,6 +366,8 @@ const speedInsightsVersion = speedInsightsPackage.version;
         }
       })();
     </script>
+    {!barePage && <CookieConsentBanner />}
+    {!barePage && <script>import "@/assets/js/app-bootstrap";</script>}
     {
       !barePage && (
         <a class="skip-link" href="#main-content">
@@ -356,12 +382,10 @@ const speedInsightsVersion = speedInsightsPackage.version;
       </div>
     </main>
     {!barePage && <Footer />}
-    {!barePage && <CookieConsentBanner />}
     {!barePage && <PageLoadingIndicator />}
     {!barePage && <SiteTooltip />}
     {!barePage && shouldEnhanceContent && <ImagePreview />}
     {!barePage && readingProgress && <ScrollTopButton />}
-    {!barePage && <script>import "@/assets/js/app-bootstrap";</script>}
     {shouldEnhanceContent && <script>import "@/assets/js/content-enhancements.js";</script>}
   </body>
 </html>

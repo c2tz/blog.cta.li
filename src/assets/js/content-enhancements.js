@@ -1,3 +1,5 @@
+import { rethrowPageLoadError } from "./app/page-lifecycle.js";
+
 const COMPLEX_SHORTCODE_SELECTOR = [
   "[data-material-table]",
   "[data-material-tabs]",
@@ -30,5 +32,8 @@ async function loadContentEnhancements() {
   await Promise.all(modules);
 }
 
-void loadContentEnhancements();
-document.addEventListener("astro:page-load", () => void loadContentEnhancements());
+void loadContentEnhancements().catch(rethrowPageLoadError);
+document.addEventListener(
+  "astro:page-load",
+  () => void loadContentEnhancements().catch(rethrowPageLoadError),
+);

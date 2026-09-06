@@ -1,6 +1,7 @@
 import { initScrollProgressBar, removeReadingProgress } from "./app/reading-progress.js";
 import { initSiteTooltips } from "./app/site-tooltips.js";
 import { initKeyboardNavigation } from "./app/keyboard-navigation.js";
+import { rethrowPageLoadError } from "./app/page-lifecycle.js";
 
 const RICH_TOOLTIP_SELECTOR = "[data-rich-tooltip-trigger]";
 const CONTEXT_POPOVER_SELECTOR = [
@@ -35,11 +36,7 @@ async function initContextPopoversWhenNeeded() {
 
 function initConditionalEnhancements() {
   void Promise.all([initRichTooltipsWhenNeeded(), initContextPopoversWhenNeeded()]).catch(
-    (error) => {
-      queueMicrotask(() => {
-        throw error;
-      });
-    },
+    rethrowPageLoadError,
   );
 }
 
@@ -66,7 +63,7 @@ function initApp() {
   initKeyboardNavigation();
   initSiteTooltips();
   initConditionalEnhancements();
-  void initProseImageEnhancements();
+  void initProseImageEnhancements().catch(rethrowPageLoadError);
   if (document.body?.dataset.readingProgress === "off") {
     removeReadingProgress();
   } else {

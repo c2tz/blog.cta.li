@@ -1,3 +1,9 @@
+[data-theme-switcher] {
+  // Keep Material's menu and its anchor in the same coordinate system during
+  // pinch zoom, rather than positioning a top-layer popover from viewport data.
+  position: relative;
+}
+
 .site-theme-menu {
   min-width: 17rem;
   max-width: min(22rem, calc(100vw - 2rem));

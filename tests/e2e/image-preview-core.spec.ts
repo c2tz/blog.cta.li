@@ -189,7 +189,7 @@ test("fits the complete image with CSS and stays scroll-free through gestures an
   expect(imageStyles.inlineTransform).toBe("");
   expect(imageStyles.inlineWidth).toBe("");
   expect(imageStyles.inlineHeight).toBe("");
-  expect(imageStyles.touchAction).toBe("pinch-zoom");
+  expect(imageStyles.touchAction).toBe("auto");
 
   const targets = await dialog
     .locator("[data-image-information], [data-image-close]")

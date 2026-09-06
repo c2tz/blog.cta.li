@@ -1,3 +1,4 @@
+import sharp from "sharp";
 import {
   expect,
   test,
@@ -7,6 +8,7 @@ import {
   waitForNativeEnhancement,
   openMaterialMenu,
   expectNoPageOverflow,
+  seedFixedKonachanImage,
 } from "./site-fixture";
 
 test("starts every page without motion and keeps detail mode independent", async ({ page }) => {
@@ -688,3 +690,95 @@ for (const route of ["/", "/posts/bienvenue-sur-ct-blog/"]) {
     }
   });
 }
+
+for (const route of ["/", "/posts/bienvenue-sur-ct-blog/"]) {
+  test(`repaints the pixels beneath the theme menu after a second trigger click on ${route}`, async ({
+    page,
+  }) => {
+    await seedFixedKonachanImage(page);
+    await gotoRoute(page, route);
+    await waitForAppReady(page);
+    if (route === "/") {
+      await expect(page.locator("[data-konachan-background]")).toHaveAttribute(
+        "data-konachan-current-url",
+        /.+/,
+      );
+    }
+    const trigger = page.locator(".site-theme-trigger");
+    const menu = page.locator("#site-theme-menu");
+    for (const enabled of [false, true, false]) {
+      if (enabled !== ((await page.locator("html").getAttribute("data-motion")) === "on")) {
+        await page.locator(".site-motion-trigger").click();
+      }
+      await page.mouse.move(0, 0);
+      const before = await page.screenshot({ scale: "css", animations: "allow" });
+      await openMaterialMenu(trigger, menu);
+      const bounds = await menu.locator(".menu").boundingBox();
+      expect(bounds).not.toBeNull();
+      await trigger.click();
+      await expect(menu).toBeHidden();
+      await expect(trigger).toHaveAttribute("data-aria-expanded", "false");
+      await page.mouse.move(0, 0);
+      // display:none can pass while Safari 18.6 still paints the old menu over
+      // the filtered hero. Check actual pixels, without finishing animations
+      // through the screenshot API (which could conceal a repaint failure).
+      const after = await page.screenshot({ scale: "css", animations: "allow" });
+      const region = {
+        left: Math.ceil(bounds!.x) + 8,
+        top: Math.ceil(bounds!.y) + 8,
+        width: Math.floor(bounds!.width) - 16,
+        height: Math.floor(bounds!.height) - 16,
+      };
+      const pixelsBefore = await sharp(before).extract(region).removeAlpha().raw().toBuffer();
+      const pixelsAfter = await sharp(after).extract(region).removeAlpha().raw().toBuffer();
+      let changed = 0;
+      for (let index = 0; index < pixelsBefore.length; index += 3) {
+        if (
+          [0, 1, 2].some(
+            (channel) => Math.abs(pixelsBefore[index + channel] - pixelsAfter[index + channel]) > 8,
+          )
+        ) {
+          changed++;
+        }
+      }
+      expect(
+        changed / (region.width * region.height),
+        "closed menu must restore the underlying pixels",
+      ).toBeLessThan(0.001);
+    }
+  });
+}
+
+test("keeps the theme menu attached to its trigger through visual viewport zoom", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== "chromium", "Visual viewport scaling requires Chromium CDP");
+  const session = await page.context().newCDPSession(page);
+  try {
+    for (const route of ["/", "/posts/bienvenue-sur-ct-blog/"]) {
+      await gotoRoute(page, route);
+      await waitForAppReady(page);
+      const trigger = page.locator(".site-theme-trigger");
+      const menu = page.locator("#site-theme-menu");
+      for (const scale of [1, 1.5, 2, 1]) {
+        await session.send("Emulation.setPageScaleFactor", { pageScaleFactor: scale });
+        await expect.poll(() => page.evaluate(() => window.visualViewport?.scale)).toBe(scale);
+        // Keyboard activation avoids Playwright pointer coordinates under CDP zoom.
+        await trigger.press("Enter");
+        await expect(menu).toBeVisible();
+        const anchor = await trigger.boundingBox();
+        const surface = await menu.locator(".menu").boundingBox();
+        expect(anchor).not.toBeNull();
+        expect(surface).not.toBeNull();
+        expect(Math.abs(surface!.x + surface!.width - anchor!.x - anchor!.width)).toBeLessThan(1);
+        expect(Math.abs(surface!.y - anchor!.y - anchor!.height)).toBeLessThan(1);
+        await page.keyboard.press("Escape");
+        await expect(menu).toBeHidden();
+      }
+    }
+  } finally {
+    await session.send("Emulation.setPageScaleFactor", { pageScaleFactor: 1 });
+    await session.detach();
+  }
+});

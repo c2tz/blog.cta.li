@@ -34,8 +34,7 @@ export const withImagePreviewGallery = (Base) =>
         this.items.findIndex((item) => item.src === selectedItem.src),
       );
       this.pendingIndex = undefined;
-      this.browserZoomBaselineDpr = Math.max(0.1, window.devicePixelRatio || 1);
-      this.browserZoomScale = 1;
+      this.browserZoomed = false;
       const richTooltip = sourceImage.closest("[data-site-rich-tooltip][id]");
       const richTooltipTrigger = richTooltip
         ? [...document.querySelectorAll("[data-rich-tooltip-trigger]")].find(
@@ -77,6 +76,7 @@ export const withImagePreviewGallery = (Base) =>
         }
       }
 
+      const openingFocusAnchor = this.createOpeningFocusAnchor();
       try {
         const focusRequestBeforeShow = this.focusRequest;
         // Back must close the preview as soon as it becomes visible, including
@@ -97,6 +97,8 @@ export const withImagePreviewGallery = (Base) =>
         }
       } catch {
         this.requestClose("open-failed");
+      } finally {
+        openingFocusAnchor?.remove();
       }
     }
 

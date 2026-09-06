@@ -62,12 +62,15 @@ for (const motion of [false, true]) {
     });
     await expect
       .poll(() =>
-        dialog.locator("[data-image-dialog-stage]").evaluate((element) => ({
-          scrollLeft: element.scrollLeft,
-          imageLeft: element.querySelector("img")?.getBoundingClientRect().left ?? 0,
-        })),
+        dialog
+          .locator("[data-image-dialog-stage]")
+          .evaluate(
+            (element) =>
+              element.scrollLeft > initialPan ||
+              (element.querySelector("img")?.getBoundingClientRect().left ?? 0) < 0,
+          ),
       )
-      .toSatisfy(({ scrollLeft, imageLeft }) => scrollLeft > initialPan || imageLeft < 0);
+      .toBe(true);
     await expect(dialog.locator("[data-image-dialog-image]")).toHaveAttribute("src", currentImage!);
     await expect(dialog.locator("[data-image-dialog-image]")).not.toHaveAttribute(
       "style",

@@ -1,3 +1,4 @@
+import "@/assets/js/app/site-motion-effects.js";
 import "@material/web/button/elevated-button.js";
 import "@material/web/button/filled-tonal-button.js";
 import "@material/web/button/outlined-button.js";

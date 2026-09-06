@@ -32,10 +32,6 @@
   display: none;
 }
 
-.site-tooltip-surface:popover-open {
-  animation: site-tooltip-enter 120ms cubic-bezier(0.2, 0, 0, 1) both;
-}
-
 .site-context-popover {
   z-index: 999;
   width: min(22.5rem, var(--site-floating-available-width, calc(100vw - 1.5rem)));
@@ -172,18 +168,6 @@
   cursor: help;
 }
 
-@keyframes site-tooltip-enter {
-  from {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
 @keyframes site-context-popover-enter {
   from {
     opacity: 0;
@@ -205,15 +189,6 @@
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .site-tooltip-surface:popover-open,
-  .site-rich-tooltip:popover-open,
-  .site-context-popover:popover-open,
-  .site-context-popover[open] {
-    animation: none;
   }
 }
 

@@ -31,6 +31,16 @@
   gap: 0.25rem;
 }
 
+@media (max-width: 360px) {
+  .site-header {
+    padding-inline: 0.75rem;
+  }
+
+  .site-header-actions {
+    gap: 0;
+  }
+}
+
 .skip-link {
   position: fixed;
   z-index: 10000;
@@ -43,10 +53,14 @@
   color: var(--md-sys-color-inverse-on-surface);
   font-weight: 700;
   text-decoration: none;
+  opacity: 0;
+  pointer-events: none;
   transform: translate(-50%, -150%);
   transition: transform 160ms ease;
 }
 
 .skip-link:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
   transform: translate(-50%, 0);
 }

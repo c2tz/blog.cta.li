@@ -59,7 +59,14 @@ async function existingFiles(files) {
 }
 
 async function listCandidateFiles() {
-  const gitFiles = git(["ls-files", "--", ...SOURCE_GLOBS])
+  const gitFiles = git([
+    "ls-files",
+    "--cached",
+    "--others",
+    "--exclude-standard",
+    "--",
+    ...SOURCE_GLOBS,
+  ])
     .trim()
     .split(/\r?\n/)
     .filter((file) => TEXT_SOURCE_PATTERN.test(file));

@@ -1,5 +1,7 @@
 ---
+import "@/assets/css/components/home-latest-posts.scss";
 import type { HomeLatestPost } from "@/lib/blog-post-projections.mjs";
+import { SORT_INDICATOR_HTML } from "@/assets/js/app/table-sort";
 
 interface Props {
   detailEndpoint?: string;
@@ -15,6 +17,7 @@ const initialPosts = posts.slice(0, 3);
   data-posts={JSON.stringify(initialPosts)}
 >
   <p class="sr-only" role="status" aria-live="polite" aria-atomic="true" data-sort-status></p>
+  <p role="status" aria-live="polite" aria-atomic="true" data-load-status hidden></p>
 
   <div class="home-posts-table-scroll" tabindex="0" data-table-scroll>
     <md-linear-progress
@@ -37,11 +40,11 @@ const initialPosts = posts.slice(0, 3);
             <button
               type="button"
               class="home-posts-sort-button"
-              aria-label="Trier par date"
+              aria-label="Trier par date de création"
               data-sort-column="date"
             >
-              <span>Date</span>
-              <md-icon aria-hidden="true" data-sort-icon>&#xE5D7;</md-icon>
+              <span>Date de création</span>
+              <Fragment set:html={SORT_INDICATOR_HTML} />
               <md-ripple></md-ripple>
             </button>
           </th>
@@ -53,7 +56,7 @@ const initialPosts = posts.slice(0, 3);
               data-sort-column="title"
             >
               <span>Titre</span>
-              <md-icon aria-hidden="true" data-sort-icon>&#xE5D7;</md-icon>
+              <Fragment set:html={SORT_INDICATOR_HTML} />
               <md-ripple></md-ripple>
             </button>
           </th>
@@ -97,159 +100,3 @@ const initialPosts = posts.slice(0, 3);
     </table>
   </div>
 </site-home-latest-posts-table>
-
-<style is:global>
-  site-home-latest-posts-table {
-    display: block;
-  }
-
-  site-home-latest-posts-table .home-posts-table-scroll {
-    --home-posts-date-column-content-width: 8rem;
-
-    position: relative;
-    max-width: 100%;
-    margin-block: 0 1em;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  site-home-latest-posts-table .home-posts-table-scroll::-webkit-scrollbar {
-    height: 0.5rem;
-  }
-
-  site-home-latest-posts-table .home-posts-table-scroll::-webkit-scrollbar-thumb {
-    border-radius: 9999px;
-    background: color-mix(in srgb, var(--site-muted) 42%, transparent);
-  }
-
-  site-home-latest-posts-table .home-posts-table-scroll-detailed {
-    --home-posts-date-column-content-width: 14rem;
-  }
-
-  site-home-latest-posts-table .home-posts-table {
-    min-width: 42rem;
-    width: max-content;
-    border-collapse: separate;
-    border-spacing: 0;
-    background: transparent;
-    color: var(--site-text);
-    font-family: var(--site-font);
-  }
-
-  site-home-latest-posts-table .home-posts-table th,
-  site-home-latest-posts-table .home-posts-table td {
-    height: 2.75rem;
-    padding: 0 2rem 0 1rem;
-    border: 0;
-    border-block-end: 1px solid var(--site-border);
-    background: var(--site-bg);
-    color: var(--site-text);
-    font-family: var(--site-font);
-    font-size: 1rem;
-    font-weight: 400;
-    letter-spacing: 0;
-    line-height: 1.5;
-    text-align: start;
-    white-space: nowrap;
-  }
-
-  site-home-latest-posts-table .home-posts-table th {
-    padding: 0;
-    color: var(--site-muted);
-    font-weight: 600;
-  }
-
-  site-home-latest-posts-table .home-posts-table .home-posts-table-row:last-child td {
-    border-block-end: 0;
-  }
-
-  site-home-latest-posts-table .home-posts-table-loading-row td {
-    height: 9rem;
-    padding: 0;
-    background: var(--m3-surface-container-low);
-    text-align: center;
-  }
-
-  site-home-latest-posts-table .home-posts-table-progress {
-    --md-linear-progress-active-indicator-color: var(--md-sys-color-primary);
-    --md-linear-progress-active-indicator-height: 0.2rem;
-    --md-linear-progress-track-color: var(--md-sys-color-surface-container-highest);
-    --md-linear-progress-track-height: 0.2rem;
-    --md-linear-progress-track-shape: var(--md-sys-shape-corner-none);
-
-    position: sticky;
-    top: 0;
-    left: 0;
-    z-index: 3;
-    display: flex;
-    width: 100%;
-    min-width: 100%;
-    block-size: var(--md-linear-progress-track-height);
-  }
-
-  site-home-latest-posts-table .home-posts-table-progress:not([data-loading-active]) {
-    visibility: hidden;
-  }
-
-  site-home-latest-posts-table .home-posts-table-empty {
-    display: inline-block;
-    padding: 1rem;
-    color: var(--site-muted);
-  }
-
-  site-home-latest-posts-table .home-posts-table .home-posts-date-column {
-    width: var(--home-posts-date-column-content-width);
-    min-width: var(--home-posts-date-column-content-width);
-    border-inline-end: 1px solid var(--site-border);
-  }
-
-  site-home-latest-posts-table .home-posts-table .home-posts-title-column {
-    min-width: 20rem;
-  }
-
-  site-home-latest-posts-table .home-posts-table .home-posts-title-header {
-    overflow: visible;
-  }
-
-  site-home-latest-posts-table .home-posts-sort-button {
-    --md-ripple-hover-color: var(--site-link);
-    --md-ripple-pressed-color: var(--site-link);
-
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    width: 100%;
-    min-height: 2.75rem;
-    box-sizing: border-box;
-    padding: 0 2rem 0 1rem;
-    overflow: hidden;
-    border: 0;
-    background: transparent;
-    color: inherit;
-    cursor: pointer;
-    font: inherit;
-    font-weight: inherit;
-    text-align: start;
-  }
-
-  site-home-latest-posts-table .home-posts-sort-button md-icon {
-    --md-icon-size: 1.25rem;
-
-    width: 1.25rem;
-    height: 1.25rem;
-    flex-basis: 1.25rem;
-    font-size: 1.25rem;
-  }
-
-  site-home-latest-posts-table .home-posts-sort-active {
-    background: color-mix(in srgb, var(--site-link) 10%, transparent);
-    color: var(--site-text);
-  }
-
-  site-home-latest-posts-table .home-post-title {
-    display: inline;
-    white-space: nowrap;
-  }
-</style>

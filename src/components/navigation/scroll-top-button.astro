@@ -11,6 +11,7 @@
 <script>
   import "@/assets/js/material-web/scroll.js";
   import { SITE_EVENTS } from "@/lib/site-contracts";
+  import { areSiteAnimationsEnabled } from "@/assets/js/app/site-motion.js";
 
   function enhanceScrollTop(root: HTMLElement) {
     if (root.dataset.enhanced === "true") return;
@@ -35,7 +36,7 @@
     button.addEventListener("click", () => {
       if (document.body.classList.contains("home-page")) return;
       document.dispatchEvent(new CustomEvent(SITE_EVENTS.tooltipHide));
-      scrollTo({ top: 0, behavior: "smooth" });
+      scrollTo({ top: 0, behavior: areSiteAnimationsEnabled() ? "smooth" : "instant" });
     });
     addEventListener("scroll", requestSync, { passive: true });
     addEventListener("resize", requestSync, { passive: true });

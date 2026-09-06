@@ -22,7 +22,11 @@ module.exports = {
     collect: {
       numberOfRuns: 3,
       staticDistDir: "./dist",
-      url: ["http://localhost/"],
+      url: [
+        "http://localhost/",
+        "http://localhost/posts/bienvenue-sur-ct-blog/",
+        "http://localhost/tags/all/",
+      ],
       settings: {
         chromeFlags: "--headless=new --no-sandbox",
         onlyCategories: ["performance", "accessibility", "best-practices"],

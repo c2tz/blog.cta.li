@@ -4,9 +4,10 @@ const PORT = 4322;
 const BASE_URL = `http://127.0.0.1:${PORT}`;
 const reuseExistingBuild = process.env.PLAYWRIGHT_REUSE_BUILD === "1";
 const nightly = process.env.PLAYWRIGHT_NIGHTLY === "1";
-const firefoxNightlyTestMatch = /(?:image-preview-(?:core|interactions)|site-resilience)\.spec\.ts/;
+const firefoxNightlyTestMatch =
+  /(?:image-preview-(?:core|interactions|generated)|site-resilience)\.spec\.ts/;
 const webkitPullRequestTestMatch =
-  /(?:image-preview-(?:core|interactions)|site-(?:archive|consent|content|giscus|navigation|rendering|search))\.spec\.ts/;
+  /(?:image-preview-(?:core|interactions|generated)|site-(?:archive|consent|content|giscus|loading-recovery|motion|navigation|rendering|search|search-ranking|tooltips))\.spec\.ts/;
 
 // The standard Chromium lane is dimension-based instead of repeating every
 // logical test through the full theme/viewport cross-product:
@@ -18,10 +19,11 @@ const webkitPullRequestTestMatch =
 // light/dark combination. Resilience is nightly-only by contract in its spec.
 const chromiumDesktopLightTestMatch = /\.spec\.ts/;
 const chromiumStandardTestIgnore = /site-resilience\.spec\.ts/;
-const chromiumDesktopDarkTestMatch = /site-(?:consent-ui|content|home-theme|rendering)\.spec\.ts/;
+const chromiumDesktopDarkTestMatch =
+  /site-(?:consent-ui|content|home-theme|motion|rendering)\.spec\.ts/;
 const chromiumMobileLightTestMatch =
-  /(?:image-preview-(?:core|interactions)|site-(?:archive|consent|content|giscus|home-theme|navigation|rendering|search|tooltips))\.spec\.ts/;
-const chromiumMobileDarkTestMatch = /site-(?:home-theme|rendering)\.spec\.ts/;
+  /(?:image-preview-(?:core|interactions|generated)|site-(?:archive|consent|content|giscus|home-theme|loading-recovery|motion|navigation|rendering|search|search-ranking|tooltips))\.spec\.ts/;
+const chromiumMobileDarkTestMatch = /site-(?:home-theme|motion|rendering)\.spec\.ts/;
 
 const nightlyProjects = nightly
   ? [
@@ -134,7 +136,7 @@ export default defineConfig({
     video: nightly ? "retain-on-failure" : "off",
   },
   webServer: {
-    command: reuseExistingBuild ? "pnpm preview:local" : "pnpm build && pnpm preview:local",
+    command: reuseExistingBuild ? "pnpm preview:local" : "pnpm build:test && pnpm preview:local",
     url: BASE_URL,
     reuseExistingServer: process.env.PLAYWRIGHT_REUSE_SERVER === "1",
     timeout: 120_000,

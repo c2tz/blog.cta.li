@@ -68,6 +68,13 @@ Le contenu de l'article commence ici.
 N'ajoutez pas un titre Markdown `#` identique au titre. Astro produit déjà le H1 à partir de
 `title`. Le corps de l'article commence normalement avec un titre de niveau 2, écrit `##`.
 
+À partir de quatre titres `##` ou `###`, le site ajoute automatiquement un sommaire après
+l’introduction, juste avant la première section. Il est visible en mode détaillé et masqué en
+mode simple, selon le bouton d’affichage dans l’en-tête. Ses liens reprennent les ancres des titres ;
+les sous-sections `###` sont imbriquées sous leur section `##`. Les exemples de code et les
+titres des composants ne sont pas repris. Les articles courts gardent leur présentation simple.
+Ses liens sont de simples ancres HTML. Le sommaire n’ajoute pas de texte en double dans la recherche.
+
 Un tag :
 
 - contient de 1 à 48 caractères ;
@@ -75,6 +82,18 @@ Un tag :
 - ne contient pas d'espace ;
 - peut contenir lettres, chiffres, points, tirets, `_` et `+` ;
 - ne doit pas être `all`, car le site ajoute ce tag automatiquement.
+
+### Image d’aperçu lors du partage
+
+Le site génère automatiquement `/posts/identifiant-de-l-article/og.png` avec le titre, la date de
+création issue de Git et les deux premiers tags du frontmatter, dans leur ordre de rédaction.
+Placez donc les deux tags les plus représentatifs en premier. Aucun champ de date ou d’image
+supplémentaire n’est nécessaire.
+
+La description reste dans les métadonnées de partage ; elle n’est pas imprimée dans l’image pour
+laisser de la place au titre. Les titres et tags très longs se terminent par une ellipse dans ce
+visuel, sans modifier le texte de l’article. La police Google Sans est fournie en WOFF2 local et
+utilisée uniquement pendant la génération de ces images.
 
 ## 3. Écrire en Markdown
 
@@ -103,8 +122,14 @@ Si le langage n'est pas reconnu ou n'est pas indiqué, le contenu reste un bloc 
 sans coloration spécifique. Le bouton de copie et le style du site sont ajoutés séparément dans le
 navigateur.
 
-Les shortcodes Material/Hugo disponibles sont documentés et démontrés dans
-`src/content/blog/hugo-material-shortcodes.md`. Ce fichier est une page de référence non listée.
+Pour ajouter des encadrés, boutons, icônes, onglets, infobulles ou tableaux interactifs dans un
+simple `.md`, ouvrez le [catalogue de rédaction](../src/content/blog/catalogue-redaction.md).
+Chaque élément a un exemple à copier, un aperçu et ses options utiles. Avec le serveur local,
+ouvrez `/posts/catalogue-redaction/` pour voir les rendus et utiliser les boutons de copie.
+Cette page est non listée afin de garder la documentation hors des listes d’articles.
+
+La [référence des shortcodes](../src/content/blog/hugo-material-shortcodes.md) rassemble aussi
+les douze types d’encadrés et un exemple combinant plusieurs composants.
 
 ## 4. Ajouter une image
 
@@ -175,8 +200,13 @@ le fichier de l'article :
 - les renommages sont suivis avec `git log --follow` ;
 - si l'historique Git est indisponible, le code utilise temporairement les dates du fichier local.
 
-La page affiche ces deux dates et, lorsqu'ils sont disponibles, des liens vers les commits GitHub.
-La date d'un brouillon non commité peut donc sembler locale ou changer : le commit établit la source
+La page affiche la date de création et, lorsqu’il existe, un lien vers son commit GitHub.
+La date de modification et son lien n’apparaissent que si le commit de modification est différent
+de celui de création. Deux commits distincts restent distingués, même s’ils datent du même jour.
+Si les deux commits ne sont pas disponibles, la page compare les jours affichés, dans le fuseau
+Europe/Paris, et masque la modification lorsque les deux dates correspondent au même jour.
+
+La date d’un brouillon non commité peut donc sembler locale ou changer : le commit établit la source
 de vérité durable.
 
 Vercel exécute `scripts/ensure-git-history.mjs` avant son build pour vérifier que l'historique requis

@@ -1,12 +1,6 @@
 body.home-page {
   --home-image-filter: brightness(0.86) saturate(0.92) contrast(1.02);
   --home-media-surface: var(--m3-surface-container-lowest);
-  background-color: var(--site-bg);
-}
-
-body.home-page::before,
-body.home-page::after {
-  display: none;
 }
 
 :root[data-theme="dark"] .home-anime-background::after {
@@ -49,29 +43,6 @@ body.home-page[data-home-detail-view="true"] .home-tags-detail,
   display: block;
 }
 
-.home-tags {
-  margin-block: 0 1em;
-  padding: 0;
-  list-style-type: none;
-}
-
-.tag-post {
-  display: flex;
-  align-items: baseline;
-  gap: 0 0.5em;
-  margin-block: 0.25em;
-}
-
-.home-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 0.5em;
-}
-
-.tag-post-date {
-  color: var(--site-muted);
-}
-
 .home-post-date-full {
   display: none;
 }
@@ -84,17 +55,4 @@ body.home-page[data-home-detail-view="true"] .home-post-date-compact,
 body.home-page[data-home-detail-view="true"] .home-post-date-full,
 :root[data-home-detail-view="true"] body.home-page .home-post-date-full {
   display: inline;
-}
-
-.tag-post-title {
-  flex: 1 1 auto;
-  width: auto;
-  min-width: 0;
-}
-
-.tag-separator {
-  display: inline;
-  color: var(--site-muted);
-  -webkit-user-select: none;
-  user-select: none;
 }

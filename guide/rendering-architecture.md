@@ -159,6 +159,17 @@ the selected 404 image and ambiguous generated entries. The thresholds in
 `scripts/check-bundle-budget.mjs` retain practical headroom instead of tracking the current output
 byte for byte.
 
+Since the September 2026 audit, `tests/e2e/site-performance-budget.spec.ts` also bounds actual
+same-origin HTML/JS/CSS responses after application initialization, including automatic module
+imports. It covers home, article and archive routes with fresh and saved consent, plus the first
+search with its Pagefind index. Response bodies are recompressed with gzip for server-independent
+comparison; images and fonts remain outside this particular guard. JSON attachments retain each
+resource and its size. Lighthouse now covers all three routes on mobile and desktop.
+
+Test builds inject archive fixtures with 0, 1, 11 and 101 entries under `/__test__/archives/`.
+These exercise the real Astro archive component and its browser pagination without changing the
+published content or the search index. The normal build does not inject these routes.
+
 The cold-route request counts in the following historical comparison came from isolated Chromium
 contexts against one `astro preview` in the July 15 migration. Each scenario used a fresh browser
 context with its normal cold cache. Request counts include cache-backed request events. The

@@ -1,5 +1,6 @@
 import siteTooltipStyles from "@/assets/css/components/site-tooltips.scss?inline";
 import { SITE_EVENTS } from "@/lib/site-contracts";
+import { areSiteAnimationsEnabled } from "./site-motion.js";
 
 const TOOLTIP_SELECTOR =
   "[data-tooltip]:not([data-context-popover-trigger]):not([data-rich-tooltip-trigger])";
@@ -205,7 +206,10 @@ class SiteTooltipController {
           } catch {
             return;
           }
-          document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "center" });
+          document.getElementById(id)?.scrollIntoView({
+            behavior: areSiteAnimationsEnabled() ? "smooth" : "instant",
+            block: "center",
+          });
         });
       });
     });

@@ -63,7 +63,7 @@ html:has(.site-search-dialog[open]) .cookie-consent--privacy {
 .site-search-panel-field {
   display: grid;
   position: relative;
-  grid-template-columns: minmax(0, 1fr) auto 12rem;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
   min-height: 3.5rem;
   width: 100%;
@@ -76,6 +76,17 @@ html:has(.site-search-dialog[open]) .cookie-consent--privacy {
   transition:
     background-color 160ms ease,
     box-shadow 160ms ease;
+}
+
+html[data-home-detail-view="true"] .site-search-panel-field {
+  grid-template-columns: minmax(0, 1fr) auto 12rem;
+}
+
+html:not([data-home-detail-view="true"]) {
+  .site-search-panel-divider,
+  .site-search-panel-sort-select {
+    display: none;
+  }
 }
 
 .site-search-panel-query {
@@ -140,10 +151,25 @@ html:has(.site-search-dialog[open]) .cookie-consent--privacy {
 }
 
 .site-search-panel-sort-select {
+  --md-filled-select-text-field-active-indicator-height: 0px;
+  --md-filled-select-text-field-focus-active-indicator-height: 0px;
+  --md-filled-select-text-field-hover-active-indicator-height: 0px;
+  --md-filled-select-text-field-container-color: transparent;
+  --md-filled-select-text-field-container-shape: 0;
+  --md-filled-select-text-field-focus-label-text-color: var(--site-muted);
+  --md-filled-select-text-field-focus-trailing-icon-color: var(--site-muted);
+  --md-filled-select-text-field-label-text-color: var(--site-muted);
+  --md-filled-select-text-field-trailing-icon-color: var(--site-muted);
   grid-column: 3;
   display: flex;
   min-width: 12rem;
   width: 100%;
+}
+
+html[data-focus-modality="keyboard"] .site-search-panel-sort-select::part(field):focus-visible {
+  outline: 2px solid var(--site-link);
+  outline-offset: -4px;
+  border-radius: var(--md-sys-shape-corner-extra-large);
 }
 
 .site-search-panel-sort-select::part(menu) {
@@ -345,13 +371,21 @@ html:has(.site-search-dialog[open]) .cookie-consent--privacy {
     width: calc(100vw - 1.5rem);
   }
 
-  .site-search-panel-field {
+  html[data-home-detail-view="true"] .site-search-panel-field {
     grid-template-columns: minmax(0, 1fr);
+    gap: 0;
   }
 
-  .site-search-panel-divider,
+  .site-search-panel-divider {
+    grid-column: 1;
+    width: auto;
+    height: 1px;
+    margin: 0 1rem;
+  }
+
   .site-search-panel-sort-select {
-    display: none;
+    grid-column: 1;
+    min-width: 0;
   }
 }
 

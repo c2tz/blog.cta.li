@@ -11,8 +11,8 @@ const options = [
     id="site-theme-trigger"
     type="button"
     class="site-theme-trigger"
-    data-tooltip="Thème : Système"
-    aria-label="Thème : Système"
+    data-tooltip="Changer de thème"
+    aria-label="Changer de thème"
     aria-expanded="false"
     aria-controls="site-theme-menu"
     aria-haspopup="menu"
@@ -125,25 +125,30 @@ const options = [
       ))
     }
     <md-divider class="site-theme-menu-divider" data-dynamic-color-control hidden></md-divider>
-    <div
+    <md-menu-item
+      type="button"
+      keep-open
       class="site-theme-dynamic-color-row"
       data-dynamic-color-control
       data-dynamic-color-option
       hidden
     >
-      <span class="site-theme-dynamic-color-copy">
+      <span slot="headline" class="site-theme-dynamic-color-copy">
         <span>Couleur dynamique</span>
         <span class="site-theme-dynamic-color-support" data-dynamic-color-support>
           Chargez d’abord une image sur l’accueil
         </span>
       </span>
       <md-switch
+        slot="end"
         class="site-theme-dynamic-color-switch"
+        tabindex="-1"
+        aria-hidden="true"
         touch-target="none"
         show-only-selected-icon
         aria-label="Couleur dynamique"
         disabled></md-switch>
-    </div>
+    </md-menu-item>
   </md-menu>
 
   <span class="sr-only" role="status" aria-live="polite" aria-atomic="true" data-theme-status

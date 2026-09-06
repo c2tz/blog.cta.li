@@ -67,12 +67,11 @@ export const withImagePreviewInformation = (Base) =>
         return;
       }
 
-      const previousQuick = this.informationDialog.quick;
       if (immediate) this.informationDialog.quick = true;
       try {
         await this.informationDialog.close("close");
       } finally {
-        if (immediate) this.informationDialog.quick = previousQuick;
+        if (immediate) this.syncMotionPreference();
       }
     }
 

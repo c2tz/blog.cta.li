@@ -11,6 +11,9 @@ import { withImagePreviewGallery } from "./image-preview/gallery.js";
 import { withImagePreviewGestures } from "./image-preview/gestures.js";
 import { withImagePreviewInformation } from "./image-preview/information.js";
 import { withImagePreviewLifecycle } from "./image-preview/lifecycle.js";
+import { initMaterialMotion } from "./material-motion.js";
+import { areSiteAnimationsEnabled } from "./site-motion.js";
+import { SITE_EVENTS } from "@/lib/site-contracts";
 
 let activeController;
 let pendingDialog;
@@ -82,7 +85,6 @@ class ImagePreviewController extends ImagePreviewControllerBase {
     this.renderRequest = 0;
     this.focusRequest = 0;
     this.pendingTabFocus = undefined;
-    this.motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     this.dialog.getOpenAnimation = () => IMAGE_DIALOG_OPEN_ANIMATION;
     this.dialog.getCloseAnimation = () => this.getDialogCloseAnimation();
@@ -117,7 +119,7 @@ class ImagePreviewController extends ImagePreviewControllerBase {
     document.addEventListener("fullscreenchange", this.handleFullscreenChange, options);
     document.addEventListener("webkitfullscreenchange", this.handleFullscreenChange, options);
     window.addEventListener("popstate", this.handlePopState, options);
-    this.motionPreference.addEventListener("change", this.syncMotionPreference, options);
+    document.addEventListener(SITE_EVENTS.motionChange, this.syncMotionPreference, options);
 
     this.dialog.addEventListener("cancel", this.handleDialogCancel, options);
     this.dialog.addEventListener("closed", this.handleDialogClosed, options);
@@ -159,9 +161,8 @@ class ImagePreviewController extends ImagePreviewControllerBase {
   }
 
   syncMotionPreference = () => {
-    const reduce = this.motionPreference.matches;
-    this.dialog.quick = reduce;
-    this.informationDialog.quick = reduce;
+    if (!areSiteAnimationsEnabled()) this.cancelImageMotion();
+    initMaterialMotion();
   };
 
   getDialogCloseAnimation() {

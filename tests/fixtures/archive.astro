@@ -1,0 +1,21 @@
+---
+import TagPosts from "@/components/tags/tag-posts.astro";
+import Layout from "@/layouts/site-layout.astro";
+import { ARCHIVE_COUNTS, archivePosts } from "./archive-posts";
+
+export function getStaticPaths() {
+  return ARCHIVE_COUNTS.map((count) => ({
+    params: { count: String(count) },
+    props: { posts: archivePosts(count) },
+  }));
+}
+
+const { posts } = Astro.props;
+---
+
+<Layout title="Archive de test" bodyClass="tag-page" readingProgress={false}>
+  <Fragment slot="content">
+    <h1>Archive de test</h1>
+    <TagPosts posts={posts} tag="all" view="table" />
+  </Fragment>
+</Layout>

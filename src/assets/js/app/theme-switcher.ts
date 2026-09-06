@@ -83,6 +83,11 @@ async function enhanceThemeSwitcher(root: HTMLElement) {
     });
     dynamicColorSwitch.disabled = !available;
     const selected = Boolean(enabled && detailed && available);
+    dynamicColorRow.toggleAttribute("disabled", !detailed || !available);
+    dynamicColorRow.setAttribute(
+      "aria-label",
+      `Couleur dynamique : ${selected ? "activée" : "désactivée"}${available ? "" : ", indisponible"}`,
+    );
     dynamicColorSwitch.toggleAttribute("selected", selected);
     dynamicColorSwitch.selected = selected;
     dynamicColorSupport.hidden = available;
@@ -92,9 +97,6 @@ async function enhanceThemeSwitcher(root: HTMLElement) {
   };
 
   const render = () => {
-    const label = labels[preference];
-    trigger.dataset.tooltip = `Thème : ${label}`;
-    trigger.setAttribute("aria-label", `Thème : ${label}`);
     triggerIcon.textContent = icons[preference];
 
     root.querySelectorAll<HTMLElement>("[data-theme-option]").forEach((item) => {
@@ -230,8 +232,8 @@ async function enhanceThemeSwitcher(root: HTMLElement) {
     apply(true);
     if (status) status.textContent = `Thème ${labels[preference]} activé`;
   });
-  dynamicColorSwitch?.addEventListener("click", (event) => {
-    if (dynamicColorSwitch.disabled) return;
+  dynamicColorRow?.addEventListener("click", (event) => {
+    if (!dynamicColorSwitch || dynamicColorSwitch.disabled) return;
     event.preventDefault();
     const state = setMaterialDynamicColorEnabled(!readMaterialDynamicColorEnabled());
     renderDynamicColor();

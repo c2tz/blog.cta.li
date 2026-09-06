@@ -13,17 +13,21 @@ import "@/assets/css/content/post-meta.scss";
 import "@/assets/css/content/prose.scss";
 import { isListedBlogPost } from "@/lib/blog-posts";
 import { getContentEntryGitDates } from "@/lib/git-dates.mjs";
+import { createTitleSortRanks } from "@/lib/search-title-order.mjs";
 import { SITE_GISCUS_CONFIG } from "@/site-config";
 
 export async function getStaticPaths() {
   const posts = await getCollection("blog");
+  const titleRanks = createTitleSortRanks(
+    posts.filter(isListedBlogPost).map((post) => ({ id: post.id, title: post.data.title })),
+  );
   return posts.map((post) => ({
     params: { slug: post.id },
-    props: post,
+    props: { ...post, titleSortRank: titleRanks.get(post.id) ?? 0 },
   }));
 }
 
-type Props = CollectionEntry<"blog">;
+type Props = CollectionEntry<"blog"> & { titleSortRank: number };
 
 const post = Astro.props;
 const { Content } = await render(post);
@@ -87,6 +91,7 @@ const postStructuredData = {
         </h1>
       </header>
       <div class="post-search-metadata" data-pagefind-ignore aria-hidden="true">
+        <span data-pagefind-sort="title-order">{post.titleSortRank}</span>
         <time
           datetime={createdAt}
           data-pagefind-meta="created[datetime]"

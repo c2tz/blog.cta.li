@@ -7,7 +7,198 @@ import {
   expectResolvedTheme,
   expectNoPageOverflow,
   gotoRoute,
+  openMaterialMenu,
+  openMaterialSelect,
+  waitForAppReady,
+  waitForNativeEnhancement,
 } from "./site-fixture";
+
+test("switches all Material menus and search dialogs between normal and quick motion", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await gotoRoute(page, "/__test__/archives/11/");
+  await waitForNativeEnhancement(page, "[data-motion-toggle]");
+  await waitForNativeEnhancement(page, "site-tag-posts");
+  await page.locator(".home-detail-trigger").click();
+  const toggle = page.locator(".site-motion-trigger");
+  const theme = page.locator("#site-theme-menu");
+  const pageSize = page.locator("[data-page-size]");
+  await expect(pageSize.locator(".site-material-select-arrow svg")).toBeVisible();
+  const dialog = page.locator("[data-search-dialog]");
+  const sort = dialog.locator("[data-sort-select]");
+
+  for (const [index, quick] of [true, false, true].entries()) {
+    if (index) await toggle.click();
+    await expect(theme).toHaveJSProperty("quick", quick);
+    await expect(pageSize).toHaveJSProperty("quick", quick);
+    await theme.evaluate((menu) => {
+      menu.addEventListener(
+        "opening",
+        () => {
+          requestAnimationFrame(() => {
+            const surface = menu.shadowRoot!.querySelector(".menu")!;
+            const running = surface
+              .getAnimations()
+              .some((animation) => animation.playState === "running");
+            menu.setAttribute("data-test-menu-animated", String(running));
+          });
+        },
+        { once: true },
+      );
+    });
+    await openMaterialMenu(page.locator("#site-theme-trigger"), theme);
+    await expect(theme).toHaveAttribute("data-test-menu-animated", String(!quick));
+    await page.keyboard.press("Escape");
+    await expect(theme).toHaveJSProperty("open", false);
+
+    await openMaterialSelect(pageSize);
+    const arrow = pageSize.locator(".site-material-select-arrow");
+    await expect(arrow).toHaveCSS("transform", "matrix(-1, 0, 0, -1, 0, 0)");
+    await expect(arrow).toHaveCSS("transition-duration", quick ? "0s" : "0.08s");
+    await page.keyboard.press("Escape");
+    await expect(arrow).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)");
+
+    await page.locator("[data-search-open]").click();
+    await expect(dialog).toHaveJSProperty("open", true);
+    await expect(page.locator("[data-search-open]")).toBeEnabled();
+    await expect(dialog).toHaveJSProperty("quick", quick);
+    await expect(sort).toHaveJSProperty("quick", quick);
+    await openMaterialSelect(sort);
+    await expect(sort.locator(".site-material-select-arrow")).toHaveCSS(
+      "transform",
+      "matrix(-1, 0, 0, -1, 0, 0)",
+    );
+    await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: "Fermer la recherche" }).click();
+    await expect(dialog).toHaveJSProperty("open", false);
+  }
+});
+
+test("keeps Material motion independent of detail mode after navigation", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await gotoRoute(page, "/");
+  await waitForNativeEnhancement(page, "[data-home-detail-toggle]");
+  await page.locator(".home-detail-trigger").click();
+  await gotoRoute(page, "/posts/mdx-smoke-test/");
+  await waitForNativeEnhancement(page, "[data-home-detail-toggle]");
+  const controls = page.locator("md-menu, md-filled-select, md-outlined-select, md-dialog");
+  const allQuick = () =>
+    controls.evaluateAll((elements) => elements.every((element) => element.hasAttribute("quick")));
+  await expect.poll(allQuick).toBe(true);
+  await page.locator(".home-detail-trigger").click();
+  await expect.poll(allQuick).toBe(true);
+  await page.locator(".site-motion-trigger").click();
+  await expect.poll(allQuick).toBe(false);
+  await page.locator(".home-detail-trigger").click();
+  await expect
+    .poll(() =>
+      controls.evaluateAll((elements) =>
+        elements.every((element) => !element.hasAttribute("quick")),
+      ),
+    )
+    .toBe(true);
+  await gotoRoute(page, "/cookies/");
+  await waitForAppReady(page);
+  await expect(page.locator("html")).toHaveAttribute("data-motion", "on");
+  await page.locator(".site-motion-trigger").click();
+  await page.reload();
+  await waitForAppReady(page);
+  await expect(page.locator("html")).toHaveAttribute("data-motion", "off");
+});
+
+for (const route of ["/", "/tags/all/", "/tags/blog/"]) {
+  test(`keeps full article titles readable on narrow screens at ${route}`, async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 844 });
+    await gotoRoute(page, route);
+    await waitForAppReady(page);
+    const home = route === "/";
+    const table = page.locator(home ? ".home-posts-table" : ".tag-posts-table");
+    const scroller = page.locator(home ? ".home-posts-table-scroll" : ".tag-posts-table-scroll");
+    const title = table.locator("tbody a").first();
+    const longTitle = `Comprendre les composants et les fonctionnalités de mon blog — ${"UnMotSansEspace".repeat(8)}`;
+
+    for (const detailed of [false, true]) {
+      if (detailed) {
+        await page.locator(".home-detail-trigger").click();
+        if (home) await expect(table).not.toHaveAttribute("aria-busy", "true");
+      }
+      for (const width of [320, 390, 720]) {
+        await page.setViewportSize({ width, height: 844 });
+        await title.evaluate((element, text) => {
+          element.textContent = text;
+        }, longTitle);
+        await expect(title).toHaveText(longTitle);
+        await expectNoPageOverflow(page);
+        await expect
+          .poll(() => scroller.evaluate((element) => element.scrollWidth - element.clientWidth))
+          .toBeLessThanOrEqual(1);
+        await expect(scroller).toHaveAttribute("tabindex", "-1");
+
+        const metrics = await table.evaluate((element) => {
+          const row = element.querySelector("tbody tr")!;
+          const date = row.querySelector("time:not([hidden])")!;
+          const link = row.querySelector("a")!;
+          const cell = link.closest("td")!;
+          const range = document.createRange();
+          range.selectNodeContents(link);
+          const lines = [...range.getClientRects()];
+          const bounds = cell.getBoundingClientRect();
+          return {
+            lineCount: lines.length,
+            titleWidth: bounds.width,
+            dateWidth: date.closest("td")!.getBoundingClientRect().width,
+            contained: lines.every(
+              (line) =>
+                line.left >= bounds.left - 1 &&
+                line.right <= bounds.right + 1 &&
+                line.top >= bounds.top - 1 &&
+                line.bottom <= bounds.bottom + 1,
+            ),
+            semantics: [
+              getComputedStyle(element).display,
+              getComputedStyle(row).display,
+              getComputedStyle(cell).display,
+            ],
+          };
+        });
+        expect(metrics.lineCount).toBeGreaterThan(1);
+        expect(metrics.titleWidth).toBeGreaterThan(metrics.dateWidth);
+        expect(metrics.contained).toBe(true);
+        expect(metrics.semantics).toEqual(["table", "table-row", "table-cell"]);
+        await expect(
+          table.locator(detailed ? ".site-date-full" : ".site-date-compact").first(),
+        ).toBeVisible();
+      }
+    }
+    await page.setViewportSize({ width: 320, height: 844 });
+    await page.evaluate(() => {
+      document.documentElement.style.fontSize = "200%";
+    });
+    await expect
+      .poll(() => scroller.evaluate((element) => element.scrollWidth - element.clientWidth))
+      .toBeLessThanOrEqual(1);
+  });
+}
+
+test("serves a valid public RSS feed", async ({ page, request }) => {
+  const response = await request.get("/rss.xml");
+  expect(response.ok()).toBe(true);
+  const feed = await page.evaluate(
+    (source) => {
+      const document = new DOMParser().parseFromString(source, "application/xml");
+      return {
+        parseErrors: document.querySelectorAll("parsererror").length,
+        titles: [...document.querySelectorAll("item > title")].map((title) => title.textContent),
+        links: [...document.querySelectorAll("item > link")].map((link) => link.textContent),
+      };
+    },
+    await response.text(),
+  );
+  expect(feed.parseErrors).toBe(0);
+  expect(feed.titles).toContain("Bienvenue sur ct-blog");
+  expect(feed.links).toContain("https://ct-blog.cta.li/posts/bienvenue-sur-ct-blog/");
+});
 
 for (const route of ROUTES) {
   test(`renders ${route} without document overflow`, async ({ page }) => {
@@ -18,13 +209,64 @@ for (const route of ROUTES) {
     await expect(page.locator("astro-island")).toHaveCount(0);
     await expect(page.locator(".cookie-consent")).toHaveCount(0);
     await expectNoPageOverflow(page);
+    const rssLink = page
+      .locator(".site-footer")
+      .getByRole("link", { name: "Flux RSS", exact: true });
+    await expect(rssLink).toBeVisible();
+    await expect(rssLink).toHaveAttribute("href", "/rss.xml");
+    await expect(rssLink).toHaveAttribute("type", "application/rss+xml");
   });
 }
 
-test("keeps post date and commit icons at 1.1rem inside their intended line box", async ({
+test("preserves visible word spacing around shortcode icons and bold button text", async ({
+  page,
+}) => {
+  await gotoRoute(page, "/posts/catalogue-redaction/");
+  await waitForAppReady(page);
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+  });
+
+  for (const selector of [
+    "p .material-shortcode-inline-icon",
+    "md-outlined-button .material-button-label strong",
+  ]) {
+    const element = page.locator(selector).first();
+    await element.scrollIntoViewIfNeeded();
+    const gaps = await element.evaluate((inline) => {
+      const previous = inline.previousSibling;
+      const next = inline.nextSibling;
+      if (!(previous instanceof Text) || !(next instanceof Text)) {
+        throw new Error("Expected text on both sides of the inline element");
+      }
+      const previousIndex = previous.data.trimEnd().length - 1;
+      const nextIndex = next.data.length - next.data.trimStart().length;
+      const before = document.createRange();
+      before.setStart(previous, previousIndex);
+      before.setEnd(previous, previousIndex + 1);
+      const after = document.createRange();
+      after.setStart(next, nextIndex);
+      after.setEnd(next, nextIndex + 1);
+      const bounds = inline.getBoundingClientRect();
+      return {
+        before: bounds.left - before.getBoundingClientRect().right,
+        after: after.getBoundingClientRect().left - bounds.right,
+      };
+    });
+
+    expect(gaps.before, `${selector}: visible space before`).toBeGreaterThan(1);
+    expect(gaps.after, `${selector}: visible space after`).toBeGreaterThan(1);
+  }
+});
+
+test("keeps a single post date and commit icon at 1.1rem when both commits are identical", async ({
   page,
 }) => {
   await gotoRoute(page, "/posts/bienvenue-sur-ct-blog/");
+  const dates = page.locator("[data-post-git-dates]");
+  await expect(dates.locator('[data-post-git-date="created"]')).toHaveCount(1);
+  await expect(dates.locator('[data-post-git-date="modified"]')).toHaveCount(0);
+  await expect(dates.locator(".post-git-date-divider")).toHaveCount(0);
   await page.evaluate(async () => {
     await document.fonts.ready;
   });
@@ -37,7 +279,7 @@ test("keeps post date and commit icons at 1.1rem inside their intended line box"
 
   for (const selector of [".post-git-date-icon", ".post-git-commit-icon"]) {
     const icons = page.locator(selector);
-    await expect(icons).toHaveCount(2);
+    await expect(icons).toHaveCount(1);
     const metrics = await icons.evaluateAll((elements) =>
       elements.map((element) => {
         const styles = getComputedStyle(element);
@@ -61,6 +303,25 @@ test("keeps post date and commit icons at 1.1rem inside their intended line box"
       }
     }
   }
+});
+
+test("keeps the modification date and commit link when the post has distinct commits", async ({
+  page,
+}) => {
+  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
+  const dates = page.locator("[data-post-git-dates]");
+  const creation = dates.locator('[data-post-git-date="created"]');
+  const modification = dates.locator('[data-post-git-date="modified"]');
+
+  await expect(creation).toHaveCount(1);
+  await expect(modification).toHaveCount(1);
+  await expect(dates.locator(".post-git-date-divider")).toHaveCount(1);
+  const createdCommit = await creation.locator(".post-git-commit-link").getAttribute("href");
+  const modifiedCommit = await modification.locator(".post-git-commit-link").getAttribute("href");
+  expect(createdCommit).toContain("/commit/");
+  expect(modifiedCommit).toContain("/commit/");
+  expect(modifiedCommit).not.toBe(createdCommit);
+  await expectNoPageOverflow(page);
 });
 
 test("renders the inverse-theme 404 artwork without site chrome", async ({ page }) => {

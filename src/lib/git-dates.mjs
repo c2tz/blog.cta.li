@@ -1,11 +1,23 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, realpathSync, statSync } from "node:fs";
 import { relative, resolve } from "node:path";
+import { formatFrenchDate } from "./date-format.mjs";
 
 const cwd = process.cwd();
 const CONTENT_EXTENSIONS = [".md", ".mdx"];
 const GIT_LOG_FORMAT = "%H%x1f%aI%x1f%s";
 const gitDatesCache = new Map();
+
+export function hasDistinctModification({
+  createdAt,
+  createdCommit,
+  lastModified,
+  lastModifiedCommit,
+}) {
+  if (createdCommit && lastModifiedCommit) return createdCommit !== lastModifiedCommit;
+
+  return formatFrenchDate(createdAt) !== formatFrenchDate(lastModified);
+}
 
 function getFileSignature(filePath) {
   try {

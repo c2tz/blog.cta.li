@@ -31,6 +31,10 @@ Playwright indépendants construisent le même commit et se partagent la collect
 navigateurs sur une même machine. `fullyParallel: true` permet à Playwright de répartir les tests
 individuels sans retirer de projet Chromium ou WebKit.
 
+Les builds destinés aux navigateurs activent `SITE_TEST_FIXTURES=1` pour inclure les archives de
+test. Cette option est aussi active dans la matrice nocturne ; les builds de déploiement et
+Lighthouse conservent les seules routes du site.
+
 `fail-fast: false` laisse les quatre shards terminer même si l'un échoue. Chaque shard publie un
 rapport blob au nom unique ; les traces et captures d'un shard rouge sont conservées pendant 14 jours.
 Un job séparé exige exactement quatre blobs, les fusionne et publie le rapport HTML.
@@ -111,7 +115,7 @@ la fusionne automatiquement, puis appelle le workflow réutilisable qui déclenc
 déploiement Vercel. Aucun secret `BOT_TOKEN` permanent n’est nécessaire : le workflow utilise son
 jeton GitHub éphémère.
 
-Un lancement manuel en mode *dry run* valide la chaîne sans créer de proposition, fusionner de
+Un lancement manuel en mode _dry run_ valide la chaîne sans créer de proposition, fusionner de
 changement ni déclencher Vercel.
 
 ## Lire un échec GitHub Actions

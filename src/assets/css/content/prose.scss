@@ -1,3 +1,5 @@
+@use "../base/typography";
+
 .site-prose {
   max-width: none;
   color: var(--site-text);
@@ -16,9 +18,7 @@
 
 .site-prose
   :where(h1, h2, h3, h4, h5, h6):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
-  color: inherit;
-  font-weight: bold;
-  letter-spacing: 0;
+  @include typography.heading-base;
 }
 
 .site-prose
@@ -29,34 +29,10 @@
   line-height: 1.5;
 }
 
-.site-prose :where(h1):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
-  margin-block: 0.67em;
-  font-size: 2em;
-}
-
-.site-prose :where(h2):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
-  margin-block: 0.83em;
-  font-size: 1.5em;
-}
-
-.site-prose :where(h3):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
-  margin-block: 1em;
-  font-size: 1.17em;
-}
-
-.site-prose :where(h4):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
-  margin-block: 1.33em;
-  font-size: 1em;
-}
-
-.site-prose :where(h5):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
-  margin-block: 1.67em;
-  font-size: 0.83em;
-}
-
-.site-prose :where(h6):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
-  margin-block: 2.33em;
-  font-size: 0.67em;
+@each $level, $style in typography.$heading-levels {
+  .site-prose :where(h#{$level}):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
+    @include typography.heading-level($level);
+  }
 }
 
 .site-prose :where(ul):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
@@ -67,6 +43,15 @@
 .site-prose :where(ol):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
   list-style-type: decimal;
   padding-inline-start: 1.625em;
+}
+
+:root:not([data-home-detail-view="true"]) .post-toc {
+  display: none;
+}
+
+.site-prose .post-toc ul ul {
+  margin-block: 0;
+  list-style-type: circle;
 }
 
 .site-prose :where(blockquote):not(:where([class~="not-prose"], [class~="not-prose"] *)) {

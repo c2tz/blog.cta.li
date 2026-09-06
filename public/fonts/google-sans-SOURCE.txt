@@ -1,0 +1,31 @@
+Google Sans — local Open Graph fonts
+
+Copyright 2025 The Google Sans Project Authors (github.com/googlefonts/googlesans)
+Version: 13.002; Google Fonts v70
+License: SIL Open Font License 1.1 (google-sans-LICENSE.txt)
+Retrieved: 2026-09-05
+Official family: https://fonts.google.com/specimen/Google+Sans
+Official license download: https://fonts.google.com/download/list?family=Google%20Sans
+Stylesheet: https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;700&display=swap
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36
+
+The User-Agent requests static WOFF2 faces with genuine 400 and 700 weights.
+Google Fonts provides the Latin and Latin Extended subsets. These files are unmodified.
+Both subsets are loaded together to cover French accents, including uppercase Y diaeresis.
+The build converts WOFF2 to TTF in memory for Satori; visitors receive the generated PNG.
+
+google-sans-latin-ext-400-normal.woff2
+Source: https://fonts.gstatic.com/s/googlesans/v70/4Ua_rENHsxJlGDuGo1OIlJfC6l_24rlCK1Yo_Iqcsih3SAyH6cAwhX9RFD48TE63OOYKtrwEIJlrpynSEg.woff2
+SHA-256: 6988c6db9ea14507704e873b2a4139ade5b8d4fd49907fcdb74434329b61c704
+
+google-sans-latin-400-normal.woff2
+Source: https://fonts.gstatic.com/s/googlesans/v70/4Ua_rENHsxJlGDuGo1OIlJfC6l_24rlCK1Yo_Iqcsih3SAyH6cAwhX9RFD48TE63OOYKtrwEIJllpyk.woff2
+SHA-256: 2634df0d79333ea639d7079f566163bb700a57783d3a8f09061c6b11a8a78bcb
+
+google-sans-latin-ext-700-normal.woff2
+Source: https://fonts.gstatic.com/s/googlesans/v70/4Ua_rENHsxJlGDuGo1OIlJfC6l_24rlCK1Yo_Iqcsih3SAyH6cAwhX9RFD48TE63OOYKtrzjJ5lrpynSEg.woff2
+SHA-256: 9e8901cfdaade1777fb21b148ce508d2a1bb4992dd996281d76cd6bff9edb6f4
+
+google-sans-latin-700-normal.woff2
+Source: https://fonts.gstatic.com/s/googlesans/v70/4Ua_rENHsxJlGDuGo1OIlJfC6l_24rlCK1Yo_Iqcsih3SAyH6cAwhX9RFD48TE63OOYKtrzjJ5llpyk.woff2
+SHA-256: 40c97e11264cb1ac171847f410e85599e7ba7647e6dfe8d9d7f2c4b26d6ebb8f

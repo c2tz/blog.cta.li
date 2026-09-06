@@ -382,11 +382,3 @@ html.site-image-dialog-fullscreen body {
     border: 2px solid CanvasText;
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .site-image-dialog-toolbar,
-  .site-image-dialog-image {
-    animation: none;
-    transition: none;
-  }
-}

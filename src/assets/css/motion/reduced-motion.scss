@@ -1,11 +1,10 @@
-@media (prefers-reduced-motion: reduce) {
-  .site-prose img,
-  .site-scroll-top {
-    transition-duration: 1ms;
-  }
-
-  .cookie-consent,
-  .cookie-consent-backdrop {
-    animation-duration: 1ms;
-  }
+// Off in the initial HTML. The dedicated header toggle enables motion explicitly.
+// Important also covers styles loaded after this sheet (dialogs and consent).
+html[data-motion="off"],
+html[data-motion="off"] *,
+html[data-motion="off"] *::before,
+html[data-motion="off"] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
 }

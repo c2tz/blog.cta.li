@@ -2,10 +2,12 @@
 @use "base/tokens";
 @use "base/material-web";
 @use "base/elements";
+@use "base/keyboard-focus";
 @use "utilities/screen-reader";
 @use "content/heading-links";
 @use "layout/site-shell";
 @use "components/scroll-controls";
+@use "components/table-sort";
 @use "motion/keyframes";
 @use "responsive/mobile";
 @use "themes/dark";

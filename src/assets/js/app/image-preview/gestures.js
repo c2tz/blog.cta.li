@@ -337,6 +337,9 @@ export const withImagePreviewGestures = (Base) =>
         }
       } else {
         this.image.style.removeProperty("opacity");
+        // An exact return to the drag origin may leave no settling animation
+        // to restore the scrim. Preserve only an explicitly running settle.
+        if (!this.image.classList.contains("is-gesture-settling")) this.clearGestureScrim();
       }
     }
 
@@ -364,6 +367,7 @@ export const withImagePreviewGestures = (Base) =>
     clearGestureScrim() {
       const scrim = this.getDialogScrim();
       if (scrim instanceof HTMLElement) {
+        scrim.getAnimations().forEach((animation) => animation.cancel());
         // Material renders its scrim outside the native top layer. Keep page
         // controls (including consent and scroll-to-top) beneath this backdrop.
         scrim.style.zIndex = "10001";

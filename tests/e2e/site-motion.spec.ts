@@ -722,6 +722,7 @@ for (const route of ["/", "/posts/bienvenue-sur-ct-blog/"]) {
       // display:none can pass while Safari 18.6 still paints the old menu over
       // the filtered hero. Check actual pixels, without finishing animations
       // through the screenshot API (which could conceal a repaint failure).
+      await page.waitForTimeout(220);
       const after = await page.screenshot({ scale: "css", animations: "allow" });
       const region = {
         left: Math.ceil(bounds!.x) + 8,

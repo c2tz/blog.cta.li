@@ -711,6 +711,12 @@ for (const route of ["/", "/posts/bienvenue-sur-ct-blog/"]) {
         await page.locator(".site-motion-trigger").click();
       }
       await page.mouse.move(0, 0);
+      await page.evaluate(async () => {
+        await document.fonts.ready;
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => resolve());
+        });
+      });
       const before = await page.screenshot({ scale: "css", animations: "allow" });
       await openMaterialMenu(trigger, menu);
       const bounds = await menu.locator(".menu").boundingBox();

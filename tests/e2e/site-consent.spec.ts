@@ -32,7 +32,7 @@ test("saves each optional service independently with official Material switches"
   ).toBeVisible();
   await giscusSwitch.click();
   await expect(giscusSwitch).toHaveJSProperty("selected", true);
-  await expect(status).toHaveText("1 service autorisé sur 3");
+  await expect(status).toHaveText("1 service autorisé sur 4");
   await expect
     .poll(() =>
       page.evaluate(() => {
@@ -55,8 +55,10 @@ test("saves each optional service independently with official Material switches"
     .toEqual({ category: false, giscus: true, ipgeo: false, speedInsights: false });
 
   await ipgeoSwitch.click();
-  await expect(status).toHaveText("2 services autorisés sur 3");
+  await expect(status).toHaveText("2 services autorisés sur 4");
   await speedInsightsSwitch.click();
+  await expect(status).toHaveText("3 services autorisés sur 4");
+  await page.locator('md-switch[data-cookie-preference-service="web-analytics"]').click();
   await expect(status).toHaveText("Tous les services autorisés");
   await expect
     .poll(() =>
@@ -220,7 +222,7 @@ test("migrates the legacy global cookie through the v2 cookie fallback", async (
   await gotoRoute(page, "/cookies/#modifier-vos-choix-cookies");
   await expect(page.locator(".cookie-preferences-panel")).toHaveAttribute(
     "data-cookie-preference-state",
-    "accepted",
+    "custom",
   );
   await expect(page.locator("site-cookie-consent-banner")).toHaveAttribute(
     "data-active-notice",
@@ -249,11 +251,138 @@ test("migrates the legacy global cookie through the v2 cookie fallback", async (
       }),
     )
     .toEqual({
-      category: true,
+      category: false,
       cookie: true,
       giscus: true,
       ipgeo: true,
       legacyCookie: false,
       speedInsights: true,
     });
+});
+
+const analyticsSwitchSelector = 'md-switch[data-cookie-preference-service="web-analytics"]';
+
+test("loads Analytics only after its own consent, once per page, and stops on revocation", async ({
+  context,
+}) => {
+  const page = await context.newPage();
+  await page.addInitScript(() => {
+    const updatedAt = new Date().toISOString();
+    localStorage.setItem(
+      "ct-explicit-content-ack-v1",
+      JSON.stringify({ acknowledged: true, updatedAt, version: 1 }),
+    );
+    if (!localStorage.getItem("ct-cookie-consent-v2")) {
+      localStorage.setItem(
+        "ct-cookie-consent-v2",
+        JSON.stringify({
+          services: {
+            giscus: false,
+            ipgeo: false,
+            "speed-insights": false,
+            "web-analytics": false,
+          },
+          updatedAt,
+          version: 2,
+        }),
+      );
+    }
+  });
+  const visits: unknown[] = [];
+  let scripts = 0;
+  await page.route("**/_vercel/insights/script.js", async (route) => {
+    scripts++;
+    await route.fulfill({
+      contentType: "text/javascript",
+      body: `
+      const queue = window.vaq || [];
+      window.va = (command, data) => {
+        if (command === "pageview") fetch("/_vercel/insights/view", { method: "POST", body: JSON.stringify(data) });
+      };
+      queue.forEach(args => window.va(...args));
+    `,
+    });
+  });
+  await page.route("**/_vercel/insights/view", async (route) => {
+    visits.push(route.request().postDataJSON());
+    await route.fulfill({ status: 204 });
+  });
+  await page.addInitScript(() => {
+    document.addEventListener("DOMContentLoaded", () => {
+      document.body.dataset.webAnalyticsEnabled = "true";
+      document.body.dataset.webAnalyticsRoute = "/cookies/";
+    });
+  });
+  await gotoRoute(page, "/cookies/#modifier-vos-choix-cookies");
+  const toggle = page.locator(analyticsSwitchSelector);
+  await expect(toggle).toHaveJSProperty("selected", false);
+  await page.locator(speedInsightsSwitchSelector).click();
+  await expect(toggle).toHaveJSProperty("selected", false);
+  expect(scripts).toBe(0);
+  expect(visits).toEqual([]);
+  await toggle.click();
+  await expect.poll(() => visits.length).toBe(1);
+  expect(scripts).toBe(1);
+  await page.locator(speedInsightsSwitchSelector).click();
+  await expect(page.locator(speedInsightsSwitchSelector)).toHaveJSProperty("selected", false);
+  expect(scripts).toBe(1);
+  expect(visits).toEqual([{ route: "/cookies/", path: "/cookies/" }]);
+  await page.reload();
+  await expect.poll(() => visits.length).toBe(2);
+  await expect(toggle).toHaveJSProperty("selected", true);
+  const reloaded = page.waitForEvent("domcontentloaded");
+  await toggle.click();
+  await reloaded;
+  await expect(toggle).toHaveJSProperty("selected", false);
+  await expect(page.locator('script[src="/_vercel/insights/script.js"]')).toHaveCount(0);
+  expect(scripts).toBe(2);
+  expect(visits).toHaveLength(2);
+});
+
+test("reloads when Analytics consent is revoked while its script is still loading", async ({
+  page,
+}) => {
+  let releaseResponse = () => {};
+  const responseGate = new Promise<void>((resolve) => {
+    releaseResponse = resolve;
+  });
+  let requestStarted = () => {};
+  const requestGate = new Promise<void>((resolve) => {
+    requestStarted = resolve;
+  });
+
+  await page.route("**/_vercel/insights/script.js", async (route) => {
+    requestStarted();
+    await responseGate;
+    await route
+      .fulfill({
+        body: 'localStorage.setItem("insights-late-execution", "true");',
+        contentType: "text/javascript",
+        status: 200,
+      })
+      .catch(() => undefined);
+  });
+  await gotoRoute(page, "/cookies/#modifier-vos-choix-cookies");
+  await page.evaluate(() => {
+    document.body.dataset.webAnalyticsEnabled = "true";
+    document.body.dataset.webAnalyticsRoute = "/cookies";
+    document.body.dataset.webAnalyticsVersion = "test";
+  });
+
+  const speedInsightsSwitch = page.locator(analyticsSwitchSelector);
+  const serviceScript = page.locator('script[src="/_vercel/insights/script.js"]');
+  await speedInsightsSwitch.click();
+  await requestGate;
+  await expect(serviceScript).toHaveCount(1);
+  await expect(serviceScript).not.toHaveAttribute("data-site-service-loaded", "true");
+
+  const reloaded = page.waitForEvent("domcontentloaded");
+  await speedInsightsSwitch.click({ noWaitAfter: true });
+  releaseResponse();
+  await reloaded;
+
+  await expect(serviceScript).toHaveCount(0);
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("insights-late-execution")))
+    .toBeNull();
 });

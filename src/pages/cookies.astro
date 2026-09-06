@@ -29,8 +29,8 @@ import "@/assets/css/content/prose.scss";
       <ul>
         <li>
           <code>ct-cookie-consent-v2</code> mémorise séparément votre choix pour les commentaires, la
-          géolocalisation IP et la mesure des performances. Les anciennes préférences globales sont migrées
-          une seule fois puis supprimées.
+          géolocalisation IP, la mesure des performances et les statistiques de fréquentation. Les anciennes
+          préférences globales sont migrées une seule fois puis supprimées.
         </li>
         <li>
           <code>ct-explicit-content-ack</code> et <code>ct-explicit-content-ack-v1</code> mémorisent l’avertissement
@@ -85,12 +85,31 @@ import "@/assets/css/content/prose.scss";
       <p>
         Le site peut contacter des services externes uniquement pour les fonctionnalités visibles:
         récupérer une géolocalisation IP, charger les commentaires Giscus sur les articles, ou
-        mesurer les performances de navigation en production via Vercel Speed Insights.
+        mesurer les performances via Vercel Speed Insights et les visites via Vercel Web Analytics
+        en production.
       </p>
       <p>
         Chaque service n’est chargé qu’après votre accord individuel. Si vous le refusez, l’adresse
-        IP disparaît du pied de page, Giscus n’est pas chargé ou Vercel Speed Insights reste
-        inactif, selon le service concerné.
+        IP disparaît du pied de page, Giscus n’est pas chargé, ou le service de mesure concerné
+        reste inactif.
+      </p>
+
+      <h3>Statistiques de fréquentation Vercel Web Analytics</h3>
+      <p>
+        Ce service mesure les pages consultées et les visites, avec des informations générales sur
+        la provenance, le pays, le navigateur et le type d’appareil. Son consentement est
+        indépendant de celui de Speed Insights, qui mesure les performances. Aucun script Analytics
+        n’est chargé et aucune visite n’est envoyée à ce service avant votre accord.
+      </p>
+      <p>
+        Vous pouvez retirer cet accord à tout moment dans le panneau ci-dessous. La page se recharge
+        pour arrêter le script et ses envois suivants ; cela ne supprime pas les mesures déjà
+        transmises. Les anciens consentements ne valent pas acceptation de ce nouveau service.
+      </p>
+      <p>
+        <a href="https://vercel.com/docs/analytics/privacy-policy"
+          >En savoir plus sur les données traitées par Vercel Web Analytics</a
+        >.
       </p>
 
       <h2 id="modifier-vos-choix-cookies">

@@ -65,9 +65,10 @@ for (const motion of [false, true]) {
         dialog
           .locator("[data-image-dialog-stage]")
           .evaluate(
-            (element) =>
-              element.scrollLeft > initialPan ||
+            (element, initialScrollLeft: number) =>
+              element.scrollLeft > initialScrollLeft ||
               (element.querySelector("img")?.getBoundingClientRect().left ?? 0) < 0,
+            initialPan,
           ),
       )
       .toBe(true);

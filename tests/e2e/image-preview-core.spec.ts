@@ -286,6 +286,16 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
   const trigger = page.locator('[data-rich-tooltip-trigger="tooltip-http-shiki"]');
   const sourceImage = richTooltip.locator('img[alt="konachan-382339.jpg"]');
   const dialog = page.locator(DIALOG_SELECTOR);
+  const expectDialogOpen = async (open: boolean) => {
+    await expect
+      .poll(() =>
+        dialog.evaluate((element, expected) => {
+          const materialDialog = element as HTMLElement & { open?: boolean };
+          return element.hasAttribute("open") === expected || materialDialog.open === expected;
+        }, open),
+      )
+      .toBe(true);
+  };
   await expect(richTooltip).toHaveAttribute("data-rich-tooltip-enhanced", "true");
   await trigger.focus();
   await expectPopoverOpen(richTooltip, true);
@@ -358,7 +368,7 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
     throw new Error("Expected the rich-tooltip image to expose a clickable box");
   }
   await page.mouse.click(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
-  await expect(dialog).toHaveJSProperty("open", true);
+  await expectDialogOpen(true);
   await expect
     .poll(() =>
       page.evaluate(
@@ -387,7 +397,7 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
     });
   await expectPopoverOpen(richTooltip, false);
   await dialog.locator("[data-image-close]").click();
-  await expect(dialog).toHaveJSProperty("open", false);
+  await expectDialogOpen(false);
   await expectPopoverOpen(richTooltip, false);
 
   await trigger.focus();
@@ -396,10 +406,10 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
   await sourceImage.focus();
   await expect(sourceImage).toBeFocused();
   await page.keyboard.press("Enter");
-  await expect(dialog).toHaveJSProperty("open", true);
+  await expectDialogOpen(true);
   await expectPopoverOpen(richTooltip, false);
   await page.keyboard.press("Escape");
-  await expect(dialog).toHaveJSProperty("open", false);
+  await expectDialogOpen(false);
   await expect(trigger).toBeFocused();
   await expectPopoverOpen(richTooltip, false);
 });

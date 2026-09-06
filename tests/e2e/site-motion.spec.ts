@@ -715,7 +715,14 @@ for (const route of ["/", "/posts/bienvenue-sur-ct-blog/"]) {
       await openMaterialMenu(trigger, menu);
       const bounds = await menu.locator(".menu").boundingBox();
       expect(bounds).not.toBeNull();
+      const menuClosed = menu.evaluate(
+        (element) =>
+          new Promise<void>((resolve) => {
+            element.addEventListener("closed", () => resolve(), { once: true });
+          }),
+      );
       await trigger.click();
+      await menuClosed;
       await expect(menu).toBeHidden();
       await expect(trigger).toHaveAttribute("data-aria-expanded", "false");
       await page.mouse.move(0, 0);

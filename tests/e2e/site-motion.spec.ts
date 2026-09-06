@@ -745,6 +745,8 @@ for (const route of ["/", "/posts/bienvenue-sur-ct-blog/"]) {
       await openMaterialMenu(trigger, menu);
       const bounds = await menu.locator(".menu").boundingBox();
       expect(bounds).not.toBeNull();
+      const ignoredRect =
+        route === "/" ? await page.locator("[data-konachan-refresh]").boundingBox() : null;
       const menuClosed = menu.evaluate(
         (element) =>
           new Promise<void>((resolve) => {
@@ -773,14 +775,40 @@ for (const route of ["/", "/posts/bienvenue-sur-ct-blog/"]) {
       };
       const pixelsBefore = await sharp(before).extract(region).removeAlpha().raw().toBuffer();
       const pixelsAfter = await sharp(after).extract(region).removeAlpha().raw().toBuffer();
+      const ignored = ignoredRect
+        ? {
+            left: Math.floor(ignoredRect.x),
+            top: Math.floor(ignoredRect.y),
+            right: Math.ceil(ignoredRect.x + ignoredRect.width),
+            bottom: Math.ceil(ignoredRect.y + ignoredRect.height),
+          }
+        : null;
       let changed = 0;
-      for (let index = 0; index < pixelsBefore.length; index += 3) {
-        if (
-          [0, 1, 2].some(
-            (channel) => Math.abs(pixelsBefore[index + channel] - pixelsAfter[index + channel]) > 8,
-          )
-        ) {
-          changed++;
+      for (let y = 0; y < region.height; y++) {
+        for (let x = 0; x < region.width; x++) {
+          const absoluteX = region.left + x;
+          const absoluteY = region.top + y;
+          // Opening the top-layer menu can re-rasterize the home refresh glyph by a few
+          // anti-aliased pixels in Chromium even though its state is unchanged. The
+          // control has its own enabled/busy assertions; compare the surrounding hero pixels.
+          if (
+            ignored &&
+            absoluteX >= ignored.left &&
+            absoluteX < ignored.right &&
+            absoluteY >= ignored.top &&
+            absoluteY < ignored.bottom
+          ) {
+            continue;
+          }
+          const index = (y * region.width + x) * 3;
+          if (
+            [0, 1, 2].some(
+              (channel) =>
+                Math.abs(pixelsBefore[index + channel] - pixelsAfter[index + channel]) > 8,
+            )
+          ) {
+            changed++;
+          }
         }
       }
       expect(

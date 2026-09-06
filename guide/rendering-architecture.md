@@ -187,9 +187,13 @@ outside those totals, so the separate guard makes font preloading comparable wit
 while also detecting growth in the complete declared font set, including faces not used by a
 particular page. This is a deployment-size bound rather than an estimate of fonts actually fetched.
 
-Non-bare pages preload Roboto 400, Roboto 700 and the Material Symbols subset using the exact
-versioned URLs from their CSS faces. Roboto Mono stays CSS-discovered: its normal and italic
-files now contain the static 400 instance already exposed by the CSS, preserving glyphs, advances
+Non-bare pages preload one shared Roboto variable file and the Material Symbols subset using
+the exact versioned URLs from their CSS faces. Roboto keeps separate 400 and 700 descriptors
+pointing to that same file, preserving the previous CSS weight matching (including requests
+for 500 and 600) while saving 11,332 bytes and one font request. Generation and verification
+details are recorded in [the Roboto source note](../public/fonts/roboto-SOURCE.txt).
+
+Roboto Mono stays CSS-discovered: its normal and italic files now contain the static 400 instance already exposed by the CSS, preserving glyphs, advances
 and hinting while removing unused weight variations. Conversion details and hashes are recorded
 in [the Roboto Mono source note](../public/fonts/roboto-mono-SOURCE.txt).
 

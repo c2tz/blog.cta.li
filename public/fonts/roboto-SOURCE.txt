@@ -1,0 +1,75 @@
+Roboto — shared browser font for weights 400 and 700
+
+Copyright 2011 The Roboto Project Authors
+Project: https://github.com/googlefonts/roboto-classic
+Font version: 3.015; 2026
+License URL retained from the source font: https://openfontlicense.org
+Conversion date: 2026-09-07
+
+The existing Latin regular and bold files are compatible masters. The shared
+WOFF2 contains both exact endpoint outlines, all 363 glyphs, all 229 Unicode
+mappings, and the original hint programs. No glyph subsetting was performed.
+Both CSS faces retain their single-weight descriptors (400 and 700), rather
+than exposing a continuous range: requests for other weights therefore keep
+the original matching and synthesis behavior. Both faces use one URL/preload.
+The original static files remain available for cached CSS and reproduction.
+
+Sources in this directory (also in Git commit d534ba8):
+roboto-latin-400-normal.woff2: 21884 bytes
+SHA-256: 425c0713a8176f92273d378599c7eac57de7fafabd4bd0ed457b70eb8f80d371
+roboto-latin-700-normal.woff2: 22240 bytes
+SHA-256: b9d66d1708156f765ada51939bc24ed259dafa69eb631b36e443680fe9e15879
+
+roboto-latin-400-700-variable.woff2: 32792 bytes
+SHA-256: ed08301c0f24161824fd122af45ed8b6927f70f9163743fdb1d74f98820775f3
+Saving when both weights are loaded: 11332 bytes (25.68%) and one request.
+The CSS URL version is the first 12 hexadecimal characters of the output hash.
+
+Reproduction from the repository root, using Python 3.12, fonttools 4.64.0
+and brotli 1.2.0 (optional maintenance tools, not build/runtime dependencies):
+
+python - <<'PY'
+from copy import deepcopy
+from pathlib import Path
+from fontTools.designspaceLib import AxisDescriptor, DesignSpaceDocument, SourceDescriptor
+from fontTools.ttLib import TTFont
+from fontTools.varLib import build
+
+root = Path('public/fonts')
+space = DesignSpaceDocument()
+axis = AxisDescriptor()
+axis.name, axis.tag = 'Weight', 'wght'
+axis.minimum, axis.default, axis.maximum = 400, 400, 700
+space.addAxis(axis)
+for weight in (400, 700):
+    source = SourceDescriptor()
+    source.name = f'Roboto{weight}'
+    source.familyName = 'Roboto'
+    source.styleName = 'Regular' if weight == 400 else 'Bold'
+    source.location = {'Weight': weight}
+    source.font = deepcopy(TTFont(root / f'roboto-latin-{weight}-normal.woff2',
+                                 recalcBBoxes=False, recalcTimestamp=False))
+    space.addSource(source)
+font, _, _ = build(space, optimize=False, drop_implied_oncurves=False)
+font.recalcBBoxes = False
+font.recalcTimestamp = False
+font.flavor = 'woff2'
+font.save(root / 'roboto-latin-400-700-variable.woff2')
+PY
+
+Verification at both endpoints:
+- All decomposed outlines, advances and pen origins are identical.
+- Glyph hints, cmap, GSUB, fpgm, prep, cvt and gasp are unchanged.
+- All 63888 covered class-kerning glyph pairs per weight are identical;
+  after normalizing arbitrary class numbering, the rest of GPOS is identical.
+- Twelve bold sidebearings differ by one font unit after static instancing.
+  Their bounding-box minima change by exactly the same amount: the stored
+  source bounds differ from recalculated bounds, while xMin minus LSB,
+  actual outlines and advance widths remain identical.
+- Chromium and WebKit pixel comparisons at DPR 1 and 2 are identical for
+  sizes 12, 13, 14, 16, 18, 20, 24 and 32px, all CSS weights 100 through 900,
+  plus bold and synthetic italic samples, including the printable mapped characters.
+
+IUP optimization and dropping implied on-curve points are deliberately disabled
+to retain exact outlines. Re-run structural and browser comparisons before
+changing the source masters, tools, or CSS weight descriptors.

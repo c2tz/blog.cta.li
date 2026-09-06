@@ -261,16 +261,15 @@ const speedInsightsVersion = speedInsightsPackage.version;
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
     {
-      !barePage &&
-        [400, 700].map((weight) => (
-          <link
-            rel="preload"
-            href={`/fonts/roboto-latin-${weight}-normal.woff2?v=${STATIC_ASSET_VERSION}`}
-            as="font"
-            type="font/woff2"
-            crossorigin="anonymous"
-          />
-        ))
+      !barePage && (
+        <link
+          rel="preload"
+          href="/fonts/roboto-latin-400-700-variable.woff2?v=ed08301c0f24"
+          as="font"
+          type="font/woff2"
+          crossorigin="anonymous"
+        />
+      )
     }
     {
       !barePage && (

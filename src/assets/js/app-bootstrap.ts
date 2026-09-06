@@ -1,4 +1,5 @@
 import { schedulePostPaint } from "@/assets/js/app/post-paint";
+import { initMotionToggles } from "@/assets/js/app/site-motion.js";
 import { parseVersionedState, readCookieValue } from "@/assets/js/app/site-persistence.js";
 import {
   SITE_COOKIE_NAMES,
@@ -60,6 +61,7 @@ async function loadBaseModules() {
     await baseModulesPromise;
   defineCookieConsentControls();
   initHomeDetailToggles();
+  initMotionToggles();
   initPageLoadingIndicators();
 }
 

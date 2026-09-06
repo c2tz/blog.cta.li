@@ -80,7 +80,54 @@ function safeSearchResultUrl(value) {
   }
 }
 
-export function renderSearchResults(container, results) {
+function captureSearchFocus(container, attribute, onFocusRemoved) {
+  const value = container.contains(document.activeElement)
+    ? document.activeElement.getAttribute(attribute)
+    : null;
+  return () => {
+    if (value === null) return;
+    const replacement = [...container.querySelectorAll(`[${attribute}]`)].find(
+      (element) => element.getAttribute(attribute) === value && !element.disabled,
+    );
+    const displacedFocus = document.activeElement;
+    // Material controls need their shadow button to finish rendering before
+    // focus can be restored. Keep a newer user focus choice if it changes.
+    void Promise.resolve(replacement?.updateComplete).then(() => {
+      if (document.activeElement !== displacedFocus) return;
+      if (replacement) replacement.focus({ preventScroll: true });
+      else onFocusRemoved();
+    });
+  };
+}
+
+export function renderSearchFilters(
+  container,
+  tags,
+  { selectedTags, maxSelectedTags, onToggle, onFocusRemoved },
+) {
+  const restoreFocus = captureSearchFocus(container, "data-search-tag", onFocusRemoved);
+  container.replaceChildren();
+  container.hidden = tags.length === 0;
+  const selectedTagLimitReached = selectedTags.length >= maxSelectedTags;
+  for (const tag of tags) {
+    const chip = document.createElement("md-filter-chip");
+    const selected = selectedTags.includes(tag.value);
+    chip.dataset.searchTag = tag.value;
+    chip.textContent = `#${tag.value}`;
+    chip.selected = selected;
+    chip.disabled = selectedTagLimitReached && !selected;
+    chip.setAttribute(
+      "aria-label",
+      selected ? `Retirer le tag ${tag.value}` : `Ajouter le tag ${tag.value}`,
+    );
+    chip.addEventListener("click", (event) => onToggle(tag.value, event));
+    container.append(chip);
+  }
+  restoreFocus();
+}
+
+export function renderSearchResults(container, results, onFocusRemoved) {
+  const restoreFocus = captureSearchFocus(container, "href", onFocusRemoved);
   container.replaceChildren();
 
   for (const result of results) {
@@ -111,4 +158,5 @@ export function renderSearchResults(container, results) {
     item.append(body);
     container.append(item);
   }
+  restoreFocus();
 }

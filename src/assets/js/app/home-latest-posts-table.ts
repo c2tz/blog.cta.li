@@ -1,5 +1,6 @@
 import { SITE_EVENTS, SITE_LOADING_INDICATOR_DELAY_MS } from "@/lib/site-contracts";
 import type { HomeLatestPost } from "@/lib/blog-post-projections.mjs";
+import { updateTableSortHeader } from "./table-sort";
 
 interface LatestPostsResponse {
   readonly posts?: readonly unknown[];
@@ -7,10 +8,6 @@ interface LatestPostsResponse {
 
 type HomeSortColumn = "date" | "title";
 type SortDirection = "asc" | "desc";
-
-const UNSORTED_ICON = "\uE5D7";
-const ASCENDING_ICON = "\uE5D8";
-const DESCENDING_ICON = "\uE5DB";
 
 function isHomeLatestPost(value: unknown): value is HomeLatestPost {
   if (!value || typeof value !== "object") return false;
@@ -144,7 +141,7 @@ class HomeLatestPostsTableElement extends HTMLElement {
       if (status) status.textContent = "Tri désactivé.";
     } else {
       const direction = this.sortDirection === "asc" ? "croissant" : "décroissant";
-      const label = column === "date" ? "date" : "titre";
+      const label = column === "date" ? "date de création" : "titre";
       if (status) {
         status.textContent = `Articles triés par ${label}, ordre ${direction}.`;
       }
@@ -160,24 +157,8 @@ class HomeLatestPostsTableElement extends HTMLElement {
       const active = this.sortColumn === column;
       button.classList.toggle("home-posts-sort-active", active);
 
-      const header = button.closest("th");
-      if (active) {
-        header?.setAttribute(
-          "aria-sort",
-          this.sortDirection === "asc" ? "ascending" : "descending",
-        );
-      } else {
-        header?.removeAttribute("aria-sort");
-      }
-
-      const icon = button.querySelector<HTMLElement>("[data-sort-icon]");
-      if (icon) icon.textContent = this.sortIcon(column);
+      updateTableSortHeader(button, active ? this.sortDirection : null, this.sortColumn === null);
     }
-  }
-
-  private sortIcon(column: HomeSortColumn) {
-    if (this.sortColumn !== column) return UNSORTED_ICON;
-    return this.sortDirection === "asc" ? ASCENDING_ICON : DESCENDING_ICON;
   }
 
   private visiblePosts() {
@@ -269,22 +250,24 @@ class HomeLatestPostsTableElement extends HTMLElement {
     if (this.detailRequest) return this.detailRequest;
 
     this.beginLoading();
+    this.setLoadError(false);
     this.detailRequest = fetch(this.dataset.detailEndpoint || "/latest-posts.json", {
       credentials: "same-origin",
+      signal: AbortSignal.timeout(10_000),
     })
       .then((response) => {
         if (!response.ok) throw new Error("Impossible de charger les derniers articles.");
         return response.json() as Promise<LatestPostsResponse>;
       })
       .then((payload) => {
-        const posts = Array.isArray(payload.posts)
-          ? payload.posts.filter(isHomeLatestPost).slice(0, 8)
-          : [];
-        this.detailedPosts = posts.length > 0 ? posts : [...this.initialPosts];
+        if (!Array.isArray(payload.posts) || !payload.posts.every(isHomeLatestPost)) {
+          throw new Error("La liste des articles est invalide.");
+        }
+        this.detailedPosts = payload.posts.slice(0, 8);
         if (this.detailed && this.isConnected) this.renderRows();
       })
       .catch(() => {
-        this.detailedPosts = [...this.initialPosts];
+        this.setLoadError(true);
         if (this.detailed && this.isConnected) this.renderRows();
       })
       .finally(() => {
@@ -293,6 +276,15 @@ class HomeLatestPostsTableElement extends HTMLElement {
       });
 
     return this.detailRequest;
+  }
+
+  private setLoadError(failed: boolean) {
+    const status = this.querySelector<HTMLElement>("[data-load-status]");
+    if (!status) return;
+    status.hidden = !failed;
+    status.textContent = failed
+      ? "Liste complète indisponible. Réactivez la vue détaillée pour réessayer."
+      : "";
   }
 
   private beginLoading() {

@@ -17,6 +17,7 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeSlug from "rehype-slug";
 import { getFileGitDates } from "./src/lib/git-dates.mjs";
 import remarkHugoMaterialShortcodes from "./src/lib/remark-hugo-material-shortcodes.mjs";
+import rehypePostToc from "./src/lib/rehype-post-toc.mjs";
 
 const IMAGE_GIT_DATES_CACHE = new Map();
 
@@ -102,7 +103,24 @@ export default defineConfig({
   devToolbar: {
     enabled: false,
   },
-  integrations: [mdx()],
+  integrations: [
+    mdx(),
+    ...(process.env.SITE_TEST_FIXTURES === "1"
+      ? [
+          {
+            name: "archive-test-fixtures",
+            hooks: {
+              "astro:config:setup": ({ injectRoute }) => {
+                injectRoute({
+                  pattern: "/__test__/archives/[count]/",
+                  entrypoint: "./tests/fixtures/archive.astro",
+                });
+              },
+            },
+          },
+        ]
+      : []),
+  ],
   vite: {
     customLogger: viteLogger,
     plugins: [disableRedundantClientModulePreloads],
@@ -191,6 +209,7 @@ export default defineConfig({
             },
           },
         ],
+        rehypePostToc,
         () => (tree, file) => {
           const walk = (node) => {
             if (!node || typeof node !== "object") return;

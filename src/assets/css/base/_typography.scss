@@ -1,0 +1,42 @@
+@use "sass:map";
+
+// Shared by the native elements and the scoped Markdown rules. Keep the
+// selectors at their call sites so component overrides retain their priority.
+$heading-levels: (
+  1: (
+    size: 2em,
+    margin: 0.67em,
+  ),
+  2: (
+    size: 1.5em,
+    margin: 0.83em,
+  ),
+  3: (
+    size: 1.17em,
+    margin: 1em,
+  ),
+  4: (
+    size: 1em,
+    margin: 1.33em,
+  ),
+  5: (
+    size: 0.83em,
+    margin: 1.67em,
+  ),
+  6: (
+    size: 0.67em,
+    margin: 2.33em,
+  ),
+);
+
+@mixin heading-base {
+  color: inherit;
+  font-weight: bold;
+  letter-spacing: 0;
+}
+
+@mixin heading-level($level) {
+  $style: map.get($heading-levels, $level);
+  margin-block: map.get($style, margin);
+  font-size: map.get($style, size);
+}

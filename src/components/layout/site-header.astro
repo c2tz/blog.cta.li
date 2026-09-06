@@ -2,6 +2,7 @@
 import { SITE_TITLE } from "@/site-config";
 import HomeDetailToggle from "@/components/home/home-detail-toggle.astro";
 import SiteSearch from "@/components/search/site-search.astro";
+import MotionToggle from "./motion-toggle.astro";
 import ThemeSwitcher from "./theme-switcher.astro";
 ---
 
@@ -12,8 +13,9 @@ import ThemeSwitcher from "./theme-switcher.astro";
     </a>
   </div>
 
-  <div class="site-header-actions">
+  <div class="site-header-actions" role="group" aria-label="Recherche et affichage">
     <SiteSearch />
+    <MotionToggle />
     <HomeDetailToggle />
     <ThemeSwitcher />
   </div>

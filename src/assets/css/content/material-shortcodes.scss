@@ -1,3 +1,5 @@
+@use "../components/data-table";
+
 .material-admonition {
   --material-admonition-color: var(--admonition-note);
   --material-admonition-container: color-mix(
@@ -152,11 +154,6 @@ summary.material-admonition-title::-webkit-details-marker {
   vertical-align: middle;
 }
 
-.material-button-label {
-  display: inline-flex;
-  align-items: center;
-}
-
 .material-button-icon {
   --md-icon-size: 1.125rem;
 }
@@ -250,46 +247,17 @@ summary.material-admonition-title::-webkit-details-marker {
 }
 
 .material-shortcode-table-scroll {
-  max-width: 100%;
-  margin-block: 0 1rem;
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-}
-
-.material-shortcode-table-scroll::-webkit-scrollbar {
-  height: 0.5rem;
-}
-
-.material-shortcode-table-scroll::-webkit-scrollbar-thumb {
-  border-radius: 9999px;
-  background: color-mix(in srgb, var(--site-muted) 42%, transparent);
+  @include data-table.scroller;
 }
 
 .material-shortcode-table {
   min-width: max(42rem, 100%);
-  border-collapse: separate;
-  border-spacing: 0;
-  background: transparent;
-  color: var(--site-text);
-  font-family: var(--site-font);
+  @include data-table.table;
 }
 
 .material-shortcode-table th,
 .material-shortcode-table td {
-  height: 3rem;
-  padding: 0 2rem 0 1rem;
-  border: 0;
-  border-block-end: 1px solid var(--site-border);
-  background: var(--site-bg);
-  color: var(--site-text);
-  font-family: var(--site-font);
-  font-size: 1rem;
-  font-weight: 400;
-  letter-spacing: 0;
-  line-height: 1.5;
-  text-align: start;
-  white-space: nowrap;
+  @include data-table.cell;
 }
 
 .material-shortcode-table th {
@@ -302,34 +270,7 @@ summary.material-admonition-title::-webkit-details-marker {
 }
 
 .material-shortcode-sort-button {
-  --md-ripple-hover-color: var(--site-link);
-  --md-ripple-pressed-color: var(--site-link);
-
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  width: 100%;
-  min-height: 3rem;
-  box-sizing: border-box;
-  padding: 0 2rem 0 1rem;
-  overflow: hidden;
-  border: 0;
-  background: var(--site-bg);
-  color: inherit;
-  cursor: pointer;
-  font: inherit;
-  font-weight: inherit;
-  text-align: start;
-}
-
-.material-shortcode-sort-button md-icon {
-  --md-icon-size: 1.25rem;
-
-  width: 1.25rem;
-  height: 1.25rem;
-  flex-basis: 1.25rem;
-  font-size: 1.25rem;
+  @include data-table.sort-button;
 }
 
 .material-shortcode-sort-active {

@@ -22,7 +22,16 @@ const ASTRO_A11Y_CONFIGS = astro.configs["flat/jsx-a11y-recommended"].map((confi
 
 export default defineConfig(
   {
-    ignores: [".astro/**", "dist/**", "node_modules/**", "public/pagefind/**"],
+    ignores: [
+      ".astro/**",
+      "dist/**",
+      "node_modules/**",
+      "public/pagefind/**",
+      "test-results/**",
+      "playwright-report/**",
+      ".lighthouseci/**",
+      "lighthouse-reports/**",
+    ],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,

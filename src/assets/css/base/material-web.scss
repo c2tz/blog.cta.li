@@ -55,6 +55,21 @@
   --md-menu-container-shape: var(--md-sys-shape-corner-small);
 }
 
+.site-material-select-arrow {
+  --md-icon-size: 1.5rem;
+  pointer-events: none;
+  transform: rotate(0deg);
+  transition: transform 80ms linear;
+}
+
+.site-material-select[data-menu-open] .site-material-select-arrow {
+  transform: rotate(180deg);
+}
+
+.site-material-select[quick] .site-material-select-arrow {
+  transition: none;
+}
+
 .site-material-select-option {
   --md-menu-item-label-text-color: var(--md-sys-color-on-surface);
   --md-menu-item-selected-container-color: transparent;

@@ -142,7 +142,9 @@ jobs:
       - name: Install Playwright Chromium and WebKit
         run: pnpm exec playwright install --with-deps chromium webkit
 
-      - name: Build production output for this shard
+      - name: Build production output with test routes for this shard
+        env:
+          SITE_TEST_FIXTURES: "1"
         run: pnpm build
 
       - name: Run Playwright shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }}

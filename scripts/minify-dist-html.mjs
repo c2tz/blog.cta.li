@@ -8,6 +8,8 @@ const minifyOptions = {
   caseSensitive: true,
   collapseBooleanAttributes: true,
   collapseWhitespace: true,
+  // Custom elements such as md-icon can appear inline between words.
+  conservativeCollapse: true,
   keepClosingSlash: true,
   minifyCSS: true,
   minifyJS: {

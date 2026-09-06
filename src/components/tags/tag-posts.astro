@@ -1,6 +1,7 @@
 ---
 import "@/assets/css/components/tag-posts.scss";
 import type { TagPostItem } from "@/lib/blog-post-projections.mjs";
+import { SORT_INDICATOR_HTML } from "@/assets/js/app/table-sort";
 
 interface Props {
   posts: TagPostItem[];
@@ -71,9 +72,7 @@ const initialStatus =
                   data-sort-column="created"
                 >
                   <span>Date</span>
-                  <md-icon aria-hidden="true" data-sort-icon>
-                    &#xE5D7;
-                  </md-icon>
+                  <Fragment set:html={SORT_INDICATOR_HTML} />
                   <md-ripple />
                 </button>
               </th>
@@ -89,9 +88,7 @@ const initialStatus =
                   data-sort-column="title"
                 >
                   <span>Titre</span>
-                  <md-icon aria-hidden="true" data-sort-icon>
-                    &#xE5D7;
-                  </md-icon>
+                  <Fragment set:html={SORT_INDICATOR_HTML} />
                   <md-ripple />
                 </button>
               </th>
@@ -175,6 +172,11 @@ const initialStatus =
             menu-positioning="popover"
             data-page-size
           >
+            <md-icon slot="trailing-icon" class="site-material-select-arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M7 10l5 5 5-5z" />
+              </svg>
+            </md-icon>
             {PAGE_SIZE_OPTIONS.map((size, index) => (
               <md-select-option
                 class="site-material-select-option"

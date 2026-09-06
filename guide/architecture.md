@@ -80,6 +80,19 @@ between `listed` and RSS/sitemap/Pagefind, a leaked/misconfigured Pagefind place
   elevated buttons only when separation from a prominent background is needed, and sentence-case
   labels of one to three words when possible.
 
+## Shared styles
+
+- `src/assets/css/base/_typography.scss` defines the heading scale used by the native element
+  rules and Markdown prose. Page styles only supply layout variants, such as the banner title's
+  size and line height; they inherit its family and weight from the shared base.
+- `src/assets/css/components/_data-table.scss` supplies the common scroll container, cells and
+  sort controls for home, archive and shortcode tables. Each caller keeps its existing selectors,
+  row density and layout, so sharing the source does not change CSS specificity or behavior.
+- Component styles belong to the component that renders them. Home table styles are imported by
+  `home-latest-posts-table.astro`; archive list styles stay with `tag-posts.scss`.
+- These Sass modules share definitions at build time. Route-specific styles remain loaded only
+  where they are needed; they do not add a browser runtime.
+
 ## Naming
 
 - Files and folders use kebab-case.

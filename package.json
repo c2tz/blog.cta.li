@@ -10,7 +10,7 @@
     "dev:local": "pnpm prepare:landing-assets && astro sync --force && astro dev --host --port 4321",
     "build": "pnpm prepare:landing-assets && pnpm check:konachan-runtime && astro build && pnpm index:search && pnpm check:content && pnpm minify:html && pnpm check:bundles",
     "build:debug": "pnpm prepare:landing-assets && pnpm check:konachan-runtime && astro build && pnpm index:search && pnpm check:content",
-    "build:test": "LANDING_ASSETS_SOURCE_DIR=tests/fixtures/landing-assets pnpm build",
+    "build:test": "SITE_TEST_FIXTURES=1 LANDING_ASSETS_SOURCE_DIR=tests/fixtures/landing-assets pnpm build",
     "build:vercel": "node scripts/ensure-git-history.mjs && pnpm build && pnpm check:headers",
     "preview": "astro preview",
     "preview:local": "astro preview --host 127.0.0.1 --port 4322",

@@ -31,12 +31,10 @@ test("shows the published introduction while keeping unlisted posts out of the h
   await expect(tableProgress).toHaveCSS("visibility", "hidden");
   await expect(tableProgress).not.toHaveCSS("display", "none");
 
-  if ((page.viewportSize()?.width ?? 0) >= 720) {
-    const tableOverflow = await page
-      .locator(".home-posts-table-scroll")
-      .evaluate((element) => element.scrollWidth - element.clientWidth);
-    expect(tableOverflow).toBeLessThanOrEqual(2);
-  }
+  const tableOverflow = await page
+    .locator(".home-posts-table-scroll")
+    .evaluate((element) => element.scrollWidth - element.clientWidth);
+  expect(tableOverflow).toBeLessThanOrEqual(2);
 
   const tagLinks = await page.locator("md-assist-chip").evaluateAll((chips) =>
     chips.map((chip) => ({
@@ -290,7 +288,8 @@ test("only exposes image colors after detailed mode is selected", async ({ page 
           element.shadowRoot?.querySelector("button")?.getAttribute("aria-label") ?? null,
       ),
     )
-    .toBe("Mode simple");
+    .toBe("Mode détaillé");
+  await expect(detailToggle).toHaveAttribute("data-tooltip", "Passer en mode détaillé");
 
   await expect
     .poll(() => dynamicColorRow.evaluate((element) => (element as HTMLElement).hidden))
@@ -304,6 +303,7 @@ test("only exposes image colors after detailed mode is selected", async ({ page 
       ),
     )
     .toBe("Mode détaillé");
+  await expect(detailToggle).toHaveAttribute("data-tooltip", "Passer en mode simple");
   await expect(detailToggle).toHaveAttribute("selected", "");
   const detailedVisualState = await detailToggle.evaluate((button) => {
     const selectedIcon = button.querySelector("md-icon[slot='selected']");
@@ -482,6 +482,12 @@ test("applies and persists the Konachan Material palette across the site", async
   await expect(dynamicColorSwitch).toBeEnabled();
 
   await dynamicColorRow.getByText("Couleur dynamique", { exact: true }).click();
+  await expect(themeMenu).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.dataset.materialDynamicColor ?? null))
+    .toBe("true");
+
+  await dynamicColorSwitch.click();
   await expect(themeMenu).toBeVisible();
   await expect
     .poll(() => page.evaluate(() => document.documentElement.dataset.materialDynamicColor ?? null))

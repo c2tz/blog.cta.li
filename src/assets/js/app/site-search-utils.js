@@ -109,6 +109,23 @@ function trimLeadingText(root) {
   });
 }
 
+export async function withTimeout(promise, duration) {
+  let timeoutId = 0;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timeoutId = window.setTimeout(
+          () => reject(new Error("Search request timed out.")),
+          duration,
+        );
+      }),
+    ]);
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
 export function removeLeadingTitle(excerpt, title) {
   if (!excerpt) return excerpt;
   const template = document.createElement("template");

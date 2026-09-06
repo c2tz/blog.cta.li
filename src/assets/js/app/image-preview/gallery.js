@@ -60,6 +60,9 @@ export const withImagePreviewGallery = (Base) =>
       this.finishInformationClose(false);
       this.setControlsVisible(true);
       await this.renderCurrent();
+      // Release focus before hiding its popover. WebKit can stall between
+      // top-layer updates when a focused descendant becomes hidden.
+      if (richTooltipWasOpen) sourceImage.blur();
       this.lockPageScroll();
       this.hideTooltip(
         richTooltipTrigger && restoreFocus ? { suppressNextFocus: true } : undefined,

@@ -298,6 +298,7 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
       __richTooltipActivationOrder?: {
         clickObserved: boolean;
         clickTaskActive: boolean;
+        focusInsidePopoverWhenHidden?: boolean;
         hidePopoverDuringClickTask?: boolean;
         showModalDuringClickTask?: boolean;
         transitions: Array<"hide-popover" | "show-modal">;
@@ -314,6 +315,7 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
     const activationOrder = {
       clickObserved: false,
       clickTaskActive: false,
+      focusInsidePopoverWhenHidden: undefined as boolean | undefined,
       hidePopoverDuringClickTask: undefined as boolean | undefined,
       showModalDuringClickTask: undefined as boolean | undefined,
       transitions: [] as Array<"hide-popover" | "show-modal">,
@@ -336,6 +338,7 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
     );
     richTooltip.hidePopover = () => {
       activationOrder.hidePopoverDuringClickTask = activationOrder.clickTaskActive;
+      activationOrder.focusInsidePopoverWhenHidden = richTooltip.contains(document.activeElement);
       activationOrder.transitions.push("hide-popover");
       console.debug("Lightbox activation: hide popover");
       originalHidePopover();
@@ -365,6 +368,7 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
               __richTooltipActivationOrder?: {
                 clickObserved: boolean;
                 clickTaskActive: boolean;
+                focusInsidePopoverWhenHidden?: boolean;
                 hidePopoverDuringClickTask?: boolean;
                 showModalDuringClickTask?: boolean;
                 transitions: Array<"hide-popover" | "show-modal">;
@@ -376,6 +380,7 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
     .toEqual({
       clickObserved: true,
       clickTaskActive: false,
+      focusInsidePopoverWhenHidden: false,
       hidePopoverDuringClickTask: false,
       showModalDuringClickTask: false,
       transitions: ["hide-popover", "show-modal"],

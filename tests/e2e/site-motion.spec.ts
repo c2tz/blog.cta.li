@@ -726,6 +726,10 @@ for (const route of ["/", "/posts/bienvenue-sur-ct-blog/"]) {
       await expect(menu).toBeHidden();
       await expect(trigger).toHaveAttribute("data-aria-expanded", "false");
       await page.mouse.move(0, 0);
+      // The trigger keeps keyboard focus after closing. Remove that focus
+      // ring from the screenshot region so this assertion measures only the
+      // pixels that the menu covered, rather than a changed control state.
+      await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
       // display:none can pass while Safari 18.6 still paints the old menu over
       // the filtered hero. Check actual pixels, without finishing animations
       // through the screenshot API (which could conceal a repaint failure).

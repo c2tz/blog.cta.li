@@ -98,7 +98,19 @@ test("bounds style recalculations when disabling motion across shadow roots", as
 
   const client = await page.context().newCDPSession(page);
   const events: Array<{ name: string; ts: number; pid: number; tid: number }> = [];
-  client.on("Tracing.dataCollected", ({ value }) => events.push(...value));
+  client.on("Tracing.dataCollected", ({ value }) => {
+    value.forEach((event: Record<string, unknown>) => {
+      const { name, ts, pid, tid } = event;
+      if (
+        typeof name === "string" &&
+        typeof ts === "number" &&
+        typeof pid === "number" &&
+        typeof tid === "number"
+      ) {
+        events.push({ name, ts, pid, tid });
+      }
+    });
+  });
   await client.send("Tracing.start", { categories: "devtools.timeline,blink.user_timing" });
   await page.locator(".site-motion-trigger").evaluate((button: HTMLElement) => {
     performance.mark("motion-budget-start");

@@ -1,6 +1,7 @@
-import { readdir, rm } from "node:fs/promises";
-import { dirname, relative, resolve, sep } from "node:path";
+import { rm } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { listFiles } from "./lib/file-listing.mjs";
 
 const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_PAGEFIND_DIRECTORY = resolve(ROOT_DIRECTORY, "dist/pagefind");
@@ -29,22 +30,6 @@ const PAGEFIND_RUNTIME_DIRECTORIES = new Map([
   ["fragment", ".pf_fragment"],
   ["index", ".pf_index"],
 ]);
-
-async function listFiles(directory, root = directory) {
-  const entries = await readdir(directory, { withFileTypes: true });
-  const files = [];
-
-  for (const entry of entries) {
-    const absolutePath = resolve(directory, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...(await listFiles(absolutePath, root)));
-    } else if (entry.isFile()) {
-      files.push(relative(root, absolutePath).split(sep).join("/"));
-    }
-  }
-
-  return files;
-}
 
 export function isKnownPagefindRuntimeFile(file) {
   if (

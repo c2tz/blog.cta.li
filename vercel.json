@@ -27,7 +27,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'wasm-unsafe-eval' https://giscus.app 'sha256-TMcL9ot3ZuDtoTCcq9gQosXNW5DDpgasIS+9QVuMuMU=' 'sha256-WmcX2v58SC3cXZIh+MSyU+oiHq5VqV4XAU96ioJjB5s=' 'sha256-uflgGjlJCtmxx/NusU/HXudDSwhnRriyAmq5BXUrooI='; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://giscus.app; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://giscus.app https://api.ipapi.is; worker-src 'self' blob:; frame-src https://giscus.app; manifest-src 'self'; media-src 'self'; upgrade-insecure-requests"
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'wasm-unsafe-eval' https://giscus.app 'sha256-TMcL9ot3ZuDtoTCcq9gQosXNW5DDpgasIS+9QVuMuMU=' 'sha256-WmcX2v58SC3cXZIh+MSyU+oiHq5VqV4XAU96ioJjB5s=' 'sha256-tpSExYGiycHeoqm3G9vgzsakV5mIT6R1RaqesS5suuc=' 'sha256-uflgGjlJCtmxx/NusU/HXudDSwhnRriyAmq5BXUrooI='; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://giscus.app; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://giscus.app https://api.ipapi.is; worker-src 'self' blob:; frame-src https://giscus.app; manifest-src 'self'; media-src 'self'; upgrade-insecure-requests"
         },
         {
           "key": "Permissions-Policy",

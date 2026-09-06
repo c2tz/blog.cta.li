@@ -22,6 +22,13 @@ function html({ body = "", links = "", scripts = "" } = {}) {
   return `<!doctype html><html><head>${links}</head><body>${body}${scripts}</body></html>`;
 }
 
+function fontFixture(length = 256) {
+  const buffer = Buffer.alloc(length, 42);
+  buffer.write("wOF2");
+  buffer.writeUInt32BE(length, 8);
+  return buffer;
+}
+
 async function createDistFixture(
   t,
   {
@@ -160,6 +167,131 @@ test("sépare Pagefind, les parcours différés et l'image 404 AVIF déterminist
     ],
   );
   await assert.doesNotReject(() => checkBundleBudget({ distDirectory }));
+});
+
+test("déduplique les polices entre CSS importé et preload sans les compter comme code", async (t) => {
+  const { distDirectory, homeHtml } = await createDistFixture(t);
+  const font = fontFixture();
+  await Promise.all([
+    writeFixture(distDirectory, "fonts/roboto.woff2", font),
+    writeFixture(distDirectory, "_astro/site.Z9y8.css", '@import "./styles/fonts.css";'),
+    writeFixture(
+      distDirectory,
+      "_astro/styles/fonts.css",
+      '@font-face{font-family:Roboto;src:url("../../fonts/roboto.woff2?v=1")} ',
+    ),
+    writeFixture(
+      distDirectory,
+      "index.html",
+      homeHtml.replace(
+        "</head>",
+        '<link rel="preload" as="font" href="/fonts/roboto.woff2?v=1" crossorigin></head>',
+      ),
+    ),
+  ]);
+
+  const stats = await collectBundleStats({ distDirectory });
+  assert.deepEqual(stats.totalFonts, {
+    files: [
+      {
+        path: "fonts/roboto.woff2",
+        rawBytes: font.length,
+        gzipBytes: gzipSync(font).length,
+        brotliBytes: brotliCompressSync(font).length,
+      },
+    ],
+    rawBytes: font.length,
+    gzipBytes: gzipSync(font).length,
+    brotliBytes: brotliCompressSync(font).length,
+  });
+  assert.ok(stats.routes.home.files.every(({ path }) => !path.endsWith(".woff2")));
+  assert.ok(stats.routes.home.files.some(({ path }) => path === "index.html"));
+  await assert.doesNotReject(() => checkBundleBudget({ distDirectory }));
+});
+
+for (const source of ["CSS", "preload"]) {
+  test(`refuse une grosse police découverte depuis ${source}`, async (t) => {
+    const { distDirectory, homeHtml } = await createDistFixture(t);
+    await writeFixture(
+      distDirectory,
+      "fonts/large.woff2",
+      fontFixture(BUNDLE_BUDGETS.totalFonts.rawBytes + 1),
+    );
+    if (source === "CSS") {
+      await writeFixture(
+        distDirectory,
+        "_astro/site.Z9y8.css",
+        "@font-face{font-family:Large;src:url(/fonts/large.woff2)}",
+      );
+    } else {
+      await writeFixture(
+        distDirectory,
+        "index.html",
+        homeHtml.replace(
+          "</head>",
+          '<link rel="preload" as="font" href="/fonts/large.woff2"></head>',
+        ),
+      );
+    }
+    await assert.rejects(
+      () => checkBundleBudget({ distDirectory }),
+      /polices locales \(raw\).*dépasse/s,
+    );
+  });
+}
+
+test("contrôle aussi les tailles gzip et Brotli des polices", async (t) => {
+  const { distDirectory } = await createDistFixture(t);
+  const font = fontFixture();
+  await Promise.all([
+    writeFixture(distDirectory, "fonts/roboto.woff2", font),
+    writeFixture(
+      distDirectory,
+      "_astro/site.Z9y8.css",
+      "@font-face{font-family:Roboto;src:url(/fonts/roboto.woff2)}",
+    ),
+  ]);
+  await assert.rejects(
+    () =>
+      checkBundleBudget({
+        distDirectory,
+        budgets: {
+          ...BUNDLE_BUDGETS,
+          totalFonts: {
+            ...BUNDLE_BUDGETS.totalFonts,
+            gzipBytes: gzipSync(font).length - 1,
+            brotliBytes: brotliCompressSync(font).length - 1,
+          },
+        },
+      }),
+    /polices locales \(gzip\).*dépasse.*polices locales \(brotli\).*dépasse/s,
+  );
+});
+
+test("un faux preload de police reste soumis au budget de la route", async (t) => {
+  const { distDirectory, homeHtml } = await createDistFixture(t);
+  await Promise.all([
+    writeFixture(
+      distDirectory,
+      "fonts/disguised.woff2",
+      "x".repeat(BUNDLE_BUDGETS.routes.home.rawBytes + 1),
+    ),
+    writeFixture(
+      distDirectory,
+      "index.html",
+      homeHtml.replace(
+        "</head>",
+        '<link rel="preload" as="font" href="/fonts/disguised.woff2"></head>',
+      ),
+    ),
+  ]);
+  const stats = await collectBundleStats({ distDirectory });
+  assert.equal(stats.totalFonts.files.length, 0);
+  assert.ok(stats.routes.home.files.some(({ path }) => path === "fonts/disguised.woff2"));
+  await assert.rejects(
+    () => checkBundleBudget({ distDirectory }),
+    /route accueil, HTML inclus \(raw\).*dépasse/s,
+  );
 });
 
 test("mesure une image représentative du manifeste sans fallback HTML", async (t) => {

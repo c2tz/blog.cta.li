@@ -1,6 +1,123 @@
-import { clearConsentState, expect, test, gotoRoute } from "./site-fixture";
+import { clearConsentState, expect, test, gotoRoute, waitForAppReady } from "./site-fixture";
 
 const speedInsightsSwitchSelector = 'md-switch[data-cookie-preference-service="speed-insights"]';
+
+test("renders and adopts a stable consent notice before bootstrap and Material finish loading", async ({
+  page,
+}) => {
+  await page.addInitScript(clearConsentState);
+  let releaseBootstrap!: () => void;
+  const bootstrapGate = new Promise<void>((resolve) => {
+    releaseBootstrap = resolve;
+  });
+  let bootstrapRequested = false;
+  let releaseMaterial!: () => void;
+  const materialGate = new Promise<void>((resolve) => {
+    releaseMaterial = resolve;
+  });
+  let materialRequested = false;
+  await page.route(
+    (url) => url.pathname.startsWith("/_astro/") && url.pathname.endsWith(".js"),
+    async (route) => {
+      if (/^\/_astro\/material-web\.[^/]+\.js$/.test(new URL(route.request().url()).pathname)) {
+        materialRequested = true;
+        await materialGate;
+      } else {
+        bootstrapRequested = true;
+        await bootstrapGate;
+      }
+      await route.continue().catch(() => undefined);
+    },
+  );
+
+  const notice = page.locator(".cookie-consent--explicit-content");
+  const description = notice.locator("#explicit-content-consent-desc");
+  const leave = notice.locator('[data-cookie-action="leave"]');
+  const acknowledge = notice.locator('[data-cookie-action="acknowledge"]');
+  const geometry = () =>
+    notice.evaluate((element) => {
+      const noticeRect = element.getBoundingClientRect();
+      const textRect = element
+        .querySelector("#explicit-content-consent-desc")!
+        .getBoundingClientRect();
+      return {
+        noticeTop: noticeRect.top,
+        noticeHeight: noticeRect.height,
+        textTop: textRect.top,
+        textHeight: textRect.height,
+      };
+    });
+
+  try {
+    await page.goto("/", { waitUntil: "commit" });
+    await expect.poll(() => bootstrapRequested).toBe(true);
+    await expect(description).toBeVisible();
+    await expect(description).toContainText("En continuant, vous confirmez avoir au moins 18 ans");
+    await expect(page.locator("[data-cookie-active-notice]")).toHaveCount(1);
+    const bootNotice = await page.locator("[data-cookie-boot-notice]").elementHandle();
+    expect(bootNotice).not.toBeNull();
+    expect(
+      await page.evaluate(() => Boolean(customElements.get("site-cookie-consent-banner"))),
+    ).toBe(false);
+    await expect(leave).toBeHidden();
+    await expect(acknowledge).toBeHidden();
+    await expect(page.locator("#main-content")).toHaveCSS("pointer-events", "none");
+    await page.keyboard.press("Tab");
+    // Load the notice faces explicitly: WebKit's fonts.ready remains pending
+    // while this test deliberately blocks module loading.
+    await page.evaluate(() =>
+      Promise.all([document.fonts.load("400 16px Roboto"), document.fonts.load("700 16px Roboto")]),
+    );
+    const beforeUpgrade = await geometry();
+
+    releaseBootstrap();
+    await page.waitForLoadState("domcontentloaded");
+    await expect.poll(() => materialRequested).toBe(true);
+    await expect(page.locator("[data-cookie-active-notice]")).toHaveCount(1);
+    expect(
+      await bootNotice!.evaluate(
+        (element) => element.isConnected && !element.hasAttribute("data-cookie-boot-notice"),
+      ),
+    ).toBe(true);
+    expect(
+      await page.evaluate(() =>
+        ["md-text-button", "md-filled-button"].some((tag) => customElements.get(tag)),
+      ),
+    ).toBe(false);
+    await expect(page.locator("#main-content")).toHaveAttribute("inert", "");
+    // An early key press must not cancel focus waiting for Material's buttons.
+    await page.keyboard.press("Tab");
+
+    releaseMaterial();
+    await waitForAppReady(page);
+    await expect(leave).toBeVisible();
+    await expect(acknowledge).toBeVisible();
+    await expect
+      .poll(() => leave.evaluate((element) => element.matches(":focus-within")))
+      .toBe(true);
+    const afterUpgrade = await geometry();
+    for (const key of Object.keys(beforeUpgrade) as (keyof typeof beforeUpgrade)[]) {
+      expect(Math.abs(afterUpgrade[key] - beforeUpgrade[key]), key).toBeLessThanOrEqual(1);
+    }
+
+    await page.keyboard.press("Tab");
+    await expect
+      .poll(() => acknowledge.evaluate((element) => element.matches(":focus-within")))
+      .toBe(true);
+    await acknowledge.click();
+    await expect(notice).toBeHidden();
+    const privacy = page.locator(".cookie-consent--privacy");
+    await expect(privacy).toBeVisible();
+    await expect(page.locator("#main-content")).not.toHaveAttribute("inert", "");
+    const reject = privacy.locator('md-text-button[data-cookie-action="reject"]:visible');
+    await reject.focus();
+    await page.keyboard.press("Enter");
+    await expect(privacy).toBeHidden();
+  } finally {
+    releaseBootstrap();
+    releaseMaterial();
+  }
+});
 
 test("saves each optional service independently with official Material switches", async ({
   page,

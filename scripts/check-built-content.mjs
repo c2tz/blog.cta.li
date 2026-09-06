@@ -1,9 +1,11 @@
-import { readdir, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { relative, resolve, sep } from "node:path";
+import { resolve } from "node:path";
 import { gunzipSync } from "node:zlib";
 
 import { parse } from "parse5";
+import { listFiles } from "./lib/file-listing.mjs";
+import { getAttribute, walkElements } from "./lib/html-nodes.mjs";
 
 const DEFAULT_DIST_DIRECTORY = resolve("dist");
 const DEFAULT_SITE_ORIGIN = "https://ct-blog.cta.li";
@@ -11,33 +13,6 @@ const PAGEFIND_PLACEHOLDER_PATH = "/posts/pagefind-index-placeholder/";
 const PAGEFIND_PLACEHOLDER_TOKEN = "pagefind-internal-placeholder-4d6af32b";
 const URL_ATTRIBUTES = new Set(["action", "data", "href", "poster", "src"]);
 const IGNORED_PROTOCOLS = new Set(["blob:", "mailto:", "tel:"]);
-
-async function listFiles(directory, root = directory) {
-  const entries = await readdir(directory, { withFileTypes: true });
-  const files = [];
-
-  for (const entry of entries) {
-    const absolutePath = resolve(directory, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...(await listFiles(absolutePath, root)));
-    } else if (entry.isFile()) {
-      files.push(relative(root, absolutePath).split(sep).join("/"));
-    }
-  }
-
-  return files;
-}
-
-function walkElements(node, elements = []) {
-  if (node && typeof node === "object" && "tagName" in node) elements.push(node);
-  for (const child of node?.childNodes ?? []) walkElements(child, elements);
-  if (node?.content) walkElements(node.content, elements);
-  return elements;
-}
-
-function getAttribute(element, name) {
-  return element.attrs?.find((attribute) => attribute.name === name)?.value;
-}
 
 function hasAttribute(element, name) {
   return element.attrs?.some((attribute) => attribute.name === name) ?? false;

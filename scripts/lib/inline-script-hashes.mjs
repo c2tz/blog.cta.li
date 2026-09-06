@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
-import { readdir, readFile, stat } from "node:fs/promises";
-import path from "node:path";
+import { readFile, stat } from "node:fs/promises";
+import { htmlFilesIn } from "./file-listing.mjs";
 
 const JAVASCRIPT_SCRIPT_TYPES = new Set([
   "application/ecmascript",
@@ -9,20 +9,6 @@ const JAVASCRIPT_SCRIPT_TYPES = new Set([
   "text/ecmascript",
   "text/javascript",
 ]);
-
-async function htmlFilesIn(directory) {
-  const entries = await readdir(directory, { withFileTypes: true });
-  const files = await Promise.all(
-    entries.map(async (entry) => {
-      const entryPath = path.join(directory, entry.name);
-      if (entry.isDirectory()) return htmlFilesIn(entryPath);
-      if (entry.isFile() && entry.name.endsWith(".html")) return [entryPath];
-      return [];
-    }),
-  );
-
-  return files.flat();
-}
 
 function scriptType(openingTag) {
   const match = openingTag.match(/\btype\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);

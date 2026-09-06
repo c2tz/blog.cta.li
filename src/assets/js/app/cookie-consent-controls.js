@@ -1,4 +1,3 @@
-import cookieConsentStyles from "@/assets/css/components/cookie-consent.scss?inline";
 import {
   SITE_COOKIE_NAMES,
   SITE_EVENTS,
@@ -39,15 +38,6 @@ const MATERIAL_BUTTON_TAG_NAMES = new Set([
   "md-outlined-button",
   "md-text-button",
 ]);
-
-function ensureCookieConsentStyles() {
-  if (document.querySelector("style[data-cookie-consent-styles]")) return;
-
-  const style = document.createElement("style");
-  style.dataset.cookieConsentStyles = "";
-  style.textContent = cookieConsentStyles;
-  document.head.append(style);
-}
 
 function readCookie(name) {
   return readCookieValue(document.cookie, name);
@@ -118,8 +108,15 @@ function clearLegacyConsentStorage() {
 }
 
 function clearLegacyConsentCookies() {
-  expireCookie(SITE_LEGACY_COOKIE_NAMES.cookieConsentV1);
-  expireCookie(SITE_LEGACY_COOKIE_NAMES.cookieConsent);
+  const cookies = document.cookie.split(";").map((cookie) => cookie.trim());
+  for (const name of [
+    SITE_LEGACY_COOKIE_NAMES.cookieConsentV1,
+    SITE_LEGACY_COOKIE_NAMES.cookieConsent,
+  ]) {
+    if (cookies.some((cookie) => cookie.startsWith(`${encodeURIComponent(name)}=`))) {
+      expireCookie(name);
+    }
+  }
 }
 
 function writeConsentServices(services) {
@@ -276,6 +273,15 @@ class SiteCookieConsentBanner extends HTMLElement {
     if (
       ["Tab", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)
     ) {
+      // The notice can render before Material upgrades its buttons. Keep the
+      // queued initial focus until there is a visible action to navigate to.
+      if (
+        this.#activeNotice === "explicit-content" &&
+        this.#getFocusableDialogElements().length === 0
+      ) {
+        event.preventDefault();
+        return;
+      }
       // A backdrop pointerdown may still have an initial-focus frame queued.
       // Once the user navigates, keyboard navigation is authoritative: do
       // not let that older frame move focus back to the first action.
@@ -328,7 +334,10 @@ class SiteCookieConsentBanner extends HTMLElement {
         ? "privacy"
         : null;
 
-    this.querySelector("[data-cookie-active-notice]")?.remove();
+    const currentNotice = this.querySelector("[data-cookie-active-notice]");
+    const adoptBootNotice =
+      nextNotice === "explicit-content" && currentNotice?.hasAttribute("data-cookie-boot-notice");
+    if (!adoptBootNotice) currentNotice?.remove();
     this.#activeNotice = nextNotice;
     this.dataset.activeNotice = nextNotice ?? "";
 
@@ -339,11 +348,13 @@ class SiteCookieConsentBanner extends HTMLElement {
       return;
     }
 
-    const template = this.querySelector(`[data-cookie-template="${nextNotice}"]`);
-    if (!(template instanceof HTMLTemplateElement)) return;
-
-    this.append(template.content.cloneNode(true));
+    if (!adoptBootNotice) {
+      const template = this.querySelector(`[data-cookie-template="${nextNotice}"]`);
+      if (!(template instanceof HTMLTemplateElement)) return;
+      this.append(template.content.cloneNode(true));
+    }
     this.#bindNoticeActions();
+    currentNotice?.removeAttribute("data-cookie-boot-notice");
 
     if (nextNotice === "explicit-content") {
       document.documentElement.classList.add(
@@ -576,8 +587,6 @@ class SiteCookiePreferences extends HTMLElement {
 }
 
 export function defineCookieConsentControls() {
-  ensureCookieConsentStyles();
-
   if (!customElements.get("site-cookie-consent-banner")) {
     customElements.define("site-cookie-consent-banner", SiteCookieConsentBanner);
   }

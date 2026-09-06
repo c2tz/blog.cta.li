@@ -182,8 +182,14 @@ html.consent-visible body {
   min-width: 0;
 }
 
+[data-cookie-boot-notice] .cookie-consent-actions {
+  visibility: hidden;
+}
+
 .cookie-consent-actions {
   display: flex;
+  // Reserve the Material button height while the notice renders before upgrade.
+  min-height: 2.5rem;
   flex-wrap: nowrap;
   justify-content: flex-start;
   gap: 0.5rem;

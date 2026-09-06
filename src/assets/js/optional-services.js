@@ -1,4 +1,5 @@
 import { inject, pageview } from "@vercel/analytics";
+import { markPageUnloading } from "./app/page-lifecycle.js";
 
 const SPEED_SELECTOR = 'script[data-site-service="speed-insights"]';
 const ANALYTICS_SRC = "/_vercel/insights/script.js";
@@ -24,6 +25,7 @@ export function syncOptionalServices() {
     // Stop in-flight scripts before removal. Reload also removes SDK listeners
     // and queues, so revoking consent stops subsequent transmissions.
     reloadRequested = true;
+    markPageUnloading();
     window.stop();
     if (!speedAccepted) speedScript?.remove();
     if (!analyticsAccepted) analyticsScript?.remove();

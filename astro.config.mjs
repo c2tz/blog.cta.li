@@ -164,6 +164,11 @@ export default defineConfig({
         "X-Content-Type-Options": "nosniff",
       },
     },
+    preview: {
+      // The fixed headers above already define CORS. Vite's dynamic middleware
+      // adds Vary: Origin, which prevents WebKit from reusing font preloads.
+      cors: false,
+    },
     css: {
       preprocessorOptions: {
         scss: {

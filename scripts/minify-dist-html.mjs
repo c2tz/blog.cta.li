@@ -1,6 +1,6 @@
-import { readdir, readFile, stat, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { readFile, stat, writeFile } from "node:fs/promises";
 import { minify } from "html-minifier-terser";
+import { htmlFilesIn } from "./lib/file-listing.mjs";
 
 const DIST_DIRECTORY = "dist";
 
@@ -23,20 +23,6 @@ const minifyOptions = {
   },
   removeComments: true,
 };
-
-async function htmlFilesIn(directory) {
-  const entries = await readdir(directory, { withFileTypes: true });
-  const files = await Promise.all(
-    entries.map(async (entry) => {
-      const entryPath = path.join(directory, entry.name);
-      if (entry.isDirectory()) return htmlFilesIn(entryPath);
-      if (entry.isFile() && entry.name.endsWith(".html")) return [entryPath];
-      return [];
-    }),
-  );
-
-  return files.flat();
-}
 
 async function directoryExists(directory) {
   try {

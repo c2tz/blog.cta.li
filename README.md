@@ -49,6 +49,10 @@ pnpm new:post "Titre de mon article" --description "Résumé de l'article." --pu
 ```
 
 Le guide complet est dans [Publier un article](guide/publier-un-article.md).
+Pour enrichir un simple fichier `.md`, le
+[catalogue de rédaction](src/content/blog/catalogue-redaction.md) présente les encadrés, boutons,
+icônes, onglets, infobulles et tableaux avec des exemples à copier. Ouvrez
+`/posts/catalogue-redaction/` sur le serveur local pour voir les aperçus interactifs.
 
 ## Quelle commande utiliser ?
 
@@ -75,12 +79,14 @@ Commencez par les documents suivants :
    dépôt.
 2. [Publier un article](guide/publier-un-article.md) : brouillon, Markdown, images, dates Git et
    publication.
-3. [Commandes et contrôles](guide/commandes-et-controles.md) : rôle de chaque script `pnpm`.
-4. [GitHub Actions et déploiement](guide/github-actions-et-deploiement.md) : contrôles automatiques,
+3. [Catalogue de rédaction](src/content/blog/catalogue-redaction.md) : éléments disponibles en
+   `.md`, rendus et exemples à copier. Aperçu local : `/posts/catalogue-redaction/`.
+4. [Commandes et contrôles](guide/commandes-et-controles.md) : rôle de chaque script `pnpm`.
+5. [GitHub Actions et déploiement](guide/github-actions-et-deploiement.md) : contrôles automatiques,
    Vercel et hébergement statique.
-5. [Dépendances](guide/dependances.md) : pourquoi il y en a plusieurs et lesquelles arrivent dans le
+6. [Dépendances](guide/dependances.md) : pourquoi il y en a plusieurs et lesquelles arrivent dans le
    navigateur.
-6. [Dépannage](guide/depannage.md) : solutions aux erreurs les plus courantes.
+7. [Dépannage](guide/depannage.md) : solutions aux erreurs les plus courantes.
 
 Références techniques pour les modifications plus avancées :
 

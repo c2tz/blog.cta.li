@@ -1,5 +1,6 @@
 import { initScrollProgressBar, removeReadingProgress } from "./app/reading-progress.js";
 import { initSiteTooltips } from "./app/site-tooltips.js";
+import { initKeyboardNavigation } from "./app/keyboard-navigation.js";
 
 const RICH_TOOLTIP_SELECTOR = "[data-rich-tooltip-trigger]";
 const CONTEXT_POPOVER_SELECTOR = [
@@ -62,6 +63,7 @@ async function initProseImageEnhancements() {
 
 function initApp() {
   syncDetailViewBodyState();
+  initKeyboardNavigation();
   initSiteTooltips();
   initConditionalEnhancements();
   void initProseImageEnhancements();

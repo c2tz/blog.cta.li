@@ -1,4 +1,5 @@
 import { GALLERY_MOTION_DURATION_MS, fileNameFromURL, decodeImageSource } from "./support.js";
+import { areSiteAnimationsEnabled } from "../site-motion.js";
 
 const waitForNextTask = () =>
   new Promise((resolve) => {
@@ -59,6 +60,9 @@ export const withImagePreviewGallery = (Base) =>
       this.finishInformationClose(false);
       this.setControlsVisible(true);
       await this.renderCurrent();
+      // Release focus before hiding its popover. WebKit can stall between
+      // top-layer updates when a focused descendant becomes hidden.
+      if (richTooltipWasOpen) sourceImage.blur();
       this.lockPageScroll();
       this.hideTooltip(
         richTooltipTrigger && restoreFocus ? { suppressNextFocus: true } : undefined,
@@ -75,7 +79,14 @@ export const withImagePreviewGallery = (Base) =>
 
       try {
         const focusRequestBeforeShow = this.focusRequest;
+        // Back must close the preview as soon as it becomes visible, including
+        // while its opening animation or the information dialog is running.
+        this.pushHistoryEntry();
         await this.dialog.show();
+        if (this.isOpen && !this.isClosing && !this.dialog.open) {
+          this.requestClose("open-cancelled");
+          return;
+        }
         if (this.isOpen && !this.isClosing && this.dialog.open) {
           // Do not overwrite a Tab move made while the opening animation was
           // still resolving. The Material dialog's autofocus already covers
@@ -83,10 +94,9 @@ export const withImagePreviewGallery = (Base) =>
           if (this.focusRequest === focusRequestBeforeShow) {
             this.focusControl(this.closeButton);
           }
-          this.pushHistoryEntry();
         }
       } catch {
-        this.finishClose();
+        this.requestClose("open-failed");
       }
     }
 
@@ -158,6 +168,7 @@ export const withImagePreviewGallery = (Base) =>
 
       this.cancelImageMotion();
       this.resetView();
+      if (!areSiteAnimationsEnabled()) motion = undefined;
       const outgoingImage = motion ? this.createOutgoingImage(motion) : null;
       this.currentIndex = normalizedIndex;
       this.pendingIndex = undefined;

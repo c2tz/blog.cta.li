@@ -165,13 +165,6 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .home-anime-rating-actions[data-open] .home-anime-rating-option {
-    animation-duration: 1ms;
-    animation-delay: 0ms;
-  }
-}
-
 .home-anime-background {
   position: absolute;
   inset: 0;
@@ -224,11 +217,9 @@
 }
 
 .home-hero-content h1 {
+  // Banner layout variant; family, weight and color come from the shared base.
   margin: 0;
-  color: inherit;
-  font-family: var(--site-heading-font);
   font-size: 3rem;
-  font-weight: 700;
   line-height: 1.02;
 }
 

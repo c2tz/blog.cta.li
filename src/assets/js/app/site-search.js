@@ -1,10 +1,10 @@
 import siteSearchStyles from "@/assets/css/components/site-search.scss?inline";
 import { isSearchSortMode } from "@/components/search/site-search-model";
 import { loadPagefindModule } from "@/components/search/site-search-pagefind";
-import { SITE_LOADING_INDICATOR_DELAY_MS } from "@/lib/site-contracts";
+import { SITE_EVENTS, SITE_LOADING_INDICATOR_DELAY_MS } from "@/lib/site-contracts";
 import { hideSiteTooltip } from "./site-tooltips.js";
 import { loadMaterialCustomElements } from "./material-custom-elements.js";
-import { renderSearchResults } from "./site-search-renderer.js";
+import { renderSearchFilters, renderSearchResults } from "./site-search-renderer.js";
 import {
   dateValue,
   formatDate,
@@ -13,6 +13,7 @@ import {
   parsePriority,
   parseTags,
   removeLeadingTitle,
+  withTimeout,
 } from "./site-search-utils.js";
 
 const MIN_QUERY_LENGTH = 2;
@@ -125,6 +126,7 @@ class SearchPanelController {
     this.results = [];
     this.status = "Tapez au moins deux caractères ou choisissez un filtre.";
     this.filtersLoaded = false;
+    this.tagFilterRequest = undefined;
     this.allTagFilterCounts = undefined;
     this.pagefind = undefined;
     this.requestId = 0;
@@ -133,12 +135,11 @@ class SearchPanelController {
     this.loadingIndicatorTimer = 0;
     this.queryDebounceTimer = 0;
     this.inputControl = undefined;
-    this.sortControlMedia = window.matchMedia("(max-width: 720px), (pointer: coarse)");
     this.filterChipReady = loadFilterChipModule();
 
     this.handleInput = this.handleInput.bind(this);
     this.handleSearchInputKeydown = this.handleSearchInputKeydown.bind(this);
-    this.handleSortControlMediaChange = this.handleSortControlMediaChange.bind(this);
+    this.handleDetailViewChange = this.handleDetailViewChange.bind(this);
     this.connect();
   }
 
@@ -168,12 +169,11 @@ class SearchPanelController {
     this.clearSearchButton.addEventListener("click", () => this.clearSearch());
     this.clearFiltersButton.addEventListener("click", () => this.clearFilters());
     this.sortSelect.addEventListener("change", (event) => this.setSortMode(controlValue(event)));
-    this.sortControlMedia.addEventListener("change", this.handleSortControlMediaChange);
+    document.addEventListener(SITE_EVENTS.homeDetailViewChange, this.handleDetailViewChange);
     document.addEventListener(
       "astro:before-swap",
-      () => {
-        this.sortControlMedia.removeEventListener("change", this.handleSortControlMediaChange);
-      },
+      () =>
+        document.removeEventListener(SITE_EVENTS.homeDetailViewChange, this.handleDetailViewChange),
       { once: true },
     );
 
@@ -210,22 +210,21 @@ class SearchPanelController {
     if (!menu || !dialogScroller) return;
 
     let repositionFrame = 0;
-    let settleTimer = 0;
     let tracking = false;
-    const resizeObserver = new ResizeObserver(() => scheduleReposition());
+    let scrollerSize;
+    const resizeObserver = new ResizeObserver(([entry]) => {
+      const size = `${entry.contentRect.width}:${entry.contentRect.height}`;
+      if (scrollerSize && scrollerSize !== size) scheduleReposition();
+      scrollerSize = size;
+    });
 
     const scheduleReposition = () => {
       if (!menu.open) return;
 
-      window.clearTimeout(settleTimer);
       window.cancelAnimationFrame(repositionFrame);
       repositionFrame = window.requestAnimationFrame(() => {
         repositionFrame = 0;
-        menu.reposition();
-
-        settleTimer = window.setTimeout(() => {
-          if (menu.open) menu.reposition();
-        }, 160);
+        if (menu.open) menu.reposition();
       });
     };
     const startTracking = () => {
@@ -235,7 +234,6 @@ class SearchPanelController {
       window.addEventListener("resize", scheduleReposition, { passive: true });
       window.visualViewport?.addEventListener("resize", scheduleReposition, { passive: true });
       resizeObserver.observe(dialogScroller);
-      scheduleReposition();
     };
     const stopTracking = () => {
       if (!tracking) return;
@@ -245,9 +243,8 @@ class SearchPanelController {
       window.visualViewport?.removeEventListener("resize", scheduleReposition);
       resizeObserver.disconnect();
       window.cancelAnimationFrame(repositionFrame);
-      window.clearTimeout(settleTimer);
       repositionFrame = 0;
-      settleTimer = 0;
+      scrollerSize = undefined;
     };
 
     this.sortSelect.addEventListener("opened", startTracking);
@@ -317,7 +314,7 @@ class SearchPanelController {
   }
 
   setSortMode(value) {
-    const nextSort = isSearchSortMode(value) ? value : "relevance";
+    const nextSort = this.isDetailedView() && isSearchSortMode(value) ? value : "relevance";
     if (this.sortMode === nextSort) return;
 
     this.sortMode = nextSort;
@@ -325,17 +322,28 @@ class SearchPanelController {
     void this.search(this.query.trim());
   }
 
-  handleSortControlMediaChange() {
+  isDetailedView() {
+    return document.documentElement.dataset.homeDetailView === "true";
+  }
+
+  handleDetailViewChange() {
+    if (!this.isDetailedView()) {
+      if (this.sortSelect.open) {
+        this.sortSelect.addEventListener("closed", () => this.focus(), { once: true });
+      }
+      this.sortSelect.open = false;
+      this.setSortMode("relevance");
+      if (this.sortSelect.matches(":focus-within")) this.focus();
+    }
     this.syncSortControl();
   }
 
   syncSortControl() {
-    // The sort control is intentionally absent from the compact/coarse layout.
-    // It is also display:none while its deferred dialog is closed. Updating
-    // its floating label in either state makes Material Web measure 0 / 0 and
-    // Chromium rejects the generated NaN animation keyframes.
+    // Updating a hidden Material floating label can produce NaN keyframes.
+    // Wait until detailed mode and the dialog both expose measurable geometry.
     const dialog = this.root.closest("md-dialog");
-    if (this.sortControlMedia.matches || (dialog && !dialog.open)) return;
+    if (!this.isDetailedView() || (dialog && !dialog.open)) return;
+    if (!this.sortSelect.getClientRects().length) return;
 
     if (this.sortSelect.value !== this.sortMode) this.sortSelect.value = this.sortMode;
     this.syncSortOptions();
@@ -388,27 +396,16 @@ class SearchPanelController {
   }
 
   renderFilters() {
-    this.tagsElement.replaceChildren();
-    this.tagsElement.hidden = this.tagFilters.length === 0;
-    const selectedTagLimitReached = this.selectedTags.length >= MAX_SELECTED_TAGS;
-
-    for (const tag of this.tagFilters) {
-      const chip = document.createElement("md-filter-chip");
-      const selected = this.selectedTags.includes(tag.value);
-      chip.textContent = `#${tag.value}`;
-      chip.selected = selected;
-      chip.disabled = selectedTagLimitReached && !selected;
-      chip.setAttribute(
-        "aria-label",
-        selected ? `Retirer le tag ${tag.value}` : `Ajouter le tag ${tag.value}`,
-      );
-      chip.addEventListener("click", (event) => this.toggleTag(tag.value, event));
-      this.tagsElement.append(chip);
-    }
+    renderSearchFilters(this.tagsElement, this.tagFilters, {
+      selectedTags: this.selectedTags,
+      maxSelectedTags: MAX_SELECTED_TAGS,
+      onToggle: (tag, event) => this.toggleTag(tag, event),
+      onFocusRemoved: () => this.focus(),
+    });
   }
 
   renderResults() {
-    renderSearchResults(this.resultsElement, this.results);
+    renderSearchResults(this.resultsElement, this.results, () => this.focus());
   }
 
   syncSortOptions() {
@@ -429,13 +426,22 @@ class SearchPanelController {
 
   async loadTagFilters() {
     if (this.filtersLoaded) return;
-    this.filtersLoaded = true;
+    this.tagFilterRequest ??= this.fetchTagFilters().finally(() => {
+      this.tagFilterRequest = undefined;
+    });
+    return this.tagFilterRequest;
+  }
+
+  async fetchTagFilters() {
     const operation = "tag-filters";
     this.beginLoadingOperation(operation);
 
     try {
       const pagefind = await this.loadPagefind();
-      const [filters] = await Promise.all([pagefind.filters(), this.filterChipReady]);
+      const [filters] = await this.withSearchTimeout(
+        Promise.all([pagefind.filters(), this.filterChipReady]),
+      );
+      this.filtersLoaded = true;
       this.allTagFilterCounts = filters.tag;
       this.setTagFilterCounts(filters.tag);
       this.renderFilters();
@@ -501,6 +507,7 @@ class SearchPanelController {
 
     try {
       const pagefind = await this.withSearchTimeout(this.loadPagefind());
+      await this.withSearchTimeout(this.loadTagFilters());
       const response = await this.withSearchTimeout(
         pagefind.search(query || null, this.pagefindSearchOptions()),
       );
@@ -561,7 +568,7 @@ class SearchPanelController {
       if (currentRequest !== this.requestId) return;
 
       this.results = [];
-      this.status = "Recherche indisponible. Lance pnpm build pour générer l’index.";
+      this.status = "Recherche indisponible pour le moment. Réessayez dans quelques instants.";
       this.render();
     } finally {
       this.endLoadingOperation(operation);
@@ -621,7 +628,9 @@ class SearchPanelController {
   }
 
   pagefindSort() {
-    return this.sortMode === "created-desc" ? { created: "desc" } : undefined;
+    if (this.sortMode === "created-desc") return { created: "desc" };
+    if (this.sortMode === "title-asc") return { "title-order": "asc" };
+    return undefined;
   }
 
   sortResults(results) {
@@ -632,9 +641,8 @@ class SearchPanelController {
     }
 
     if (this.sortMode === "title-asc") {
-      return [...results].sort((left, right) =>
-        left.title.localeCompare(right.title, "fr", { numeric: true, sensitivity: "base" }),
-      );
+      // The complete index was ordered with the French collator at build time.
+      return results;
     }
 
     return [...results].sort((left, right) => {
@@ -652,7 +660,7 @@ class SearchPanelController {
   }
 
   resultFetchLimit() {
-    return this.sortMode === "created-desc" ? RESULT_LIMIT : EXPANDED_RESULT_FETCH_LIMIT;
+    return this.sortMode === "relevance" ? EXPANDED_RESULT_FETCH_LIMIT : RESULT_LIMIT;
   }
 
   hasActiveFilters() {
@@ -663,21 +671,8 @@ class SearchPanelController {
     return selectedTags.length === 0 || selectedTags.every((tag) => result.tags.includes(tag));
   }
 
-  async withSearchTimeout(promise) {
-    let timeoutId = 0;
-    try {
-      return await Promise.race([
-        promise,
-        new Promise((_, reject) => {
-          timeoutId = window.setTimeout(
-            () => reject(new Error("Search request timed out.")),
-            SEARCH_TIMEOUT_MS,
-          );
-        }),
-      ]);
-    } finally {
-      window.clearTimeout(timeoutId);
-    }
+  withSearchTimeout(promise) {
+    return withTimeout(promise, SEARCH_TIMEOUT_MS);
   }
 }
 

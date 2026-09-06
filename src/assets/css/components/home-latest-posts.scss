@@ -1,0 +1,105 @@
+@use "data-table";
+
+site-home-latest-posts-table {
+  display: block;
+}
+
+site-home-latest-posts-table .home-posts-table-scroll {
+  --home-posts-date-column-content-width: 8rem;
+  position: relative;
+
+  @include data-table.scroller($margin-end: 1em);
+}
+
+site-home-latest-posts-table .home-posts-table-scroll-detailed {
+  --home-posts-date-column-content-width: 14rem;
+}
+
+site-home-latest-posts-table .home-posts-table {
+  min-width: 42rem;
+  width: max-content;
+  @include data-table.table;
+}
+
+site-home-latest-posts-table .home-posts-table th,
+site-home-latest-posts-table .home-posts-table td {
+  @include data-table.cell($height: 2.75rem);
+}
+
+site-home-latest-posts-table .home-posts-table th {
+  padding: 0;
+  color: var(--site-muted);
+  font-weight: 600;
+}
+
+site-home-latest-posts-table .home-posts-table .home-posts-table-row:last-child td {
+  border-block-end: 0;
+}
+
+site-home-latest-posts-table .home-posts-table-loading-row td {
+  height: 9rem;
+  padding: 0;
+  background: var(--m3-surface-container-low);
+  text-align: center;
+}
+
+site-home-latest-posts-table .home-posts-table-progress {
+  --md-linear-progress-active-indicator-color: var(--md-sys-color-primary);
+  --md-linear-progress-active-indicator-height: 0.2rem;
+  --md-linear-progress-track-color: var(--md-sys-color-surface-container-highest);
+  --md-linear-progress-track-height: 0.2rem;
+  --md-linear-progress-track-shape: var(--md-sys-shape-corner-none);
+
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  display: flex;
+  width: 100%;
+  min-width: 100%;
+  block-size: var(--md-linear-progress-track-height);
+}
+
+site-home-latest-posts-table .home-posts-table-progress:not([data-loading-active]) {
+  visibility: hidden;
+}
+
+site-home-latest-posts-table .home-posts-table-empty {
+  display: inline-block;
+  padding: 1rem;
+  color: var(--site-muted);
+}
+
+site-home-latest-posts-table .home-posts-table .home-posts-date-column {
+  width: var(--home-posts-date-column-content-width);
+  min-width: var(--home-posts-date-column-content-width);
+  border-inline-end: 1px solid var(--site-border);
+}
+
+site-home-latest-posts-table .home-posts-table .home-posts-title-column {
+  min-width: 20rem;
+}
+
+site-home-latest-posts-table .home-posts-table .home-posts-title-header {
+  overflow: visible;
+}
+
+site-home-latest-posts-table .home-posts-sort-button {
+  @include data-table.sort-button($height: 2.75rem, $background: transparent);
+}
+
+site-home-latest-posts-table .home-posts-sort-active {
+  background: color-mix(in srgb, var(--site-link) 10%, transparent);
+  color: var(--site-text);
+}
+
+site-home-latest-posts-table .home-post-title {
+  display: inline;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  site-home-latest-posts-table .home-posts-table {
+    @include data-table.mobile-posts-table;
+  }
+}

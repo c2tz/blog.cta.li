@@ -14,6 +14,30 @@ import {
   expectImageContained,
 } from "./image-preview-fixture";
 
+test("uses the independent animation preference when lazily opening both image dialogs", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  const toggle = page.locator(".site-motion-trigger");
+  await page.locator(".home-detail-trigger").click();
+  const { dialog } = await openLightbox(page);
+  const information = page.locator("[data-image-information-dialog]");
+  await expect(dialog).toHaveJSProperty("quick", true);
+  await dialog.locator("[data-image-information]").click();
+  await expect(information).toHaveJSProperty("open", true);
+  await expect(information).toHaveJSProperty("quick", true);
+  await page.keyboard.press("Escape");
+  await expect(information).toHaveJSProperty("open", false);
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveJSProperty("open", false);
+  await toggle.click();
+  await expect(dialog).toHaveJSProperty("quick", false);
+  await expect(information).toHaveJSProperty("quick", false);
+  await openLightbox(page);
+  await expect(dialog).toHaveJSProperty("quick", false);
+  await page.keyboard.press("Escape");
+});
+
 test("keeps native lazy loading without an artificial image blur", async ({ page }) => {
   await page.goto("/posts/mdx-smoke-test/", { waitUntil: "domcontentloaded" });
 
@@ -274,6 +298,7 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
       __richTooltipActivationOrder?: {
         clickObserved: boolean;
         clickTaskActive: boolean;
+        focusInsidePopoverWhenHidden?: boolean;
         hidePopoverDuringClickTask?: boolean;
         showModalDuringClickTask?: boolean;
         transitions: Array<"hide-popover" | "show-modal">;
@@ -290,6 +315,7 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
     const activationOrder = {
       clickObserved: false,
       clickTaskActive: false,
+      focusInsidePopoverWhenHidden: undefined as boolean | undefined,
       hidePopoverDuringClickTask: undefined as boolean | undefined,
       showModalDuringClickTask: undefined as boolean | undefined,
       transitions: [] as Array<"hide-popover" | "show-modal">,
@@ -302,21 +328,28 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
       () => {
         activationOrder.clickObserved = true;
         activationOrder.clickTaskActive = true;
+        console.debug("Lightbox activation: click");
         window.setTimeout(() => {
           activationOrder.clickTaskActive = false;
+          console.debug("Lightbox activation: click task finished");
         });
       },
       { capture: true, once: true },
     );
     richTooltip.hidePopover = () => {
       activationOrder.hidePopoverDuringClickTask = activationOrder.clickTaskActive;
+      activationOrder.focusInsidePopoverWhenHidden = richTooltip.contains(document.activeElement);
       activationOrder.transitions.push("hide-popover");
+      console.debug("Lightbox activation: hide popover");
       originalHidePopover();
+      console.debug("Lightbox activation: popover hidden");
     };
     nativeDialog.showModal = () => {
       activationOrder.showModalDuringClickTask = activationOrder.clickTaskActive;
       activationOrder.transitions.push("show-modal");
+      console.debug("Lightbox activation: show modal");
       originalShowModal();
+      console.debug("Lightbox activation: modal shown");
     };
   });
   await sourceImage.click({ trial: true, timeout: 5_000 });
@@ -335,6 +368,7 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
               __richTooltipActivationOrder?: {
                 clickObserved: boolean;
                 clickTaskActive: boolean;
+                focusInsidePopoverWhenHidden?: boolean;
                 hidePopoverDuringClickTask?: boolean;
                 showModalDuringClickTask?: boolean;
                 transitions: Array<"hide-popover" | "show-modal">;
@@ -346,6 +380,7 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
     .toEqual({
       clickObserved: true,
       clickTaskActive: false,
+      focusInsidePopoverWhenHidden: false,
       hidePopoverDuringClickTask: false,
       showModalDuringClickTask: false,
       transitions: ["hide-popover", "show-modal"],
@@ -357,7 +392,9 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
 
   await trigger.focus();
   await expectPopoverOpen(richTooltip, true);
+  await expect(sourceImage).toBeVisible();
   await sourceImage.focus();
+  await expect(sourceImage).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(dialog).toHaveJSProperty("open", true);
   await expectPopoverOpen(richTooltip, false);
@@ -445,6 +482,7 @@ test("closes from the toolbar without waiting for the history fallback", async (
 });
 
 test("supports gallery arrows and touch swipe while taps control the toolbar", async ({ page }) => {
+  await page.locator(".site-motion-trigger").click();
   const { dialog, nativeDialog } = await openLightbox(page);
   const image = dialog.locator("[data-image-dialog-image]");
   const stage = dialog.locator("[data-image-dialog-stage]");
@@ -661,6 +699,7 @@ test("supports gallery arrows and touch swipe while taps control the toolbar", a
 });
 
 test("keeps rapid gallery navigation ordered while images decode", async ({ page }) => {
+  await page.locator(".site-motion-trigger").click();
   const { dialog } = await openLightbox(page);
   const status = dialog.locator("[data-image-status]");
 
@@ -675,6 +714,7 @@ test("keeps rapid gallery navigation ordered while images decode", async ({ page
 });
 
 test("does not commit a decoded gallery image after closing starts", async ({ page }) => {
+  await page.locator(".site-motion-trigger").click();
   const { dialog, sourceImage } = await openLightbox(page);
 
   await page.evaluate(() => {

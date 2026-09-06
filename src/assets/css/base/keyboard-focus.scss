@@ -1,0 +1,43 @@
+// Keep the official Material ring, including its shape and animation. A change
+// from pointer to keyboard can happen while the same control retains focus.
+$material-actions: "md-icon-button, md-filled-tonal-icon-button, md-text-button, md-filled-button, md-filled-tonal-button, md-outlined-button, md-elevated-button, md-switch";
+
+html[data-focus-modality="keyboard"] :is(#{$material-actions}):focus-within::part(focus-ring) {
+  display: flex;
+}
+
+html[data-focus-modality="pointer"] :is(#{$material-actions})::part(focus-ring) {
+  display: none;
+}
+
+// Native links and controls share a visible theme-colored contour as well.
+:where(a[href], button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--md-sys-color-secondary);
+  outline-offset: 3px;
+}
+
+// An inset contour stays visible inside scrolling tables and clipped headers.
+:is(
+  .home-posts-sort-button,
+  .tag-posts-sort-button,
+  .home-posts-table-scroll,
+  .tag-posts-table-scroll
+):focus-visible {
+  outline: 2px solid var(--md-sys-color-secondary);
+  outline-offset: -3px;
+}
+
+@media (forced-colors: active) {
+  :where(a[href], button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline-color: Highlight;
+  }
+
+  :is(
+    .home-posts-sort-button,
+    .tag-posts-sort-button,
+    .home-posts-table-scroll,
+    .tag-posts-table-scroll
+  ):focus-visible {
+    outline-color: Highlight;
+  }
+}

@@ -1,5 +1,6 @@
 ---
 import { formatFrenchDate, formatFrenchDateTime, toDate } from "@/lib/date-format.mjs";
+import { hasDistinctModification } from "@/lib/git-dates.mjs";
 
 interface Props {
   createdAt: Date | string;
@@ -9,6 +10,7 @@ interface Props {
 }
 
 const { createdAt, createdCommit, lastModified, lastModifiedCommit } = Astro.props as Props;
+const showModified = hasDistinctModification(Astro.props);
 const GITHUB_REPOSITORY_URL = "https://github.com/c2tz/ct-blog.cta.li";
 
 const createdLabel = "Création du post";
@@ -34,7 +36,12 @@ const modifiedDateCompact = formatFrenchDate(lastModified);
 const modifiedDateFull = formatFrenchDateTime(lastModified);
 ---
 
-<footer class="post-git-dates" aria-label="Dates du post" data-post-git-dates>
+<footer
+  class="post-git-dates"
+  aria-label="Dates du post"
+  data-post-git-dates
+  data-stacked={showModified ? undefined : "true"}
+>
   <span class="post-git-date" data-post-git-date="created">
     <span
       class="post-icon-tooltip"
@@ -66,38 +73,48 @@ const modifiedDateFull = formatFrenchDateTime(lastModified);
       )
     }
   </span>
-  <span class="post-git-date-divider" aria-hidden="true"></span>
-  <span class="post-git-date" data-post-git-date="modified">
-    <span
-      class="post-icon-tooltip"
-      role="img"
-      aria-label={modifiedLabel}
-      data-tooltip={modifiedLabel}
-      data-tooltip-anchor="cursor"
-    >
-      <span class="material-symbols-rounded post-git-date-icon" aria-hidden="true">&#xF88C;</span>
-    </span>
-    <span class="post-git-date-text">
-      <span class="post-git-date-label">Modifié le :</span>
-      <time class="site-date-compact" datetime={modifiedIso}>{modifiedDateCompact}</time>
-      <time class="site-date-full" datetime={modifiedIso}>{modifiedDateFull}</time>
-    </span>
-    {
-      modifiedCommitLabel && modifiedCommitUrl && (
-        <a
-          class="post-icon-tooltip post-git-commit-link"
-          href={modifiedCommitUrl}
-          aria-label={modifiedCommitLabel}
-          data-tooltip={modifiedCommitLabel}
-          data-tooltip-anchor="cursor"
-        >
-          <span class="material-symbols-rounded post-git-commit-icon" aria-hidden="true">
-            &#xEAF5;
+  {
+    showModified && (
+      <>
+        <span class="post-git-date-divider" aria-hidden="true" />
+        <span class="post-git-date" data-post-git-date="modified">
+          <span
+            class="post-icon-tooltip"
+            role="img"
+            aria-label={modifiedLabel}
+            data-tooltip={modifiedLabel}
+            data-tooltip-anchor="cursor"
+          >
+            <span class="material-symbols-rounded post-git-date-icon" aria-hidden="true">
+              &#xF88C;
+            </span>
           </span>
-        </a>
-      )
-    }
-  </span>
+          <span class="post-git-date-text">
+            <span class="post-git-date-label">Modifié le :</span>
+            <time class="site-date-compact" datetime={modifiedIso}>
+              {modifiedDateCompact}
+            </time>
+            <time class="site-date-full" datetime={modifiedIso}>
+              {modifiedDateFull}
+            </time>
+          </span>
+          {modifiedCommitLabel && modifiedCommitUrl && (
+            <a
+              class="post-icon-tooltip post-git-commit-link"
+              href={modifiedCommitUrl}
+              aria-label={modifiedCommitLabel}
+              data-tooltip={modifiedCommitLabel}
+              data-tooltip-anchor="cursor"
+            >
+              <span class="material-symbols-rounded post-git-commit-icon" aria-hidden="true">
+                &#xEAF5;
+              </span>
+            </a>
+          )}
+        </span>
+      </>
+    )
+  }
 </footer>
 
 <script>

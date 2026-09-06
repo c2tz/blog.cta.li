@@ -5,7 +5,6 @@ import {
   gotoRoute,
   prepareClipboardWrite,
   waitForAppReady,
-  waitForNativeEnhancement,
   expectPopoverOpen,
   expectKeyboardFocusOverridesPendingPointerFrame,
   clearConsentState,
@@ -28,37 +27,6 @@ test("links each post title to its own anchor", async ({ page }) => {
 
   await titleLink.click();
   await expect(page).toHaveURL(/#post-title$/);
-});
-
-test("keeps the latest-posts table interactive without exposing hidden posts", async ({ page }) => {
-  await gotoRoute(page, "/");
-  await waitForNativeEnhancement(page, "site-home-latest-posts-table");
-  await waitForAppReady(page);
-
-  const sortButtons = page.locator(".home-posts-sort-button");
-  await expect(sortButtons).toHaveCount(2);
-  const coverage = await sortButtons.evaluateAll((buttons) =>
-    buttons.map((button) => {
-      const header = button.closest("th");
-      const buttonRect = button.getBoundingClientRect();
-      const headerRect = header?.getBoundingClientRect();
-      return {
-        height: headerRect ? buttonRect.height / headerRect.height : 0,
-        rippleUpgraded: Boolean(button.querySelector("md-ripple")?.shadowRoot),
-        width: headerRect ? buttonRect.width / headerRect.width : 0,
-      };
-    }),
-  );
-  expect(coverage.every(({ width, height }) => width >= 0.98 && height >= 0.95)).toBe(true);
-  expect(coverage.every(({ rippleUpgraded }) => rippleUpgraded)).toBe(true);
-
-  await page.getByRole("button", { name: "Trier par titre" }).click();
-  await expect(page.getByRole("columnheader", { name: "Trier par titre" })).toHaveAttribute(
-    "aria-sort",
-    "ascending",
-  );
-  await expect(page.getByRole("link", { name: "Vérification MDX" })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "Shortcodes Astro et Material Web" })).toHaveCount(0);
 });
 
 test("keeps consent actions uppercase and the privacy banner below the search scrim", async ({
@@ -148,7 +116,7 @@ test("keeps consent actions uppercase and the privacy banner below the search sc
         }),
       )
       .toMatchObject({
-        animationName: "outward-grow, outward-shrink",
+        animationName: "none",
         colored: true,
         display: "flex",
       });

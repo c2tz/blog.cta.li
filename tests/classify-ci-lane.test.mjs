@@ -510,6 +510,14 @@ test("the composite action converts malformed successful output to full", (conte
 });
 
 test("keeps all required check names aligned and every external action pinned by SHA", () => {
+  const codeqlWorkflow = readFileSync(".github/workflows/codeql.yml", "utf8");
+  const codeqlRefs = [...codeqlWorkflow.matchAll(/github\/codeql-action\/[^@\s]+@([a-f0-9]{40})/g)];
+  assert.ok(codeqlRefs.length >= 2, "CodeQL initialization and analysis must both be present");
+  assert.equal(
+    new Set(codeqlRefs.map((match) => match[1])).size,
+    1,
+    "all CodeQL steps must use the same release so their shared configuration stays compatible",
+  );
   const requiredChecks = REQUIRED_CHECK_NAMES;
   const workflowFiles = [
     ".github/workflows/codeql.yml",
@@ -572,7 +580,7 @@ test("keeps all required check names aligned and every external action pinned by
   assert.doesNotMatch(verifyWorkflow, /\bcontinue-on-error\s*:/);
   assert.equal(
     packageJson.scripts["build:test"],
-    "LANDING_ASSETS_SOURCE_DIR=tests/fixtures/landing-assets pnpm build",
+    "SITE_TEST_FIXTURES=1 LANDING_ASSETS_SOURCE_DIR=tests/fixtures/landing-assets pnpm build",
   );
   assert.match(
     packageJson.scripts["verify:quality:static"],
@@ -582,6 +590,17 @@ test("keeps all required check names aligned and every external action pinned by
     packageJson.scripts["verify:quality"],
     "pnpm verify:quality:static && PLAYWRIGHT_REUSE_BUILD=1 pnpm test:e2e",
   );
+
+  for (const path of [
+    ".github/workflows/verify-project.yml",
+    ".github/workflows/nightly-browser-qa.yml",
+  ]) {
+    assert.match(
+      readFileSync(path, "utf8"),
+      /name: Build production output with test routes[^\n]*\n\s+env:\n\s+SITE_TEST_FIXTURES: "1"\n\s+run: pnpm build/,
+      `${path} must build the archive fixtures before reusing the output for browser tests`,
+    );
+  }
 
   for (const check of requiredChecks) {
     assert.equal(workflowText.split(`name: ${check}`).length - 1, 1, check);

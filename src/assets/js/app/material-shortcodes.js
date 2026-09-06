@@ -1,8 +1,5 @@
 import { initMaterialMenuEnhancements } from "./material-menu.js";
-
-const SORT_ICON = "\uE5D7";
-const SORT_ASCENDING_ICON = "\uE5D8";
-const SORT_DESCENDING_ICON = "\uE5DB";
+import { SORT_INDICATOR_HTML, updateTableSortHeader } from "./table-sort";
 
 const PAGINATOR_ACTIONS = Object.freeze([
   { action: "first", icon: "\uE5DC", label: "Première page" },
@@ -163,18 +160,17 @@ function enhanceTable(host) {
     if (sortEnabled) {
       const button = document.createElement("button");
       const label = document.createElement("span");
-      const icon = document.createElement("md-icon");
       const ripple = document.createElement("md-ripple");
 
       button.type = "button";
       button.className = "material-shortcode-sort-button";
       button.setAttribute("aria-label", `Trier par ${column.label}`);
       label.textContent = column.label;
-      icon.setAttribute("aria-hidden", "true");
-      icon.textContent = SORT_ICON;
-      button.append(label, icon, ripple);
+      button.append(label);
+      button.insertAdjacentHTML("beforeend", SORT_INDICATOR_HTML);
+      button.append(ripple);
       heading.appendChild(button);
-      headerControls.push({ button, column, heading, icon });
+      headerControls.push({ button, column });
     } else {
       heading.textContent = column.label;
     }
@@ -315,21 +311,10 @@ function enhanceTable(host) {
       body.appendChild(emptyRow);
     }
 
-    headerControls.forEach(({ button, column, heading, icon }) => {
+    headerControls.forEach(({ button, column }) => {
       const active = state.sortColumn === column.key;
       button.classList.toggle("material-shortcode-sort-active", active);
-      heading.removeAttribute("aria-sort");
-      if (active) {
-        heading.setAttribute(
-          "aria-sort",
-          state.sortDirection === "asc" ? "ascending" : "descending",
-        );
-      }
-      icon.textContent = active
-        ? state.sortDirection === "asc"
-          ? SORT_ASCENDING_ICON
-          : SORT_DESCENDING_ICON
-        : SORT_ICON;
+      updateTableSortHeader(button, active ? state.sortDirection : null, state.sortColumn === null);
     });
 
     if (!filtered.length) {

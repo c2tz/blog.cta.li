@@ -207,7 +207,7 @@ Voir les articles
 {{< tab title="JSON" >}}
 
 ```json
-{"ok": true}
+{ "ok": true }
 ```
 
 {{< /tab >}}
@@ -236,15 +236,15 @@ filtrage et pagination sans créer une seconde syntaxe de tableau.
 
 {{< material-table filter=true sort=true paginate=true pageSize=5 >}}
 
-| Composant         | Type            | Interactif |
-| ----------------- | --------------- | ---------- |
-| Bouton rempli     | Material Web    | Oui        |
-| Bouton tonal      | Material Web    | Oui        |
-| Bouton contour    | Material Web    | Oui        |
-| Barre de progrès  | Material Web    | Oui        |
-| Onglets           | Material Web    | Oui        |
-| Tableau           | HTML sémantique | Oui        |
-| Rich tooltip      | HTML sémantique | Oui        |
+| Composant        | Type            | Interactif |
+| ---------------- | --------------- | ---------- |
+| Bouton rempli    | Material Web    | Oui        |
+| Bouton tonal     | Material Web    | Oui        |
+| Bouton contour   | Material Web    | Oui        |
+| Barre de progrès | Material Web    | Oui        |
+| Onglets          | Material Web    | Oui        |
+| Tableau          | HTML sémantique | Oui        |
+| Rich tooltip     | HTML sémantique | Oui        |
 
 {{< /material-table >}}
 

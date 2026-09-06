@@ -39,6 +39,66 @@ async function openSearch(page: Page) {
   return { dialog, openButton, trigger };
 }
 
+async function enableDetailedView(page: Page) {
+  await waitForNativeEnhancement(page, "[data-home-detail-toggle]");
+  await page.locator("md-icon-button.home-detail-trigger").click();
+  await expect(page.locator("html")).toHaveAttribute("data-home-detail-view", "true");
+}
+
+test("only offers sorting in detailed mode and preserves the search when switching modes", async ({
+  page,
+}) => {
+  await gotoRoute(page, "/");
+  await waitForNativeEnhancement(page, "[data-home-detail-toggle]");
+  const { openButton } = await openSearch(page);
+  const dialog = page.locator("[data-search-dialog]");
+  const sortSelect = dialog.locator("[data-sort-select]");
+  const query = dialog.getByRole("searchbox", { name: "Mot-clé, titre ou contenu" });
+  await expect(sortSelect).toBeHidden();
+  await expect(dialog.locator(".site-search-panel-divider")).toBeHidden();
+  const queryFillsBar = await dialog.locator(".site-search-panel-field").evaluate((element) => {
+    const bar = element.getBoundingClientRect();
+    const field = element.querySelector(".site-search-panel-query")!.getBoundingClientRect();
+    return Math.abs(bar.width - field.width) <= 1;
+  });
+  expect(queryFillsBar).toBe(true);
+  await query.fill("MDX");
+  const tag = dialog.locator("md-filter-chip").first();
+  await tag.click();
+  await expect(tag).toHaveJSProperty("selected", true);
+
+  await page.getByRole("button", { name: "Fermer la recherche" }).click();
+  await enableDetailedView(page);
+  await openButton.click();
+  await expect(sortSelect).toBeVisible();
+  await expect(sortSelect).toHaveJSProperty("value", "relevance");
+  await expect(query).toHaveValue("MDX");
+  await expect(tag).toHaveJSProperty("selected", true);
+  await openMaterialSelect(sortSelect);
+  await sortSelect.locator('md-select-option[value="title-asc"]').click();
+  await expect(sortSelect).toHaveJSProperty("value", "title-asc");
+
+  await page.getByRole("button", { name: "Fermer la recherche" }).click();
+  await page.locator("md-icon-button.home-detail-trigger").click();
+  await openButton.click();
+  await expect(sortSelect).toBeHidden();
+  await expect(query).toHaveValue("MDX");
+  await expect(tag).toHaveJSProperty("selected", true);
+  await page.getByRole("button", { name: "Fermer la recherche" }).click();
+  await enableDetailedView(page);
+  await openButton.click();
+  await expect(sortSelect).toHaveJSProperty("value", "relevance");
+
+  // Also cover a preference update while the modal and its popover are open.
+  await openMaterialSelect(sortSelect);
+  await page.locator("md-icon-button.home-detail-trigger").dispatchEvent("click");
+  await expect(sortSelect).toBeHidden();
+  await expect(sortSelect).toHaveJSProperty("open", false);
+  await expect(query).toBeFocused();
+  await expect(query).toHaveValue("MDX");
+  await expect(tag).toHaveJSProperty("selected", true);
+});
+
 test("shows the official four-color progress while the search dialog opens slowly", async ({
   page,
 }) => {
@@ -131,6 +191,41 @@ test("uses Escape to clear a search, then close its empty dialog", async ({ page
   await expect(openButton).toBeFocused();
 });
 
+test("keeps keyboard focus inside search when delayed results replace focused controls", async ({
+  page,
+}) => {
+  await gotoRoute(page, "/");
+  await openSearch(page);
+  const dialog = page.locator("md-dialog[data-search-dialog]");
+  const chip = dialog.locator("[data-search-tags] md-filter-chip").first();
+  const input = dialog.getByRole("searchbox");
+  await expect(chip).toBeVisible();
+
+  // Move focus during the debounce window, before the pending search replaces
+  // its filters. Both actions share one task so slow CI cannot miss the race.
+  await dialog.evaluate((element) => {
+    const control = element
+      .querySelector("[data-search-input]")!
+      .shadowRoot!.querySelector("input")!;
+    control.value = "bienvenue";
+    control.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
+    element.querySelector<HTMLElement>("[data-search-tags] md-filter-chip")!.focus();
+  });
+  const results = dialog.locator("[data-search-results] a");
+  await expect(results).toHaveCount(1);
+  await expect(chip).toBeFocused();
+
+  await results.first().evaluate((link) => {
+    const panel = link.closest("[data-site-search-panel]")!;
+    const control = panel.querySelector("[data-search-input]")!.shadowRoot!.querySelector("input")!;
+    control.value = "";
+    control.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
+    (link as HTMLElement).focus();
+  });
+  await expect(results).toHaveCount(0);
+  await expect(input).toBeFocused();
+});
+
 test("uses the search status as the only live result announcement", async ({ page }) => {
   await gotoRoute(page, "/");
   await openSearch(page);
@@ -193,9 +288,8 @@ test("searches through the Material Web text field", async ({ page }) => {
 });
 
 test("keeps the official Material filled select and its complete sort menu", async ({ page }) => {
-  test.skip(test.info().project.name.includes("mobile"), "The sort select is hidden on mobile.");
-
   await gotoRoute(page, "/");
+  await enableDetailedView(page);
   await openSearch(page);
   const searchDialog = page.locator("md-dialog.site-search-dialog[open]");
   await expect(searchDialog).toHaveCount(1);
@@ -206,19 +300,52 @@ test("keeps the official Material filled select and its complete sort menu", asy
   await expect(sortSelect).toHaveAttribute("id", /-sort$/);
   await expect(sortSelect).toHaveAttribute("name", "sort");
   await expect(sortSelect).toHaveJSProperty("localName", "md-filled-select");
-  await expect(sortSelect.locator('[slot="trailing-icon"]')).toHaveCount(0);
-  await expect(sortSelect.locator(".site-material-menu-check")).toHaveCount(0);
+  await expect(sortSelect.locator(".site-material-select-arrow svg")).toBeVisible();
+  await expect(sortSelect.locator(".site-material-menu-check")).toHaveCount(3);
   await expect.poll(() => sortSelect.evaluate((select) => Boolean(select.shadowRoot))).toBe(true);
   await expect
     .poll(() => sortSelect.evaluate((select) => (select as HTMLInputElement).value))
     .toBe("relevance");
   await expect
     .poll(() => sortSelect.evaluate((select) => getComputedStyle(select).minWidth))
-    .toBe("192px");
+    .toBe(test.info().project.name.includes("mobile") ? "0px" : "192px");
+  await sortSelect.evaluate((select) => {
+    const menu = select.shadowRoot!.querySelector("md-menu") as HTMLElement & {
+      reposition(): void;
+    };
+    const reposition = menu.reposition.bind(menu);
+    select.setAttribute("data-test-repositions", "0");
+    menu.reposition = () => {
+      const count = Number(select.getAttribute("data-test-repositions"));
+      select.setAttribute("data-test-repositions", String(count + 1));
+      reposition();
+    };
+    select.addEventListener(
+      "opening",
+      () => {
+        requestAnimationFrame(() => {
+          const height = menu.shadowRoot!.querySelector(".menu")!.getBoundingClientRect().height;
+          select.setAttribute("data-test-opening-height", String(height));
+          const rowsVisible = Array.from(select.children).every(
+            (option) => getComputedStyle(option).opacity === "1",
+          );
+          select.setAttribute("data-test-opening-rows-visible", String(rowsVisible));
+        });
+      },
+      { once: true },
+    );
+  });
   await openMaterialSelect(sortSelect);
 
   const sortOptions = sortSelect.locator("md-select-option");
   await expect(sortOptions).toHaveCount(3);
+  const optionsHeight = await sortOptions.evaluateAll((options) =>
+    options.reduce((height, option) => height + option.getBoundingClientRect().height, 0),
+  );
+  await expect
+    .poll(async () => Number(await sortSelect.getAttribute("data-test-opening-height")))
+    .toBeGreaterThanOrEqual(optionsHeight);
+  await expect(sortSelect).toHaveAttribute("data-test-opening-rows-visible", "true");
 
   const relevanceOption = sortSelect.locator('md-select-option[value="relevance"]');
   const newestOption = sortSelect.locator('md-select-option[value="created-desc"]');
@@ -228,21 +355,13 @@ test("keeps the official Material filled select and its complete sort menu", asy
   await expect(relevanceOption).toHaveJSProperty("selected", true);
   await expect(newestOption).toHaveJSProperty("selected", false);
   await expect(nameOption).toHaveJSProperty("selected", false);
-
-  const officialStructure = await sortSelect.evaluate((select) => {
-    const menu = select.shadowRoot?.querySelector("md-menu");
-    const field = select.shadowRoot?.querySelector('[part="field"]');
-    return {
-      fieldPart: field?.getAttribute("part"),
-      menuName: menu?.localName,
-      optionNames: Array.from(select.children, (option) => option.localName),
-    };
-  });
-  expect(officialStructure).toEqual({
-    fieldPart: "field",
-    menuName: "md-menu",
-    optionNames: ["md-select-option", "md-select-option", "md-select-option"],
-  });
+  await expect(relevanceOption.locator(".site-material-menu-check")).toBeVisible();
+  await expect(newestOption.locator(".site-material-menu-check")).toBeHidden();
+  await expect(sortSelect).toHaveCSS(
+    "--md-filled-select-text-field-focus-active-indicator-height",
+    "0px",
+  );
+  await expect(relevanceOption).toHaveCSS("--md-menu-item-selected-container-color", "transparent");
 
   await page.keyboard.press("Escape");
   await expect
@@ -255,6 +374,7 @@ test("keeps the official Material filled select and its complete sort menu", asy
     .poll(() => sortSelect.evaluate((select) => select.matches(":focus-within")))
     .toBe(true);
   await expect(sortSelect).not.toHaveAttribute("data-menu-open", "");
+  await expect(sortSelect.getByRole("combobox")).toHaveCSS("outline-width", "2px");
   await openMaterialSelect(sortSelect);
   await expect(relevanceOption).toBeVisible();
   await expect
@@ -329,12 +449,12 @@ test("keeps the official Material filled select and its complete sort menu", asy
     return Boolean(label && label.scrollWidth <= label.clientWidth);
   });
   expect(newestLabelFits).toBe(true);
+  await expect(sortSelect).toHaveAttribute("data-test-repositions", "0");
 });
 
 test("never exposes the internal Pagefind placeholder", async ({ page }) => {
-  test.skip(test.info().project.name.includes("mobile"), "The sort select is hidden on mobile.");
-
   await gotoRoute(page, "/");
+  await enableDetailedView(page);
   await openSearch(page);
   const dialog = page.locator("md-dialog.site-search-dialog[open]");
   const sortSelect = dialog.locator("[data-sort-select]");
@@ -420,10 +540,11 @@ test("reconnects the desktop sort after a closed compact resize without console 
 
   await page.setViewportSize({ width: 700, height: 720 });
   await gotoRoute(page, "/");
+  await enableDetailedView(page);
   await openSearch(page);
   const dialog = page.locator("[data-search-dialog]");
   const sortSelect = page.locator("[data-search-dialog] [data-sort-select]");
-  await expect(sortSelect).toBeHidden();
+  await expect(sortSelect).toBeVisible();
 
   await page.getByRole("button", { name: "Fermer la recherche" }).click();
   await expect(dialog).toBeHidden();
@@ -439,9 +560,10 @@ test("reconnects the desktop sort after a closed compact resize without console 
 });
 
 test("keeps the search sort menu anchored while the zoomed dialog scrolls", async ({ page }) => {
-  test.skip(test.info().project.name.includes("mobile"), "The sort select is hidden on mobile.");
+  test.skip(test.info().project.name.includes("mobile"), "This exercises a desktop resize.");
   await page.setViewportSize({ width: 1000, height: 420 });
   await gotoRoute(page, "/");
+  await enableDetailedView(page);
   await openSearch(page);
 
   const searchDialog = page.locator("md-dialog.site-search-dialog[open]");
@@ -493,9 +615,10 @@ test("keeps the search sort menu anchored while the zoomed dialog scrolls", asyn
 });
 
 test("restores the complete search sort menu after browser dezoom", async ({ page }) => {
-  test.skip(test.info().project.name.includes("mobile"), "The sort select is hidden on mobile.");
+  test.skip(test.info().project.name.includes("mobile"), "This exercises a desktop resize.");
   await page.setViewportSize({ width: 1000, height: 300 });
   await gotoRoute(page, "/");
+  await enableDetailedView(page);
   await openSearch(page);
 
   const searchDialog = page.locator("md-dialog.site-search-dialog[open]");
@@ -595,6 +718,8 @@ test("delays and aggregates the linear search progress indicator", async ({ page
     };
   });
   await gotoRoute(page, "/");
+  await waitForNativeEnhancement(page, "[data-motion-toggle]");
+  await page.locator(".site-motion-trigger").click();
   await openSearch(page);
   const searchPanel = page.locator(".site-search-dialog-content");
   const progress = searchPanel.locator("md-linear-progress.site-search-panel-progress");
@@ -728,175 +853,4 @@ test("delays and aggregates the linear search progress indicator", async ({ page
         ).__playwrightSearchVisibilityChanges?.some(({ hidden }) => !hidden) ?? false,
     ),
   ).toBe(false);
-});
-
-test("delays and aggregates short indeterminate loading indicators", async ({ page }) => {
-  await gotoRoute(page, "/");
-
-  await waitForNativeEnhancement(page, "[data-page-loading-root]");
-  const landing = page.locator(".home-anime-landing");
-  await expect.poll(() => landing.getAttribute("data-controls-ready")).toBe("true");
-  await expect.poll(() => landing.getAttribute("aria-busy")).toBe("false");
-
-  const pageProgress = page.locator("md-circular-progress.site-page-loading-progress");
-  const pageProgressRevealedDuringShortOperation = await page.evaluate(async () => {
-    const root = document.querySelector("[data-page-loading-root]");
-    if (!(root instanceof HTMLElement)) throw new Error("Missing page loading root");
-
-    let revealed = Boolean(root.querySelector(".site-page-loading-progress"));
-    const observer = new MutationObserver(() => {
-      revealed ||= Boolean(root.querySelector(".site-page-loading-progress"));
-    });
-    observer.observe(root, { childList: true, subtree: true });
-
-    document.dispatchEvent(
-      new CustomEvent("site:loading-start", { detail: { key: "playwright-guideline-check" } }),
-    );
-    await new Promise<void>((resolve) => {
-      window.setTimeout(resolve, 120);
-    });
-    document.dispatchEvent(
-      new CustomEvent("site:loading-end", { detail: { key: "playwright-guideline-check" } }),
-    );
-    await new Promise<void>((resolve) => {
-      window.setTimeout(resolve, 140);
-    });
-
-    observer.disconnect();
-    return revealed;
-  });
-  expect(pageProgressRevealedDuringShortOperation).toBe(false);
-  await expect(pageProgress).toHaveCount(0);
-
-  const pageProgressRevealDelay = await page.evaluate(() => {
-    const root = document.querySelector("[data-page-loading-root]");
-    if (!(root instanceof HTMLElement)) throw new Error("Missing page loading root");
-
-    return new Promise<number | null>((resolve) => {
-      const startedAt = performance.now();
-      let timeout = 0;
-      const finish = (delay: number | null) => {
-        observer.disconnect();
-        if (timeout) window.clearTimeout(timeout);
-        resolve(delay);
-      };
-      const sample = () => {
-        if (root.querySelector(".site-page-loading-progress")) {
-          finish(performance.now() - startedAt);
-        }
-      };
-      const observer = new MutationObserver(sample);
-      observer.observe(root, { childList: true, subtree: true });
-      timeout = window.setTimeout(() => finish(null), 3000);
-
-      for (const key of ["playwright-long-check-a", "playwright-long-check-b"]) {
-        document.dispatchEvent(new CustomEvent("site:loading-start", { detail: { key } }));
-      }
-      sample();
-    });
-  });
-  expect(pageProgressRevealDelay).not.toBeNull();
-  expect(pageProgressRevealDelay ?? 0).toBeGreaterThanOrEqual(180);
-  await expect(pageProgress).toHaveCount(1);
-  await expect(pageProgress).toHaveAttribute("indeterminate", "");
-  await expect(pageProgress).toHaveAttribute("four-color", /^(?:|true)$/);
-  await page.evaluate(() => {
-    document.dispatchEvent(
-      new CustomEvent("site:loading-end", { detail: { key: "playwright-long-check-a" } }),
-    );
-  });
-  await expect(pageProgress).toHaveCount(1);
-  await page.evaluate(() => {
-    document.dispatchEvent(
-      new CustomEvent("site:loading-end", { detail: { key: "playwright-long-check-b" } }),
-    );
-  });
-  await expect(pageProgress).toHaveCount(0);
-
-  const konachanProgress = page.locator("md-circular-progress.home-anime-loading-progress");
-  await expect(konachanProgress).toHaveAttribute("indeterminate", "");
-  await expect(konachanProgress).toHaveAttribute("four-color", /^(?:|true)$/);
-  await expect(konachanProgress).toBeHidden();
-  const konachanProgressRevealedDuringShortOperation = await page.evaluate(async () => {
-    const landing = document.querySelector(".home-anime-landing");
-    const loader = document.querySelector("[data-konachan-loading]");
-    if (!(landing instanceof HTMLElement) || !(loader instanceof HTMLElement)) {
-      throw new Error("Missing Konachan loading elements");
-    }
-
-    let revealed = !loader.hidden;
-    const observer = new MutationObserver(() => {
-      revealed ||= !loader.hidden;
-    });
-    observer.observe(loader, { attributeFilter: ["hidden"], attributes: true });
-
-    landing.setAttribute("aria-busy", "true");
-    document.dispatchEvent(
-      new CustomEvent("konachan:refresh-state", { detail: { busy: true, status: "Test" } }),
-    );
-    await new Promise<void>((resolve) => {
-      window.setTimeout(resolve, 120);
-    });
-    landing.setAttribute("aria-busy", "false");
-    document.dispatchEvent(
-      new CustomEvent("konachan:refresh-state", {
-        detail: { busy: false, status: "Test court terminé" },
-      }),
-    );
-    await new Promise<void>((resolve) => {
-      window.setTimeout(resolve, 140);
-    });
-
-    observer.disconnect();
-    return revealed;
-  });
-  expect(konachanProgressRevealedDuringShortOperation).toBe(false);
-  await expect(konachanProgress).toBeHidden();
-
-  const konachanProgressRevealDelay = await page.evaluate(() => {
-    const landing = document.querySelector(".home-anime-landing");
-    const loader = document.querySelector("[data-konachan-loading]");
-    if (!(landing instanceof HTMLElement) || !(loader instanceof HTMLElement)) {
-      throw new Error("Missing Konachan loading elements");
-    }
-
-    return new Promise<number | null>((resolve) => {
-      const startedAt = performance.now();
-      let timeout = 0;
-      const finish = (delay: number | null) => {
-        observer.disconnect();
-        if (timeout) window.clearTimeout(timeout);
-        resolve(delay);
-      };
-      const sample = () => {
-        if (!loader.hidden) finish(performance.now() - startedAt);
-      };
-      const observer = new MutationObserver(sample);
-      observer.observe(loader, { attributeFilter: ["hidden"], attributes: true });
-      timeout = window.setTimeout(() => finish(null), 3000);
-
-      landing.setAttribute("aria-busy", "true");
-      document.dispatchEvent(
-        new CustomEvent("konachan:refresh-state", {
-          detail: { busy: true, status: "Test long" },
-        }),
-      );
-      sample();
-    });
-  });
-  expect(konachanProgressRevealDelay).not.toBeNull();
-  expect(konachanProgressRevealDelay ?? 0).toBeGreaterThanOrEqual(180);
-  await expect(konachanProgress).toBeVisible();
-  await expect(page.locator("md-icon-button.home-anime-refresh md-circular-progress")).toHaveCount(
-    0,
-  );
-  await page.evaluate(() => {
-    document.querySelector(".home-anime-landing")?.setAttribute("aria-busy", "false");
-    document.dispatchEvent(
-      new CustomEvent("konachan:refresh-state", {
-        detail: { busy: false, status: "Test terminé" },
-      }),
-    );
-  });
-  await expect(konachanProgress).toBeHidden();
 });

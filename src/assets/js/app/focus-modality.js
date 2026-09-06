@@ -29,7 +29,8 @@ export function initFocusModality() {
   const root = document.documentElement;
   const useKeyboard = (event) => {
     if (!KEYBOARD_MODALITY_KEYS.has(event.key)) return;
-    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    // Safari uses Option+Tab for full keyboard navigation in its default settings.
+    if ((event.altKey && event.key !== "Tab") || event.ctrlKey || event.metaKey) return;
     root.dataset.focusModality = "keyboard";
   };
   const usePointer = () => {

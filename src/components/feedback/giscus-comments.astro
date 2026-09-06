@@ -85,10 +85,10 @@ const configured = Boolean(repo.trim() && repoId.trim() && category.trim() && ca
     )
   }
 
-  <p class="giscus-comments-config giscus-comments-privacy" data-giscus-privacy>
-    Les commentaires sont masqués, car Giscus n'a pas été autorisé.{" "}
-    <a href="/cookies/#modifier-vos-choix-cookies">Modifier mes préférences</a>.
-  </p>
+  <div class="giscus-comments-config giscus-comments-privacy" data-giscus-privacy>
+    <p>Les commentaires sont masqués, car Giscus n'a pas été autorisé.</p>
+    <p><a href="/cookies/#modifier-vos-choix-cookies">Modifier mes préférences</a></p>
+  </div>
 
   <div class="giscus-comments-panel-content" data-giscus-panel aria-busy="false" hidden>
     <md-linear-progress
@@ -126,6 +126,10 @@ const configured = Boolean(repo.trim() && repoId.trim() && category.trim() && ca
 
   .giscus-comments-config {
     color: var(--site-text);
+  }
+
+  .giscus-comments-privacy p {
+    margin-block: 0;
   }
 
   .giscus-comments-header {

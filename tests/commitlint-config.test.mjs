@@ -27,7 +27,16 @@ Signed-off-by: dependabot[bot] <support@github.com>
 
   const dependabotResult = lintCommit(dependabotMessage);
   assert.equal(dependabotResult.status, 0, dependabotResult.stderr || dependabotResult.stdout);
-  assert.match(dependabotResult.stdout, /footer must have leading blank line/);
+
+  const malformedFooterResult = lintCommit(`fix: keep footer style signal
+Dependabot: metadata
+`);
+  assert.equal(
+    malformedFooterResult.status,
+    0,
+    malformedFooterResult.stderr || malformedFooterResult.stdout,
+  );
+  assert.match(malformedFooterResult.stdout, /footer must have leading blank line/);
 
   const invalidResult = lintCommit("invalid dependency update");
   assert.notEqual(invalidResult.status, 0);

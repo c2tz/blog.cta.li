@@ -1,4 +1,5 @@
 import sharp from "sharp";
+import type { Page } from "@playwright/test";
 import {
   expect,
   test,
@@ -10,6 +11,24 @@ import {
   expectNoPageOverflow,
   seedFixedKonachanImage,
 } from "./site-fixture";
+
+async function takeStableScreenshot(page: Page) {
+  let previous: Buffer | undefined;
+
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        }),
+    );
+    const current = await page.screenshot({ scale: "css", animations: "allow" });
+    if (previous?.equals(current)) return current;
+    previous = current;
+  }
+
+  return previous as Buffer;
+}
 
 test("starts every page without motion and keeps detail mode independent", async ({ page }) => {
   for (const route of ROUTES) {
@@ -722,7 +741,7 @@ for (const route of ["/", "/posts/bienvenue-sur-ct-blog/"]) {
           requestAnimationFrame(() => resolve());
         });
       });
-      const before = await page.screenshot({ scale: "css", animations: "allow" });
+      const before = await takeStableScreenshot(page);
       await openMaterialMenu(trigger, menu);
       const bounds = await menu.locator(".menu").boundingBox();
       expect(bounds).not.toBeNull();
@@ -745,7 +764,7 @@ for (const route of ["/", "/posts/bienvenue-sur-ct-blog/"]) {
       // the filtered hero. Check actual pixels, without finishing animations
       // through the screenshot API (which could conceal a repaint failure).
       await page.waitForTimeout(220);
-      const after = await page.screenshot({ scale: "css", animations: "allow" });
+      const after = await takeStableScreenshot(page);
       const region = {
         left: Math.ceil(bounds!.x) + 8,
         top: Math.ceil(bounds!.y) + 8,

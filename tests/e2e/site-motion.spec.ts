@@ -214,6 +214,38 @@ test("settles Web Animations without breaking completion promises and restores t
     .toBe(false);
 });
 
+test("settles infinite and pending animations in nested shadow roots", async ({ page }) => {
+  await gotoRoute(page, "/");
+  await waitForAppReady(page);
+  await page.locator(".site-motion-trigger").click();
+
+  await page.evaluate(() => {
+    const host = document.createElement("div");
+    host.id = "nested-motion-fixture";
+    document.body.append(host);
+    const outer = host.attachShadow({ mode: "open" });
+    const innerHost = document.createElement("div");
+    outer.append(innerHost);
+    const inner = innerHost.attachShadow({ mode: "closed" });
+    const target = document.createElement("span");
+    target.textContent = "Nested animation";
+    inner.append(target);
+
+    const animations = [
+      innerHost.animate({ opacity: [0.8, 1] }, { duration: 10_000, iterations: Infinity }),
+      target.animate({ opacity: [0.8, 1] }, { duration: 10_000, delay: 20_000 }),
+    ];
+    void Promise.all(animations.map((animation) => animation.finished)).then(() => {
+      host.dataset.finished = String(
+        animations.every((animation) => animation.playState === "finished"),
+      );
+    });
+  });
+
+  await page.locator(".site-motion-trigger").click();
+  await expect(page.locator("#nested-motion-fixture")).toHaveAttribute("data-finished", "true");
+});
+
 test("defaults to off with reduced-motion preferences and persists through the cookie fallback", async ({
   page,
 }) => {

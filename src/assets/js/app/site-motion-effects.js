@@ -28,15 +28,22 @@ function finishAnimation(animation) {
 
 function syncMotionEffects() {
   const enabled = areSiteAnimationsEnabled();
+  const media = enabled ? "not all" : "all";
+  const roots = [document];
   for (const [root, style] of shadowStyles) {
     if (!root.host.isConnected) {
       shadowStyles.delete(root);
       continue;
     }
-    style.media = enabled ? "not all" : "all";
-    if (!enabled) root.getAnimations().forEach(finishAnimation);
+    if (style.media !== media) style.media = media;
+    roots.push(root);
   }
-  if (!enabled) document.getAnimations().forEach(finishAnimation);
+  if (!enabled) {
+    // Apply every style change before querying animations: each query can flush
+    // pending styles. Finish only after all reads, since finish() writes timing.
+    const animations = new Set(roots.flatMap((root) => root.getAnimations()));
+    animations.forEach(finishAnimation);
+  }
 }
 
 function trackShadowRoot(root) {

@@ -73,3 +73,42 @@ test("bounds the first search including deferred modules and index", async ({ pa
   await expect(dialog.locator('a[href="/posts/bienvenue-sur-ct-blog/"]')).toBeVisible();
   await check(340);
 });
+
+test("bounds style recalculations when disabling motion across shadow roots", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== "chromium", "Style recalculation counters use Chromium's CDP.");
+  await gotoRoute(page, "/");
+  await waitForAppReady(page);
+  await page.locator(".site-motion-trigger").click();
+  await expect(page.locator("html")).toHaveAttribute("data-motion", "on");
+
+  await page.evaluate(() => {
+    for (let index = 0; index < 24; index++) {
+      const host = document.createElement("div");
+      const root = host.attachShadow({ mode: "open" });
+      const content = document.createElement("span");
+      content.textContent = "Motion performance fixture";
+      root.append(content);
+      document.body.append(host);
+    }
+    document.getAnimations();
+  });
+
+  const client = await page.context().newCDPSession(page);
+  await client.send("Performance.enable");
+  const readStyleCount = async () => {
+    const { metrics } = await client.send("Performance.getMetrics");
+    return metrics.find((metric) => metric.name === "RecalcStyleCount")!.value;
+  };
+  const before = await readStyleCount();
+  await page.locator(".site-motion-trigger").evaluate((button: HTMLElement) => button.click());
+  const recalculations = (await readStyleCount()) - before;
+  expect(
+    recalculations,
+    "A preference change must not flush styles once per component",
+  ).toBeLessThanOrEqual(4);
+  await expect(page.locator("html")).toHaveAttribute("data-motion", "off");
+  await client.detach();
+});

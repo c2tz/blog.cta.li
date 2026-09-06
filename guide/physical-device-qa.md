@@ -31,9 +31,18 @@ cache policy, size and payload contracts on the deployed origin.
   that optional services remain disabled.
 - Open search, change its sort order, close it with the visible close action, and verify keyboard or
   touch focus returns to the trigger.
-- Open a post image. At browser zoom 100%, swipe between images; when zoomed, pan natively in both
-  axes while the toolbar keeps its top safe-area anchor instead of following the pan. Return to
-  100% and verify gallery swipe still works.
+- Open a post image, including once after first zooming the page. Check that opening does not jump
+  toward the close button. At normal zoom, swipe between images; when magnified, pan natively in
+  both axes and repeat with mouse dragging. Controls retain their original layout anchor and
+  screen size even at 4x pinch magnification; they must not chase the visible viewport.
+  Return close to 100% and verify gallery swipe and vertical dismissal work without an exact reset.
+- Drag from the top and bottom of the image in both directions. Equal displacement should give
+  equal scrim opacity, and dragging the image fully out should make the scrim transparent. Cancel
+  a drag and repeat with site motion enabled and disabled; there should be no dark/light flash.
+  With motion enabled, open/close twice and close once before the opening fade ends: the toolbar
+  must keep its viewport anchor without jumping at an animation boundary.
+  Release a dismissal drag with motion enabled: the image must not recenter and the scrim must
+  continue fading instead of returning to its initial opacity.
 - Visit a deliberately unknown URL and confirm the branded 404 page is shown with an HTTP 404 in
   remote Web Inspector or DevTools.
 

@@ -119,14 +119,14 @@ export const withImagePreviewLifecycle = (Base) =>
           position: style.getPropertyValue("position"),
           top: style.getPropertyValue("top"),
           width: style.getPropertyValue("width"),
+          scrollbarGutter: style.getPropertyValue("scrollbar-gutter"),
         },
       };
       root.classList.add("site-image-dialog-open");
-      style.setProperty("position", "fixed");
-      style.setProperty("top", `${-this.lockedScroll.y}px`);
-      style.setProperty("left", `${-this.lockedScroll.x}px`);
-      style.setProperty("width", "100%");
-      style.setProperty("overflow-y", "scroll");
+      // Lock document scrolling without moving the entire root into a new
+      // fixed positioning context during native viewport magnification.
+      style.setProperty("scrollbar-gutter", "stable");
+      style.setProperty("overflow-y", "hidden");
     }
 
     unlockPageScroll() {
@@ -141,6 +141,7 @@ export const withImagePreviewLifecycle = (Base) =>
       restoreInlineStyle(style, "position", lockedScroll.styles.position);
       restoreInlineStyle(style, "top", lockedScroll.styles.top);
       restoreInlineStyle(style, "width", lockedScroll.styles.width);
+      restoreInlineStyle(style, "scrollbar-gutter", lockedScroll.styles.scrollbarGutter);
     }
 
     restoreLockedScrollPosition() {

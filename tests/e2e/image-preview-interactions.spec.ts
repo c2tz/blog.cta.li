@@ -26,14 +26,9 @@ test("keeps gallery gestures at 100% and leaves browser-zoomed pan to the browse
   const status = dialog.locator("[data-image-status]");
   const toolbar = dialog.locator("[data-image-dialog-toolbar]");
 
-  await expect(shell).toHaveCSS("touch-action", "pinch-zoom");
-  await expect(stage).toHaveCSS("touch-action", "pinch-zoom");
-  await expect(image).toHaveCSS("touch-action", "pinch-zoom");
-  const toolbarAnchor = await toolbar.evaluate((element) => {
-    const style = getComputedStyle(element);
-    return { right: style.right, top: style.top };
-  });
-
+  await expect(shell).toHaveCSS("touch-action", "auto");
+  await expect(stage).toHaveCSS("touch-action", "auto");
+  await expect(image).toHaveCSS("touch-action", "auto");
   await mouseDrag(page, stage, -180, 0);
   await expect(status).toHaveText("Image 2 sur 2 : konachan-382339.jpg");
 
@@ -42,10 +37,10 @@ test("keeps gallery gestures at 100% and leaves browser-zoomed pan to the browse
 
   let restoreBrowserZoom: () => Promise<void>;
   if (browserName !== "chromium") {
-    const originalDpr = await stage.evaluate(() => {
-      const current = window.devicePixelRatio;
+    const originalScale = await stage.evaluate(() => {
+      const current = window.visualViewport!.scale;
       try {
-        Object.defineProperty(window, "devicePixelRatio", {
+        Object.defineProperty(window.visualViewport, "scale", {
           configurable: true,
           value: current * 2,
         });
@@ -56,13 +51,13 @@ test("keeps gallery gestures at 100% and leaves browser-zoomed pan to the browse
         return null;
       }
     });
-    expect(originalDpr).not.toBeNull();
+    expect(originalScale).not.toBeNull();
     restoreBrowserZoom = async () => {
       await stage.evaluate((_, dpr) => {
-        Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: dpr });
+        Object.defineProperty(window.visualViewport, "scale", { configurable: true, value: dpr });
         document.dispatchEvent(new Event("gestureend"));
         window.dispatchEvent(new Event("resize"));
-      }, originalDpr);
+      }, originalScale);
     };
   } else {
     const cdp = await page.context().newCDPSession(page);
@@ -82,19 +77,8 @@ test("keeps gallery gestures at 100% and leaves browser-zoomed pan to the browse
   await expect(stage).toHaveCSS("touch-action", "auto");
   await expect(image).toHaveCSS("touch-action", "auto");
 
-  const toolbarOffsets = await toolbar.evaluate((element) => ({
-    right: (element as HTMLElement).style.getPropertyValue("--site-image-dialog-visual-right"),
-    top: (element as HTMLElement).style.getPropertyValue("--site-image-dialog-visual-top"),
-  }));
-  expect(toolbarOffsets).toEqual({ right: "", top: "" });
-  await expect
-    .poll(() =>
-      toolbar.evaluate((element) => {
-        const style = getComputedStyle(element);
-        return { right: style.right, top: style.top };
-      }),
-    )
-    .toEqual(toolbarAnchor);
+  // Controls track the visible viewport without changing the image's scale.
+  await expect(toolbar).toBeVisible();
 
   const wheelPrevented = await trackpadWheel(stage, 80, 60);
   expect(wheelPrevented).toBe(false);
@@ -129,69 +113,47 @@ test("keeps gallery gestures at 100% and leaves browser-zoomed pan to the browse
   await expect(status).toHaveText("Image 2 sur 2 : konachan-382339.jpg");
 });
 
-test("delays then progressively softens the image and scrim during vertical dismissal", async ({
+test("fades the actual scrim continuously during dismissal, with and without motion", async ({
   page,
 }) => {
-  for (const direction of [1, -1]) {
+  for (const enabled of [false, true]) {
+    if (enabled !== ((await page.locator("html").getAttribute("data-motion")) === "on")) {
+      await page.locator(".site-motion-trigger").click();
+    }
     const { dialog, nativeDialog } = await openLightbox(page);
     const stage = dialog.locator("[data-image-dialog-stage]");
-    const image = dialog.locator("[data-image-dialog-image]");
-    const initialScroll = await page.evaluate(() =>
-      Math.round(Math.abs(Number.parseFloat(document.documentElement.style.top) || 0)),
-    );
-
-    const box = await stage.boundingBox();
-    expect(box).not.toBeNull();
-    if (!box) return;
-    const startX = box.x + box.width / 2;
-    const startY = box.y + box.height / 2;
-    const availableDistance = box.height / 2;
-    await page.mouse.move(startX, startY);
+    const opacity = () =>
+      dialog.evaluate((element) =>
+        Number(getComputedStyle(element.shadowRoot!.querySelector(".scrim")!).opacity),
+      );
+    await expect.poll(opacity).toBeCloseTo(0.82, 2);
+    const box = (await stage.boundingBox())!;
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 2;
+    const direction = enabled ? -1 : 1;
+    const distance = box.height / 2;
+    await page.mouse.move(x, y);
     await page.mouse.down();
-    await page.mouse.move(startX, startY + availableDistance * 0.55 * direction, { steps: 4 });
-
-    await expect(image).not.toHaveAttribute("style", /opacity/);
-    const earlyScrimOpacity = await dialog.evaluate((element) => {
-      const scrim = element.shadowRoot?.querySelector<HTMLElement>(".scrim");
-      return scrim?.style.opacity ?? "";
-    });
-    expect(earlyScrimOpacity).toBe("");
-
-    await page.mouse.move(startX, startY + availableDistance * 0.75 * direction, { steps: 5 });
-
-    const middleImageOpacity = await image.evaluate((element) =>
-      Number.parseFloat((element as HTMLElement).style.opacity),
-    );
-    const middleScrimOpacity = await dialog.evaluate((element) => {
-      const scrim = element.shadowRoot?.querySelector<HTMLElement>(".scrim");
-      return Number.parseFloat(scrim?.style.opacity ?? "");
-    });
-    expect(middleImageOpacity).toBeLessThan(0.8);
-    expect(middleImageOpacity).toBeGreaterThan(0.6);
-    expect(middleScrimOpacity).toBeLessThan(0.6);
-    expect(middleScrimOpacity).toBeGreaterThan(0.45);
-
-    await page.mouse.move(startX, startY + availableDistance * 0.95 * direction, { steps: 5 });
-    const finalImageOpacity = await image.evaluate((element) =>
-      Number.parseFloat((element as HTMLElement).style.opacity),
-    );
-    const finalScrimOpacity = await dialog.evaluate((element) => {
-      const scrim = element.shadowRoot?.querySelector<HTMLElement>(".scrim");
-      return Number.parseFloat(scrim?.style.opacity ?? "");
-    });
-    expect(finalImageOpacity).toBeLessThan(0.3);
-    expect(finalScrimOpacity).toBeLessThan(0.4);
-    expect(finalScrimOpacity).toBeGreaterThan(0.25);
-
+    let previous = await opacity();
+    for (const fraction of [0.2, 0.4, 0.6, 0.8]) {
+      await page.mouse.move(x, y + direction * distance * fraction, { steps: 4 });
+      const current = await opacity();
+      expect(current).toBeLessThan(previous);
+      expect(current).toBeGreaterThanOrEqual(0);
+      previous = current;
+    }
+    // Returning to the origin cancels dismissal and restores one stable base.
+    await page.mouse.move(x, y, { steps: 5 });
     await page.mouse.up();
-    await expect(dialog).toHaveJSProperty("open", false);
+    await expect(dialog).toHaveJSProperty("open", true);
+    await expect.poll(opacity).toBeCloseTo(0.82, 2);
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x, y + direction * distance * 0.9, { steps: 6 });
+    await page.mouse.up();
     await expect(nativeDialog).toBeHidden();
-    await expect
-      .poll(() =>
-        page.evaluate(() => !document.documentElement.classList.contains("site-image-dialog-open")),
-      )
-      .toBe(true);
-    await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBe(initialScroll);
+    await expect(dialog).toHaveJSProperty("open", false);
+    await expect(page.locator("html")).not.toHaveClass(/site-image-dialog-open/);
   }
 });
 

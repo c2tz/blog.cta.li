@@ -168,6 +168,11 @@ async function enhanceThemeSwitcher(root: HTMLElement) {
       pendingOpen = defaultFocus;
       return;
     }
+    // Material removes the menu surface from its shadow tree after `closed`,
+    // but Safari can retain the old top-layer compositing surface over the
+    // transformed home hero. Removing the host from layout clears that stale
+    // layer; it is restored immediately before the next canonical `show()`.
+    menu.style.removeProperty("display");
     pendingOpen = null;
     menuReady = false;
     queuedNavigation = 0;
@@ -219,6 +224,7 @@ async function enhanceThemeSwitcher(root: HTMLElement) {
     queuedNavigation = 0;
     trigger.setAttribute("aria-expanded", "false");
     menu.defaultFocus = "first-item";
+    if (!reopenDefaultFocus) menu.style.display = "none";
     if (!reopenDefaultFocus) return;
     window.requestAnimationFrame(() => {
       if (!menu.isConnected || menu.open || menuClosing) return;

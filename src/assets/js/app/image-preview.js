@@ -11,6 +11,7 @@ import { withImagePreviewGallery } from "./image-preview/gallery.js";
 import { withImagePreviewGestures } from "./image-preview/gestures.js";
 import { withImagePreviewInformation } from "./image-preview/information.js";
 import { withImagePreviewLifecycle } from "./image-preview/lifecycle.js";
+import { withImagePreviewViewport } from "./image-preview/viewport.js";
 import { initMaterialMotion } from "./material-motion.js";
 import { areSiteAnimationsEnabled } from "./site-motion.js";
 import { SITE_EVENTS } from "@/lib/site-contracts";
@@ -20,7 +21,9 @@ let pendingDialog;
 let pageLoadListenerInstalled = false;
 
 const ImagePreviewControllerBase = withImagePreviewLifecycle(
-  withImagePreviewInformation(withImagePreviewGallery(withImagePreviewGestures(class {}))),
+  withImagePreviewInformation(
+    withImagePreviewGallery(withImagePreviewGestures(withImagePreviewViewport(class {}))),
+  ),
 );
 
 class ImagePreviewController extends ImagePreviewControllerBase {
@@ -61,8 +64,8 @@ class ImagePreviewController extends ImagePreviewControllerBase {
     this.currentIndex = 0;
     this.pendingIndex = undefined;
     this.activePointers = new Set();
-    this.browserZoomBaselineDpr = Math.max(0.1, window.devicePixelRatio || 1);
-    this.browserZoomScale = 1;
+    this.browserZoomed = false;
+
     this.controlsVisible = true;
     this.informationOpen = false;
     this.historyToken = null;
@@ -91,6 +94,7 @@ class ImagePreviewController extends ImagePreviewControllerBase {
     this.informationDialog.getOpenAnimation = () => INFORMATION_DIALOG_OPEN_ANIMATION;
     this.informationDialog.getCloseAnimation = () => INFORMATION_DIALOG_CLOSE_ANIMATION;
     this.syncMotionPreference();
+    this.clearGestureScrim();
     this.syncBrowserZoomState();
     this.renderFullscreenState();
     this.bindEvents();
@@ -121,6 +125,7 @@ class ImagePreviewController extends ImagePreviewControllerBase {
     window.addEventListener("popstate", this.handlePopState, options);
     document.addEventListener(SITE_EVENTS.motionChange, this.syncMotionPreference, options);
 
+    this.dialog.addEventListener("opened", this.handleViewportChange, options);
     this.dialog.addEventListener("cancel", this.handleDialogCancel, options);
     this.dialog.addEventListener("closed", this.handleDialogClosed, options);
     this.dialog.addEventListener("keydown", this.handleDialogKeydown, options);
@@ -134,6 +139,7 @@ class ImagePreviewController extends ImagePreviewControllerBase {
     this.image.addEventListener("load", this.handleImageLoad, options);
     window.addEventListener("resize", this.handleViewportChange, options);
     window.visualViewport?.addEventListener("resize", this.handleViewportChange, options);
+    window.visualViewport?.addEventListener("scroll", this.handleViewportChange, options);
 
     this.informationDialog.addEventListener("cancel", this.handleInformationCancel, options);
     this.informationDialog.addEventListener("closed", this.handleInformationClosed, options);

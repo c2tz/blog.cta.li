@@ -381,7 +381,9 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
 
   await trigger.focus();
   await expectPopoverOpen(richTooltip, true);
+  await expect(sourceImage).toBeVisible();
   await sourceImage.focus();
+  await expect(sourceImage).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(dialog).toHaveJSProperty("open", true);
   await expectPopoverOpen(richTooltip, false);

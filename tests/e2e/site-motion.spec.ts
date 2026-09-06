@@ -1,3 +1,5 @@
+import sharp from "sharp";
+import type { Page } from "@playwright/test";
 import {
   expect,
   test,
@@ -7,7 +9,26 @@ import {
   waitForNativeEnhancement,
   openMaterialMenu,
   expectNoPageOverflow,
+  seedFixedKonachanImage,
 } from "./site-fixture";
+
+async function takeStableScreenshot(page: Page) {
+  let previous: Buffer | undefined;
+
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        }),
+    );
+    const current = await page.screenshot({ scale: "css", animations: "allow" });
+    if (previous?.equals(current)) return current;
+    previous = current;
+  }
+
+  return previous as Buffer;
+}
 
 test("starts every page without motion and keeps detail mode independent", async ({ page }) => {
   for (const route of ROUTES) {
@@ -688,3 +709,146 @@ for (const route of ["/", "/posts/bienvenue-sur-ct-blog/"]) {
     }
   });
 }
+
+for (const route of ["/", "/posts/bienvenue-sur-ct-blog/"]) {
+  test(`repaints the pixels beneath the theme menu after a second trigger click on ${route}`, async ({
+    page,
+  }) => {
+    await seedFixedKonachanImage(page);
+    await gotoRoute(page, route);
+    await waitForAppReady(page);
+    if (route === "/") {
+      await expect(page.locator("[data-konachan-background]")).toHaveAttribute(
+        "data-konachan-current-url",
+        /.+/,
+      );
+      await expect(page.locator("[data-konachan-refresh]")).toBeEnabled();
+      await expect(page.locator("[data-konachan-refresh]")).toHaveAttribute(
+        "data-aria-busy",
+        "false",
+      );
+    }
+    const trigger = page.locator(".site-theme-trigger");
+    const menu = page.locator("#site-theme-menu");
+    for (const enabled of [false, true, false]) {
+      if (enabled !== ((await page.locator("html").getAttribute("data-motion")) === "on")) {
+        await page.locator(".site-motion-trigger").click();
+      }
+      await page.mouse.move(0, 0);
+      await page.evaluate(async () => {
+        await document.fonts.ready;
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => resolve());
+        });
+      });
+      const before = await takeStableScreenshot(page);
+      await openMaterialMenu(trigger, menu);
+      const bounds = await menu.locator(".menu").boundingBox();
+      expect(bounds).not.toBeNull();
+      const ignoredRect =
+        route === "/" ? await page.locator("[data-konachan-refresh]").boundingBox() : null;
+      const menuClosed = menu.evaluate(
+        (element) =>
+          new Promise<void>((resolve) => {
+            element.addEventListener("closed", () => resolve(), { once: true });
+          }),
+      );
+      await trigger.click();
+      await menuClosed;
+      await expect(menu).toBeHidden();
+      await expect(trigger).toHaveAttribute("data-aria-expanded", "false");
+      await page.mouse.move(0, 0);
+      // The trigger keeps keyboard focus after closing. Remove that focus
+      // ring from the screenshot region so this assertion measures only the
+      // pixels that the menu covered, rather than a changed control state.
+      await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+      // display:none can pass while Safari 18.6 still paints the old menu over
+      // the filtered hero. Check actual pixels, without finishing animations
+      // through the screenshot API (which could conceal a repaint failure).
+      await page.waitForTimeout(220);
+      const after = await takeStableScreenshot(page);
+      const region = {
+        left: Math.ceil(bounds!.x) + 8,
+        top: Math.ceil(bounds!.y) + 8,
+        width: Math.floor(bounds!.width) - 16,
+        height: Math.floor(bounds!.height) - 16,
+      };
+      const pixelsBefore = await sharp(before).extract(region).removeAlpha().raw().toBuffer();
+      const pixelsAfter = await sharp(after).extract(region).removeAlpha().raw().toBuffer();
+      const ignored = ignoredRect
+        ? {
+            left: Math.floor(ignoredRect.x),
+            top: Math.floor(ignoredRect.y),
+            right: Math.ceil(ignoredRect.x + ignoredRect.width),
+            bottom: Math.ceil(ignoredRect.y + ignoredRect.height),
+          }
+        : null;
+      let changed = 0;
+      for (let y = 0; y < region.height; y++) {
+        for (let x = 0; x < region.width; x++) {
+          const absoluteX = region.left + x;
+          const absoluteY = region.top + y;
+          // Opening the top-layer menu can re-rasterize the home refresh glyph by a few
+          // anti-aliased pixels in Chromium even though its state is unchanged. The
+          // control has its own enabled/busy assertions; compare the surrounding hero pixels.
+          if (
+            ignored &&
+            absoluteX >= ignored.left &&
+            absoluteX < ignored.right &&
+            absoluteY >= ignored.top &&
+            absoluteY < ignored.bottom
+          ) {
+            continue;
+          }
+          const index = (y * region.width + x) * 3;
+          if (
+            [0, 1, 2].some(
+              (channel) =>
+                Math.abs(pixelsBefore[index + channel] - pixelsAfter[index + channel]) > 8,
+            )
+          ) {
+            changed++;
+          }
+        }
+      }
+      expect(
+        changed / (region.width * region.height),
+        "closed menu must restore the underlying pixels",
+      ).toBeLessThan(0.001);
+    }
+  });
+}
+
+test("keeps the theme menu attached to its trigger through visual viewport zoom", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== "chromium", "Visual viewport scaling requires Chromium CDP");
+  const session = await page.context().newCDPSession(page);
+  try {
+    for (const route of ["/", "/posts/bienvenue-sur-ct-blog/"]) {
+      await gotoRoute(page, route);
+      await waitForAppReady(page);
+      const trigger = page.locator(".site-theme-trigger");
+      const menu = page.locator("#site-theme-menu");
+      for (const scale of [1, 1.5, 2, 1]) {
+        await session.send("Emulation.setPageScaleFactor", { pageScaleFactor: scale });
+        await expect.poll(() => page.evaluate(() => window.visualViewport?.scale)).toBe(scale);
+        // Keyboard activation avoids Playwright pointer coordinates under CDP zoom.
+        await trigger.press("Enter");
+        await expect(menu).toBeVisible();
+        const anchor = await trigger.boundingBox();
+        const surface = await menu.locator(".menu").boundingBox();
+        expect(anchor).not.toBeNull();
+        expect(surface).not.toBeNull();
+        expect(Math.abs(surface!.x + surface!.width - anchor!.x - anchor!.width)).toBeLessThan(1);
+        expect(Math.abs(surface!.y - anchor!.y - anchor!.height)).toBeLessThan(1);
+        await page.keyboard.press("Escape");
+        await expect(menu).toBeHidden();
+      }
+    }
+  } finally {
+    await session.send("Emulation.setPageScaleFactor", { pageScaleFactor: 1 });
+    await session.detach();
+  }
+});

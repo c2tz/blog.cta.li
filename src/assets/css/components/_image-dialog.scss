@@ -32,13 +32,9 @@ html.site-image-dialog-fullscreen body {
   padding: 0 !important;
   overflow: hidden;
   background: transparent;
-  touch-action: pinch-zoom;
+  touch-action: auto;
   -webkit-user-select: none;
   user-select: none;
-}
-
-.site-image-dialog-shell[data-browser-zoomed] {
-  touch-action: auto;
 }
 
 .site-image-dialog-stage {
@@ -48,16 +44,29 @@ html.site-image-dialog-fullscreen body {
   place-items: center;
   overflow: hidden;
   background: transparent;
-  cursor: default;
-  touch-action: pinch-zoom;
-}
-
-.site-image-dialog-stage[data-browser-zoomed] {
+  cursor: grab;
   touch-action: auto;
 }
 
 .site-image-dialog-stage[data-image-dragging] {
   cursor: grabbing;
+}
+
+.site-image-dialog-stage[data-browser-zoomed] {
+  inset: var(--image-viewport-top, 0px) auto auto var(--image-viewport-left, 0px);
+  display: block;
+  width: var(--image-viewport-width, 100%);
+  height: var(--image-viewport-height, 100%);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scroll-behavior: auto;
+  scrollbar-width: none;
+  transform: scale(var(--image-viewport-inverse-scale, 1));
+  transform-origin: top left;
+}
+
+.site-image-dialog-stage[data-browser-zoomed]::-webkit-scrollbar {
+  display: none;
 }
 
 .site-image-dialog-image {
@@ -75,18 +84,23 @@ html.site-image-dialog-fullscreen body {
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-  touch-action: pinch-zoom;
+  touch-action: auto;
   transform-origin: center;
   -webkit-user-drag: none;
   user-select: none;
 }
 
-.site-image-dialog-stage[data-browser-zoomed] .site-image-dialog-image {
-  touch-action: auto;
-}
-
 .site-image-dialog-stage[data-image-dragging] .site-image-dialog-image {
   will-change: transform;
+}
+
+.site-image-dialog-stage[data-browser-zoomed] .site-image-dialog-image {
+  position: relative;
+  inset: auto;
+  width: var(--image-viewport-canvas-width, 100%);
+  height: var(--image-viewport-canvas-height, 100%);
+  max-width: none;
+  max-height: none;
 }
 
 .site-image-dialog-stage[data-image-dragging]:not([data-browser-zoomed]) .site-image-dialog-image {
@@ -173,6 +187,8 @@ html.site-image-dialog-fullscreen body {
   top: max(1rem, env(safe-area-inset-top, 0px));
   right: max(1rem, env(safe-area-inset-right, 0px));
   z-index: 3;
+  scale: var(--site-image-dialog-ui-scale, 1);
+  transform-origin: top right;
   display: flex;
   align-items: center;
   justify-content: center;

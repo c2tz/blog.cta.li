@@ -52,10 +52,13 @@ state and tests the equivalent image-preview behavior on the replacement fixture
    reloads once if a Speed Insights or Giscus script was inserted, so neither an executed nor an
    in-flight third-party runtime can survive the opt-out. `pageshow` and consent-storage changes
    resynchronize restored BFCache pages and other open tabs.
-6. The browser owns page zoom and the resulting two-axis visual-viewport panning. The image
-   preview observes that zoom state only to suspend gallery navigation until the scale returns to
-   100%; it does not cancel zoomed wheel/pointer/double-click events or translate the image. The
-   toolbar keeps one static safe-area anchor instead of adding visual-viewport offsets.
+6. The browser owns pinch zoom and smart zoom. While magnified, the image preview exposes a native
+   scroll container over its fitted image canvas: touch and trackpad gestures use browser scrolling,
+   and mouse dragging changes that same container's scroll position. It does not implement wheel
+   panning or inertia. `viewport.js` aligns the scrollable image area to the visual viewport.
+   An inverse scale and matching canvas dimensions keep scroll units in screen pixels without
+   changing the visible image size. Gallery/dismiss gestures resume near 100%
+   (5% entry / 3% exit tolerance), after the native gesture cooldown.
 7. Keyboard focus is cycled explicitly inside both preview dialogs so Safari does not depend on
    the user's full-keyboard-access preference. A focus move made during Material's opening motion
    wins over the later resolution of `show()` instead of being overwritten by autofocus.
@@ -94,9 +97,14 @@ state and tests the equivalent image-preview behavior on the replacement fixture
 
 ### 3. Harden the image preview
 
-- Removed custom trackpad/mouse panning while browser zoom is active. Native pinch, pan and smart
-  zoom remain authoritative; gallery swipe and baseline horizontal trackpad navigation resume only
-  after returning to 100%.
+- Kept pinch and smart zoom native. Magnified touch/trackpad panning uses element scrolling, which
+  also works when Safari's modal visual viewport cannot pan. Mouse dragging uses the same scroll
+  container. Fresh mouse presses clear Safari's occasionally missing `gestureend` state.
+- Resolve client coordinates from the native dialog geometry. The toolbar retains its original
+  layout anchor instead of following viewport panning. Compensate only its native pinch scale to
+  preserve screen size; regular page/text zoom remains unaffected.
+- Use a single 82% scrim baseline with and without motion. Dismissal fades depend on image
+  displacement, not the pointer's starting position, and reach zero when the image leaves view.
 - Made initial and information-dialog focus deterministic, added an explicit Safari-safe Tab
   cycle, and guarded it against the asynchronous completion of Material's opening animation.
 - Kept real Material icon/text buttons and local icons; unsupported fullscreen remains genuinely

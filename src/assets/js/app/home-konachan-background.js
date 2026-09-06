@@ -91,7 +91,16 @@ export function initHomeKonachanBackground({ initialBackground = null, konachanC
     return new Promise((resolve, reject) => {
       const image = new Image();
       image.decoding = "async";
-      image.onload = () => resolve({ url });
+      image.onload = async () => {
+        // `load` guarantees that the resource arrived, but the browser may
+        // still decode it after the background state is exposed to the UI.
+        // Wait for that decode so the first settled frame cannot briefly show
+        // the loading surface underneath an opening menu.
+        try {
+          await image.decode?.();
+        } catch {}
+        resolve({ url });
+      };
       image.onerror = reject;
       image.src = url;
     });

@@ -7,16 +7,16 @@ export const FULLSCREEN_EXIT_ICON = "\uE5D1";
 export const FULLSCREEN_ICON = "\uE5D0";
 export const GALLERY_MOTION_DURATION_MS = 320;
 const HISTORY_STATE_KEY = "__siteImageDialog";
-export const IMAGE_DIALOG_SCRIM_OPACITY = 0.68;
+export const IMAGE_DIALOG_SCRIM_OPACITY = 0.82;
 export const INFORMATION_LOADING_DELAY_MS = 200;
 export const SHARE_FEEDBACK_DURATION_MS = 2200;
 export const SHARE_ICON = "\uE80D";
 export const DRAG_AXIS_LOCK_DISTANCE = 8;
 export const DISMISS_DISTANCE = 84;
-export const DISMISS_FADE_END_RATIO = 0.95;
-export const DISMISS_FADE_START_RATIO = 0.6;
+export const DISMISS_FADE_END_RATIO = 1;
+export const DISMISS_FADE_START_RATIO = 0;
 export const DISMISS_IMAGE_OPACITY_REDUCTION = 0.82;
-export const DISMISS_SCRIM_OPACITY_REDUCTION = 0.55;
+export const DISMISS_SCRIM_OPACITY_REDUCTION = 1;
 export const DISMISS_VELOCITY = 0.5;
 export const SWIPE_DISTANCE = 56;
 export const SWIPE_DURATION_MS = 900;
@@ -27,25 +27,34 @@ export const TRACKPAD_SWIPE_DISTANCE = 72;
 export const TRACKPAD_SWIPE_LOCK_MS = 420;
 export const TRACKPAD_SWIPE_RESET_MS = 180;
 export const ZOOM_GESTURE_COOLDOWN_MS = 240;
-export const ZOOM_EPSILON = 0.01;
+// Pinch zoom can settle slightly above 1. Hysteresis avoids flickering between
+// panning and dismissal near the resting scale.
+export const ZOOM_EPSILON = 0.05;
+export const ZOOM_REST_EPSILON = 0.03;
 
 export const IMAGE_DIALOG_OPEN_ANIMATION = {
   dialog: [[[{ opacity: 0 }, { opacity: 1 }], { duration: 150, easing: "linear", fill: "both" }]],
-  scrim: [[[{ opacity: 0 }, { opacity: 0.68 }], { duration: 240, easing: "linear", fill: "both" }]],
-  content: [
+  scrim: [
     [
-      [
-        { opacity: 0, transform: "scale(0.985)" },
-        { opacity: 1, transform: "scale(1)" },
-      ],
-      { duration: 180, easing: "cubic-bezier(0.2, 0, 0, 1)", fill: "both" },
+      [{ opacity: 0 }, { opacity: IMAGE_DIALOG_SCRIM_OPACITY }],
+      { duration: 240, easing: "linear" },
     ],
+  ],
+  // Transforming this ancestor temporarily reanchors the fixed toolbar to
+  // the content box. Opacity keeps its viewport anchor stable throughout.
+  content: [
+    [[{ opacity: 0 }, { opacity: 1 }], { duration: 180, easing: "cubic-bezier(0.2, 0, 0, 1)" }],
   ],
 };
 
 export const IMAGE_DIALOG_CLOSE_ANIMATION = {
   dialog: [[[{ opacity: 1 }, { opacity: 0 }], { duration: 75, easing: "linear", fill: "both" }]],
-  scrim: [[[{ opacity: 0.68 }, { opacity: 0 }], { duration: 120, easing: "linear", fill: "both" }]],
+  scrim: [
+    [
+      [{ opacity: IMAGE_DIALOG_SCRIM_OPACITY }, { opacity: 0 }],
+      { duration: 120, easing: "linear", fill: "both" },
+    ],
+  ],
   content: [[[{ opacity: 1 }, { opacity: 0 }], { duration: 75, easing: "linear", fill: "both" }]],
 };
 

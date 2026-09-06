@@ -243,11 +243,11 @@ test("keyboard arrows traverse cookie services without changing their choices", 
   await page.keyboard.press("Home");
   await expectKeyboardRing(services.nth(0));
   await page.keyboard.press("End");
-  await expectKeyboardRing(services.nth(2));
+  await expectKeyboardRing(services.last());
   await page.keyboard.press("ArrowDown");
   await expectKeyboardRing(page.locator(".cookie-preferences-reject"));
   await page.keyboard.press("ArrowUp");
-  await expectKeyboardRing(services.nth(2));
+  await expectKeyboardRing(services.last());
   for (const service of await services.all()) {
     await expect(service).toHaveJSProperty("selected", false);
   }

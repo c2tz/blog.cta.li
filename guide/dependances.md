@@ -26,6 +26,7 @@ paquets directs. Il est donc beaucoup plus long que la liste de `package.json`.
 | `@material/web`                      | Fournit les composants Material 3 utilisés par l'interface                  | Oui, seulement les modules importés et découpés par le build  |
 | `@material/material-color-utilities` | Calcule les palettes Material dynamiques et le thème généré                 | Partiellement, pour les couleurs dynamiques ; aussi au build  |
 | `@floating-ui/dom`                   | Positionne menus et surfaces flottantes                                     | Oui, quand la fonctionnalité correspondante est chargée       |
+| `@vercel/analytics` | Statistiques de fréquentation en production | Oui, seulement après son accord individuel |
 | `@vercel/speed-insights`             | Mesure optionnelle des performances après consentement                      | Oui, seulement après son accord individuel                    |
 | `rehype-slug`                        | Ajoute des identifiants aux titres Markdown                                 | Non ; seul le HTML résultant est servi                        |
 | `rehype-autolink-headings`           | Rend les titres Markdown directement liés à leur ancre                      | Non ; seul le HTML résultant est servi                        |

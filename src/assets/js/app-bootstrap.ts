@@ -23,7 +23,7 @@ let baseModulesPromise: Promise<BaseInitializers> | undefined;
 let homeUiPromise: Promise<unknown> | undefined;
 let ipGeolocationModulePromise: Promise<typeof import("@/assets/js/ip-geolocation.js")> | undefined;
 let searchModulePromise: Promise<SearchControllers> | undefined;
-let speedInsightsModulePromise:
+let optionalServicesModulePromise:
   Promise<typeof import("@/assets/js/optional-services.js")> | undefined;
 let consentServicesListenerInstalled = false;
 let consentResyncInstalled = false;
@@ -78,14 +78,19 @@ function loadConsentServices() {
   const modules: Promise<unknown>[] = [];
 
   if (
-    document.body?.dataset.speedInsightsEnabled === "true" &&
-    (hasFunctionalityConsent("speed-insights") || speedInsightsModulePromise)
+    (document.body?.dataset.speedInsightsEnabled === "true" &&
+      hasFunctionalityConsent("speed-insights")) ||
+    (document.body?.dataset.webAnalyticsEnabled === "true" &&
+      hasFunctionalityConsent("web-analytics")) ||
+    optionalServicesModulePromise
   ) {
-    speedInsightsModulePromise ??= import("@/assets/js/optional-services.js").catch((error) => {
-      speedInsightsModulePromise = undefined;
+    optionalServicesModulePromise ??= import("@/assets/js/optional-services.js").catch((error) => {
+      optionalServicesModulePromise = undefined;
       throw error;
     });
-    modules.push(speedInsightsModulePromise.then(({ syncSpeedInsights }) => syncSpeedInsights()));
+    modules.push(
+      optionalServicesModulePromise.then(({ syncOptionalServices }) => syncOptionalServices()),
+    );
   }
 
   if (

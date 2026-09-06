@@ -1,4 +1,9 @@
-export const OPTIONAL_SERVICE_IDS = Object.freeze(["giscus", "ipgeo", "speed-insights"]);
+export const OPTIONAL_SERVICE_IDS = Object.freeze([
+  "giscus",
+  "ipgeo",
+  "speed-insights",
+  "web-analytics",
+]);
 export const OPTIONAL_SERVICES_CONSENT_VERSION = 2;
 
 const isRecord = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -12,6 +17,11 @@ function normalizeOptionalServices(value) {
 
   const services = {};
   for (const service of OPTIONAL_SERVICE_IDS) {
+    // Existing choices predate Analytics and must never grant it consent.
+    if (service === "web-analytics" && !Object.hasOwn(value, service)) {
+      services[service] = false;
+      continue;
+    }
     if (typeof value[service] !== "boolean") return null;
     services[service] = value[service];
   }
@@ -42,7 +52,7 @@ export function optionalServicesFromLegacyConsent(value) {
     return null;
   }
 
-  return createOptionalServices(value.functionality);
+  return { ...createOptionalServices(value.functionality), "web-analytics": false };
 }
 
 export function countEnabledOptionalServices(services) {

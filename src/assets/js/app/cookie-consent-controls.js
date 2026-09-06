@@ -101,7 +101,9 @@ function readLegacyCookieServices() {
     SITE_LEGACY_COOKIE_NAMES.cookieConsent,
   ]) {
     const choice = readCookie(name);
-    if (choice === "accepted") return createOptionalServices(true);
+    if (choice === "accepted") {
+      return optionalServicesFromLegacyConsent({ functionality: true, version: 1 });
+    }
     if (choice === "rejected") return createOptionalServices(false);
   }
 
@@ -229,7 +231,7 @@ function exposeConsentApi() {
   window.cookieConsent = {
     acceptedService: (service, category) =>
       category === "functionality" &&
-      ["giscus", "ipgeo", "speed-insights"].includes(service) &&
+      OPTIONAL_SERVICE_IDS.includes(service) &&
       serviceConsentAccepted(service),
     isCategoryAccepted: (category) =>
       category === "necessary" || (category === "functionality" && functionalityConsentAccepted()),

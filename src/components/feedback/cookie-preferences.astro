@@ -72,6 +72,19 @@ const { labelledby = "modifier-vos-choix-cookies" } = Astro.props;
           aria-label="Mesure des performances Vercel. Autorise Vercel Speed Insights à mesurer les performances de navigation en production."
         ></md-switch>
       </section>
+      <section class="cookie-preferences-service">
+        <div class="cookie-preferences-service-copy">
+          <p class="cookie-preferences-service-title">Statistiques de fréquentation Vercel</p>
+          <p class="cookie-preferences-service-description">
+            Autorise Vercel Web Analytics à compter les visites et les pages consultées en
+            production.
+          </p>
+        </div>
+        <md-switch
+          data-cookie-preference-service="web-analytics"
+          aria-label="Statistiques de fréquentation Vercel. Autorise Vercel Web Analytics à compter les visites et les pages consultées en production."
+        ></md-switch>
+      </section>
     </div>
 
     <div

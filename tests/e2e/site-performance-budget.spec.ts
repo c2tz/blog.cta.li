@@ -73,3 +73,75 @@ test("bounds the first search including deferred modules and index", async ({ pa
   await expect(dialog.locator('a[href="/posts/bienvenue-sur-ct-blog/"]')).toBeVisible();
   await check(340);
 });
+
+test("bounds style recalculations when disabling motion across shadow roots", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== "chromium", "Style recalculation counters use Chromium's CDP.");
+  await gotoRoute(page, "/");
+  await waitForAppReady(page);
+  await page.locator(".site-motion-trigger").click();
+  await expect(page.locator("html")).toHaveAttribute("data-motion", "on");
+
+  await page.evaluate(() => {
+    for (let index = 0; index < 24; index++) {
+      const host = document.createElement("div");
+      const root = host.attachShadow({ mode: "open" });
+      const content = document.createElement("span");
+      content.textContent = "Motion performance fixture";
+      root.append(content);
+      document.body.append(host);
+    }
+    document.getAnimations();
+  });
+
+  const client = await page.context().newCDPSession(page);
+  const events: Array<{ name: string; ts: number; pid: number; tid: number }> = [];
+  client.on("Tracing.dataCollected", ({ value }) => {
+    value.forEach((event: Record<string, unknown>) => {
+      const { name, ts, pid, tid } = event;
+      if (
+        typeof name === "string" &&
+        typeof ts === "number" &&
+        typeof pid === "number" &&
+        typeof tid === "number"
+      ) {
+        events.push({ name, ts, pid, tid });
+      }
+    });
+  });
+  await client.send("Tracing.start", { categories: "devtools.timeline,blink.user_timing" });
+  await page.locator(".site-motion-trigger").evaluate((button: HTMLElement) => {
+    performance.mark("motion-budget-start");
+    button.click();
+    performance.mark("motion-budget-end");
+  });
+  const completed = new Promise<void>((resolve) => {
+    client.once("Tracing.tracingComplete", () => resolve());
+  });
+  await client.send("Tracing.end");
+  await completed;
+  await client.detach();
+
+  // Count only work inside the click. CDP metric snapshots also include frames
+  // rendered between protocol calls, which vary with the runner's scheduling.
+  const start = events.find((event) => event.name === "motion-budget-start")!;
+  const end = events.find((event) => event.name === "motion-budget-end")!;
+  expect(start).toBeDefined();
+  expect(end).toBeDefined();
+  const recalculations = events.filter(
+    (event) =>
+      event.name === "UpdateLayoutTree" &&
+      event.pid === start.pid &&
+      event.tid === start.tid &&
+      event.ts >= start.ts &&
+      event.ts <= end.ts,
+  ).length;
+  expect(recalculations, "The trace must capture the style changes").toBeGreaterThan(0);
+  expect(
+    recalculations,
+    "A preference change must not flush styles once per component",
+  ).toBeLessThanOrEqual(4);
+  await expect(page.locator("html")).toHaveAttribute("data-motion", "off");
+});

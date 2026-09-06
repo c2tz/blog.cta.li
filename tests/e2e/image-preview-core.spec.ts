@@ -298,6 +298,7 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
       __richTooltipActivationOrder?: {
         clickObserved: boolean;
         clickTaskActive: boolean;
+        focusInsidePopoverWhenHidden?: boolean;
         hidePopoverDuringClickTask?: boolean;
         showModalDuringClickTask?: boolean;
         transitions: Array<"hide-popover" | "show-modal">;
@@ -314,6 +315,7 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
     const activationOrder = {
       clickObserved: false,
       clickTaskActive: false,
+      focusInsidePopoverWhenHidden: undefined as boolean | undefined,
       hidePopoverDuringClickTask: undefined as boolean | undefined,
       showModalDuringClickTask: undefined as boolean | undefined,
       transitions: [] as Array<"hide-popover" | "show-modal">,
@@ -326,21 +328,28 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
       () => {
         activationOrder.clickObserved = true;
         activationOrder.clickTaskActive = true;
+        console.debug("Lightbox activation: click");
         window.setTimeout(() => {
           activationOrder.clickTaskActive = false;
+          console.debug("Lightbox activation: click task finished");
         });
       },
       { capture: true, once: true },
     );
     richTooltip.hidePopover = () => {
       activationOrder.hidePopoverDuringClickTask = activationOrder.clickTaskActive;
+      activationOrder.focusInsidePopoverWhenHidden = richTooltip.contains(document.activeElement);
       activationOrder.transitions.push("hide-popover");
+      console.debug("Lightbox activation: hide popover");
       originalHidePopover();
+      console.debug("Lightbox activation: popover hidden");
     };
     nativeDialog.showModal = () => {
       activationOrder.showModalDuringClickTask = activationOrder.clickTaskActive;
       activationOrder.transitions.push("show-modal");
+      console.debug("Lightbox activation: show modal");
       originalShowModal();
+      console.debug("Lightbox activation: modal shown");
     };
   });
   await sourceImage.click({ trial: true, timeout: 5_000 });
@@ -359,6 +368,7 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
               __richTooltipActivationOrder?: {
                 clickObserved: boolean;
                 clickTaskActive: boolean;
+                focusInsidePopoverWhenHidden?: boolean;
                 hidePopoverDuringClickTask?: boolean;
                 showModalDuringClickTask?: boolean;
                 transitions: Array<"hide-popover" | "show-modal">;
@@ -370,6 +380,7 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
     .toEqual({
       clickObserved: true,
       clickTaskActive: false,
+      focusInsidePopoverWhenHidden: false,
       hidePopoverDuringClickTask: false,
       showModalDuringClickTask: false,
       transitions: ["hide-popover", "show-modal"],
@@ -381,7 +392,9 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
 
   await trigger.focus();
   await expectPopoverOpen(richTooltip, true);
+  await expect(sourceImage).toBeVisible();
   await sourceImage.focus();
+  await expect(sourceImage).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(dialog).toHaveJSProperty("open", true);
   await expectPopoverOpen(richTooltip, false);

@@ -703,6 +703,11 @@ for (const route of ["/", "/posts/bienvenue-sur-ct-blog/"]) {
         "data-konachan-current-url",
         /.+/,
       );
+      await expect(page.locator("[data-konachan-refresh]")).toBeEnabled();
+      await expect(page.locator("[data-konachan-refresh]")).toHaveAttribute(
+        "data-aria-busy",
+        "false",
+      );
     }
     const trigger = page.locator(".site-theme-trigger");
     const menu = page.locator("#site-theme-menu");

@@ -97,18 +97,39 @@ test("bounds style recalculations when disabling motion across shadow roots", as
   });
 
   const client = await page.context().newCDPSession(page);
-  await client.send("Performance.enable");
-  const readStyleCount = async () => {
-    const { metrics } = await client.send("Performance.getMetrics");
-    return metrics.find((metric) => metric.name === "RecalcStyleCount")!.value;
-  };
-  const before = await readStyleCount();
-  await page.locator(".site-motion-trigger").evaluate((button: HTMLElement) => button.click());
-  const recalculations = (await readStyleCount()) - before;
+  const events: Array<{ name: string; ts: number; pid: number; tid: number }> = [];
+  client.on("Tracing.dataCollected", ({ value }) => events.push(...value));
+  await client.send("Tracing.start", { categories: "devtools.timeline,blink.user_timing" });
+  await page.locator(".site-motion-trigger").evaluate((button: HTMLElement) => {
+    performance.mark("motion-budget-start");
+    button.click();
+    performance.mark("motion-budget-end");
+  });
+  const completed = new Promise<void>((resolve) => {
+    client.once("Tracing.tracingComplete", () => resolve());
+  });
+  await client.send("Tracing.end");
+  await completed;
+  await client.detach();
+
+  // Count only work inside the click. CDP metric snapshots also include frames
+  // rendered between protocol calls, which vary with the runner's scheduling.
+  const start = events.find((event) => event.name === "motion-budget-start")!;
+  const end = events.find((event) => event.name === "motion-budget-end")!;
+  expect(start).toBeDefined();
+  expect(end).toBeDefined();
+  const recalculations = events.filter(
+    (event) =>
+      event.name === "UpdateLayoutTree" &&
+      event.pid === start.pid &&
+      event.tid === start.tid &&
+      event.ts >= start.ts &&
+      event.ts <= end.ts,
+  ).length;
+  expect(recalculations, "The trace must capture the style changes").toBeGreaterThan(0);
   expect(
     recalculations,
     "A preference change must not flush styles once per component",
   ).toBeLessThanOrEqual(4);
   await expect(page.locator("html")).toHaveAttribute("data-motion", "off");
-  await client.detach();
 });

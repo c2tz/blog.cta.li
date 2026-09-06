@@ -326,8 +326,10 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
       () => {
         activationOrder.clickObserved = true;
         activationOrder.clickTaskActive = true;
+        console.debug("Lightbox activation: click");
         window.setTimeout(() => {
           activationOrder.clickTaskActive = false;
+          console.debug("Lightbox activation: click task finished");
         });
       },
       { capture: true, once: true },
@@ -335,12 +337,16 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
     richTooltip.hidePopover = () => {
       activationOrder.hidePopoverDuringClickTask = activationOrder.clickTaskActive;
       activationOrder.transitions.push("hide-popover");
+      console.debug("Lightbox activation: hide popover");
       originalHidePopover();
+      console.debug("Lightbox activation: popover hidden");
     };
     nativeDialog.showModal = () => {
       activationOrder.showModalDuringClickTask = activationOrder.clickTaskActive;
       activationOrder.transitions.push("show-modal");
+      console.debug("Lightbox activation: show modal");
       originalShowModal();
+      console.debug("Lightbox activation: modal shown");
     };
   });
   await sourceImage.click({ trial: true, timeout: 5_000 });

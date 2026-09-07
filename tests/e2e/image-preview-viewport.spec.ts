@@ -1,4 +1,5 @@
 import sharp from "sharp";
+import type { Locator } from "@playwright/test";
 import {
   expect,
   test,
@@ -10,6 +11,40 @@ import {
   mouseDrag,
   trackpadWheel,
 } from "./image-preview-fixture";
+
+async function slowDialogAnimationsForSampling(dialog: Locator) {
+  // Under CI load, Linux WebKit can leave only one RAF sample inside a
+  // 75–180ms animation. Stretch time, retaining the real keyframes,
+  // easing and geometry assertions rather than depending on the runner's FPS.
+  await dialog.evaluate((element) => {
+    type Animations = Record<
+      string,
+      [Keyframe[] | PropertyIndexedKeyframes, KeyframeAnimationOptions][]
+    >;
+    const modal = element as HTMLElement & {
+      getOpenAnimation(): Animations;
+      getCloseAnimation(): Animations;
+    };
+    for (const name of ["getOpenAnimation", "getCloseAnimation"] as const) {
+      const original = modal[name].bind(modal);
+      modal[name] = () =>
+        Object.fromEntries(
+          Object.entries(original()).map(([part, animations]) => [
+            part,
+            animations.map(([keyframes, options]) => [
+              keyframes,
+              {
+                ...options,
+                duration:
+                  typeof options.duration === "number" ? options.duration * 8 : options.duration,
+                delay: (options.delay ?? 0) * 8,
+              },
+            ]),
+          ]),
+        );
+    }
+  });
+}
 
 for (const motion of [false, true]) {
   test(`opens after native zoom without panning to the close button (motion: ${motion})`, async ({
@@ -263,6 +298,7 @@ for (const direction of [-1, 1]) {
     await page.locator(".site-motion-trigger").click();
     await expect(page.locator("html")).toHaveAttribute("data-motion", "on");
     const { dialog, nativeDialog } = await openLightbox(page);
+    await slowDialogAnimationsForSampling(dialog);
     const stage = dialog.locator("[data-image-dialog-stage]");
     await expect(dialog).toHaveJSProperty("quick", false);
     await expect
@@ -358,10 +394,17 @@ for (const interruptOpening of [false, true]) {
     const dialog = page.locator(DIALOG_SELECTOR);
     const source = page.locator(SOURCE_IMAGE_SELECTOR).first();
     await waitForLightboxController(dialog);
+    await slowDialogAnimationsForSampling(dialog);
     await source.scrollIntoViewIfNeeded();
     // Repeat to catch animation state left over from the preceding close.
     for (let attempt = 0; attempt < 2; attempt++) {
       await dialog.evaluate((element) => {
+        element.removeAttribute("data-test-dialog-opened");
+        element.addEventListener(
+          "opened",
+          () => element.setAttribute("data-test-dialog-opened", ""),
+          { once: true },
+        );
         const native = element.shadowRoot!.querySelector("dialog")!;
         const toolbar = element.querySelector<HTMLElement>("[data-image-dialog-toolbar]")!;
         const frames: { x: number; y: number; width: number; height: number }[] = [];
@@ -400,7 +443,12 @@ for (const interruptOpening of [false, true]) {
       await source.dispatchEvent("click");
       await expect(dialog).toHaveJSProperty("open", true);
       await expect(dialog).toHaveJSProperty("quick", false);
-      await page.waitForTimeout(interruptOpening ? 60 : 300);
+      if (interruptOpening) {
+        await page.waitForTimeout(60);
+        await expect(dialog).not.toHaveAttribute("data-test-dialog-opened");
+      } else {
+        await expect(dialog).toHaveAttribute("data-test-dialog-opened", "");
+      }
       await dialog.locator("[data-image-close]").dispatchEvent("click");
       await expect(dialog.locator("dialog")).toBeHidden();
       const frames = JSON.parse((await dialog.getAttribute("data-test-toolbar-frames"))!) as {

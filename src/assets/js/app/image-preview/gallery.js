@@ -1,9 +1,11 @@
 import { GALLERY_MOTION_DURATION_MS, fileNameFromURL, decodeImageSource } from "./support.js";
 import { areSiteAnimationsEnabled } from "../site-motion.js";
 
-const waitForNextTask = () =>
+const waitForNextRender = () =>
   new Promise((resolve) => {
-    window.setTimeout(resolve);
+    // A timer alone may run before WebKit commits the current input/layout
+    // update. Resume in a task after a rendering opportunity instead.
+    requestAnimationFrame(() => window.setTimeout(resolve));
   });
 
 export const withImagePreviewGallery = (Base) =>
@@ -47,10 +49,9 @@ export const withImagePreviewGallery = (Base) =>
       this.isOpen = true;
       this.isClosing = false;
       if (richTooltipWasOpen) {
-        // Keep every opening mutation outside WebKit's trusted activation.
-        // Changing the clicked popover or page layout in that task can prevent
-        // the pointer action itself from completing.
-        await waitForNextTask();
+        // Let WebKit finish rendering the trusted activation before removing
+        // the clicked popover or changing the page layout.
+        await waitForNextRender();
         if (!this.isOpen || this.isClosing || !this.dialog.isConnected) {
           this.finishClose();
           return;
@@ -66,9 +67,9 @@ export const withImagePreviewGallery = (Base) =>
         richTooltipTrigger && restoreFocus ? { suppressNextFocus: true } : undefined,
       );
       if (richTooltipWasOpen) {
-        // Give WebKit a separate task to remove the popover from the top layer
-        // before promoting the Material dialog to a modal.
-        await waitForNextTask();
+        // Let top-layer removal render before locking the root and promoting
+        // the Material dialog to a modal. Separate timers can share a frame.
+        await waitForNextRender();
         if (!this.isOpen || this.isClosing || !this.dialog.isConnected) {
           this.finishClose();
           return;

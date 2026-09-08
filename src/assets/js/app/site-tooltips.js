@@ -555,8 +555,8 @@ class SiteTooltipController {
   }
 }
 
-export function hideSiteTooltip() {
-  document.dispatchEvent(new CustomEvent(SITE_EVENTS.tooltipHide));
+export function hideSiteTooltip(detail) {
+  document.dispatchEvent(new CustomEvent(SITE_EVENTS.tooltipHide, { detail }));
 }
 
 export function showSiteTooltip(target) {

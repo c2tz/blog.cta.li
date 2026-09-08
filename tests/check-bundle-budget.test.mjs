@@ -150,6 +150,8 @@ test("sépare Pagefind, les parcours différés et l'image 404 AVIF déterminist
   const stats = await collectBundleStats({ distDirectory });
 
   assert.equal(stats.pagefind.rawBytes, 33);
+  assert.equal(stats.pagefindRuntime.rawBytes, 33);
+  assert.equal(stats.pagefindIndex.rawBytes, 0);
   assert.equal(stats.notFoundImage.path, "images/404-screen-dark.avif");
   assert.equal(stats.notFoundImage.rawBytes, 20);
   assert.ok(stats.routes.notFoundWithImage.rawBytes > stats.routes.notFound.rawBytes);
@@ -167,6 +169,43 @@ test("sépare Pagefind, les parcours différés et l'image 404 AVIF déterminist
     ],
   );
   await assert.doesNotReject(() => checkBundleBudget({ distDirectory }));
+});
+
+test("l'ajout d'articles peut agrandir l'index sans dépasser le budget du moteur Pagefind", async (t) => {
+  const { distDirectory } = await createDistFixture(t);
+  await Promise.all(
+    Array.from({ length: 100 }, (_, index) =>
+      writeFixture(
+        distDirectory,
+        `pagefind/fragment/fr_${index}.pf_fragment`,
+        JSON.stringify({ content: "Un article du blog. ".repeat(200) }),
+      ),
+    ),
+  );
+
+  const stats = await checkBundleBudget({ distDirectory });
+  assert.ok(stats.pagefind.rawBytes > BUNDLE_BUDGETS.pagefindRuntime.rawBytes);
+  assert.equal(stats.pagefindRuntime.rawBytes, 33);
+  assert.equal(stats.pagefindIndex.files.length, 100);
+  assert.equal(
+    stats.pagefindIndex.rawBytes + stats.pagefindRuntime.rawBytes,
+    stats.pagefind.rawBytes,
+  );
+});
+
+test("le moteur Pagefind reste soumis au budget quand l'index grandit", async (t) => {
+  const { distDirectory } = await createDistFixture(t);
+  await writeFixture(
+    distDirectory,
+    "pagefind/wasm.fr.pagefind",
+    Buffer.alloc(BUNDLE_BUDGETS.pagefindRuntime.rawBytes + 1),
+  );
+  await writeFixture(distDirectory, "pagefind/fragment/fr_1.pf_fragment", "Un article");
+
+  await assert.rejects(
+    () => checkBundleBudget({ distDirectory }),
+    /moteur Pagefind \(raw\).*dépasse/,
+  );
 });
 
 test("déduplique les polices entre CSS importé et preload sans les compter comme code", async (t) => {

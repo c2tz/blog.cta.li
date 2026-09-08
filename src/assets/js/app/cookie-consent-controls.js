@@ -26,19 +26,12 @@ const DIALOG_FOCUSABLE_SELECTOR = [
   "md-filled-tonal-button:not([disabled])",
   "md-outlined-button:not([disabled])",
   "md-text-button:not([disabled])",
+  "md-outlined-text-field:not([disabled])",
   "input:not([disabled])",
   "select:not([disabled])",
   "textarea:not([disabled])",
   '[tabindex]:not([tabindex="-1"])',
 ].join(",");
-const MATERIAL_BUTTON_TAG_NAMES = new Set([
-  "md-elevated-button",
-  "md-filled-button",
-  "md-filled-tonal-button",
-  "md-outlined-button",
-  "md-text-button",
-]);
-
 function readCookie(name) {
   return readCookieValue(document.cookie, name);
 }
@@ -242,13 +235,19 @@ function setBackgroundInteractionDisabled(disabled) {
 }
 
 function isFocusableElement(element) {
+  const visible =
+    typeof element.checkVisibility !== "function" ||
+    element.checkVisibility({ checkVisibilityCSS: true });
+
   return (
-    (element.tabIndex >= 0 || MATERIAL_BUTTON_TAG_NAMES.has(element.localName)) &&
+    // Material hosts delegate focus to their shadow control, even at tabindex=-1.
+    (element.tabIndex >= 0 || element.localName.startsWith("md-")) &&
+    element.matches(":defined") &&
     !element.hasAttribute("disabled") &&
     !element.matches(":disabled") &&
     element.getAttribute("aria-disabled") !== "true" &&
     !element.closest('[inert], [hidden], [aria-hidden="true"]') &&
-    element.checkVisibility({ checkVisibilityCSS: true })
+    visible
   );
 }
 
@@ -277,7 +276,7 @@ class SiteCookieConsentBanner extends HTMLElement {
       // queued initial focus until there is a visible action to navigate to.
       if (
         this.#activeNotice === "explicit-content" &&
-        this.#getFocusableDialogElements().length === 0
+        (!customElements.get("md-text-button") || this.#getFocusableDialogElements().length === 0)
       ) {
         event.preventDefault();
         return;
@@ -286,7 +285,14 @@ class SiteCookieConsentBanner extends HTMLElement {
       // Once the user navigates, keyboard navigation is authoritative: do
       // not let that older frame move focus back to the first action.
       this.#cancelFocusRequest();
-      if (event.key === "Tab" && this.#activeNotice === "explicit-content") this.#trapFocus(event);
+      if (
+        this.#activeNotice === "explicit-content" &&
+        (event.key === "Tab" ||
+          ((event.key === "ArrowDown" || event.key === "ArrowUp") &&
+            !document.activeElement?.matches("[data-cookie-age]")))
+      ) {
+        this.#trapFocus(event, event.shiftKey || event.key === "ArrowUp");
+      }
     }
   };
 
@@ -377,14 +383,17 @@ class SiteCookieConsentBanner extends HTMLElement {
     });
 
     this.querySelector("[data-cookie-action='leave']")?.addEventListener("click", () => {
-      if (window.history.length > 1) {
-        window.history.back();
-      } else {
-        window.location.assign("https://www.cta.li/");
-      }
+      window.location.assign("https://www.cta.li/");
     });
 
-    this.querySelector("[data-cookie-action='acknowledge']")?.addEventListener("click", () => {
+    const acknowledgeButton = this.querySelector("[data-cookie-action='acknowledge']");
+    if (this.querySelector("[data-cookie-age]")) {
+      void import("./explicit-content-age.js")
+        .then(({ bindExplicitContentAge }) => bindExplicitContentAge(this))
+        .catch(() => undefined);
+    }
+
+    acknowledgeButton?.addEventListener("click", () => {
       writeExplicitContentAcknowledgement();
       this.#explicitContentPending = false;
       document.dispatchEvent(new Event(SITE_EVENTS.explicitContentChange));
@@ -418,9 +427,12 @@ class SiteCookieConsentBanner extends HTMLElement {
   }
 
   #getFocusableDialogElements() {
-    return Array.from(this.querySelectorAll(`.cookie-consent ${DIALOG_FOCUSABLE_SELECTOR}`)).filter(
-      isFocusableElement,
-    );
+    const elements = Array.from(
+      this.querySelectorAll(`.cookie-consent ${DIALOG_FOCUSABLE_SELECTOR}`),
+    ).filter(isFocusableElement);
+    // Keep the safe exit first, followed by the birth date and confirmation.
+    const leave = elements.find((element) => element.matches('[data-cookie-action="leave"]'));
+    return leave ? [leave, ...elements.filter((element) => element !== leave)] : elements;
   }
 
   #focusInitialAction() {
@@ -460,12 +472,12 @@ class SiteCookieConsentBanner extends HTMLElement {
     this.#focusFrame = 0;
   }
 
-  #trapFocus(event) {
+  #trapFocus(event, backwards) {
     const elements = this.#getFocusableDialogElements();
     if (elements.length === 0) return;
 
     const activeIndex = elements.indexOf(document.activeElement);
-    const nextIndex = event.shiftKey
+    const nextIndex = backwards
       ? activeIndex <= 0
         ? elements.length - 1
         : activeIndex - 1
@@ -587,6 +599,8 @@ class SiteCookiePreferences extends HTMLElement {
 }
 
 export function defineCookieConsentControls() {
+  void import("@material/web/textfield/outlined-text-field.js").catch(() => undefined);
+
   if (!customElements.get("site-cookie-consent-banner")) {
     customElements.define("site-cookie-consent-banner", SiteCookieConsentBanner);
   }

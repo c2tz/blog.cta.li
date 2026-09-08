@@ -62,7 +62,6 @@ export const withImagePreviewGallery = (Base) =>
       // Release focus before hiding its popover. WebKit can stall between
       // top-layer updates when a focused descendant becomes hidden.
       if (richTooltipWasOpen) sourceImage.blur();
-      this.lockPageScroll();
       this.hideTooltip(
         richTooltipTrigger && restoreFocus ? { suppressNextFocus: true } : undefined,
       );
@@ -76,6 +75,9 @@ export const withImagePreviewGallery = (Base) =>
         }
       }
 
+      // Preserve the popover's scrolling context until its top-layer removal
+      // has settled. Locking the root first can stall WebKit during that removal.
+      this.lockPageScroll();
       const openingFocusAnchor = this.createOpeningFocusAnchor();
       try {
         const focusRequestBeforeShow = this.focusRequest;

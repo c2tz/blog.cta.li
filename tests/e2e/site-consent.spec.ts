@@ -31,14 +31,15 @@ test("renders and adopts a stable consent notice before bootstrap and Material f
   );
 
   const notice = page.locator(".cookie-consent--explicit-content");
-  const description = notice.locator("#explicit-content-consent-desc");
+  const description = notice.locator(".cookie-consent-content > p");
   const leave = notice.locator('[data-cookie-action="leave"]');
   const acknowledge = notice.locator('[data-cookie-action="acknowledge"]');
+  const ageField = notice.locator("[data-cookie-age]");
   const geometry = () =>
     notice.evaluate((element) => {
       const noticeRect = element.getBoundingClientRect();
       const textRect = element
-        .querySelector("#explicit-content-consent-desc")!
+        .querySelector(".cookie-consent-content > p")!
         .getBoundingClientRect();
       return {
         noticeTop: noticeRect.top,
@@ -52,7 +53,7 @@ test("renders and adopts a stable consent notice before bootstrap and Material f
     await page.goto("/", { waitUntil: "commit" });
     await expect.poll(() => bootstrapRequested).toBe(true);
     await expect(description).toBeVisible();
-    await expect(description).toContainText("En continuant, vous confirmez avoir au moins 18 ans");
+    await expect(description).toContainText("image d'anime explicite");
     await expect(page.locator("[data-cookie-active-notice]")).toHaveCount(1);
     const bootNotice = await page.locator("[data-cookie-boot-notice]").elementHandle();
     expect(bootNotice).not.toBeNull();
@@ -92,6 +93,8 @@ test("renders and adopts a stable consent notice before bootstrap and Material f
     await waitForAppReady(page);
     await expect(leave).toBeVisible();
     await expect(acknowledge).toBeVisible();
+    await expect(ageField).toBeVisible();
+    await expect(acknowledge.getByRole("button")).toBeDisabled();
     await expect
       .poll(() => leave.evaluate((element) => element.matches(":focus-within")))
       .toBe(true);
@@ -102,8 +105,14 @@ test("renders and adopts a stable consent notice before bootstrap and Material f
 
     await page.keyboard.press("Tab");
     await expect
+      .poll(() => ageField.evaluate((element) => element.matches(":focus-within")))
+      .toBe(true);
+    await ageField.locator("input").fill("2000-01-01");
+    await page.keyboard.press("Tab");
+    await expect
       .poll(() => acknowledge.evaluate((element) => element.matches(":focus-within")))
       .toBe(true);
+    await expect(acknowledge.getByRole("button")).toBeEnabled();
     await acknowledge.click();
     await expect(notice).toBeHidden();
     const privacy = page.locator(".cookie-consent--privacy");
@@ -182,6 +191,60 @@ test("saves each optional service independently with official Material switches"
       page.locator(".cookie-preferences-panel").getAttribute("data-cookie-preference-state"),
     )
     .toBe("accepted");
+});
+
+test("validates the birth date range and remembers only valid dates", async ({ page }) => {
+  await page.addInitScript(clearConsentState);
+  await gotoRoute(page, "/");
+  await waitForAppReady(page);
+
+  const ageField = page.locator("[data-cookie-age]");
+  const input = ageField.locator("input");
+  const status = page.locator("[data-cookie-age-status]");
+  const acknowledge = page.locator('[data-cookie-action="acknowledge"]').getByRole("button");
+  const dateYearsAgo = (years: number) => {
+    const date = new Date();
+    date.setFullYear(date.getFullYear() - years);
+    return [date.getFullYear(), date.getMonth() + 1, date.getDate()]
+      .map((value, index) => (index === 0 ? String(value) : String(value).padStart(2, "0")))
+      .join("-");
+  };
+
+  await input.fill(dateYearsAgo(2));
+  await input.blur();
+  await expect(acknowledge).toBeDisabled();
+  await expect(status).toHaveText("Veuillez saisir une date valide.");
+  await expect
+    .poll(() => page.evaluate(() => document.cookie))
+    .not.toContain("ct-explicit-content-age=");
+
+  await input.fill(dateYearsAgo(5));
+  await input.blur();
+  await expect(acknowledge).toBeDisabled();
+  await expect(status).toHaveText("Veuillez saisir une date valide.");
+  await expect
+    .poll(() => page.evaluate(() => document.cookie))
+    .not.toContain("ct-explicit-content-age=");
+
+  await input.fill(dateYearsAgo(17));
+  await input.blur();
+  await expect(acknowledge).toBeDisabled();
+  await expect(status).toHaveText(
+    /^(Retourne jouer à (Roblox|Minecraft|Pokémon|Brawl Stars|Fortnite), t’es pas prêt gamin\.|Retourne jouer à Mario, nous c’est dans la vraie vie qu’on rentre dans les tuyaux, t’es pas prêt gamin\.|Retourne jouer avec la Tesla de ton père qui fait des bruits de pet, t’es pas prêt gamin\.|Retourne regarder (One Piece|Naruto), t’es pas prêt gamin\.)$/,
+  );
+  await expect
+    .poll(() => page.evaluate(() => document.cookie))
+    .toContain("ct-explicit-content-age=");
+
+  await input.fill(dateYearsAgo(18));
+  await input.blur();
+  await expect(acknowledge).toBeEnabled();
+  await expect(status).toHaveText("");
+
+  await input.fill(dateYearsAgo(100));
+  await input.blur();
+  await expect(acknowledge).toBeDisabled();
+  await expect(status).toHaveText("Veuillez saisir une date valide.");
 });
 
 test("does not turn Escape in search into an implicit privacy rejection", async ({ page }) => {

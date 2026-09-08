@@ -308,10 +308,14 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
       __richTooltipActivationOrder?: {
         clickObserved: boolean;
         clickTaskActive: boolean;
+        clickFrameFinished: boolean;
+        popoverCloseFrameFinished: boolean;
         focusInsidePopoverWhenHidden?: boolean;
         hidePopoverDuringClickTask?: boolean;
+        hidePopoverBeforeClickFrameFinished?: boolean;
         pageLockedWhenHidden?: boolean;
         showModalDuringClickTask?: boolean;
+        showModalBeforePopoverCloseFrameFinished?: boolean;
         transitions: Array<"hide-popover" | "show-modal">;
       };
     };
@@ -326,10 +330,14 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
     const activationOrder = {
       clickObserved: false,
       clickTaskActive: false,
+      clickFrameFinished: false,
+      popoverCloseFrameFinished: false,
       focusInsidePopoverWhenHidden: undefined as boolean | undefined,
       hidePopoverDuringClickTask: undefined as boolean | undefined,
+      hidePopoverBeforeClickFrameFinished: undefined as boolean | undefined,
       pageLockedWhenHidden: undefined as boolean | undefined,
       showModalDuringClickTask: undefined as boolean | undefined,
+      showModalBeforePopoverCloseFrameFinished: undefined as boolean | undefined,
       transitions: [] as Array<"hide-popover" | "show-modal">,
     };
     const originalHidePopover = richTooltip.hidePopover.bind(richTooltip);
@@ -345,11 +353,17 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
           activationOrder.clickTaskActive = false;
           console.debug("Lightbox activation: click task finished");
         });
+        requestAnimationFrame(() => {
+          window.setTimeout(() => {
+            activationOrder.clickFrameFinished = true;
+          });
+        });
       },
       { capture: true, once: true },
     );
     richTooltip.hidePopover = () => {
       activationOrder.hidePopoverDuringClickTask = activationOrder.clickTaskActive;
+      activationOrder.hidePopoverBeforeClickFrameFinished = !activationOrder.clickFrameFinished;
       activationOrder.focusInsidePopoverWhenHidden = richTooltip.contains(document.activeElement);
       activationOrder.pageLockedWhenHidden =
         document.documentElement.classList.contains("site-image-dialog-open");
@@ -357,9 +371,16 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
       console.debug("Lightbox activation: hide popover");
       originalHidePopover();
       console.debug("Lightbox activation: popover hidden");
+      requestAnimationFrame(() => {
+        window.setTimeout(() => {
+          activationOrder.popoverCloseFrameFinished = true;
+        });
+      });
     };
     nativeDialog.showModal = () => {
       activationOrder.showModalDuringClickTask = activationOrder.clickTaskActive;
+      activationOrder.showModalBeforePopoverCloseFrameFinished =
+        !activationOrder.popoverCloseFrameFinished;
       activationOrder.transitions.push("show-modal");
       console.debug("Lightbox activation: show modal");
       originalShowModal();
@@ -379,10 +400,14 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
               __richTooltipActivationOrder?: {
                 clickObserved: boolean;
                 clickTaskActive: boolean;
+                clickFrameFinished: boolean;
+                popoverCloseFrameFinished: boolean;
                 focusInsidePopoverWhenHidden?: boolean;
                 hidePopoverDuringClickTask?: boolean;
+                hidePopoverBeforeClickFrameFinished?: boolean;
                 pageLockedWhenHidden?: boolean;
                 showModalDuringClickTask?: boolean;
+                showModalBeforePopoverCloseFrameFinished?: boolean;
                 transitions: Array<"hide-popover" | "show-modal">;
               };
             }
@@ -392,10 +417,14 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
     .toEqual({
       clickObserved: true,
       clickTaskActive: false,
+      clickFrameFinished: true,
+      popoverCloseFrameFinished: true,
       focusInsidePopoverWhenHidden: false,
       hidePopoverDuringClickTask: false,
+      hidePopoverBeforeClickFrameFinished: false,
       pageLockedWhenHidden: false,
       showModalDuringClickTask: false,
+      showModalBeforePopoverCloseFrameFinished: false,
       transitions: ["hide-popover", "show-modal"],
     });
   await expectPopoverOpen(richTooltip, false);

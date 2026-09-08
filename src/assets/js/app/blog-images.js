@@ -44,9 +44,9 @@ export function prepareBlogImageDialogs() {
       if (!img.dataset.imageDialogTooltipBound) {
         img.dataset.imageDialogTooltipBound = "true";
         img.addEventListener("click", () => {
-          // Let WebKit finish the trusted pointer activation before a rich
-          // tooltip leaves the top layer.
-          window.setTimeout(hideSiteTooltip);
+          // Dismiss the image label here. The preview controller owns closing
+          // an ancestor rich tooltip after WebKit finishes the activation frame.
+          hideSiteTooltip({ simpleOnly: true });
         });
       }
 

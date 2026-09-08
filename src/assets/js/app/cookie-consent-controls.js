@@ -290,6 +290,19 @@ class SiteCookieConsentBanner extends HTMLElement {
       // Once the user navigates, keyboard navigation is authoritative: do
       // not let that older frame move focus back to the first action.
       this.#cancelFocusRequest();
+      if (
+        this.#activeNotice === "explicit-content" &&
+        (event.key === "ArrowDown" || event.key === "ArrowUp")
+      ) {
+        const elements = this.#getFocusableDialogElements();
+        const activeIndex = elements.indexOf(document.activeElement);
+        if (activeIndex !== -1) {
+          event.preventDefault();
+          const offset = event.key === "ArrowDown" ? 1 : -1;
+          elements[(activeIndex + offset + elements.length) % elements.length].focus();
+          return;
+        }
+      }
       if (event.key === "Tab" && this.#activeNotice === "explicit-content") this.#trapFocus(event);
     }
   };

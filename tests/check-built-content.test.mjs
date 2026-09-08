@@ -19,12 +19,12 @@ test("valide les pages, ressources, liens internes et ancres d’un build", asyn
   await writeFixture(
     distDirectory,
     "index.html",
-    '<!doctype html><html><head><link rel="canonical" href="https://ct-blog.cta.li/"><link rel="stylesheet" href="/_astro/site.hash.css"></head><body><h1>Accueil</h1><a href="/article/#details">Article</a><img src="/image.webp" alt=""></body></html>',
+    '<!doctype html><html><head><link rel="canonical" href="https://ct-blog.cta.li/"><link rel="stylesheet" href="/_astro/site.hash.css"></head><body><h1>Accueil</h1><a href="/article#details">Article</a><img src="/image.webp" alt=""></body></html>',
   );
   await writeFixture(
     distDirectory,
     "article/index.html",
-    '<!doctype html><html><head><link rel="canonical" href="https://ct-blog.cta.li/article/"><link rel="stylesheet" href="/_astro/site.hash.css"></head><body><h1>Article</h1><h2 id="details">Détails</h2></body></html>',
+    '<!doctype html><html><head><link rel="canonical" href="https://ct-blog.cta.li/article"><link rel="stylesheet" href="/_astro/site.hash.css"></head><body><h1>Article</h1><h2 id="details">Détails</h2></body></html>',
   );
   await writeFixture(distDirectory, "image.webp", "image");
   await writeFixture(distDirectory, "_astro/site.hash.css", "body{}\n");
@@ -83,24 +83,24 @@ test("signale les liens, ancres, H1, canonical et marqueurs Pagefind invalides",
   await writeFixture(
     distDirectory,
     "index.html",
-    '<!doctype html><html><head><link rel="canonical" href="https://ct-blog.cta.li/autre/"></head><body><h1>Un</h1><h1>Deux</h1><a href="/absent/">Absent</a><a href="/cible/#absente">Ancre</a></body></html>',
+    '<!doctype html><html><head><link rel="canonical" href="https://ct-blog.cta.li/autre/"></head><body><h1>Un</h1><h1>Deux</h1><a href="/absent/">Absent</a><a href="/cible#absente">Ancre</a></body></html>',
   );
   await writeFixture(
     distDirectory,
     "cible/index.html",
-    '<!doctype html><html><head><link rel="canonical" href="https://ct-blog.cta.li/cible/"></head><body><h1>Cible</h1></body></html>',
+    '<!doctype html><html><head><link rel="canonical" href="https://ct-blog.cta.li/cible"></head><body><h1>Cible</h1></body></html>',
   );
   await writeFixture(
     distDirectory,
     "posts/pagefind-index-placeholder/index.html",
-    '<!doctype html><html><head><link rel="canonical" href="https://ct-blog.cta.li/posts/pagefind-index-placeholder/"></head><body><h1>pagefind-internal-placeholder-4d6af32b</h1></body></html>',
+    '<!doctype html><html><head><link rel="canonical" href="https://ct-blog.cta.li/posts/pagefind-index-placeholder"></head><body><h1>pagefind-internal-placeholder-4d6af32b</h1></body></html>',
   );
 
   const { issues } = await collectBuiltContentIssues({ distDirectory });
   assert.ok(issues.some((issue) => issue.includes("2 H1")));
   assert.ok(issues.some((issue) => issue.includes("canonical")));
   assert.ok(issues.some((issue) => issue.includes("cible interne absente /absent/")));
-  assert.ok(issues.some((issue) => issue.includes("ancre absente /cible/#absente")));
+  assert.ok(issues.some((issue) => issue.includes("ancre absente /cible#absente")));
   assert.ok(issues.some((issue) => issue.includes("route Pagefind temporaire")));
   assert.ok(issues.some((issue) => issue.includes("marqueur Pagefind temporaire")));
   assert.ok(issues.includes("Publication: flux RSS absent"));
@@ -114,29 +114,29 @@ test("compare les routes RSS et sitemap exactement, sans collision de préfixe",
   await writeFixture(
     distDirectory,
     "posts/foo/index.html",
-    '<!doctype html><html><head><link rel="canonical" href="https://ct-blog.cta.li/posts/foo/"></head><body><h1>Masqué</h1><article class="post"></article></body></html>',
+    '<!doctype html><html><head><link rel="canonical" href="https://ct-blog.cta.li/posts/foo"></head><body><h1>Masqué</h1><article class="post"></article></body></html>',
   );
   await writeFixture(
     distDirectory,
     "posts/foo/bar/index.html",
-    '<!doctype html><html><head><link rel="canonical" href="https://ct-blog.cta.li/posts/foo/bar/"></head><body><h1>Listé</h1><article class="post" data-pagefind-body></article></body></html>',
+    '<!doctype html><html><head><link rel="canonical" href="https://ct-blog.cta.li/posts/foo/bar"></head><body><h1>Listé</h1><article class="post" data-pagefind-body></article></body></html>',
   );
   await writeFixture(
     distDirectory,
     "rss.xml",
-    "<rss><channel><link>https://ct-blog.cta.li/</link><item><link>https://ct-blog.cta.li/posts/foo/bar/</link></item></channel></rss>",
+    "<rss><channel><link>https://ct-blog.cta.li/</link><item><link>https://ct-blog.cta.li/posts/foo/bar</link></item></channel></rss>",
   );
   await writeFixture(
     distDirectory,
     "sitemap.xml",
-    "<urlset><url><loc>https://ct-blog.cta.li/posts/foo/bar/</loc></url></urlset>",
+    "<urlset><url><loc>https://ct-blog.cta.li/posts/foo/bar</loc></url></urlset>",
   );
 
   const { issues } = await collectBuiltContentIssues({ distDirectory });
-  assert.ok(!issues.includes("/posts/foo/: article non listé présent dans le flux RSS"));
-  assert.ok(!issues.includes("/posts/foo/: article non listé présent dans le sitemap"));
-  assert.ok(!issues.includes("/posts/foo/bar/: article listé absent du flux RSS"));
-  assert.ok(!issues.includes("/posts/foo/bar/: article listé absent du sitemap"));
+  assert.ok(!issues.includes("/posts/foo: article non listé présent dans le flux RSS"));
+  assert.ok(!issues.includes("/posts/foo: article non listé présent dans le sitemap"));
+  assert.ok(!issues.includes("/posts/foo/bar: article listé absent du flux RSS"));
+  assert.ok(!issues.includes("/posts/foo/bar: article listé absent du sitemap"));
 });
 
 test("ne décode les entités XML qu’une seule fois", async (t) => {
@@ -146,20 +146,20 @@ test("ne décode les entités XML qu’une seule fois", async (t) => {
   await writeFixture(
     distDirectory,
     "posts/%3Csafe%3E/index.html",
-    '<!doctype html><html><head><link rel="canonical" href="https://ct-blog.cta.li/posts/%3Csafe%3E/"></head><body><h1>Article</h1><article class="post" data-pagefind-body></article></body></html>',
+    '<!doctype html><html><head><link rel="canonical" href="https://ct-blog.cta.li/posts/%3Csafe%3E"></head><body><h1>Article</h1><article class="post" data-pagefind-body></article></body></html>',
   );
   await writeFixture(
     distDirectory,
     "rss.xml",
-    "<rss><channel><link>https://ct-blog.cta.li/</link><item><link>https://ct-blog.cta.li/posts/&amp;lt;safe&amp;gt;/</link></item></channel></rss>",
+    "<rss><channel><link>https://ct-blog.cta.li/</link><item><link>https://ct-blog.cta.li/posts/&amp;lt;safe&amp;gt;</link></item></channel></rss>",
   );
   await writeFixture(
     distDirectory,
     "sitemap.xml",
-    "<urlset><url><loc>https://ct-blog.cta.li/posts/&amp;lt;safe&amp;gt;/</loc></url></urlset>",
+    "<urlset><url><loc>https://ct-blog.cta.li/posts/&amp;lt;safe&amp;gt;</loc></url></urlset>",
   );
 
   const { issues } = await collectBuiltContentIssues({ distDirectory });
-  assert.ok(issues.includes("/posts/%3Csafe%3E/: article listé absent du flux RSS"));
-  assert.ok(issues.includes("/posts/%3Csafe%3E/: article listé absent du sitemap"));
+  assert.ok(issues.includes("/posts/%3Csafe%3E: article listé absent du flux RSS"));
+  assert.ok(issues.includes("/posts/%3Csafe%3E: article listé absent du sitemap"));
 });

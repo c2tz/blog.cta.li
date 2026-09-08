@@ -60,7 +60,7 @@ n’apparaît pas dans les listes d’articles ni la recherche. Passez à `liste
 ```md
 Un texte avec du **gras**, de l’_italique_, du ~~texte barré~~ et du `code court`.
 
-Un [lien vers tous les articles](/tags/all/).
+Un [lien vers tous les articles](/tags/all).
 
 - Une première idée.
 - Une deuxième idée.
@@ -76,7 +76,7 @@ Un [lien vers tous les articles](/tags/all/).
 
 Un texte avec du **gras**, de l’_italique_, du ~~texte barré~~ et du `code court`.
 
-Un [lien vers tous les articles](/tags/all/).
+Un [lien vers tous les articles](/tags/all).
 
 - Une première idée.
 - Une deuxième idée.
@@ -97,7 +97,7 @@ inclure du Markdown : paragraphes, listes, liens et blocs de code.
 ```md
 {{< admonition type="tip" title="À retenir" >}}
 
-Vous pouvez écrire du **gras**, ajouter un [lien](/tags/all/) et faire une liste :
+Vous pouvez écrire du **gras**, ajouter un [lien](/tags/all) et faire une liste :
 
 - Une idée importante.
 - Une autre idée utile.
@@ -109,7 +109,7 @@ Vous pouvez écrire du **gras**, ajouter un [lien](/tags/all/) et faire une list
 
 {{< admonition type="tip" title="À retenir" >}}
 
-Vous pouvez écrire du **gras**, ajouter un [lien](/tags/all/) et faire une liste :
+Vous pouvez écrire du **gras**, ajouter un [lien](/tags/all) et faire une liste :
 
 - Une idée importante.
 - Une autre idée utile.
@@ -183,38 +183,38 @@ Le shortcode `button` crée un lien présenté comme un bouton. `href` indique s
 **À copier :**
 
 ```md
-{{< button href="/tags/all/" label="Voir les articles" variant="tonal" icon="article" />}}
+{{< button href="/tags/all" label="Voir les articles" variant="tonal" icon="article" />}}
 ```
 
 **Rendu :**
 
-{{< button href="/tags/all/" label="Voir les articles" variant="tonal" icon="article" />}}
+{{< button href="/tags/all" label="Voir les articles" variant="tonal" icon="article" />}}
 
 ### Les cinq apparences
 
 Remplacez `variant` par l’un de ces noms. Sans ce paramètre, le bouton utilise `filled`.
 
 ```md
-{{< button href="/tags/all/" label="Rempli" variant="filled" />}}
+{{< button href="/tags/all" label="Rempli" variant="filled" />}}
 
-{{< button href="/tags/all/" label="Tonal" variant="tonal" />}}
+{{< button href="/tags/all" label="Tonal" variant="tonal" />}}
 
-{{< button href="/tags/all/" label="Contour" variant="outlined" />}}
+{{< button href="/tags/all" label="Contour" variant="outlined" />}}
 
-{{< button href="/tags/all/" label="Texte" variant="text" />}}
+{{< button href="/tags/all" label="Texte" variant="text" />}}
 
-{{< button href="/tags/all/" label="Élevé" variant="elevated" />}}
+{{< button href="/tags/all" label="Élevé" variant="elevated" />}}
 ```
 
-{{< button href="/tags/all/" label="Rempli" variant="filled" />}}
+{{< button href="/tags/all" label="Rempli" variant="filled" />}}
 
-{{< button href="/tags/all/" label="Tonal" variant="tonal" />}}
+{{< button href="/tags/all" label="Tonal" variant="tonal" />}}
 
-{{< button href="/tags/all/" label="Contour" variant="outlined" />}}
+{{< button href="/tags/all" label="Contour" variant="outlined" />}}
 
-{{< button href="/tags/all/" label="Texte" variant="text" />}}
+{{< button href="/tags/all" label="Texte" variant="text" />}}
 
-{{< button href="/tags/all/" label="Élevé" variant="elevated" />}}
+{{< button href="/tags/all" label="Élevé" variant="elevated" />}}
 
 `icon` est facultatif et place l’icône avant le texte. `target="_blank"` ouvre le lien dans un
 nouvel onglet. `href` accepte aussi une URL complète ou une adresse `mailto:`.
@@ -223,14 +223,14 @@ Pour mettre du Markdown dans le libellé, remplacez `label` par un seul paragrap
 les balises :
 
 ```md
-{{< button href="/tags/all/" variant="outlined" >}}
+{{< button href="/tags/all" variant="outlined" >}}
 
 Voir **tous** les articles
 
 {{< /button >}}
 ```
 
-{{< button href="/tags/all/" variant="outlined" >}}
+{{< button href="/tags/all" variant="outlined" >}}
 
 Voir **tous** les articles
 
@@ -301,7 +301,7 @@ Astro prépare les pages à partir de vos fichiers **Markdown** :
 - Le texte devient une page HTML.
 - Les shortcodes prennent l’apparence du site.
 
-{{< button href="/tags/all/" label="Parcourir les articles" variant="text" />}}
+{{< button href="/tags/all" label="Parcourir les articles" variant="text" />}}
 
 {{< /rich-tooltip >}}
 ```
@@ -317,7 +317,7 @@ Astro prépare les pages à partir de vos fichiers **Markdown** :
 - Le texte devient une page HTML.
 - Les shortcodes prennent l’apparence du site.
 
-{{< button href="/tags/all/" label="Parcourir les articles" variant="text" />}}
+{{< button href="/tags/all" label="Parcourir les articles" variant="text" />}}
 
 {{< /rich-tooltip >}}
 
@@ -530,9 +530,9 @@ Pour prévisualiser pendant la rédaction :
 pnpm dev
 ```
 
-Ouvrez l’adresse affichée dans le terminal, puis `/posts/mon-nouvel-article/` pour le fichier
+Ouvrez l’adresse affichée dans le terminal, puis `/posts/mon-nouvel-article` pour le fichier
 `mon-nouvel-article.md`. Avant de publier, `pnpm build` vérifie aussi le contenu et les liens.
 
 Le cycle de publication est détaillé dans `guide/publier-un-article.md`. Pour voir les douze
 encadrés et un exemple qui combine plusieurs éléments, consultez aussi la
-[page de référence des shortcodes](/posts/hugo-material-shortcodes/).
+[page de référence des shortcodes](/posts/hugo-material-shortcodes).

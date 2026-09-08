@@ -11,7 +11,7 @@ import {
   waitForLightboxController,
 } from "./image-preview-fixture";
 
-const ARTICLE = "/posts/test-lightbox-paysage/";
+const ARTICLE = "/posts/test-lightbox-paysage";
 const ALT =
   "Un lac alpin reflète les montagnes éclairées à l’aube, avec des pierres et des herbes au premier plan.";
 

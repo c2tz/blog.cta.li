@@ -39,7 +39,7 @@ test("uses the independent animation preference when lazily opening both image d
 });
 
 test("keeps native lazy loading without an artificial image blur", async ({ page }) => {
-  await page.goto("/posts/mdx-smoke-test/", { waitUntil: "domcontentloaded" });
+  await page.goto("/posts/mdx-smoke-test", { waitUntil: "domcontentloaded" });
 
   const images = page.locator(".site-prose img");
   await expect(images).toHaveCount(2);
@@ -281,7 +281,7 @@ test("fits the complete image with CSS and stays scroll-free through gestures an
 test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwards", async ({
   page,
 }) => {
-  await page.goto("/posts/hugo-material-shortcodes/", { waitUntil: "domcontentloaded" });
+  await page.goto("/posts/hugo-material-shortcodes", { waitUntil: "domcontentloaded" });
   const richTooltip = page.locator("#tooltip-http-shiki");
   const trigger = page.locator('[data-rich-tooltip-trigger="tooltip-http-shiki"]');
   const sourceImage = richTooltip.locator('img[alt="konachan-382339.jpg"]');

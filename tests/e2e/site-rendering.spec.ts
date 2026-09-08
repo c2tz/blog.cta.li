@@ -17,7 +17,7 @@ test("switches all Material menus and search dialogs between normal and quick mo
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  await gotoRoute(page, "/__test__/archives/11/");
+  await gotoRoute(page, "/__test__/archives/11");
   await waitForNativeEnhancement(page, "[data-motion-toggle]");
   await waitForNativeEnhancement(page, "site-tag-posts");
   await page.locator(".home-detail-trigger").click();
@@ -80,7 +80,7 @@ test("keeps Material motion independent of detail mode after navigation", async 
   await gotoRoute(page, "/");
   await waitForNativeEnhancement(page, "[data-home-detail-toggle]");
   await page.locator(".home-detail-trigger").click();
-  await gotoRoute(page, "/posts/mdx-smoke-test/");
+  await gotoRoute(page, "/posts/mdx-smoke-test");
   await waitForNativeEnhancement(page, "[data-home-detail-toggle]");
   const controls = page.locator("md-menu, md-filled-select, md-outlined-select, md-dialog");
   const allQuick = () =>
@@ -98,7 +98,7 @@ test("keeps Material motion independent of detail mode after navigation", async 
       ),
     )
     .toBe(true);
-  await gotoRoute(page, "/cookies/");
+  await gotoRoute(page, "/cookies");
   await waitForAppReady(page);
   await expect(page.locator("html")).toHaveAttribute("data-motion", "on");
   await page.locator(".site-motion-trigger").click();
@@ -107,7 +107,7 @@ test("keeps Material motion independent of detail mode after navigation", async 
   await expect(page.locator("html")).toHaveAttribute("data-motion", "off");
 });
 
-for (const route of ["/", "/tags/all/", "/tags/blog/"]) {
+for (const route of ["/", "/tags/all", "/tags/blog"]) {
   test(`keeps full article titles readable on narrow screens at ${route}`, async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 844 });
     await gotoRoute(page, route);
@@ -197,7 +197,7 @@ test("serves a valid public RSS feed", async ({ page, request }) => {
   );
   expect(feed.parseErrors).toBe(0);
   expect(feed.titles).toContain("Bienvenue sur ct-blog");
-  expect(feed.links).toContain("https://ct-blog.cta.li/posts/bienvenue-sur-ct-blog/");
+  expect(feed.links).toContain("https://ct-blog.cta.li/posts/bienvenue-sur-ct-blog");
 });
 
 for (const route of ROUTES) {
@@ -221,7 +221,7 @@ for (const route of ROUTES) {
 test("preserves visible word spacing around shortcode icons and bold button text", async ({
   page,
 }) => {
-  await gotoRoute(page, "/posts/catalogue-redaction/");
+  await gotoRoute(page, "/posts/catalogue-redaction");
   await waitForAppReady(page);
   await page.evaluate(async () => {
     await document.fonts.ready;
@@ -262,7 +262,7 @@ test("preserves visible word spacing around shortcode icons and bold button text
 test("keeps a single post date and commit icon at 1.1rem when both commits are identical", async ({
   page,
 }) => {
-  await gotoRoute(page, "/posts/bienvenue-sur-ct-blog/");
+  await gotoRoute(page, "/posts/bienvenue-sur-ct-blog");
   const dates = page.locator("[data-post-git-dates]");
   await expect(dates.locator('[data-post-git-date="created"]')).toHaveCount(1);
   await expect(dates.locator('[data-post-git-date="modified"]')).toHaveCount(0);
@@ -308,7 +308,7 @@ test("keeps a single post date and commit icon at 1.1rem when both commits are i
 test("keeps the modification date and commit link when the post has distinct commits", async ({
   page,
 }) => {
-  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
+  await gotoRoute(page, "/posts/hugo-material-shortcodes");
   const dates = page.locator("[data-post-git-dates]");
   const creation = dates.locator('[data-post-git-date="created"]');
   const modification = dates.locator('[data-post-git-date="modified"]');
@@ -435,7 +435,7 @@ test("scrolls the document vertically with a mouse wheel in Chromium", async ({ 
     test.info().project.name.includes("webkit"),
     "The targeted WebKit matrix covers rendering, not Chromium wheel semantics.",
   );
-  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
+  await gotoRoute(page, "/posts/hugo-material-shortcodes");
 
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight))

@@ -25,6 +25,9 @@ const {
   lang = "fr",
 } = Astro.props;
 const configured = Boolean(repo.trim() && repoId.trim() && category.trim() && categoryId.trim());
+// Keep the discussion key used before public page URLs lost their trailing slash.
+const discussionPath = Astro.url.pathname.replace(/^\/+|\/+$/g, "");
+const discussionTerm = discussionPath ? `${discussionPath}/` : "index";
 ---
 
 <section
@@ -36,7 +39,8 @@ const configured = Boolean(repo.trim() && repoId.trim() && category.trim() && ca
   data-repo-id={repoId}
   data-category={category}
   data-category-id={categoryId}
-  data-mapping={mapping}
+  data-mapping={mapping === "pathname" ? "specific" : mapping}
+  data-term={mapping === "pathname" ? discussionTerm : undefined}
   data-strict={strict}
   data-reactions-enabled={reactionsEnabled}
   data-emit-metadata={emitMetadata}
@@ -87,7 +91,7 @@ const configured = Boolean(repo.trim() && repoId.trim() && category.trim() && ca
 
   <div class="giscus-comments-config giscus-comments-privacy" data-giscus-privacy>
     <p>Les commentaires sont masqués, car Giscus n'a pas été autorisé.</p>
-    <p><a href="/cookies/#modifier-vos-choix-cookies">Modifier mes préférences</a></p>
+    <p><a href="/cookies#modifier-vos-choix-cookies">Modifier mes préférences</a></p>
   </div>
 
   <div class="giscus-comments-panel-content" data-giscus-panel aria-busy="false" hidden>

@@ -15,7 +15,7 @@ test("loads rich and context tooltip controllers only for matching DOM", async (
   await waitForAppReady(page);
   expect(conditionalRequests).toEqual([]);
 
-  await gotoRoute(page, "/posts/mdx-smoke-test/");
+  await gotoRoute(page, "/posts/mdx-smoke-test");
   await expect(page.locator(".site-prose .footnotes")).toHaveAttribute(
     "data-footnotes-enhanced",
     "true",
@@ -23,7 +23,7 @@ test("loads rich and context tooltip controllers only for matching DOM", async (
   expect(conditionalRequests.some((url) => url.includes("site-context-popovers."))).toBe(true);
   expect(conditionalRequests.some((url) => url.includes("site-rich-tooltips."))).toBe(false);
 
-  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
+  await gotoRoute(page, "/posts/hugo-material-shortcodes");
   await expect(page.locator("[data-site-rich-tooltip]").first()).toHaveAttribute(
     "data-rich-tooltip-enhanced",
     "true",
@@ -268,7 +268,7 @@ test("dismisses trigger tooltips throughout search dialog open and close", async
 
 test("opens a virtual tooltip only after the cursor stops", async ({ page }) => {
   test.skip(test.info().project.name.includes("mobile"), "Virtual cursor anchors need a mouse.");
-  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
+  await gotoRoute(page, "/posts/hugo-material-shortcodes");
 
   const trigger = page.locator('a[data-tooltip-anchor="cursor"][data-tooltip]').first();
   const tooltip = page.locator("[data-site-tooltip-surface]");

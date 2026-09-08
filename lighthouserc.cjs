@@ -24,8 +24,8 @@ module.exports = {
       staticDistDir: "./dist",
       url: [
         "http://localhost/",
-        "http://localhost/posts/bienvenue-sur-ct-blog/",
-        "http://localhost/tags/all/",
+        "http://localhost/posts/bienvenue-sur-ct-blog",
+        "http://localhost/tags/all",
       ],
       settings: {
         chromeFlags: "--headless=new --no-sandbox",

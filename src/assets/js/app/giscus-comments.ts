@@ -186,6 +186,7 @@ function enhanceGiscus(root: HTMLElement) {
       ["category", root.dataset.category],
       ["category-id", root.dataset.categoryId],
       ["mapping", root.dataset.mapping],
+      ["term", root.dataset.term],
       ["strict", root.dataset.strict],
       ["reactions-enabled", root.dataset.reactionsEnabled],
       ["emit-metadata", root.dataset.emitMetadata],

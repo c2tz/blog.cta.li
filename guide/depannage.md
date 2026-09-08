@@ -71,7 +71,7 @@ C'est normal si son frontmatter contient :
 listed: false
 ```
 
-Ouvrez son URL directe `/posts/<nom-du-fichier>/`. Pour le publier, ajoutez une description et passez
+Ouvrez son URL directe `/posts/<nom-du-fichier>`. Pour le publier, ajoutez une description et passez
 `listed` à `true`, puis reconstruisez.
 
 ## Une date d'article est incorrecte

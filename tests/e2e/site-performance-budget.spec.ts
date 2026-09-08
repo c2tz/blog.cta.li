@@ -6,8 +6,8 @@ import { clearConsentState, expect, gotoRoute, test, waitForAppReady } from "./s
 // first search. Fonts and images retain their separate static/performance checks.
 const routes = [
   { path: "/", freshKiB: 100, consentedKiB: 140 },
-  { path: "/posts/bienvenue-sur-ct-blog/", freshKiB: 115, consentedKiB: 120 },
-  { path: "/tags/all/", freshKiB: 90, consentedKiB: 100 },
+  { path: "/posts/bienvenue-sur-ct-blog", freshKiB: 115, consentedKiB: 120 },
+  { path: "/tags/all", freshKiB: 90, consentedKiB: 100 },
 ];
 
 function observeAssets(page: Page, origin: string) {
@@ -70,7 +70,7 @@ test("bounds the first search including deferred modules and index", async ({ pa
   const dialog = page.locator("md-dialog.site-search-dialog[open]");
   await expect(dialog).toBeVisible();
   await dialog.getByRole("searchbox", { name: "Mot-clé, titre ou contenu" }).fill("bienvenue");
-  await expect(dialog.locator('a[href="/posts/bienvenue-sur-ct-blog/"]')).toBeVisible();
+  await expect(dialog.locator('a[href="/posts/bienvenue-sur-ct-blog"]')).toBeVisible();
   await check(340);
 });
 

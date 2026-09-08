@@ -95,6 +95,7 @@ export const SITE_LEGACY_STORAGE_KEYS = Object.freeze({
 export const SITE_COOKIE_NAMES = Object.freeze({
   cookieConsent: "ct-cookie-consent-v2",
   explicitContentAcknowledgement: "ct-explicit-content-ack",
+  explicitContentAge: "ct-explicit-content-age",
   giscusCommentsEnabled: "site-giscus-comments-enabled",
   homeDetailView: "home-detail-view",
   motionPreference: "site-motion-preference",

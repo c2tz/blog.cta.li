@@ -118,11 +118,16 @@ explicite dans `knip.json` plutôt qu'une suppression immédiate.
 
 Mesure en brut, gzip et Brotli le HTML et les ressources initiales de l'accueil, d'un article, de la
 page cookies et de la 404. Il borne aussi chaque fichier JavaScript et image AVIF 404, les totaux
-JavaScript/CSS, Pagefind et les graphes différés de recherche, d'aperçu d'image et de Konachan. Les
+JavaScript/CSS, le moteur Pagefind et les graphes différés de recherche, d'aperçu d'image et de Konachan. Les
 entrées générées sont retrouvées par leur nom stable plutôt que par leur hash, afin qu'un nouveau
 build ne fausse pas le contrôle. Les graphes différés constituent une garde de poids déterministe :
 ils peuvent partager des chunks et ne représentent pas une trace réseau incrémentale. Cette
 vérification s'exécute à la fin de `pnpm build`.
+
+Le budget gzip de l'article de référence est de 36 Kio, avec ses ressources initiales ; il ne
+cumule pas le poids de tous les articles du blog. Les données de recherche Pagefind sont mesurées
+à titre informatif et peuvent grandir avec le nombre d'articles. Le moteur JavaScript/WebAssembly
+et le chargement réel de la première recherche restent soumis à leurs contrôles de performance.
 
 ## Tests
 

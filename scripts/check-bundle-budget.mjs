@@ -44,7 +44,8 @@ function sizeBudget(rawKib, gzipKib, brotliKib) {
 export const BUNDLE_BUDGETS = Object.freeze({
   routes: Object.freeze({
     home: sizeBudget(112, 28, 24),
-    article: sizeBudget(144, 32, 28),
+    // Leave room for production metadata and normal article-template changes.
+    article: sizeBudget(144, 36, 32),
     cookies: sizeBudget(120, 30, 26),
     notFound: sizeBudget(64, 16, 14),
     notFoundWithImage: sizeBudget(112, 68, 64),
@@ -53,7 +54,7 @@ export const BUNDLE_BUDGETS = Object.freeze({
   totalJavaScript: sizeBudget(768, 200, 176),
   totalStylesheet: sizeBudget(128, 32, 28),
   totalFonts: sizeBudget(128, 128, 128),
-  pagefind: sizeBudget(256, 184, 176),
+  pagefindRuntime: sizeBudget(256, 184, 176),
   notFoundImage: sizeBudget(56, 57, 57),
   deferredJourneys: Object.freeze({
     search: sizeBudget(320, 88, 76),
@@ -383,6 +384,17 @@ export async function collectBundleStats({ distDirectory = DEFAULT_DIST_DIRECTOR
     pagefindPaths.map((path) => `pagefind/${path}`),
     measurementCache,
   );
+  // Search data grows with the published corpus. Keep the fixed engine under
+  // budget and report the index separately instead of capping the blog's size.
+  const pagefindRuntimeFiles = pagefind.files.filter(
+    ({ path }) => path.endsWith(".js") || /\/wasm\.[^/]+\.pagefind$/.test(path),
+  );
+  const pagefindIndexFiles = pagefind.files.filter((file) => !pagefindRuntimeFiles.includes(file));
+  const pagefindRuntime = {
+    files: pagefindRuntimeFiles,
+    ...sumMeasurements(pagefindRuntimeFiles),
+  };
+  const pagefindIndex = { files: pagefindIndexFiles, ...sumMeasurements(pagefindIndexFiles) };
   const notFoundWithImages = await Promise.all(
     notFoundImageCandidates.map(async (image) => ({
       imagePath: image.path,
@@ -411,6 +423,8 @@ export async function collectBundleStats({ distDirectory = DEFAULT_DIST_DIRECTOR
     totalStylesheet: { ...sumMeasurements(stylesheetAssets), files: stylesheetAssets },
     totalFonts,
     pagefind,
+    pagefindRuntime,
+    pagefindIndex,
     notFoundImage,
     notFoundImages: notFoundImageCandidates,
     deferredJourneys,
@@ -445,7 +459,7 @@ export async function checkBundleBudget({
     ["total JavaScript applicatif", stats.totalJavaScript, budgets.totalJavaScript],
     ["total CSS", stats.totalStylesheet, budgets.totalStylesheet],
     ["polices locales", stats.totalFonts, budgets.totalFonts],
-    ["Pagefind", stats.pagefind, budgets.pagefind],
+    ["moteur Pagefind", stats.pagefindRuntime, budgets.pagefindRuntime],
     ["parcours différé recherche", stats.deferredJourneys.search, budgets.deferredJourneys.search],
     [
       "parcours différé aperçu d’image",
@@ -495,7 +509,8 @@ async function main() {
       `Budgets de bundles vérifiés : JS ${formatMeasurement(stats.totalJavaScript)};`,
       `CSS ${formatMeasurement(stats.totalStylesheet)};`,
       `polices ${formatMeasurement(stats.totalFonts)};`,
-      `Pagefind ${formatMeasurement(stats.pagefind)};`,
+      `moteur Pagefind ${formatMeasurement(stats.pagefindRuntime)};`,
+      `index Pagefind (informatif) ${formatMeasurement(stats.pagefindIndex)};`,
       `accueil ${formatMeasurement(stats.routes.home)}.`,
     ].join(" "),
   );

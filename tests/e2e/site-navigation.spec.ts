@@ -144,7 +144,13 @@ test("keyboard navigation reaches every visible cookie action", async ({ page })
   await expect(notice).toBeVisible();
   await expect.poll(() => leave.evaluate((element) => element.matches(":focus-within"))).toBe(true);
   await page.keyboard.press("ArrowDown");
-  await expectKeyboardRing(ageField);
+  // Text fields indicate focus with their active outline, not md-focus-ring.
+  await expect(ageField.locator("input")).toBeFocused();
+  await expect(ageField.locator("md-outlined-field")).toHaveJSProperty("focused", true);
+  await page.keyboard.press("ArrowUp");
+  await expect(ageField.locator("input")).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(ageField.locator("input")).toBeFocused();
   await ageField.locator("input").fill("2000-01-01");
   await page.keyboard.press("Tab");
   await expectKeyboardRing(acknowledge);

@@ -189,6 +189,8 @@ html.consent-visible body {
 }
 
 .cookie-consent-age-field md-outlined-text-field {
+  // Reserve the field's geometry before its Material definition loads.
+  display: flex;
   height: 3.5rem;
   width: 100%;
 }

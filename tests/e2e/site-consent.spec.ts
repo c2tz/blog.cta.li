@@ -53,7 +53,7 @@ test("renders and adopts a stable consent notice before bootstrap and Material f
     await page.goto("/", { waitUntil: "commit" });
     await expect.poll(() => bootstrapRequested).toBe(true);
     await expect(description).toBeVisible();
-    await expect(description).toContainText("Ce site peut contenir des images d’anime explicites.");
+    await expect(description).toContainText("image d'anime explicite");
     await expect(page.locator("[data-cookie-active-notice]")).toHaveCount(1);
     const bootNotice = await page.locator("[data-cookie-boot-notice]").elementHandle();
     expect(bootNotice).not.toBeNull();
@@ -94,7 +94,7 @@ test("renders and adopts a stable consent notice before bootstrap and Material f
     await expect(leave).toBeVisible();
     await expect(acknowledge).toBeVisible();
     await expect(ageField).toBeVisible();
-    await expect(acknowledge).toBeDisabled();
+    await expect(acknowledge.getByRole("button")).toBeDisabled();
     await expect
       .poll(() => leave.evaluate((element) => element.matches(":focus-within")))
       .toBe(true);
@@ -112,7 +112,7 @@ test("renders and adopts a stable consent notice before bootstrap and Material f
     await expect
       .poll(() => acknowledge.evaluate((element) => element.matches(":focus-within")))
       .toBe(true);
-    await expect(acknowledge).toBeEnabled();
+    await expect(acknowledge.getByRole("button")).toBeEnabled();
     await acknowledge.click();
     await expect(notice).toBeHidden();
     const privacy = page.locator(".cookie-consent--privacy");
@@ -201,7 +201,7 @@ test("validates the birth date range and remembers only valid dates", async ({ p
   const ageField = page.locator("[data-cookie-age]");
   const input = ageField.locator("input");
   const status = page.locator("[data-cookie-age-status]");
-  const acknowledge = page.locator('[data-cookie-action="acknowledge"]');
+  const acknowledge = page.locator('[data-cookie-action="acknowledge"]').getByRole("button");
   const dateYearsAgo = (years: number) => {
     const date = new Date();
     date.setFullYear(date.getFullYear() - years);

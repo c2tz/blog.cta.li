@@ -32,13 +32,6 @@ const DIALOG_FOCUSABLE_SELECTOR = [
   "textarea:not([disabled])",
   '[tabindex]:not([tabindex="-1"])',
 ].join(",");
-const MATERIAL_BUTTON_TAG_NAMES = new Set([
-  "md-elevated-button",
-  "md-filled-button",
-  "md-filled-tonal-button",
-  "md-outlined-button",
-  "md-text-button",
-]);
 function readCookie(name) {
   return readCookieValue(document.cookie, name);
 }
@@ -247,7 +240,9 @@ function isFocusableElement(element) {
     element.checkVisibility({ checkVisibilityCSS: true });
 
   return (
-    (element.tabIndex >= 0 || MATERIAL_BUTTON_TAG_NAMES.has(element.localName)) &&
+    // Material hosts delegate focus to their shadow control, even at tabindex=-1.
+    (element.tabIndex >= 0 || element.localName.startsWith("md-")) &&
+    element.matches(":defined") &&
     !element.hasAttribute("disabled") &&
     !element.matches(":disabled") &&
     element.getAttribute("aria-disabled") !== "true" &&
@@ -281,7 +276,7 @@ class SiteCookieConsentBanner extends HTMLElement {
       // queued initial focus until there is a visible action to navigate to.
       if (
         this.#activeNotice === "explicit-content" &&
-        this.#getFocusableDialogElements().length === 0
+        (!customElements.get("md-text-button") || this.#getFocusableDialogElements().length === 0)
       ) {
         event.preventDefault();
         return;
@@ -292,18 +287,12 @@ class SiteCookieConsentBanner extends HTMLElement {
       this.#cancelFocusRequest();
       if (
         this.#activeNotice === "explicit-content" &&
-        (event.key === "ArrowDown" || event.key === "ArrowUp")
+        (event.key === "Tab" ||
+          ((event.key === "ArrowDown" || event.key === "ArrowUp") &&
+            !document.activeElement?.matches("[data-cookie-age]")))
       ) {
-        const elements = this.#getFocusableDialogElements();
-        const activeIndex = elements.indexOf(document.activeElement);
-        if (activeIndex !== -1) {
-          event.preventDefault();
-          const offset = event.key === "ArrowDown" ? 1 : -1;
-          elements[(activeIndex + offset + elements.length) % elements.length].focus();
-          return;
-        }
+        this.#trapFocus(event, event.shiftKey || event.key === "ArrowUp");
       }
-      if (event.key === "Tab" && this.#activeNotice === "explicit-content") this.#trapFocus(event);
     }
   };
 
@@ -438,9 +427,12 @@ class SiteCookieConsentBanner extends HTMLElement {
   }
 
   #getFocusableDialogElements() {
-    return Array.from(this.querySelectorAll(`.cookie-consent ${DIALOG_FOCUSABLE_SELECTOR}`)).filter(
-      isFocusableElement,
-    );
+    const elements = Array.from(
+      this.querySelectorAll(`.cookie-consent ${DIALOG_FOCUSABLE_SELECTOR}`),
+    ).filter(isFocusableElement);
+    // Keep the safe exit first, followed by the birth date and confirmation.
+    const leave = elements.find((element) => element.matches('[data-cookie-action="leave"]'));
+    return leave ? [leave, ...elements.filter((element) => element !== leave)] : elements;
   }
 
   #focusInitialAction() {
@@ -480,12 +472,12 @@ class SiteCookieConsentBanner extends HTMLElement {
     this.#focusFrame = 0;
   }
 
-  #trapFocus(event) {
+  #trapFocus(event, backwards) {
     const elements = this.#getFocusableDialogElements();
     if (elements.length === 0) return;
 
     const activeIndex = elements.indexOf(document.activeElement);
-    const nextIndex = event.shiftKey
+    const nextIndex = backwards
       ? activeIndex <= 0
         ? elements.length - 1
         : activeIndex - 1

@@ -310,6 +310,7 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
         clickTaskActive: boolean;
         focusInsidePopoverWhenHidden?: boolean;
         hidePopoverDuringClickTask?: boolean;
+        pageLockedWhenHidden?: boolean;
         showModalDuringClickTask?: boolean;
         transitions: Array<"hide-popover" | "show-modal">;
       };
@@ -327,6 +328,7 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
       clickTaskActive: false,
       focusInsidePopoverWhenHidden: undefined as boolean | undefined,
       hidePopoverDuringClickTask: undefined as boolean | undefined,
+      pageLockedWhenHidden: undefined as boolean | undefined,
       showModalDuringClickTask: undefined as boolean | undefined,
       transitions: [] as Array<"hide-popover" | "show-modal">,
     };
@@ -349,6 +351,8 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
     richTooltip.hidePopover = () => {
       activationOrder.hidePopoverDuringClickTask = activationOrder.clickTaskActive;
       activationOrder.focusInsidePopoverWhenHidden = richTooltip.contains(document.activeElement);
+      activationOrder.pageLockedWhenHidden =
+        document.documentElement.classList.contains("site-image-dialog-open");
       activationOrder.transitions.push("hide-popover");
       console.debug("Lightbox activation: hide popover");
       originalHidePopover();
@@ -377,6 +381,7 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
                 clickTaskActive: boolean;
                 focusInsidePopoverWhenHidden?: boolean;
                 hidePopoverDuringClickTask?: boolean;
+                pageLockedWhenHidden?: boolean;
                 showModalDuringClickTask?: boolean;
                 transitions: Array<"hide-popover" | "show-modal">;
               };
@@ -389,13 +394,16 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
       clickTaskActive: false,
       focusInsidePopoverWhenHidden: false,
       hidePopoverDuringClickTask: false,
+      pageLockedWhenHidden: false,
       showModalDuringClickTask: false,
       transitions: ["hide-popover", "show-modal"],
     });
   await expectPopoverOpen(richTooltip, false);
+  await expect(page.locator("html")).toHaveCSS("overflow-y", "hidden");
   await dialog.locator("[data-image-close]").click();
   await expectDialogOpen(false);
   await expectPopoverOpen(richTooltip, false);
+  await expect(page.locator("html")).not.toHaveClass(/site-image-dialog-open/);
 
   await trigger.focus();
   await expectPopoverOpen(richTooltip, true);

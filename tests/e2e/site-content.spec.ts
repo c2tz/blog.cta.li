@@ -36,7 +36,7 @@ test("keeps consent actions uppercase and the privacy banner below the search sc
   await gotoRoute(page, "/");
 
   const explicitConsent = page.getByRole("dialog", {
-    name: "Avertissement images explicites +18",
+    name: "Avertissement +18",
   });
   await expect(explicitConsent).toBeVisible();
   const modalVisualState = await explicitConsent.evaluate((dialog) => {

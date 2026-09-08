@@ -362,12 +362,9 @@ test("opens a rich-tooltip image in preview and keeps the tooltip closed afterwa
       console.debug("Lightbox activation: modal shown");
     };
   });
-  await sourceImage.click({ trial: true, timeout: 5_000 });
-  const sourceBox = await sourceImage.boundingBox();
-  if (!sourceBox) {
-    throw new Error("Expected the rich-tooltip image to expose a clickable box");
-  }
-  await page.mouse.click(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
+  // Keep actionability checks and the trusted click together: floating layout
+  // can move the image after a trial click or a separately sampled bounding box.
+  await sourceImage.click();
   await expectDialogOpen(true);
   await expect
     .poll(() =>

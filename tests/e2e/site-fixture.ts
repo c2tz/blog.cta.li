@@ -20,6 +20,7 @@ export function clearConsentState() {
   localStorage.removeItem("ct-cookie-consent-v2");
   localStorage.removeItem("ct-cookie-consent-v1");
   document.cookie = "ct-explicit-content-ack=; Max-Age=0; Path=/; SameSite=Lax";
+  document.cookie = "ct-explicit-content-age=; Max-Age=0; Path=/; SameSite=Lax";
   document.cookie = "ct-cookie-consent-v2=; Max-Age=0; Path=/; SameSite=Lax";
   document.cookie = "ct-cookie-consent=; Max-Age=0; Path=/; SameSite=Lax";
 }
@@ -163,8 +164,10 @@ export async function expectKeyboardFocusOverridesPendingPointerFrame(dialog: Lo
   const focusState = await dialog.evaluate(async (element) => {
     const backdrop = element.parentElement?.querySelector(".cookie-consent-backdrop");
     const leave = element.querySelector("[data-cookie-action='leave']");
+    const ageField = element.querySelector("[data-cookie-age]");
     const acknowledge = element.querySelector("[data-cookie-action='acknowledge']");
     if (!(backdrop instanceof HTMLElement) || !(leave instanceof HTMLElement)) return null;
+    if (!(ageField instanceof HTMLElement)) return null;
     if (!(acknowledge instanceof HTMLElement)) return null;
 
     const pointerdownCanceled = !backdrop.dispatchEvent(
@@ -186,6 +189,7 @@ export async function expectKeyboardFocusOverridesPendingPointerFrame(dialog: Lo
     });
 
     return {
+      ageField: ageField.matches(":focus-within"),
       acknowledge: acknowledge.matches(":focus-within"),
       leave: leave.matches(":focus-within"),
       pointerdownCanceled,
@@ -193,7 +197,8 @@ export async function expectKeyboardFocusOverridesPendingPointerFrame(dialog: Lo
   });
 
   expect(focusState).toEqual({
-    acknowledge: true,
+    ageField: true,
+    acknowledge: false,
     leave: false,
     pointerdownCanceled: true,
   });

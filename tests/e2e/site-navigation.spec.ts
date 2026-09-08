@@ -139,10 +139,14 @@ test("keyboard navigation reaches every visible cookie action", async ({ page })
   await gotoRoute(page, "/");
   const notice = page.locator(".cookie-consent--explicit-content");
   const leave = notice.locator('[data-cookie-action="leave"]');
+  const ageField = notice.locator("[data-cookie-age]");
   const acknowledge = notice.locator('[data-cookie-action="acknowledge"]');
   await expect(notice).toBeVisible();
   await expect.poll(() => leave.evaluate((element) => element.matches(":focus-within"))).toBe(true);
   await page.keyboard.press("ArrowDown");
+  await expectKeyboardRing(ageField);
+  await ageField.locator("input").fill("2000-01-01");
+  await page.keyboard.press("Tab");
   await expectKeyboardRing(acknowledge);
   await page.keyboard.press("Tab");
   await expectKeyboardRing(leave);
@@ -200,6 +204,9 @@ test("cookie notices respect reduced motion after their styles load", async ({ p
     "0s",
   );
   await expect(page.locator(".cookie-consent-backdrop")).toHaveCSS("animation-duration", "0s");
+  const ageField = page.locator("[data-cookie-age]");
+  await ageField.locator("input").fill("2000-01-01");
+  await ageField.locator("input").blur();
   await page.locator('[data-cookie-action="acknowledge"]').click();
   await expect(page.locator(".cookie-consent--privacy")).toHaveCSS("animation-duration", "0s");
 });

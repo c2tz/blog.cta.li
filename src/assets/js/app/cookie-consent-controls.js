@@ -26,6 +26,7 @@ const DIALOG_FOCUSABLE_SELECTOR = [
   "md-filled-tonal-button:not([disabled])",
   "md-outlined-button:not([disabled])",
   "md-text-button:not([disabled])",
+  "md-outlined-text-field:not([disabled])",
   "input:not([disabled])",
   "select:not([disabled])",
   "textarea:not([disabled])",
@@ -38,7 +39,6 @@ const MATERIAL_BUTTON_TAG_NAMES = new Set([
   "md-outlined-button",
   "md-text-button",
 ]);
-
 function readCookie(name) {
   return readCookieValue(document.cookie, name);
 }
@@ -377,14 +377,17 @@ class SiteCookieConsentBanner extends HTMLElement {
     });
 
     this.querySelector("[data-cookie-action='leave']")?.addEventListener("click", () => {
-      if (window.history.length > 1) {
-        window.history.back();
-      } else {
-        window.location.assign("https://www.cta.li/");
-      }
+      window.location.assign("https://www.cta.li/");
     });
 
-    this.querySelector("[data-cookie-action='acknowledge']")?.addEventListener("click", () => {
+    const acknowledgeButton = this.querySelector("[data-cookie-action='acknowledge']");
+    if (this.querySelector("[data-cookie-age]")) {
+      void import("./explicit-content-age.js")
+        .then(({ bindExplicitContentAge }) => bindExplicitContentAge(this))
+        .catch(() => undefined);
+    }
+
+    acknowledgeButton?.addEventListener("click", () => {
       writeExplicitContentAcknowledgement();
       this.#explicitContentPending = false;
       document.dispatchEvent(new Event(SITE_EVENTS.explicitContentChange));
@@ -587,6 +590,8 @@ class SiteCookiePreferences extends HTMLElement {
 }
 
 export function defineCookieConsentControls() {
+  void import("@material/web/textfield/outlined-text-field.js").catch(() => undefined);
+
   if (!customElements.get("site-cookie-consent-banner")) {
     customElements.define("site-cookie-consent-banner", SiteCookieConsentBanner);
   }

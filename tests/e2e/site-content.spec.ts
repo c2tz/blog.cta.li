@@ -36,7 +36,7 @@ test("keeps consent actions uppercase and the privacy banner below the search sc
   await gotoRoute(page, "/");
 
   const explicitConsent = page.getByRole("dialog", {
-    name: "Avertissement relatif aux images",
+    name: "Avertissement images explicites +18",
   });
   await expect(explicitConsent).toBeVisible();
   const modalVisualState = await explicitConsent.evaluate((dialog) => {
@@ -78,7 +78,7 @@ test("keeps consent actions uppercase and the privacy banner below the search sc
     expect.poll(() => button.evaluate((element) => element.matches(":focus-within"))).toBe(true);
 
   await expect(explicitConsent.getByText("QUITTER", { exact: true })).toBeVisible();
-  await expect(explicitConsent.getByText("J’ACCEPTE ET J’ENTRE", { exact: true })).toBeVisible();
+  await expect(explicitConsent.getByText("CONTINUER", { exact: true })).toBeVisible();
   await expect(explicitConsent.getByRole("button", { name: "Quitter le site" })).toBeVisible();
   await expect(
     explicitConsent.getByRole("button", {
@@ -99,6 +99,10 @@ test("keeps consent actions uppercase and the privacy banner below the search sc
 
   await page.locator(".cookie-consent-backdrop").click({ position: { x: 8, y: 8 } });
   await expectFocused(leaveButton);
+  await page.keyboard.press("Tab");
+  const ageField = explicitConsent.locator("[data-cookie-age]");
+  await expectFocused(ageField);
+  await ageField.locator("input").fill("2000-01-01");
   await page.keyboard.press("Tab");
   await expectFocused(acknowledgeButton);
   if (!test.info().project.name.includes("mobile")) {
@@ -121,6 +125,7 @@ test("keeps consent actions uppercase and the privacy banner below the search sc
         display: "flex",
       });
   }
+  await page.keyboard.press("Shift+Tab");
   await page.keyboard.press("Shift+Tab");
   await expectFocused(leaveButton);
   await acknowledgeButton.click();

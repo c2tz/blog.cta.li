@@ -182,6 +182,23 @@ html.consent-visible body {
   min-width: 0;
 }
 
+.cookie-consent-age-field {
+  margin-top: 0.75rem;
+}
+
+.cookie-consent-age-field md-outlined-text-field {
+  height: 3.5rem;
+  width: 100%;
+}
+
+.cookie-consent-age-status {
+  display: block;
+  margin-top: 0.75rem;
+  color: var(--md-sys-color-error);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
 [data-cookie-boot-notice] .cookie-consent-actions {
   visibility: hidden;
 }

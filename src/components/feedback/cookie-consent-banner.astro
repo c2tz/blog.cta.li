@@ -11,7 +11,7 @@ import "@/assets/css/components/cookie-consent.scss";
         role="dialog"
         aria-modal="true"
         aria-labelledby="explicit-content-consent-title"
-        aria-describedby="explicit-content-consent-desc"
+        aria-describedby="explicit-content-age-help"
       >
         <div class="cookie-consent-alert">
           <svg
@@ -25,12 +25,31 @@ import "@/assets/css/components/cookie-consent.scss";
             ></path>
           </svg>
           <div class="cookie-consent-content">
-            <h4 id="explicit-content-consent-title">Avertissement relatif aux images</h4>
-            <p id="explicit-content-consent-desc">
-              Ce site peut contenir des images d’anime à caractère explicite, réservées à un public
-              adulte. En continuant, vous confirmez avoir au moins 18 ans, ou avoir atteint l’âge
-              légal de la majorité dans votre pays ou région.
+            <h4 id="explicit-content-consent-title">Avertissement +18</h4>
+            <p>
+              Ce site peut inclure et proposer l'affichage de contenu : <strong
+                ><u>image d'anime explicite</u></strong
+              > ; qui n'est pas approprié pour tous les âges ou pour la consultation au travail (NSFW).
             </p>
+            <div class="cookie-consent-age-field">
+              <md-outlined-text-field
+                id="explicit-content-age"
+                name="explicit-content-age"
+                type="date"
+                min="1900-01-01"
+                autocomplete="bday"
+                label="Date de naissance"
+                aria-describedby="explicit-content-age-help"
+                data-cookie-age></md-outlined-text-field>
+              <span id="explicit-content-age-help" class="sr-only">
+                Vous devez avoir au moins 18 ans pour activer le bouton Continuer.
+              </span>
+              <span
+                class="cookie-consent-age-status"
+                role="status"
+                aria-live="polite"
+                data-cookie-age-status></span>
+            </div>
           </div>
         </div>
 
@@ -48,8 +67,9 @@ import "@/assets/css/components/cookie-consent.scss";
             type="button"
             aria-label="J’accepte et j’entre en confirmant avoir au moins 18 ans"
             data-cookie-action="acknowledge"
+            disabled
           >
-            J’ACCEPTE ET J’ENTRE
+            CONTINUER
           </md-filled-button>
         </div>
       </section>

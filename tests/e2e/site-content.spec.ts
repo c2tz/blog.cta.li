@@ -767,7 +767,11 @@ test("keeps unlisted posts out of the semantic tag table", async ({ page }) => {
 });
 
 test("keeps Giscus disabled behind the privacy choice", async ({ page }) => {
+  if (!test.info().project.name.includes("mobile")) {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+  }
   await gotoRoute(page, "/posts/hugo-material-shortcodes");
+  await waitForAppReady(page);
 
   const commentsHeading = page.getByRole("heading", { name: "Commentaires" });
   await expect(commentsHeading).toBeVisible();
@@ -783,20 +787,26 @@ test("keeps Giscus disabled behind the privacy choice", async ({ page }) => {
     "href",
     "/cookies#modifier-vos-choix-cookies",
   );
+  await expect(page.locator("[data-giscus-privacy]")).toContainText(
+    "autorisé. Modifier mes préférences",
+  );
 
-  if (test.info().project.name.includes("mobile")) {
-    const actionAlignment = await page.locator(".giscus-comments-actions").evaluate((actions) => {
-      const parentRect = actions.parentElement?.getBoundingClientRect();
-      const actionsRect = actions.getBoundingClientRect();
-      return parentRect
-        ? Math.abs(
-            actionsRect.left + actionsRect.width / 2 - (parentRect.left + parentRect.width / 2),
-          )
-        : Number.POSITIVE_INFINITY;
-    });
-    expect(actionAlignment).toBeLessThanOrEqual(2);
-    await expect(page.locator(".giscus-comments-actions")).toHaveCSS("justify-content", "center");
-  }
+  const actionAlignment = await page.locator(".giscus-comments-header").evaluate((header) => {
+    const intro = header.querySelector(".giscus-comments-intro")!.getBoundingClientRect();
+    const conduct = header.querySelector(".giscus-comments-conduct-link")!.getBoundingClientRect();
+    const accept = header.querySelector(".giscus-comments-accept-button")!.getBoundingClientRect();
+    const bounds = header.getBoundingClientRect();
+    return {
+      centerOffset: Math.abs((conduct.left + accept.right) / 2 - (bounds.left + bounds.width / 2)),
+      belowIntro: Math.min(conduct.top, accept.top) >= intro.bottom,
+      verticalOffset: Math.abs(conduct.top + conduct.height / 2 - (accept.top + accept.height / 2)),
+      contained: conduct.left >= bounds.left && accept.right <= bounds.right,
+    };
+  });
+  expect(actionAlignment.centerOffset).toBeLessThanOrEqual(2);
+  expect(actionAlignment.belowIntro).toBe(true);
+  expect(actionAlignment.verticalOffset).toBeLessThanOrEqual(2);
+  expect(actionAlignment.contained).toBe(true);
 });
 
 test("keeps one Giscus progress bar until its iframe has loaded", async ({ page }) => {

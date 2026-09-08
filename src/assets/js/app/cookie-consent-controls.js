@@ -242,13 +242,17 @@ function setBackgroundInteractionDisabled(disabled) {
 }
 
 function isFocusableElement(element) {
+  const visible =
+    typeof element.checkVisibility !== "function" ||
+    element.checkVisibility({ checkVisibilityCSS: true });
+
   return (
     (element.tabIndex >= 0 || MATERIAL_BUTTON_TAG_NAMES.has(element.localName)) &&
     !element.hasAttribute("disabled") &&
     !element.matches(":disabled") &&
     element.getAttribute("aria-disabled") !== "true" &&
     !element.closest('[inert], [hidden], [aria-hidden="true"]') &&
-    element.checkVisibility({ checkVisibilityCSS: true })
+    visible
   );
 }
 

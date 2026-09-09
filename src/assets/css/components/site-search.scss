@@ -17,7 +17,7 @@
   z-index: 2;
 }
 
-html:has(.site-search-dialog[open]) .cookie-consent--privacy {
+html:has(.site-search-dialog[open]) :is(.cookie-consent--privacy, .site-scroll-top) {
   z-index: 1;
 }
 

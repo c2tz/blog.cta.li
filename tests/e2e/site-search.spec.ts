@@ -6,6 +6,7 @@ import {
   waitForNativeEnhancement,
 } from "./site-fixture";
 import type { Page } from "@playwright/test";
+import sharp from "sharp";
 
 const searchTriggerSelector = "[data-site-search-trigger]";
 
@@ -44,6 +45,55 @@ async function enableDetailedView(page: Page) {
   await page.locator("md-icon-button.home-detail-trigger").click();
   await expect(page.locator("html")).toHaveAttribute("data-home-detail-view", "true");
 }
+
+test("dims scroll-to-top beneath the search scrim and restores it after closing", async ({
+  page,
+}) => {
+  await gotoRoute(page, "/posts/hugo-material-shortcodes");
+  await page.evaluate(() => window.scrollTo(0, 800));
+  const scrollTop = page.locator("[data-scroll-top]");
+  await expect(scrollTop).toBeVisible();
+  await scrollTop.evaluate((element) => {
+    // A solid patch verifies the actual painting order, as in the lightbox test.
+    (element as HTMLElement).style.background = "rgb(255, 0, 255)";
+    Array.from(element.children).forEach(
+      (child) => ((child as HTMLElement).style.visibility = "hidden"),
+    );
+  });
+  const { dialog } = await openSearch(page);
+  await expect
+    .poll(() =>
+      page
+        .locator("[data-search-dialog] .scrim")
+        .evaluate((element) => Number(getComputedStyle(element).opacity)),
+    )
+    .toBeCloseTo(0.32, 2);
+  const box = (await scrollTop.boundingBox())!;
+  const sample = async () =>
+    sharp(await page.screenshot({ scale: "css" }))
+      .extract({ left: Math.round(box.x + 2), top: Math.round(box.y + 2), width: 1, height: 1 })
+      .removeAlpha()
+      .raw()
+      .toBuffer();
+  const dimmed = await sample();
+  expect(dimmed[0]).toBeGreaterThan(150);
+  expect(dimmed[0]).toBeLessThan(200);
+  expect(dimmed[1]).toBeLessThan(5);
+  expect(dimmed[2]).toBeGreaterThan(150);
+  expect(dimmed[2]).toBeLessThan(200);
+
+  await page.getByRole("button", { name: "Fermer la recherche" }).click();
+  await expect(dialog).toBeHidden();
+  expect([...(await sample())]).toEqual([255, 0, 255]);
+  await scrollTop.evaluate((element) => {
+    (element as HTMLElement).style.removeProperty("background");
+    Array.from(element.children).forEach((child) =>
+      (child as HTMLElement).style.removeProperty("visibility"),
+    );
+  });
+  await page.getByRole("button", { name: "Retour en haut", exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+});
 
 test("only offers sorting in detailed mode and preserves the search when switching modes", async ({
   page,
@@ -280,6 +330,11 @@ test("searches through the Material Web text field", async ({ page }) => {
   await expect(
     searchDialog.getByRole("link", { name: "Bienvenue sur ct-blog", exact: true }),
   ).toBeVisible();
+  const dates = searchDialog.locator(".site-search-panel-result-meta");
+  await expect(dates.locator("time")).toHaveCount(1);
+  await expect(dates.locator('[aria-label="Création du post"]')).toBeVisible();
+  await expect(dates.locator('[aria-label="Dernière modification du post"]')).toHaveCount(0);
+  await expect(dates.locator(".site-search-panel-result-meta-separator")).toHaveCount(0);
 
   await searchInput.fill("site");
   const excerpt = searchDialog.locator(".site-search-panel-result-excerpt");

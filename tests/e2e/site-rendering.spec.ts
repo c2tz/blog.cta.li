@@ -325,7 +325,7 @@ test("keeps the modification date and commit link when the post has distinct com
 });
 
 test("renders the inverse-theme 404 artwork without site chrome", async ({ page }) => {
-  const response = await page.goto("/page-absente-pour-test/", {
+  const response = await page.goto("/page-absente-pour-test", {
     waitUntil: "domcontentloaded",
   });
 

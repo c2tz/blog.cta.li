@@ -44,7 +44,7 @@ test("reuses the article archive table for individual tags", async ({ page }) =>
   await expect(tagPosts.getByRole("button", { name: "Trier par titre" })).toBeVisible();
   await expect(tagPosts.locator("md-outlined-text-field.tag-posts-table-filter")).toBeVisible();
   await expect(tagPosts.locator("ul.tag-posts")).toHaveCount(0);
-  await expect(row.getByRole("link")).toHaveAttribute("href", /^\/posts\/[^/]+\/$/);
+  await expect(row.getByRole("link")).toHaveAttribute("href", /^\/posts\/[^/]+$/);
   await expect(row.getByRole("link")).toHaveText((await row.getAttribute("data-title"))!);
   await expect(row.locator(".site-date-compact")).toBeVisible();
   await expect(row.locator(".site-date-full")).toBeHidden();

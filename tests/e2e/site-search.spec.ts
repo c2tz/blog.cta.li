@@ -465,13 +465,14 @@ test("never exposes the internal Pagefind placeholder", async ({ page }) => {
   });
 
   await expect(dialog.locator("[data-search-status]")).toHaveText(/résultat|Aucun article trouvé/);
-  await expect(dialog.locator('a[href="/posts/pagefind-index-placeholder/"]')).toHaveCount(0);
+  const placeholderLinks = dialog.locator('a[href^="/posts/pagefind-index-placeholder"]');
+  await expect(placeholderLinks).toHaveCount(0);
 
   await dialog
     .getByRole("searchbox", { name: "Mot-clé, titre ou contenu" })
     .fill("pagefind-internal-placeholder-4d6af32b");
   await expect(dialog.locator("[data-search-status]")).toHaveText(/résultat|Aucun article trouvé/);
-  await expect(dialog.locator('a[href="/posts/pagefind-index-placeholder/"]')).toHaveCount(0);
+  await expect(placeholderLinks).toHaveCount(0);
 });
 
 test("renders only safe Pagefind markup and same-origin result links", async ({ page }) => {

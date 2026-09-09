@@ -136,7 +136,7 @@ test("keeps consent actions uppercase and the privacy banner below the search sc
     .locator('md-text-button[href="/cookies#modifier-vos-choix-cookies"]')
     .filter({ hasText: "PLUS DE DÉTAILS" });
   await expect(detailsLink).toHaveCount(1);
-  await expect(detailsLink).toHaveAttribute("href", /\/cookies\/#modifier-vos-choix-cookies$/);
+  await expect(detailsLink).toHaveAttribute("href", "/cookies#modifier-vos-choix-cookies");
   await expect(
     privacyBanner.locator("md-text-button").filter({ hasText: "PERSONNALISER" }),
   ).toHaveCount(0);

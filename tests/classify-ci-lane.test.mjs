@@ -540,8 +540,8 @@ test("keeps all required check names aligned and every external action pinned by
   );
   assert.match(
     verifyWorkflow,
-    /strategy:\s+fail-fast: false\s+matrix:\s+shardIndex: \[1, 2, 3, 4\]\s+shardTotal: \[4\]/,
-    "the full lane must keep four non-fail-fast Playwright shards",
+    /strategy:\s+fail-fast: false\s+matrix:\s+shardIndex: \[1, 2, 3, 4, 5, 6, 7, 8\]\s+shardTotal: \[8\]/,
+    "the full lane must keep eight non-fail-fast Playwright shards",
   );
   assert.match(
     verifyWorkflow,
@@ -574,8 +574,8 @@ test("keeps all required check names aligned and every external action pinned by
   );
   assert.match(
     verifyWorkflow,
-    /scripts\/check-playwright-blob-reports\.mjs all-blob-reports 4/,
-    "report merging must fail closed unless all four blobs are present",
+    /scripts\/check-playwright-blob-reports\.mjs all-blob-reports 8/,
+    "report merging must fail closed unless all eight blobs are present",
   );
   assert.doesNotMatch(verifyWorkflow, /\bcontinue-on-error\s*:/);
   assert.equal(

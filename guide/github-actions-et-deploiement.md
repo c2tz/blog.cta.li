@@ -25,9 +25,9 @@ de navigation ; le second exécute Lighthouse.
 
 ### Check Astro, Material Web, and security headers
 
-Dans la lane complète, un job exécute les contrôles statiques et le build pendant que quatre runners
+Dans la lane complète, un job exécute les contrôles statiques et le build pendant que huit runners
 Playwright indépendants construisent le même commit et se partagent la collection avec
-`--shard=1/4` à `--shard=4/4`. Chaque runner conserve un seul worker afin d'éviter la contention entre
+`--shard=1/8` à `--shard=8/8`. Chaque runner conserve un seul worker afin d'éviter la contention entre
 navigateurs sur une même machine. `fullyParallel: true` permet à Playwright de répartir les tests
 individuels sans retirer de projet Chromium ou WebKit.
 
@@ -35,9 +35,9 @@ Les builds destinés aux navigateurs activent `SITE_TEST_FIXTURES=1` pour inclur
 test. Cette option est aussi active dans la matrice nocturne ; les builds de déploiement et
 Lighthouse conservent les seules routes du site.
 
-`fail-fast: false` laisse les quatre shards terminer même si l'un échoue. Chaque shard publie un
+`fail-fast: false` laisse les huit shards terminer même si l'un échoue. Chaque shard publie un
 rapport blob au nom unique ; les traces et captures d'un shard rouge sont conservées pendant 14 jours.
-Un job séparé exige exactement quatre blobs, les fusionne et publie le rapport HTML.
+Un job séparé exige exactement huit blobs, les fusionne et publie le rapport HTML.
 
 Le job portant le nom requis `Check Astro, Material Web, and security headers` ne duplique aucun test :
 il utilise `needs` avec `always()` et vérifie le résultat exact attendu pour la lane. Une
@@ -75,7 +75,7 @@ ressemble à un merge. La taxonomie, les priorités et la preuve API sont détai
 
 Dans la lane `content`, le job de qualité n'installe que Chromium et exécute le sous-ensemble
 éditorial après le build. Dans la lane `docs`, il limite le contrôle au diff et au formatage des
-documents modifiés. Les quatre shards et leur fusion sont alors explicitement `skipped`, ce que le
+documents modifiés. Les huit shards et leur fusion sont alors explicitement `skipped`, ce que le
 verdict final exige au lieu de les traiter comme des résultats manquants.
 
 ## Workflows planifiés ou manuels

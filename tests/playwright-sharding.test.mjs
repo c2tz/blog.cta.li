@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 
+const SHARD_TOTAL = 8;
 const EXPECTED_PROJECTS = [
   "desktop-dark",
   "desktop-light",
@@ -43,14 +44,14 @@ function collectPlaywrightTests(extraArguments = []) {
   return { projects, tests };
 }
 
-test("four Playwright shards form a balanced, disjoint partition of the complete suite", () => {
+test("eight Playwright shards form a balanced, disjoint partition of the complete suite", (context) => {
   const complete = collectPlaywrightTests();
   assert.deepEqual([...complete.projects].sort(), EXPECTED_PROJECTS);
 
   const union = new Set();
   const shardSizes = [];
-  for (let shard = 1; shard <= 4; shard += 1) {
-    const collection = collectPlaywrightTests([`--shard=${shard}/4`]);
+  for (let shard = 1; shard <= SHARD_TOTAL; shard += 1) {
+    const collection = collectPlaywrightTests([`--shard=${shard}/${SHARD_TOTAL}`]);
     shardSizes.push(collection.tests.size);
     for (const identity of collection.tests) {
       assert.equal(union.has(identity), false, `Duplicate sharded test: ${identity}`);
@@ -62,5 +63,8 @@ test("four Playwright shards form a balanced, disjoint partition of the complete
   assert.ok(
     Math.max(...shardSizes) - Math.min(...shardSizes) <= 1,
     `Unbalanced shard sizes: ${shardSizes.join(", ")}`,
+  );
+  context.diagnostic(
+    `${complete.tests.size} tests partitioned into shards: ${shardSizes.join(", ")}`,
   );
 });

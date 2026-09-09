@@ -46,11 +46,16 @@ test("unloads Giscus on consent revocation and reloads it after consent returns"
     );
   });
 
-  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
+  await gotoRoute(page, "/posts/hugo-material-shortcodes");
   const panel = page.locator("[data-giscus-panel]");
   const privacy = page.locator("[data-giscus-privacy]");
   const frame = page.locator("[data-giscus-frame]");
   await expect(frame.locator("iframe.giscus-frame")).toHaveCount(1);
+  await expect(frame.locator("script")).toHaveAttribute("data-mapping", "specific");
+  await expect(frame.locator("script")).toHaveAttribute(
+    "data-term",
+    "posts/hugo-material-shortcodes/",
+  );
   await expect(panel).toHaveAttribute("aria-busy", "false");
   await expect(panel).toBeVisible();
   await expect(privacy).toBeHidden();
@@ -159,7 +164,7 @@ test("prevents an in-flight Giscus client from executing after consent is revoke
   });
 
   try {
-    await gotoRoute(page, "/posts/hugo-material-shortcodes/");
+    await gotoRoute(page, "/posts/hugo-material-shortcodes");
     await Promise.all([requestGate, contentRequestGate]);
     const frame = page.locator("[data-giscus-frame]");
     await expect(frame.locator("script[src='https://giscus.app/client.js']")).toHaveCount(1);

@@ -16,7 +16,7 @@ export async function routeSearchCorpus(page: Page) {
   try {
     for (const entry of entries) {
       const { errors } = await index.addCustomRecord({
-        url: `/posts/corpus-${entry.id}/`,
+        url: `/posts/corpus-${entry.id}`,
         // Keep Abricot below the first 100 relevance matches.
         content: entry.id === "a" ? `corpus ${"exemple ".repeat(500)}` : "corpus corpus corpus",
         language: "fr",

@@ -565,7 +565,7 @@ test("applies and persists the Konachan Material palette across the site", async
     )
     .toEqual({ active: "true", source: activePalette.source });
 
-  await gotoRoute(page, "/posts/mdx-smoke-test/");
+  await gotoRoute(page, "/posts/mdx-smoke-test");
   await waitForAppReady(page);
   await expectResolvedTheme(page);
   await expect

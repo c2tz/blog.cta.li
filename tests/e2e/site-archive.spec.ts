@@ -8,8 +8,8 @@ import {
 } from "./site-fixture";
 import { ARCHIVE_COUNTS, archivePosts } from "../fixtures/archive-posts";
 
-test("presents /tags/all/ as the article archive", async ({ page }) => {
-  await gotoRoute(page, "/tags/all/");
+test("presents /tags/all as the article archive", async ({ page }) => {
+  await gotoRoute(page, "/tags/all");
 
   await expect(page.getByRole("heading", { level: 1, name: "Tous les articles" })).toBeVisible();
   await expect(page.locator("table.tag-posts-table")).toHaveAttribute(
@@ -27,7 +27,7 @@ test("presents /tags/all/ as the article archive", async ({ page }) => {
 });
 
 test("reuses the article archive table for individual tags", async ({ page }) => {
-  await gotoRoute(page, "/tags/blog/");
+  await gotoRoute(page, "/tags/blog");
 
   const tagPosts = page.locator('site-tag-posts[data-tag="blog"]');
   const row = tagPosts.locator("tbody tr[data-tag-post-item]").first();
@@ -44,7 +44,7 @@ test("reuses the article archive table for individual tags", async ({ page }) =>
   await expect(tagPosts.getByRole("button", { name: "Trier par titre" })).toBeVisible();
   await expect(tagPosts.locator("md-outlined-text-field.tag-posts-table-filter")).toBeVisible();
   await expect(tagPosts.locator("ul.tag-posts")).toHaveCount(0);
-  await expect(row.getByRole("link")).toHaveAttribute("href", /^\/posts\/[^/]+\/$/);
+  await expect(row.getByRole("link")).toHaveAttribute("href", /^\/posts\/[^/]+$/);
   await expect(row.getByRole("link")).toHaveText((await row.getAttribute("data-title"))!);
   await expect(row.locator(".site-date-compact")).toBeVisible();
   await expect(row.locator(".site-date-full")).toBeHidden();
@@ -54,7 +54,7 @@ test("reuses the article archive table for individual tags", async ({ page }) =>
 
 for (const count of ARCHIVE_COUNTS) {
   test(`paginates a deterministic archive of ${count} articles`, async ({ page }) => {
-    await gotoRoute(page, `/__test__/archives/${count}/`);
+    await gotoRoute(page, `/__test__/archives/${count}`);
     await waitForNativeEnhancement(page, "site-tag-posts");
     const archive = page.locator("site-tag-posts");
     const visible = archive.locator("[data-tag-post-item]:visible");
@@ -113,7 +113,7 @@ for (const count of ARCHIVE_COUNTS) {
 
 test("shows one detailed date on individual tag pages", async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem("home-detail-view-v1", "true"));
-  await gotoRoute(page, "/tags/blog/");
+  await gotoRoute(page, "/tags/blog");
 
   const row = page.locator('site-tag-posts[data-tag="blog"] tbody tr[data-tag-post-item]').first();
   await expect(row.locator(".site-date-compact")).toBeHidden();
@@ -123,12 +123,12 @@ test("shows one detailed date on individual tag pages", async ({ page }) => {
 
 test("keeps the all-articles archive out of the home tag section", async ({ page }) => {
   await gotoRoute(page, "/");
-  await expect(page.locator('#home-tags-list [href="/tags/all/"]')).toHaveCount(0);
+  await expect(page.locator('#home-tags-list [href="/tags/all"]')).toHaveCount(0);
   await expect(page.locator("#home-tags-list")).toContainText("#blog");
 });
 
 test("keeps the all-articles archive out of article tag sections", async ({ page }) => {
-  await gotoRoute(page, "/posts/bienvenue-sur-ct-blog/");
-  await expect(page.locator('.post-tags-section [href="/tags/all/"]')).toHaveCount(0);
+  await gotoRoute(page, "/posts/bienvenue-sur-ct-blog");
+  await expect(page.locator('.post-tags-section [href="/tags/all"]')).toHaveCount(0);
   await expect(page.locator(".post-tags-section")).toContainText("#blog");
 });

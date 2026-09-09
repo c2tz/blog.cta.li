@@ -13,7 +13,7 @@ test.describe("nightly browser resilience", () => {
   test("captures runtime failures while ignoring the WebKit ResizeObserver diagnostic", async ({
     page,
   }) => {
-    await gotoRoute(page, "/cookies/");
+    await gotoRoute(page, "/cookies");
     await page.route("**/__nightly-request-failure", (route) => route.abort("failed"));
     await page.evaluate(() => {
       const cspEvent = new Event("securitypolicyviolation");
@@ -51,7 +51,7 @@ test.describe("nightly browser resilience", () => {
   });
 
   test("recovers from corrupt versioned browser storage", async ({ page }) => {
-    await gotoRoute(page, "/cookies/");
+    await gotoRoute(page, "/cookies");
     await waitForAppReady(page);
     await page.evaluate(() => {
       for (const key of [
@@ -83,7 +83,7 @@ test.describe("nightly browser resilience", () => {
     context,
     page,
   }) => {
-    await gotoRoute(page, "/cookies/");
+    await gotoRoute(page, "/cookies");
     await waitForAppReady(page);
     await page.waitForLoadState("networkidle");
     const nextTheme = test.info().project.name.includes("dark") ? "light" : "dark";
@@ -127,7 +127,7 @@ test.describe("nightly browser resilience", () => {
     });
 
     const moduleRequested = page.waitForRequest("**/_astro/*.js");
-    const navigation = page.goto("/cookies/", { waitUntil: "domcontentloaded" });
+    const navigation = page.goto("/cookies", { waitUntil: "domcontentloaded" });
     try {
       await moduleRequested;
     } finally {
@@ -139,7 +139,7 @@ test.describe("nightly browser resilience", () => {
   });
 
   test("resynchronizes once after a persisted pageshow lifecycle", async ({ page }) => {
-    await gotoRoute(page, "/cookies/");
+    await gotoRoute(page, "/cookies");
     await waitForAppReady(page);
     const panel = page.locator(".cookie-preferences-panel");
     await expect(panel).toHaveCount(1);
@@ -154,7 +154,7 @@ test.describe("nightly browser resilience", () => {
   });
 
   test("keeps the document contained across portrait and landscape changes", async ({ page }) => {
-    await gotoRoute(page, "/cookies/");
+    await gotoRoute(page, "/cookies");
     await waitForAppReady(page);
 
     for (const viewport of [

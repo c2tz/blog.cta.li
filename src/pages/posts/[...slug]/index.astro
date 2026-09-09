@@ -40,7 +40,7 @@ const postTags = visiblePostTags.map((tag) => ({
   label: `#${tag}`,
   value: tag,
 }));
-const postUrl = new URL(`/posts/${post.id}/`, Astro.site).toString();
+const postUrl = new URL(`/posts/${post.id}`, Astro.site).toString();
 const postImage = new URL(`/posts/${post.id}/og.png`, Astro.site).toString();
 const postStructuredData = {
   "@context": "https://schema.org",
@@ -84,6 +84,7 @@ const postStructuredData = {
       class="post"
       data-pagefind-body={isListed ? true : undefined}
       data-pagefind-ignore={isListed ? undefined : "all"}
+      data-pagefind-meta={`url:/posts/${post.id}`}
     >
       <header class="post-header">
         <h1 id="post-title" class="post-title-anchor" data-anchor-reset>
@@ -131,7 +132,7 @@ const postStructuredData = {
                 {postTags.map((tag) => (
                   <li>
                     {isListed ? (
-                      <a class="post-tag-link" href={`/tags/${encodeURIComponent(tag.value)}/`}>
+                      <a class="post-tag-link" href={`/tags/${encodeURIComponent(tag.value)}`}>
                         {tag.label}
                       </a>
                     ) : (
@@ -164,7 +165,7 @@ const postStructuredData = {
           <p>
             Les commentaires externes nécessitent JavaScript et un accord pour les services
             optionnels. Vous pouvez consulter ou modifier votre choix sur la page
-            <a href="/cookies/#modifier-vos-choix-cookies">Données personnelles</a>.
+            <a href="/cookies#modifier-vos-choix-cookies">Données personnelles</a>.
           </p>
         </section>
       </noscript>

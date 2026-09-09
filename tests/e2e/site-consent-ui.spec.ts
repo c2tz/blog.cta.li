@@ -14,7 +14,7 @@ test("keeps cookie preferences off the home page, including its former hash targ
 });
 
 test("renders granular cookie preference controls", async ({ page }) => {
-  await gotoRoute(page, "/cookies/#modifier-vos-choix-cookies");
+  await gotoRoute(page, "/cookies#modifier-vos-choix-cookies");
 
   await expect(page.getByRole("heading", { name: "Modifier vos choix cookies" })).toBeVisible();
   const panel = page.locator(".cookie-preferences-panel");

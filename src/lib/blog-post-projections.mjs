@@ -21,7 +21,7 @@ export function toHomeLatestPost(post) {
     dateCompact: formatFrenchDate(post.gitDates.createdAt),
     dateFull: formatFrenchDateTime(post.gitDates.createdAt),
     datetime: toDate(post.gitDates.createdAt).toISOString(),
-    href: `/posts/${post.id}/`,
+    href: `/posts/${post.id}`,
     title: post.data.title,
   };
 }
@@ -35,6 +35,6 @@ export function toTagPostItem(post) {
     createdLabelCompact: formatFrenchDate(post.gitDates.createdAt),
     createdLabelFull: formatFrenchDateTime(post.gitDates.createdAt),
     title: post.data.title,
-    url: `/posts/${post.id}/`,
+    url: `/posts/${post.id}`,
   };
 }

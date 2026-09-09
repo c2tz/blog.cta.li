@@ -12,7 +12,7 @@ const visibleTags = tags.filter((tag) => tag !== "all");
     visibleTags.map((tag) => (
       <md-assist-chip
         class="home-tags-tree-link"
-        href={`/tags/${encodeURIComponent(tag)}/`}
+        href={`/tags/${encodeURIComponent(tag)}`}
         aria-label={`Voir les articles du tag ${tag}`}
       >
         #{tag}

@@ -232,7 +232,7 @@ export const test = base.extend<{ browserPage: Page }>({
     const runtimeMessages: string[] = [];
     await observePageRuntime(page, runtimeMessages);
     await seedLocalPreferences(page);
-    await page.goto("/posts/mdx-smoke-test/", { waitUntil: "domcontentloaded" });
+    await page.goto("/posts/mdx-smoke-test", { waitUntil: "domcontentloaded" });
     await expect
       .poll(() => page.evaluate(() => document.documentElement.dataset.appReady))
       .toBe("true");

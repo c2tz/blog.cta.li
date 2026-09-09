@@ -93,6 +93,7 @@ const disableRedundantClientModulePreloads = {
 
 export default defineConfig({
   site: "https://ct-blog.cta.li/",
+  trailingSlash: "never",
   server: {
     host: true,
     port: 4321,
@@ -112,7 +113,7 @@ export default defineConfig({
             hooks: {
               "astro:config:setup": ({ injectRoute }) => {
                 injectRoute({
-                  pattern: "/__test__/archives/[count]/",
+                  pattern: "/__test__/archives/[count]",
                   entrypoint: "./tests/fixtures/archive.astro",
                 });
               },

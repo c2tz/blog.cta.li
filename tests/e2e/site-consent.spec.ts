@@ -131,7 +131,7 @@ test("renders and adopts a stable consent notice before bootstrap and Material f
 test("saves each optional service independently with official Material switches", async ({
   page,
 }) => {
-  await gotoRoute(page, "/cookies/#modifier-vos-choix-cookies");
+  await gotoRoute(page, "/cookies#modifier-vos-choix-cookies");
 
   const giscusSwitch = page.locator('md-switch[data-cookie-preference-service="giscus"]');
   const ipgeoSwitch = page.locator('md-switch[data-cookie-preference-service="ipgeo"]');
@@ -300,7 +300,7 @@ test("stops an already loaded Speed Insights service when its own consent is rev
       status: 200,
     }),
   );
-  await gotoRoute(page, "/cookies/#modifier-vos-choix-cookies");
+  await gotoRoute(page, "/cookies#modifier-vos-choix-cookies");
   await page.evaluate(() => {
     document.body.dataset.speedInsightsEnabled = "true";
     document.body.dataset.speedInsightsRoute = "/cookies";
@@ -362,7 +362,7 @@ test("reloads when Speed Insights consent is revoked while its script is still l
       })
       .catch(() => undefined);
   });
-  await gotoRoute(page, "/cookies/#modifier-vos-choix-cookies");
+  await gotoRoute(page, "/cookies#modifier-vos-choix-cookies");
   await page.evaluate(() => {
     document.body.dataset.speedInsightsEnabled = "true";
     document.body.dataset.speedInsightsRoute = "/cookies";
@@ -399,7 +399,7 @@ test("migrates the legacy global cookie through the v2 cookie fallback", async (
     });
   });
 
-  await gotoRoute(page, "/cookies/#modifier-vos-choix-cookies");
+  await gotoRoute(page, "/cookies#modifier-vos-choix-cookies");
   await expect(page.locator(".cookie-preferences-panel")).toHaveAttribute(
     "data-cookie-preference-state",
     "custom",
@@ -490,10 +490,10 @@ test("loads Analytics only after its own consent, once per page, and stops on re
   await page.addInitScript(() => {
     document.addEventListener("DOMContentLoaded", () => {
       document.body.dataset.webAnalyticsEnabled = "true";
-      document.body.dataset.webAnalyticsRoute = "/cookies/";
+      document.body.dataset.webAnalyticsRoute = "/cookies";
     });
   });
-  await gotoRoute(page, "/cookies/#modifier-vos-choix-cookies");
+  await gotoRoute(page, "/cookies#modifier-vos-choix-cookies");
   const toggle = page.locator(analyticsSwitchSelector);
   await expect(toggle).toHaveJSProperty("selected", false);
   await page.locator(speedInsightsSwitchSelector).click();
@@ -506,7 +506,7 @@ test("loads Analytics only after its own consent, once per page, and stops on re
   await page.locator(speedInsightsSwitchSelector).click();
   await expect(page.locator(speedInsightsSwitchSelector)).toHaveJSProperty("selected", false);
   expect(scripts).toBe(1);
-  expect(visits).toEqual([{ route: "/cookies/", path: "/cookies/" }]);
+  expect(visits).toEqual([{ route: "/cookies", path: "/cookies" }]);
   await page.reload();
   await expect.poll(() => visits.length).toBe(2);
   await expect(toggle).toHaveJSProperty("selected", true);
@@ -542,7 +542,7 @@ test("reloads when Analytics consent is revoked while its script is still loadin
       })
       .catch(() => undefined);
   });
-  await gotoRoute(page, "/cookies/#modifier-vos-choix-cookies");
+  await gotoRoute(page, "/cookies#modifier-vos-choix-cookies");
   await page.evaluate(() => {
     document.body.dataset.webAnalyticsEnabled = "true";
     document.body.dataset.webAnalyticsRoute = "/cookies";

@@ -1,5 +1,33 @@
 import { expect, test } from "./site-fixture";
 
+test("serves slashless page URLs with matching canonical and article metadata", async ({
+  page,
+}) => {
+  for (const path of ["/", "/cookies", "/tags/all", "/posts/bienvenue-sur-ct-blog"]) {
+    const response = await page.goto(`${path}?source=url-check#main-content`, {
+      waitUntil: "domcontentloaded",
+    });
+    expect(response?.status()).toBe(200);
+    const url = new URL(page.url());
+    expect(url.pathname).toBe(path);
+    expect(url.search).toBe("?source=url-check");
+    expect(url.hash).toBe("#main-content");
+    const canonical = new URL(path, "https://ct-blog.cta.li").href;
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", canonical);
+    if (path.startsWith("/posts/")) {
+      await expect(page.locator('meta[property="og:url"]')).toHaveAttribute("content", canonical);
+      await expect(page.locator("article.post")).toHaveAttribute(
+        "data-pagefind-meta",
+        `url:${path}`,
+      );
+      const structuredData = JSON.parse(
+        await page.locator('script[type="application/ld+json"]').innerText(),
+      );
+      expect(structuredData.mainEntityOfPage).toBe(canonical);
+    }
+  }
+});
+
 test("keeps technical posts reachable but out of every discovery feed", async ({ page }) => {
   const listedPost = {
     slug: "bienvenue-sur-ct-blog",
@@ -17,7 +45,7 @@ test("keeps technical posts reachable but out of every discovery feed", async ({
   ];
 
   for (const { slug, title } of hiddenPosts) {
-    const response = await page.goto(`/posts/${slug}/`, { waitUntil: "domcontentloaded" });
+    const response = await page.goto(`/posts/${slug}`, { waitUntil: "domcontentloaded" });
     expect(response?.status()).toBe(200);
     await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
     await expect(page.locator("article.post")).toHaveAttribute("data-pagefind-ignore", "all");
@@ -29,7 +57,7 @@ test("keeps technical posts reachable but out of every discovery feed", async ({
   const discovery = await page.evaluate(async () =>
     Object.fromEntries(
       await Promise.all(
-        ["/", "/tags/all/", "/latest-posts.json", "/rss.xml", "/sitemap.xml"].map(async (path) => {
+        ["/", "/tags/all", "/latest-posts.json", "/rss.xml", "/sitemap.xml"].map(async (path) => {
           const response = await fetch(path);
           return [path, await response.text()];
         }),
@@ -40,16 +68,16 @@ test("keeps technical posts reachable but out of every discovery feed", async ({
   const latestPosts = JSON.parse(discovery["/latest-posts.json"]).posts;
   expect(Array.isArray(latestPosts)).toBe(true);
   expect(latestPosts).toContainEqual(
-    expect.objectContaining({ href: `/posts/${listedPost.slug}/`, title: listedPost.title }),
+    expect.objectContaining({ href: `/posts/${listedPost.slug}`, title: listedPost.title }),
   );
-  for (const path of ["/", "/tags/all/", "/rss.xml"]) {
+  for (const path of ["/", "/tags/all", "/rss.xml"]) {
     expect(discovery[path]).toContain(listedPost.slug);
     expect(discovery[path]).toContain(listedPost.title);
   }
   expect(discovery["/sitemap.xml"]).toContain(listedPost.slug);
   for (const { slug, title } of hiddenPosts) {
-    expect(latestPosts).not.toContainEqual(expect.objectContaining({ href: `/posts/${slug}/` }));
-    for (const path of ["/", "/tags/all/", "/rss.xml", "/sitemap.xml"]) {
+    expect(latestPosts).not.toContainEqual(expect.objectContaining({ href: `/posts/${slug}` }));
+    for (const path of ["/", "/tags/all", "/rss.xml", "/sitemap.xml"]) {
       expect(discovery[path]).not.toContain(slug);
       expect(discovery[path]).not.toContain(title);
     }

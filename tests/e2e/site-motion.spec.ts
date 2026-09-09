@@ -149,7 +149,7 @@ test("announces the theme action while its icon and menu show the current theme"
 test("disables nested Material CSS and keeps deferred loading indicators visible", async ({
   page,
 }) => {
-  await gotoRoute(page, "/posts/catalogue-redaction/");
+  await gotoRoute(page, "/posts/catalogue-redaction");
   await waitForAppReady(page);
   await page.evaluate(async () => {
     for (const name of ["md-linear-progress", "md-circular-progress"]) {
@@ -301,7 +301,7 @@ test("defaults to off with reduced-motion preferences and persists through the c
 });
 
 test("returns to the top immediately when animations are disabled", async ({ page }) => {
-  await gotoRoute(page, "/posts/catalogue-redaction/");
+  await gotoRoute(page, "/posts/catalogue-redaction");
   await waitForAppReady(page);
   await page.evaluate(() => scrollTo({ top: document.body.scrollHeight, behavior: "instant" }));
   const button = page.locator(".site-scroll-top-button");
@@ -483,10 +483,10 @@ test("delays and aggregates short indeterminate loading indicators", async ({ pa
 
 for (const fixture of [
   { name: "home", route: "/", table: ".home-posts-table", column: "titre" },
-  { name: "archive", route: "/__test__/archives/11/", table: ".tag-posts-table", column: "titre" },
+  { name: "archive", route: "/__test__/archives/11", table: ".tag-posts-table", column: "titre" },
   {
     name: "shortcode",
-    route: "/posts/catalogue-redaction/",
+    route: "/posts/catalogue-redaction",
     table: ".material-shortcode-table",
     column: "Quantité",
   },
@@ -579,7 +579,7 @@ for (const fixture of [
 test("shows the automatic contents only in detailed mode and links to nested article headings", async ({
   page,
 }) => {
-  await gotoRoute(page, "/posts/catalogue-redaction/");
+  await gotoRoute(page, "/posts/catalogue-redaction");
   await waitForAppReady(page);
   const toc = page.locator(".post-toc");
   await expect(toc).toBeHidden();
@@ -613,7 +613,7 @@ test("shows the automatic contents only in detailed mode and links to nested art
 test("keeps short articles free of an automatic contents even in detailed mode", async ({
   page,
 }) => {
-  await gotoRoute(page, "/posts/bienvenue-sur-ct-blog/");
+  await gotoRoute(page, "/posts/bienvenue-sur-ct-blog");
   await waitForAppReady(page);
   await page.locator(".home-detail-trigger").click();
   await expect(page.locator(".post-toc")).toHaveCount(0);
@@ -658,7 +658,7 @@ test("keeps the latest-posts table interactive without exposing hidden posts", a
   await expect(page.getByRole("link", { name: "Shortcodes Astro et Material Web" })).toHaveCount(0);
 });
 
-for (const route of ["/", "/posts/bienvenue-sur-ct-blog/"]) {
+for (const route of ["/", "/posts/bienvenue-sur-ct-blog"]) {
   test(`reopens the theme menu after disabling motion on ${route}`, async ({ page }) => {
     await gotoRoute(page, route);
     await waitForAppReady(page);
@@ -710,7 +710,7 @@ for (const route of ["/", "/posts/bienvenue-sur-ct-blog/"]) {
   });
 }
 
-for (const route of ["/", "/posts/bienvenue-sur-ct-blog/"]) {
+for (const route of ["/", "/posts/bienvenue-sur-ct-blog"]) {
   test(`repaints the pixels beneath the theme menu after a second trigger click on ${route}`, async ({
     page,
   }) => {
@@ -826,7 +826,7 @@ test("keeps the theme menu attached to its trigger through visual viewport zoom"
   test.skip(browserName !== "chromium", "Visual viewport scaling requires Chromium CDP");
   const session = await page.context().newCDPSession(page);
   try {
-    for (const route of ["/", "/posts/bienvenue-sur-ct-blog/"]) {
+    for (const route of ["/", "/posts/bienvenue-sur-ct-blog"]) {
       await gotoRoute(page, route);
       await waitForAppReady(page);
       const trigger = page.locator(".site-theme-trigger");

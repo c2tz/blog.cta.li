@@ -101,31 +101,31 @@ Une citation ou une référence contextuelle.
 Les cinq variantes de bouton Material Web sont disponibles. Le libellé peut contenir du Markdown
 inline et l’icône reste optionnelle.
 
-{{< button href="/tags/all/" variant="filled" icon="search" >}}
+{{< button href="/tags/all" variant="filled" icon="search" >}}
 
 Bouton rempli
 
 {{< /button >}}
 
-{{< button href="/tags/all/" variant="tonal" icon="article" >}}
+{{< button href="/tags/all" variant="tonal" icon="article" >}}
 
 Bouton tonal
 
 {{< /button >}}
 
-{{< button href="/tags/all/" variant="outlined" >}}
+{{< button href="/tags/all" variant="outlined" >}}
 
 Bouton contour
 
 {{< /button >}}
 
-{{< button href="/tags/all/" variant="text" >}}
+{{< button href="/tags/all" variant="text" >}}
 
 Bouton texte
 
 {{< /button >}}
 
-{{< button href="/tags/all/" variant="elevated" >}}
+{{< button href="/tags/all" variant="elevated" >}}
 
 Bouton élevé
 
@@ -197,7 +197,7 @@ const articles = await response.json();
 
 {{< progress label="Chargement de l’exemple" value=72 buffer=90 />}}
 
-{{< button href="/tags/all/" variant="tonal" icon="article" >}}
+{{< button href="/tags/all" variant="tonal" icon="article" >}}
 
 Voir les articles
 

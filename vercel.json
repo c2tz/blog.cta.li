@@ -1,5 +1,6 @@
 {
   "buildCommand": "pnpm build:vercel",
+  "trailingSlash": false,
   "headers": [
     {
       "source": "/(.*)",

@@ -21,7 +21,7 @@ for (const withQuery of [true, false]) {
     if (withQuery) {
       await dialog.getByRole("searchbox", { name: "Mot-clé, titre ou contenu" }).fill("corpus");
       await expect(results).toHaveCount(12);
-      await expect(dialog.locator('a[href="/posts/corpus-a/"]')).toHaveCount(0);
+      await expect(dialog.locator('a[href="/posts/corpus-a"]')).toHaveCount(0);
       expect(fragments).toBe(100);
     }
     const select = dialog.locator("[data-sort-select]");

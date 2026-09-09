@@ -12,7 +12,7 @@ import {
 } from "./site-fixture";
 
 test("links each post title to its own anchor", async ({ page }) => {
-  await gotoRoute(page, "/posts/bienvenue-sur-ct-blog/");
+  await gotoRoute(page, "/posts/bienvenue-sur-ct-blog");
 
   const title = page.getByRole("heading", { level: 1, name: "Bienvenue sur ct-blog" });
   const titleLink = title.getByRole("link", { name: "Bienvenue sur ct-blog" });
@@ -133,10 +133,10 @@ test("keeps consent actions uppercase and the privacy banner below the search sc
   const privacyBanner = page.getByRole("region", { name: "Avis de confidentialité" });
   await expect(privacyBanner).toBeVisible();
   const detailsLink = privacyBanner
-    .locator('md-text-button[href="/cookies/#modifier-vos-choix-cookies"]')
+    .locator('md-text-button[href="/cookies#modifier-vos-choix-cookies"]')
     .filter({ hasText: "PLUS DE DÉTAILS" });
   await expect(detailsLink).toHaveCount(1);
-  await expect(detailsLink).toHaveAttribute("href", /\/cookies\/#modifier-vos-choix-cookies$/);
+  await expect(detailsLink).toHaveAttribute("href", "/cookies#modifier-vos-choix-cookies");
   await expect(
     privacyBanner.locator("md-text-button").filter({ hasText: "PERSONNALISER" }),
   ).toHaveCount(0);
@@ -208,7 +208,7 @@ test("keeps consent actions uppercase and the privacy banner below the search sc
 test("keeps the Material rich tooltip anchored and enhances all of its rich content", async ({
   page,
 }) => {
-  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
+  await gotoRoute(page, "/posts/hugo-material-shortcodes");
 
   const trigger = page.locator('[data-rich-tooltip-trigger="tooltip-http-shiki"]').first();
   const popover = page.locator("#tooltip-http-shiki");
@@ -409,7 +409,7 @@ test("keeps the Material rich tooltip anchored and enhances all of its rich cont
 });
 
 test("keeps only the enhanced Markdown footnote preview in the page", async ({ page }) => {
-  await gotoRoute(page, "/posts/mdx-smoke-test/");
+  await gotoRoute(page, "/posts/mdx-smoke-test");
   await waitForAppReady(page);
 
   const reference = page.locator("a[data-footnote-ref]").first();
@@ -439,7 +439,7 @@ test("keeps only the enhanced Markdown footnote preview in the page", async ({ p
 });
 
 test("renders shortcode code blocks with highlighted lines and copy controls", async ({ page }) => {
-  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
+  await gotoRoute(page, "/posts/hugo-material-shortcodes");
   await waitForAppReady(page);
   await page.evaluate(async () => {
     await document.fonts.ready;
@@ -656,7 +656,7 @@ test("renders shortcode code blocks with highlighted lines and copy controls", a
 test("makes code blocks keyboard-focusable only while they scroll horizontally", async ({
   page,
 }) => {
-  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
+  await gotoRoute(page, "/posts/hugo-material-shortcodes");
   await waitForAppReady(page);
 
   await page.evaluate(() => {
@@ -691,7 +691,7 @@ test("makes code blocks keyboard-focusable only while they scroll horizontally",
 test("renders every shortcode button variant as a real Material Web component", async ({
   page,
 }) => {
-  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
+  await gotoRoute(page, "/posts/hugo-material-shortcodes");
 
   for (const tag of [
     "md-filled-button",
@@ -731,7 +731,7 @@ test("renders every shortcode button variant as a real Material Web component", 
 });
 
 test("switches the real Material Web tabs and their semantic panels", async ({ page }) => {
-  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
+  await gotoRoute(page, "/posts/hugo-material-shortcodes");
 
   const packageTabs = page.locator('md-tabs[aria-label="Gestionnaire de paquets"] md-primary-tab');
   await expect(packageTabs).toHaveCount(2);
@@ -742,7 +742,7 @@ test("switches the real Material Web tabs and their semantic panels", async ({ p
 });
 
 test("keeps unlisted posts out of the semantic tag table", async ({ page }) => {
-  await gotoRoute(page, "/tags/all/");
+  await gotoRoute(page, "/tags/all");
 
   const filter = page.locator("md-outlined-text-field.tag-posts-table-filter");
   await expect(filter).toHaveAttribute("id", "tag-posts-filter");
@@ -767,7 +767,11 @@ test("keeps unlisted posts out of the semantic tag table", async ({ page }) => {
 });
 
 test("keeps Giscus disabled behind the privacy choice", async ({ page }) => {
-  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
+  if (!test.info().project.name.includes("mobile")) {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+  }
+  await gotoRoute(page, "/posts/hugo-material-shortcodes");
+  await waitForAppReady(page);
 
   const commentsHeading = page.getByRole("heading", { name: "Commentaires" });
   await expect(commentsHeading).toBeVisible();
@@ -781,22 +785,28 @@ test("keeps Giscus disabled behind the privacy choice", async ({ page }) => {
   ).toBeVisible();
   await expect(page.getByRole("link", { name: "Modifier mes préférences" })).toHaveAttribute(
     "href",
-    "/cookies/#modifier-vos-choix-cookies",
+    "/cookies#modifier-vos-choix-cookies",
+  );
+  await expect(page.locator("[data-giscus-privacy]")).toContainText(
+    "autorisé. Modifier mes préférences",
   );
 
-  if (test.info().project.name.includes("mobile")) {
-    const actionAlignment = await page.locator(".giscus-comments-actions").evaluate((actions) => {
-      const parentRect = actions.parentElement?.getBoundingClientRect();
-      const actionsRect = actions.getBoundingClientRect();
-      return parentRect
-        ? Math.abs(
-            actionsRect.left + actionsRect.width / 2 - (parentRect.left + parentRect.width / 2),
-          )
-        : Number.POSITIVE_INFINITY;
-    });
-    expect(actionAlignment).toBeLessThanOrEqual(2);
-    await expect(page.locator(".giscus-comments-actions")).toHaveCSS("justify-content", "center");
-  }
+  const actionAlignment = await page.locator(".giscus-comments-header").evaluate((header) => {
+    const intro = header.querySelector(".giscus-comments-intro")!.getBoundingClientRect();
+    const conduct = header.querySelector(".giscus-comments-conduct-link")!.getBoundingClientRect();
+    const accept = header.querySelector(".giscus-comments-accept-button")!.getBoundingClientRect();
+    const bounds = header.getBoundingClientRect();
+    return {
+      centerOffset: Math.abs((conduct.left + accept.right) / 2 - (bounds.left + bounds.width / 2)),
+      belowIntro: Math.min(conduct.top, accept.top) >= intro.bottom,
+      verticalOffset: Math.abs(conduct.top + conduct.height / 2 - (accept.top + accept.height / 2)),
+      contained: conduct.left >= bounds.left && accept.right <= bounds.right,
+    };
+  });
+  expect(actionAlignment.centerOffset).toBeLessThanOrEqual(2);
+  expect(actionAlignment.belowIntro).toBe(true);
+  expect(actionAlignment.verticalOffset).toBeLessThanOrEqual(2);
+  expect(actionAlignment.contained).toBe(true);
 });
 
 test("keeps one Giscus progress bar until its iframe has loaded", async ({ page }) => {
@@ -874,7 +884,7 @@ test("keeps one Giscus progress bar until its iframe has loaded", async ({ page 
     };
   });
 
-  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
+  await gotoRoute(page, "/posts/hugo-material-shortcodes");
   const panel = page.locator("[data-giscus-panel]");
   const progress = panel.locator("md-linear-progress[data-giscus-progress]");
   await expect(progress).toHaveCount(1);

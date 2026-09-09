@@ -39,7 +39,7 @@ test("toHomeLatestPost conserve le contrat partagé par l'accueil et son endpoin
     dateCompact: "Jeu. 23 juillet 2026",
     dateFull: "Jeu. 23 juillet 2026, 12:15 UTC+2",
     datetime: "2026-07-23T10:15:00.000Z",
-    href: "/posts/bienvenue-sur-ct-blog/",
+    href: "/posts/bienvenue-sur-ct-blog",
     title: "Bienvenue sur ct-blog",
   });
 });
@@ -50,6 +50,6 @@ test("toTagPostItem conserve le contrat du tableau d'archives", () => {
     createdLabelCompact: "Jeu. 23 juillet 2026",
     createdLabelFull: "Jeu. 23 juillet 2026, 12:15 UTC+2",
     title: "Bienvenue sur ct-blog",
-    url: "/posts/bienvenue-sur-ct-blog/",
+    url: "/posts/bienvenue-sur-ct-blog",
   });
 });

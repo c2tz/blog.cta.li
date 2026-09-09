@@ -218,12 +218,21 @@ export async function expectImageContained(stage: Locator) {
     .toBe(true);
 }
 
-export const test = base.extend({
-  page: async ({ page }, use) => {
+// WebKit can spend most of the scenario timeout creating a page on CI.
+// Keep browser startup in its own budget; site setup and assertions still use
+// the normal test timeout, and Playwright's context owns tracing and cleanup.
+export const test = base.extend<{ browserPage: Page }>({
+  browserPage: [
+    async ({ context }, use) => {
+      await use(await context.newPage());
+    },
+    { timeout: 30_000 },
+  ],
+  page: async ({ browserPage: page }, use) => {
     const runtimeMessages: string[] = [];
     await observePageRuntime(page, runtimeMessages);
     await seedLocalPreferences(page);
-    await page.goto("/posts/mdx-smoke-test/", { waitUntil: "domcontentloaded" });
+    await page.goto("/posts/mdx-smoke-test", { waitUntil: "domcontentloaded" });
     await expect
       .poll(() => page.evaluate(() => document.documentElement.dataset.appReady))
       .toBe("true");

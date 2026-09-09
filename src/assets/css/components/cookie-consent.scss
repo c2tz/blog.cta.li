@@ -232,7 +232,8 @@ html.consent-visible body {
   flex-wrap: nowrap;
   gap: 0.5rem;
   justify-content: flex-end;
-  margin: 0.25rem -0.5rem 0 0;
+  // Safari adds a negative end margin to this grid item's scrollable overflow.
+  margin: 0.25rem 0 0;
 }
 
 .cookie-consent-choice-actions {

@@ -47,7 +47,7 @@ for (const path of ["/pagefind-loader.js", "/pagefind/pagefind.js"]) {
     expect(failures).toBeGreaterThan(0);
     recovered = true;
     await input.fill("bienvenue sur");
-    await expect(dialog.locator('a[href="/posts/bienvenue-sur-ct-blog/"]')).toBeVisible();
+    await expect(dialog.locator('a[href="/posts/bienvenue-sur-ct-blog"]')).toBeVisible();
     expect(successes).toBe(1);
     await expect(page.locator('script[src^="/pagefind-loader.js"]')).toHaveCount(1);
   });
@@ -60,7 +60,7 @@ for (const failure of ["http", "payload", "timeout"] as const) {
       dateCompact: "01/01/2025",
       dateFull: "1 janvier 2025",
       datetime: "2025-01-01T00:00:00.000Z",
-      href: "/posts/bienvenue-sur-ct-blog/",
+      href: "/posts/bienvenue-sur-ct-blog",
       title: `Article de test ${index + 1}`,
     }));
     if (failure === "timeout") {
@@ -118,7 +118,7 @@ test("recovers tag filters after their first request fails", async ({ page }) =>
           {
             score: 1,
             data: async () => ({
-              url: "/posts/bienvenue-sur-ct-blog/",
+              url: "/posts/bienvenue-sur-ct-blog",
               meta: { title: "Bienvenue sur ct-blog", tags: "blog" },
             }),
           },
@@ -131,7 +131,7 @@ test("recovers tag filters after their first request fails", async ({ page }) =>
   await expect.poll(() => page.evaluate(() => Reflect.get(window, "__filterCalls"))).toBe(1);
   const input = dialog.getByRole("searchbox", { name: "Mot-clé, titre ou contenu" });
   await input.fill("bienvenue");
-  await expect(dialog.locator('a[href="/posts/bienvenue-sur-ct-blog/"]')).toBeVisible();
+  await expect(dialog.locator('a[href="/posts/bienvenue-sur-ct-blog"]')).toBeVisible();
   await expect.poll(() => page.evaluate(() => Reflect.get(window, "__filterCalls"))).toBe(2);
   await input.fill("");
   await expect(dialog.locator("md-filter-chip").filter({ hasText: "#blog" })).toBeVisible();

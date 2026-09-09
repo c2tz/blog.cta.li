@@ -8,7 +8,7 @@ export function archivePosts(count: number) {
       createdLabelCompact: date.toLocaleDateString("fr-FR", { timeZone: "UTC" }),
       createdLabelFull: date.toLocaleDateString("fr-FR", { dateStyle: "long", timeZone: "UTC" }),
       title: `Article ${String(count - index).padStart(3, "0")}`,
-      url: "/posts/bienvenue-sur-ct-blog/",
+      url: "/posts/bienvenue-sur-ct-blog",
     };
   });
 }

@@ -6,10 +6,10 @@ export { expectPopoverOpen } from "./shared-fixture-helpers";
 
 export const ROUTES = [
   "/",
-  "/cookies/",
-  "/posts/bienvenue-sur-ct-blog/",
-  "/posts/hugo-material-shortcodes/",
-  "/posts/mdx-smoke-test/",
+  "/cookies",
+  "/posts/bienvenue-sur-ct-blog",
+  "/posts/hugo-material-shortcodes",
+  "/posts/mdx-smoke-test",
 ];
 
 export const pageRuntimeErrors = new WeakMap<Page, string[]>();

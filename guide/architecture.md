@@ -40,9 +40,16 @@ pnpm new:post "Titre de l’article"
 ```
 
 The command refuses filename collisions and creates a non-listed `.md` file without a duplicate
-H1 or an empty description. A draft remains reachable at `/posts/<slug>/` for direct review, but is
+H1 or an empty description. A draft remains reachable at `/posts/<slug>` for direct review, but is
 absent from the home page, tag routes, latest-posts JSON, RSS, sitemap, and Pagefind. Its displayed
 tags are labels rather than links to routes that do not exist.
+
+Page URLs omit the trailing slash (`trailingSlash: "never"` in Astro). The static build keeps
+`<route>/index.html`; Vercel's native `trailingSlash: false` serves the slashless URL and redirects
+the old slash URL with HTTP 308. Query parameters and browser fragments are preserved. Local
+Astro dev/preview expects the slashless URL; the hosting redirect is verified on Vercel by the
+preview smoke. RSS, sitemap, canonical metadata and Pagefind result metadata use the same URLs.
+Giscus uses an explicit discussion term to retain the former pathname key and existing comments.
 
 To publish directly, provide the summary explicitly:
 

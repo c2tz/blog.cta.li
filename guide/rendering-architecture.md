@@ -178,6 +178,15 @@ the selected 404 image and ambiguous generated entries. The thresholds in
 `scripts/check-bundle-budget.mjs` retain practical headroom instead of tracking the current output
 byte for byte.
 
+The representative article route allows 144 KiB raw, 36 KiB gzip and 32 KiB Brotli,
+including the attributes enabled only in Vercel production. These route budgets do
+not add together the HTML of every published article. Pagefind's fixed JavaScript
+and WebAssembly engine has its own budget; generated search metadata, indexes,
+filters and article fragments are measured and reported separately without a
+site-wide size ceiling. Publishing more articles can therefore grow the search
+corpus without exhausting the engine budget. The browser's first-search budget
+still checks the resources actually loaded for a search.
+
 Local browser fonts have a separate 128 KiB budget in each encoding. The check follows local
 font URLs in generated stylesheets and their CSS imports, and includes direct font preloads,
 counting each file once. Recognized font extensions and binary signatures are required before a

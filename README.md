@@ -52,7 +52,7 @@ Le guide complet est dans [Publier un article](guide/publier-un-article.md).
 Pour enrichir un simple fichier `.md`, le
 [catalogue de rédaction](src/content/blog/catalogue-redaction.md) présente les encadrés, boutons,
 icônes, onglets, infobulles et tableaux avec des exemples à copier. Ouvrez
-`/posts/catalogue-redaction/` sur le serveur local pour voir les aperçus interactifs.
+`/posts/catalogue-redaction` sur le serveur local pour voir les aperçus interactifs.
 
 ## Quelle commande utiliser ?
 
@@ -80,7 +80,7 @@ Commencez par les documents suivants :
 2. [Publier un article](guide/publier-un-article.md) : brouillon, Markdown, images, dates Git et
    publication.
 3. [Catalogue de rédaction](src/content/blog/catalogue-redaction.md) : éléments disponibles en
-   `.md`, rendus et exemples à copier. Aperçu local : `/posts/catalogue-redaction/`.
+   `.md`, rendus et exemples à copier. Aperçu local : `/posts/catalogue-redaction`.
 4. [Commandes et contrôles](guide/commandes-et-controles.md) : rôle de chaque script `pnpm`.
 5. [GitHub Actions et déploiement](guide/github-actions-et-deploiement.md) : contrôles automatiques,
    Vercel et hébergement statique.

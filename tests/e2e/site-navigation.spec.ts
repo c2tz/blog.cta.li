@@ -218,7 +218,7 @@ test("cookie notices respect reduced motion after their styles load", async ({ p
 });
 
 test("keyboard cookie preferences skip disabled actions", async ({ page }) => {
-  await gotoRoute(page, "/cookies/");
+  await gotoRoute(page, "/cookies");
   await waitForAppReady(page);
   const reset = page.locator(".cookie-preferences-reset");
   await reset.click();
@@ -243,7 +243,7 @@ test("keyboard cookie preferences skip disabled actions", async ({ page }) => {
 test("keyboard arrows traverse cookie services without changing their choices", async ({
   page,
 }) => {
-  await gotoRoute(page, "/cookies/");
+  await gotoRoute(page, "/cookies");
   await waitForAppReady(page);
   const services = page.locator(".cookie-preferences-services md-switch");
   await services.nth(0).focus();
@@ -371,7 +371,7 @@ test("offers a keyboard skip link", async ({ page }) => {
 test("tracks reading progress fractionally without a delayed indicator transition", async ({
   page,
 }) => {
-  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
+  await gotoRoute(page, "/posts/hugo-material-shortcodes");
   const progress = page.locator("md-linear-progress.site-scroll-progress");
   await expect(progress).toBeVisible();
 
@@ -498,7 +498,7 @@ test("delegates native and Material focus indicators to their owners", async ({ 
 });
 
 test("keeps native focus contours on tab panels", async ({ page }) => {
-  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
+  await gotoRoute(page, "/posts/hugo-material-shortcodes");
 
   const tab = page.locator("md-primary-tab").first();
   const panel = page.locator(".material-shortcode-tab-panel").first();
@@ -798,7 +798,7 @@ test("distinguishes touch selection from keyboard focus on coarse screens", asyn
 
 test("uses the Material Web pagination menu with keyboard selection", async ({ page }) => {
   test.skip(test.info().project.name.includes("mobile"), "The pagination control is desktop-only.");
-  await gotoRoute(page, "/posts/hugo-material-shortcodes/");
+  await gotoRoute(page, "/posts/hugo-material-shortcodes");
   await waitForAppReady(page);
 
   const table = page.locator(

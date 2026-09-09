@@ -6,6 +6,7 @@ interface PagefindResultData {
     priority?: string;
     tags?: string;
     title?: string;
+    url?: string;
   };
   title?: string;
   url: string;

@@ -522,10 +522,13 @@ class SearchPanelController {
         .slice(0, this.resultFetchLimit());
       const results = await this.withSearchTimeout(
         Promise.all(
-          resultRefs.map(async (result) => ({
-            data: await result.data(),
-            score: result.score ?? 0,
-          })),
+          resultRefs.map(async (result) => {
+            const data = await result.data();
+            return {
+              data: { ...data, url: data.meta?.url ?? data.url },
+              score: result.score ?? 0,
+            };
+          }),
         ),
       );
 

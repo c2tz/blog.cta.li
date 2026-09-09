@@ -125,7 +125,7 @@ navigateur.
 Pour ajouter des encadrés, boutons, icônes, onglets, infobulles ou tableaux interactifs dans un
 simple `.md`, ouvrez le [catalogue de rédaction](../src/content/blog/catalogue-redaction.md).
 Chaque élément a un exemple à copier, un aperçu et ses options utiles. Avec le serveur local,
-ouvrez `/posts/catalogue-redaction/` pour voir les rendus et utiliser les boutons de copie.
+ouvrez `/posts/catalogue-redaction` pour voir les rendus et utiliser les boutons de copie.
 Cette page est non listée afin de garder la documentation hors des listes d’articles.
 
 La [référence des shortcodes](../src/content/blog/hugo-material-shortcodes.md) rassemble aussi
@@ -160,7 +160,7 @@ pnpm dev
 L'URL de l'article est basée sur son nom de fichier :
 
 ```text
-http://localhost:4321/posts/mon-premier-article/
+http://localhost:4321/posts/mon-premier-article
 ```
 
 Avant la publication, construisez le site :

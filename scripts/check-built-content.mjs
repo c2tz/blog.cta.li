@@ -24,9 +24,9 @@ function hasClass(element, className) {
 
 function outputPathToRoute(outputPath) {
   if (outputPath === "index.html") return "/";
-  if (outputPath === "404.html") return "/404/";
+  if (outputPath === "404.html") return "/404";
   if (outputPath.endsWith("/index.html")) {
-    return `/${outputPath.slice(0, -"index.html".length)}`;
+    return `/${outputPath.slice(0, -"/index.html".length)}`;
   }
   return `/${outputPath}`;
 }
@@ -43,7 +43,7 @@ function pathVariants(pathname) {
 
 function outputCandidates(pathname) {
   const candidates = new Set();
-  if (pathname === "/404/") candidates.add("404.html");
+  if (pathname === "/404" || pathname === "/404/") candidates.add("404.html");
   for (const variant of pathVariants(pathname)) {
     const relativePath = variant.replace(/^\/+/, "");
     if (!relativePath || variant.endsWith("/")) {
@@ -294,7 +294,12 @@ export async function collectBuiltContentIssues({
   }
 
   const pagefindFragments = await readPagefindFragments(distDirectory, files, issues);
-  const fragmentUrls = new Set(pagefindFragments.map((fragment) => fragment.url));
+  const fragmentUrls = new Set(
+    pagefindFragments.map((fragment) => {
+      const url = new URL(fragment.meta?.url ?? fragment.url, normalizedSiteOrigin);
+      return url.origin === normalizedSiteOrigin ? url.pathname : url.href;
+    }),
+  );
   const placeholderFragments = pagefindFragments.filter(
     (fragment) => fragment.url === PAGEFIND_PLACEHOLDER_PATH,
   );

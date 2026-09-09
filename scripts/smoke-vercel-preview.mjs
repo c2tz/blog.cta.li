@@ -109,6 +109,27 @@ async function fetchDocument(url, label) {
   return fetchResource(url, label, "text/html,application/xhtml+xml");
 }
 
+async function verifySlashRedirects(targetUrl) {
+  for (const path of ["/cookies", "/tags/all", "/posts/bienvenue-sur-ct-blog"]) {
+    const legacyUrl = new URL(`${path}/?source=slash-check`, targetUrl);
+    const response = await fetch(legacyUrl, {
+      redirect: "manual",
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
+    await rejectVercelGate(response, `${path}/`);
+    assert(response.status === 308, `${path}/ must redirect permanently with HTTP 308.`);
+    const location = response.headers.get("location");
+    assert(location, `${path}/ redirect is missing its Location header.`);
+    const destination = new URL(location, legacyUrl);
+    assert(
+      destination.href === new URL(`${path}?source=slash-check`, targetUrl).href,
+      `${path}/ must remove the trailing slash and preserve query parameters.`,
+    );
+    const canonicalResponse = await fetchDocument(destination, path);
+    assert(canonicalResponse.status === 200, `${path} must return HTTP 200 without redirecting.`);
+  }
+}
+
 function assertLiveSecurityHeaders(response, label) {
   for (const [headerName, requiredTokens] of REQUIRED_LIVE_HEADERS) {
     const value = response.headers.get(headerName);
@@ -125,6 +146,7 @@ function assertLiveSecurityHeaders(response, label) {
 }
 
 async function verifyHttpSurface(targetUrl) {
+  await verifySlashRedirects(targetUrl);
   const homeResponse = await fetchDocument(targetUrl, "Preview home page");
   assert(homeResponse.status === 200, `Preview home page returned HTTP ${homeResponse.status}.`);
   assertLiveSecurityHeaders(homeResponse, "Preview home page");
@@ -195,7 +217,7 @@ async function verifyHttpSurface(targetUrl) {
   const konachanImageBytes = new Uint8Array(await konachanImageResponse.arrayBuffer());
   assertWebpBytes(konachanImageBytes, "Konachan WebP variant");
 
-  const missingUrl = new URL(`/__preview-smoke-missing-${randomUUID()}/`, targetUrl);
+  const missingUrl = new URL(`/__preview-smoke-missing-${randomUUID()}`, targetUrl);
   const missingResponse = await fetchDocument(missingUrl, "Missing-route probe");
   assert(
     missingResponse.status === 404,

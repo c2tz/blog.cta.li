@@ -115,8 +115,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shardIndex: [1, 2, 3, 4]
-        shardTotal: [4]
+        shardIndex: [1, 2, 3, 4, 5, 6, 7, 8]
+        shardTotal: [8]
 
     steps:
       - name: Checkout repository
@@ -213,7 +213,7 @@ jobs:
           merge-multiple: true
 
       - name: Require one blob report from every shard
-        run: pnpm exec node scripts/check-playwright-blob-reports.mjs all-blob-reports 4
+        run: pnpm exec node scripts/check-playwright-blob-reports.mjs all-blob-reports 8
 
       - name: Merge Playwright reports
         run: pnpm exec playwright merge-reports --reporter=html all-blob-reports

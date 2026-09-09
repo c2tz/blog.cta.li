@@ -7,12 +7,12 @@ Il ne compare jamais une pull request à une branche locale supposée.
 
 ## Lanes
 
-| Lane         | Chemins admis                                                                                             | Validation                                                                                   |
-| ------------ | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `docs`       | `guide/**`, documents racine connus et documentation/templates Markdown GitHub                            | Diff/Prettier des documents modifiés et titre de pull request                                |
-| `content`    | `LICENSE*` et fichiers Markdown/MDX sous `src/content/**`                                                 | Formatage, tests unitaires, build/Pagefind, CSP/headers et smoke Chromium ciblé              |
-| `post-merge` | Push d’un unique commit de merge dont la PR et les cinq checks verts sont prouvés par GitHub              | Publication rapide des cinq statuts sans répéter les validations déjà réussies               |
-| `full`       | Code, styles, dépendances, configuration, workflows, rulesets, scripts, tests, assets et chemins inconnus | Suite qualité, quatre shards Playwright, Lighthouse, validation CSP complète et vraie CodeQL |
+| Lane         | Chemins admis                                                                                             | Validation                                                                                 |
+| ------------ | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `docs`       | `guide/**`, documents racine connus et documentation/templates Markdown GitHub                            | Diff/Prettier des documents modifiés et titre de pull request                              |
+| `content`    | `LICENSE*` et fichiers Markdown/MDX sous `src/content/**`                                                 | Formatage, tests unitaires, build/Pagefind, CSP/headers et smoke Chromium ciblé            |
+| `post-merge` | Push d’un unique commit de merge dont la PR et les cinq checks verts sont prouvés par GitHub              | Publication rapide des cinq statuts sans répéter les validations déjà réussies             |
+| `full`       | Code, styles, dépendances, configuration, workflows, rulesets, scripts, tests, assets et chemins inconnus | Suite qualité, huit shards Playwright, Lighthouse, validation CSP complète et vraie CodeQL |
 
 La priorité est `full` > `content` > `docs`. Les deux chemins d’un renommage sont classés et une
 suppression conserve la classe de son ancien chemin. Un chemin inconnu, un ensemble vide, un SHA
@@ -40,10 +40,10 @@ workflow principal. Il utilise `needs` avec `always()` afin de rester présent a
 rouge ou ignoré. Sa table fail-closed exige :
 
 - `docs` et `content` : qualité réussie, shards et fusion explicitement ignorés ;
-- `full` : qualité, quatre shards et fusion réussis ;
+- `full` : qualité, huit shards et fusion réussis ;
 - `post-merge` : qualité, shards et fusion explicitement ignorés après la preuve GitHub.
 
-Tout résultat absent, annulé, inconnu ou différent de cette table échoue. Les quatre shards utilisent
+Tout résultat absent, annulé, inconnu ou différent de cette table échoue. Les huit shards utilisent
 un worker chacun et `fail-fast: false`. Leurs rapports blob portent des noms distincts, sont vérifiés
 avant fusion et ne partagent jamais le nom du check requis.
 
@@ -66,7 +66,7 @@ incomplète rebascule en `full`.
 
 ## Validation locale
 
-Le classificateur, le verdict agrégé, les quatre rapports et la partition Playwright sont couverts
+Le classificateur, le verdict agrégé, les huit rapports et la partition Playwright sont couverts
 par :
 
 ```sh
@@ -79,5 +79,5 @@ node --test \
 
 La suite simule notamment documentation, article, licence, code, workflow, dépendances, mélange,
 renommage, suppression, merge prouvé, push direct, faux merge, API indisponible, check absent ou
-rouge, push multiple/forcé, SHA absent et historique indisponible. Elle vérifie aussi que les quatre
+rouge, push multiple/forcé, SHA absent et historique indisponible. Elle vérifie aussi que les huit
 shards sont disjoints, équilibrés et couvrent exactement la collection complète.

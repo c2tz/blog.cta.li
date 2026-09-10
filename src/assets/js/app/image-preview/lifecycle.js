@@ -62,6 +62,7 @@ export const withImagePreviewLifecycle = (Base) =>
       this.nativeGestureActive = false;
       this.zoomGestureCooldownUntil = 0;
       this.resetView();
+      this.resetToolbarPosition();
       this.status.textContent = "";
       this.isOpen = false;
       this.isClosing = false;
@@ -173,6 +174,7 @@ export const withImagePreviewLifecycle = (Base) =>
       this.abortController.abort();
       this.cancelImageMotion();
       this.clearTapTimer();
+      this.resetToolbarPosition();
       if (this.informationSizeTimer) window.clearTimeout(this.informationSizeTimer);
       this.informationSizeTimer = undefined;
       this.resetShareFeedback();

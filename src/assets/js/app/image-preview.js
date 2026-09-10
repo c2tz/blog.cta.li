@@ -11,6 +11,7 @@ import { withImagePreviewGallery } from "./image-preview/gallery.js";
 import { withImagePreviewGestures } from "./image-preview/gestures.js";
 import { withImagePreviewInformation } from "./image-preview/information.js";
 import { withImagePreviewLifecycle } from "./image-preview/lifecycle.js";
+import { withImagePreviewToolbar } from "./image-preview/toolbar.js";
 import { withImagePreviewViewport } from "./image-preview/viewport.js";
 import { initMaterialMotion } from "./material-motion.js";
 import { areSiteAnimationsEnabled } from "./site-motion.js";
@@ -22,7 +23,9 @@ let pageLoadListenerInstalled = false;
 
 const ImagePreviewControllerBase = withImagePreviewLifecycle(
   withImagePreviewInformation(
-    withImagePreviewGallery(withImagePreviewGestures(withImagePreviewViewport(class {}))),
+    withImagePreviewGallery(
+      withImagePreviewToolbar(withImagePreviewGestures(withImagePreviewViewport(class {}))),
+    ),
   ),
 );
 
@@ -65,6 +68,8 @@ class ImagePreviewController extends ImagePreviewControllerBase {
     this.pendingIndex = undefined;
     this.activePointers = new Set();
     this.browserZoomed = false;
+    this.toolbarDrag = undefined;
+    this.toolbarPosition = undefined;
 
     this.controlsVisible = true;
     this.informationOpen = false;
@@ -136,6 +141,12 @@ class ImagePreviewController extends ImagePreviewControllerBase {
     this.stage.addEventListener("lostpointercapture", this.handlePointerCancel, options);
     this.stage.addEventListener("dblclick", this.handleDoubleClick, { ...options, passive: true });
     this.stage.addEventListener("wheel", this.handleWheel, { ...options, passive: false });
+    this.toolbar.addEventListener("pointerdown", this.handleToolbarPointerDown, options);
+    this.toolbar.addEventListener("pointermove", this.handleToolbarPointerMove, options);
+    this.toolbar.addEventListener("pointerup", this.handleToolbarPointerUp, options);
+    this.toolbar.addEventListener("pointercancel", this.handleToolbarPointerCancel, options);
+    this.toolbar.addEventListener("lostpointercapture", this.handleToolbarPointerCancel, options);
+    this.toolbar.addEventListener("keydown", this.handleToolbarKeydown, options);
     this.image.addEventListener("load", this.handleImageLoad, options);
     window.addEventListener("resize", this.handleViewportChange, options);
     window.visualViewport?.addEventListener("resize", this.handleViewportChange, options);

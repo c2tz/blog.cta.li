@@ -222,6 +222,43 @@ test("opens and refocuses search with Cmd/Ctrl+K without stealing editable field
   expect(editableShortcutWasPrevented).toBe(false);
 });
 
+test("reveals a heart only for the complete name and restores normal search", async ({ page }) => {
+  await gotoRoute(page, "/posts/hugo-material-shortcodes");
+  await openSearch(page);
+  const dialog = page.locator("[data-search-dialog]");
+  const query = dialog.getByRole("searchbox", { name: "Mot-clé, titre ou contenu" });
+  const status = dialog.locator("[data-search-status]");
+  const results = dialog.locator("[data-search-results] a");
+
+  await expect(status).not.toHaveText("❤️");
+  await query.fill("nathanaell");
+  await expect(status).toHaveText(/résultat|Aucun article trouvé/);
+
+  await query.press("e");
+  await expect(status).toHaveText("❤️");
+  await expect(status).toBeVisible();
+  await expect(results).toHaveCount(0);
+  await expect(dialog.locator("[data-search-tags]")).toBeHidden();
+  await expect(query).toBeFocused();
+
+  await query.press("x");
+  await expect(status).not.toHaveText("❤️");
+  await expect(status).toHaveText(/résultat|Aucun article trouvé/);
+
+  await query.fill(" NATHANAËLLE ");
+  await expect(status).toHaveText("❤️");
+  await query.press("Escape");
+  await expect(query).toHaveValue("");
+  await expect(status).toHaveText("Tapez au moins deux caractères ou choisissez un filtre.");
+  await expect(dialog).toBeVisible();
+  await expect(query).toBeFocused();
+
+  await query.fill("bienvenue");
+  await expect(results.first()).toBeVisible();
+  await expect(status).toHaveText(/résultat/);
+  await expect(dialog.locator("[data-search-tags]")).toBeVisible();
+});
+
 test("uses Escape to clear a search, then close its empty dialog", async ({ page }) => {
   await gotoRoute(page, "/");
   const { dialog, openButton } = await openSearch(page);
@@ -356,7 +393,6 @@ test("keeps the official Material filled select and its complete sort menu", asy
   await expect(sortSelect).toHaveAttribute("name", "sort");
   await expect(sortSelect).toHaveJSProperty("localName", "md-filled-select");
   await expect(sortSelect.locator(".site-material-select-arrow svg")).toBeVisible();
-  await expect(sortSelect.locator(".site-material-menu-check")).toHaveCount(3);
   await expect.poll(() => sortSelect.evaluate((select) => Boolean(select.shadowRoot))).toBe(true);
   await expect
     .poll(() => sortSelect.evaluate((select) => (select as HTMLInputElement).value))
@@ -410,13 +446,16 @@ test("keeps the official Material filled select and its complete sort menu", asy
   await expect(relevanceOption).toHaveJSProperty("selected", true);
   await expect(newestOption).toHaveJSProperty("selected", false);
   await expect(nameOption).toHaveJSProperty("selected", false);
-  await expect(relevanceOption.locator(".site-material-menu-check")).toBeVisible();
-  await expect(newestOption.locator(".site-material-menu-check")).toBeHidden();
+  await expect(relevanceOption.getByRole("option")).toHaveAttribute("aria-selected", "true");
+  await expect(newestOption.getByRole("option")).not.toHaveAttribute("aria-selected", "true");
   await expect(sortSelect).toHaveCSS(
     "--md-filled-select-text-field-focus-active-indicator-height",
     "0px",
   );
-  await expect(relevanceOption).toHaveCSS("--md-menu-item-selected-container-color", "transparent");
+  await expect(relevanceOption.getByRole("option")).not.toHaveCSS(
+    "background-color",
+    "rgba(0, 0, 0, 0)",
+  );
 
   await page.keyboard.press("Escape");
   await expect

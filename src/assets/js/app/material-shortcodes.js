@@ -220,22 +220,23 @@ function enhanceTable(host) {
     pageSizeSelect.setAttribute("aria-controls", tableId);
     pageSizeSelect.setAttribute("menu-positioning", "popover");
 
+    const pageSizeArrow = document.createElement("md-icon");
+    pageSizeArrow.slot = "trailing-icon";
+    pageSizeArrow.className = "site-material-select-arrow";
+    pageSizeArrow.setAttribute("aria-hidden", "true");
+    pageSizeArrow.innerHTML =
+      '<svg viewBox="0 0 24 24" focusable="false"><path d="M7 10l5 5 5-5z"></path></svg>';
+    pageSizeSelect.appendChild(pageSizeArrow);
+
     pageSizeOptions.forEach((size) => {
       const option = document.createElement("md-select-option");
       const headline = document.createElement("span");
-      const label = document.createElement("span");
-      const check = document.createElement("md-icon");
       option.className = "site-material-select-option";
       option.value = String(size);
       option.displayText = String(size);
       option.selected = size === state.pageSize;
       headline.slot = "headline";
-      headline.className = "site-material-option-content";
-      label.textContent = String(size);
-      check.className = "site-material-menu-check";
-      check.setAttribute("aria-hidden", "true");
-      check.textContent = "\uE5CA";
-      headline.append(label, check);
+      headline.textContent = String(size);
       option.append(headline);
       pageSizeSelect.appendChild(option);
     });

@@ -160,6 +160,47 @@ test("uses a modal Material dialog with only two accessible, focus-trapped contr
   );
 });
 
+test("moves the floating image controls without intercepting their buttons", async ({ page }) => {
+  const { dialog } = await openLightbox(page);
+  const toolbar = dialog.locator("[data-image-dialog-toolbar]");
+  const informationButton = toolbar.locator("[data-image-information]");
+  const closeButton = toolbar.locator("[data-image-close]");
+  const informationDialog = page.locator("[data-image-information-dialog]");
+
+  const before = await toolbar.boundingBox();
+  expect(before).not.toBeNull();
+  if (!before) return;
+
+  // The toolbar's padding is the drag surface; the icon buttons retain their
+  // normal pointer activation.
+  await page.mouse.move(before.x + 3, before.y + before.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(before.x - 80, before.y + 80, { steps: 5 });
+  await page.mouse.up();
+
+  await expect(toolbar).toHaveAttribute("data-image-toolbar-positioned", "");
+  const after = await toolbar.boundingBox();
+  expect(after).not.toBeNull();
+  if (!after) return;
+  expect(after.x).toBeLessThan(before.x - 20);
+  expect(after.y).toBeGreaterThan(before.y + 20);
+
+  await informationButton.click();
+  await expect(informationDialog).toHaveJSProperty("open", true);
+  await page.keyboard.press("Escape");
+  await expect(informationDialog).toHaveJSProperty("open", false);
+
+  // Option/Alt + arrows provide a keyboard equivalent to pointer movement.
+  await informationButton.focus();
+  const beforeKeyboard = await toolbar.boundingBox();
+  await page.keyboard.press("Alt+ArrowLeft");
+  const afterKeyboard = await toolbar.boundingBox();
+  expect(afterKeyboard!.x).toBeLessThan(beforeKeyboard!.x - 8);
+
+  await closeButton.click();
+  await expect(dialog).toHaveJSProperty("open", false);
+});
+
 test("fits the complete image with CSS and stays scroll-free through gestures and resizing", async ({
   page,
 }) => {

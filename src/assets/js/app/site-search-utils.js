@@ -1,3 +1,18 @@
+export function isDedicationQuery(query) {
+  return query.trim().normalize("NFD").replace(/\p{M}/gu, "").toLowerCase() === "nathanaelle";
+}
+
+export function isPublicSearchResultUrl(value) {
+  if (typeof value !== "string" || !value) return false;
+
+  try {
+    const url = new URL(value, document.baseURI);
+    return ["http:", "https:"].includes(url.protocol) && url.origin === location.origin;
+  } catch {
+    return false;
+  }
+}
+
 export function normalizeSelectedTags(value, limit) {
   const tags = Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
   return [...new Set(tags.filter((tag) => typeof tag === "string"))].slice(0, limit);

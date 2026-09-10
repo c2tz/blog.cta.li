@@ -209,7 +209,18 @@ html.site-image-dialog-fullscreen body {
     transform 160ms cubic-bezier(0.2, 0, 0, 1),
     border-radius 160ms cubic-bezier(0.2, 0, 0, 1);
   pointer-events: auto;
-  will-change: opacity, transform, border-radius;
+  cursor: grab;
+  touch-action: none;
+  will-change: left, top, opacity, transform, border-radius;
+}
+
+.site-image-dialog-toolbar[data-image-toolbar-positioned] {
+  transform-origin: top left;
+}
+
+.site-image-dialog-toolbar[data-image-toolbar-dragging] {
+  cursor: grabbing;
+  transition: none;
 }
 
 .site-image-dialog-toolbar.is-hidden {

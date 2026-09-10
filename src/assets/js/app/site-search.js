@@ -9,6 +9,8 @@ import {
   dateValue,
   formatDate,
   highlightTitle,
+  isDedicationQuery,
+  isPublicSearchResultUrl,
   normalizeSelectedTags,
   parsePriority,
   parseTags,
@@ -89,17 +91,6 @@ function isInternalPagefindUrl(value) {
   }
 }
 
-function isPublicSearchResultUrl(value) {
-  if (typeof value !== "string" || !value) return false;
-
-  try {
-    const url = new URL(value, document.baseURI);
-    return ["http:", "https:"].includes(url.protocol) && url.origin === location.origin;
-  } catch {
-    return false;
-  }
-}
-
 class SearchPanelController {
   constructor(root) {
     this.root = root;
@@ -125,6 +116,7 @@ class SearchPanelController {
     this.tagFilters = [];
     this.results = [];
     this.status = "Tapez au moins deux caractères ou choisissez un filtre.";
+    this.dedicationActive = false;
     this.filtersLoaded = false;
     this.tagFilterRequest = undefined;
     this.allTagFilterCounts = undefined;
@@ -387,9 +379,15 @@ class SearchPanelController {
 
   renderQueryState() {
     this.clearSearchButton.hidden = this.query.trim().length === 0;
+    if (this.dedicationActive && !isDedicationQuery(this.query)) {
+      this.dedicationActive = false;
+      this.status = "";
+      this.renderStatus();
+    }
   }
 
   renderStatus() {
+    this.root.toggleAttribute("data-search-dedication", this.dedicationActive);
     this.statusElement.textContent = this.status;
     this.filterActions.hidden = this.selectedTags.length === 0;
     this.filterLimit.hidden = this.selectedTags.length < MAX_SELECTED_TAGS;
@@ -410,9 +408,7 @@ class SearchPanelController {
 
   syncSortOptions() {
     this.sortSelect.querySelectorAll("md-select-option").forEach((option) => {
-      const selected = option.value === this.sortMode;
-      option.selected = selected;
-      option.toggleAttribute("data-selected-option", selected);
+      option.selected = option.value === this.sortMode;
     });
   }
 
@@ -484,6 +480,14 @@ class SearchPanelController {
     const currentRequest = ++this.requestId;
     const hasActiveFilters = this.hasActiveFilters();
     this.cancelCurrentSearchOperation();
+
+    this.dedicationActive = isDedicationQuery(query);
+    if (this.dedicationActive) {
+      this.results = [];
+      this.status = "❤️";
+      this.render();
+      return;
+    }
 
     if (query.length > 0 && query.length < MIN_QUERY_LENGTH) {
       this.results = [];

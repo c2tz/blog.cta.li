@@ -27,6 +27,8 @@ const SHARE_ICON = "\uE80D";
       class="site-image-dialog-toolbar"
       role="toolbar"
       aria-label="Commandes de l’image"
+      aria-describedby="site-image-dialog-toolbar-help"
+      aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown Alt+ArrowLeft Alt+ArrowRight"
       data-image-dialog-toolbar
     >
       <md-icon-button
@@ -53,6 +55,10 @@ const SHARE_ICON = "\uE80D";
         <md-icon aria-hidden="true">{CLOSE_ICON}</md-icon>
       </md-icon-button>
     </div>
+
+    <span id="site-image-dialog-toolbar-help" class="sr-only"
+      >La barre de commandes peut être déplacée avec Option ou Alt et les touches fléchées.</span
+    >
 
     <span class="sr-only" role="status" aria-live="polite" aria-atomic="true" data-image-status
     ></span>

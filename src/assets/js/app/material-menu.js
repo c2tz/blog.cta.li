@@ -2,7 +2,6 @@ import { initMaterialMotion } from "./material-motion.js";
 
 const MATERIAL_MENU_SELECTION_KEYS = new Set(["Enter", "Space"]);
 const materialSelectStateOwners = new WeakSet();
-const materialSelectIndicatorOwners = new WeakSet();
 
 /**
  * Mirrors the select's official lifecycle solely for the decorative chevron.
@@ -25,35 +24,6 @@ function bindMaterialSelectState(owner) {
 }
 
 /**
- * Mirrors Material Web's internal selected state onto the option host so the
- * shared trailing check can be styled without replacing the native select.
- *
- * @param {HTMLElement} owner
- */
-function bindMaterialSelectIndicator(owner) {
-  if (!owner.matches("md-filled-select, md-outlined-select")) return;
-
-  let syncFrame = 0;
-  const sync = () => {
-    if (syncFrame) window.cancelAnimationFrame(syncFrame);
-    syncFrame = window.requestAnimationFrame(() => {
-      syncFrame = 0;
-      const selectedValue = String(owner.value ?? owner.getAttribute("value") ?? "");
-      owner.querySelectorAll("md-select-option").forEach((option) => {
-        const optionValue = String(option.value ?? option.getAttribute("value") ?? "");
-        const selected = optionValue === selectedValue;
-        option.toggleAttribute("data-selected-option", selected);
-      });
-    });
-  };
-
-  owner.addEventListener("opened", sync);
-  owner.addEventListener("input", sync);
-  owner.addEventListener("change", sync);
-  sync();
-}
-
-/**
  * Enhances every Material menu/select present in a document or Astro page.
  *
  * @param {ParentNode} [root]
@@ -65,10 +35,6 @@ export function initMaterialMenuEnhancements(root = document) {
     if (!materialSelectStateOwners.has(owner)) {
       materialSelectStateOwners.add(owner);
       bindMaterialSelectState(owner);
-    }
-    if (!materialSelectIndicatorOwners.has(owner)) {
-      materialSelectIndicatorOwners.add(owner);
-      bindMaterialSelectIndicator(owner);
     }
   });
 }

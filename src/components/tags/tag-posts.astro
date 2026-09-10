@@ -184,12 +184,7 @@ const initialStatus =
                 display-text={size.toString()}
                 selected={index === 0 ? true : undefined}
               >
-                <span slot="headline" class="site-material-option-content">
-                  <span>{size}</span>
-                  <md-icon class="site-material-menu-check" aria-hidden="true">
-                    &#xE5CA;
-                  </md-icon>
-                </span>
+                <span slot="headline">{size}</span>
               </md-select-option>
             ))}
           </md-outlined-select>

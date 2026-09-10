@@ -13,6 +13,7 @@ export const withImagePreviewViewport = (Base) =>
       this.shell.toggleAttribute("data-browser-zoomed", this.browserZoomed);
       this.stage.toggleAttribute("data-browser-zoomed", this.browserZoomed);
       this.syncToolbarScale();
+      this.clampToolbarPosition?.();
     }
 
     isBrowserZoomed() {

@@ -754,10 +754,12 @@ test("keeps unlisted posts out of the semantic tag table", async ({ page }) => {
       primary: getComputedStyle(document.documentElement)
         .getPropertyValue("--md-sys-color-primary")
         .trim(),
-      radius: styles.getPropertyValue("--md-outlined-text-field-container-shape").trim(),
     };
   });
-  expect(filterStyle.radius).toBe("28px");
+  await expect(filter.locator("md-outlined-field .container")).toHaveCSS(
+    "border-top-left-radius",
+    "4px",
+  );
   expect(filterStyle.focusOutline).toBe(filterStyle.primary);
 
   await page.getByRole("searchbox", { name: "Filtrer les articles" }).fill("MDX");

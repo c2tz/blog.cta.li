@@ -6,6 +6,7 @@ import {
   waitForNativeEnhancement,
 } from "./site-fixture";
 import type { Page } from "@playwright/test";
+import sharp from "sharp";
 
 const searchTriggerSelector = "[data-site-search-trigger]";
 
@@ -44,6 +45,55 @@ async function enableDetailedView(page: Page) {
   await page.locator("md-icon-button.home-detail-trigger").click();
   await expect(page.locator("html")).toHaveAttribute("data-home-detail-view", "true");
 }
+
+test("dims scroll-to-top beneath the search scrim and restores it after closing", async ({
+  page,
+}) => {
+  await gotoRoute(page, "/posts/hugo-material-shortcodes");
+  await page.evaluate(() => window.scrollTo(0, 800));
+  const scrollTop = page.locator("[data-scroll-top]");
+  await expect(scrollTop).toBeVisible();
+  await scrollTop.evaluate((element) => {
+    // A solid patch verifies the actual painting order, as in the lightbox test.
+    (element as HTMLElement).style.background = "rgb(255, 0, 255)";
+    Array.from(element.children).forEach(
+      (child) => ((child as HTMLElement).style.visibility = "hidden"),
+    );
+  });
+  const { dialog } = await openSearch(page);
+  await expect
+    .poll(() =>
+      page
+        .locator("[data-search-dialog] .scrim")
+        .evaluate((element) => Number(getComputedStyle(element).opacity)),
+    )
+    .toBeCloseTo(0.32, 2);
+  const box = (await scrollTop.boundingBox())!;
+  const sample = async () =>
+    sharp(await page.screenshot({ scale: "css" }))
+      .extract({ left: Math.round(box.x + 2), top: Math.round(box.y + 2), width: 1, height: 1 })
+      .removeAlpha()
+      .raw()
+      .toBuffer();
+  const dimmed = await sample();
+  expect(dimmed[0]).toBeGreaterThan(150);
+  expect(dimmed[0]).toBeLessThan(200);
+  expect(dimmed[1]).toBeLessThan(5);
+  expect(dimmed[2]).toBeGreaterThan(150);
+  expect(dimmed[2]).toBeLessThan(200);
+
+  await page.getByRole("button", { name: "Fermer la recherche" }).click();
+  await expect(dialog).toBeHidden();
+  expect([...(await sample())]).toEqual([255, 0, 255]);
+  await scrollTop.evaluate((element) => {
+    (element as HTMLElement).style.removeProperty("background");
+    Array.from(element.children).forEach((child) =>
+      (child as HTMLElement).style.removeProperty("visibility"),
+    );
+  });
+  await page.getByRole("button", { name: "Retour en haut", exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+});
 
 test("only offers sorting in detailed mode and preserves the search when switching modes", async ({
   page,
@@ -172,6 +222,43 @@ test("opens and refocuses search with Cmd/Ctrl+K without stealing editable field
   expect(editableShortcutWasPrevented).toBe(false);
 });
 
+test("reveals a heart only for the complete name and restores normal search", async ({ page }) => {
+  await gotoRoute(page, "/posts/hugo-material-shortcodes");
+  await openSearch(page);
+  const dialog = page.locator("[data-search-dialog]");
+  const query = dialog.getByRole("searchbox", { name: "Mot-clé, titre ou contenu" });
+  const status = dialog.locator("[data-search-status]");
+  const results = dialog.locator("[data-search-results] a");
+
+  await expect(status).not.toHaveText("❤️");
+  await query.fill("nathanaell");
+  await expect(status).toHaveText(/résultat|Aucun article trouvé/);
+
+  await query.press("e");
+  await expect(status).toHaveText("❤️");
+  await expect(status).toBeVisible();
+  await expect(results).toHaveCount(0);
+  await expect(dialog.locator("[data-search-tags]")).toBeHidden();
+  await expect(query).toBeFocused();
+
+  await query.press("x");
+  await expect(status).not.toHaveText("❤️");
+  await expect(status).toHaveText(/résultat|Aucun article trouvé/);
+
+  await query.fill(" NATHANAËLLE ");
+  await expect(status).toHaveText("❤️");
+  await query.press("Escape");
+  await expect(query).toHaveValue("");
+  await expect(status).toHaveText("Tapez au moins deux caractères ou choisissez un filtre.");
+  await expect(dialog).toBeVisible();
+  await expect(query).toBeFocused();
+
+  await query.fill("bienvenue");
+  await expect(results.first()).toBeVisible();
+  await expect(status).toHaveText(/résultat/);
+  await expect(dialog.locator("[data-search-tags]")).toBeVisible();
+});
+
 test("uses Escape to clear a search, then close its empty dialog", async ({ page }) => {
   await gotoRoute(page, "/");
   const { dialog, openButton } = await openSearch(page);
@@ -280,6 +367,11 @@ test("searches through the Material Web text field", async ({ page }) => {
   await expect(
     searchDialog.getByRole("link", { name: "Bienvenue sur ct-blog", exact: true }),
   ).toBeVisible();
+  const dates = searchDialog.locator(".site-search-panel-result-meta");
+  await expect(dates.locator("time")).toHaveCount(1);
+  await expect(dates.locator('[aria-label="Création du post"]')).toBeVisible();
+  await expect(dates.locator('[aria-label="Dernière modification du post"]')).toHaveCount(0);
+  await expect(dates.locator(".site-search-panel-result-meta-separator")).toHaveCount(0);
 
   await searchInput.fill("site");
   const excerpt = searchDialog.locator(".site-search-panel-result-excerpt");
@@ -301,7 +393,6 @@ test("keeps the official Material filled select and its complete sort menu", asy
   await expect(sortSelect).toHaveAttribute("name", "sort");
   await expect(sortSelect).toHaveJSProperty("localName", "md-filled-select");
   await expect(sortSelect.locator(".site-material-select-arrow svg")).toBeVisible();
-  await expect(sortSelect.locator(".site-material-menu-check")).toHaveCount(3);
   await expect.poll(() => sortSelect.evaluate((select) => Boolean(select.shadowRoot))).toBe(true);
   await expect
     .poll(() => sortSelect.evaluate((select) => (select as HTMLInputElement).value))
@@ -355,13 +446,16 @@ test("keeps the official Material filled select and its complete sort menu", asy
   await expect(relevanceOption).toHaveJSProperty("selected", true);
   await expect(newestOption).toHaveJSProperty("selected", false);
   await expect(nameOption).toHaveJSProperty("selected", false);
-  await expect(relevanceOption.locator(".site-material-menu-check")).toBeVisible();
-  await expect(newestOption.locator(".site-material-menu-check")).toBeHidden();
+  await expect(relevanceOption.getByRole("option")).toHaveAttribute("aria-selected", "true");
+  await expect(newestOption.getByRole("option")).not.toHaveAttribute("aria-selected", "true");
   await expect(sortSelect).toHaveCSS(
     "--md-filled-select-text-field-focus-active-indicator-height",
     "0px",
   );
-  await expect(relevanceOption).toHaveCSS("--md-menu-item-selected-container-color", "transparent");
+  await expect(relevanceOption.getByRole("option")).not.toHaveCSS(
+    "background-color",
+    "rgba(0, 0, 0, 0)",
+  );
 
   await page.keyboard.press("Escape");
   await expect

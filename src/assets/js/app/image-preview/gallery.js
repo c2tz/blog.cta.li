@@ -37,6 +37,7 @@ export const withImagePreviewGallery = (Base) =>
       );
       this.pendingIndex = undefined;
       this.browserZoomed = false;
+      this.resetToolbarPosition();
       const richTooltip = sourceImage.closest("[data-site-rich-tooltip][id]");
       const richTooltipTrigger = richTooltip
         ? [...document.querySelectorAll("[data-rich-tooltip-trigger]")].find(

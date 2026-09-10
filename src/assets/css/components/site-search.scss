@@ -17,7 +17,7 @@
   z-index: 2;
 }
 
-html:has(.site-search-dialog[open]) .cookie-consent--privacy {
+html:has(.site-search-dialog[open]) :is(.cookie-consent--privacy, .site-scroll-top) {
   z-index: 1;
 }
 
@@ -206,6 +206,32 @@ html[data-focus-modality="keyboard"] .site-search-panel-sort-select::part(field)
   margin: 0;
   color: var(--site-muted);
   font-size: 0.9rem;
+}
+
+.site-search-panel[data-search-dedication] {
+  .site-search-panel-state {
+    min-height: 10rem;
+    box-sizing: border-box;
+    place-items: center;
+    padding: 2rem 1.5rem;
+    border-radius: var(--md-sys-shape-corner-extra-large);
+    background: var(--md-sys-color-primary-container);
+  }
+
+  .site-search-panel-status {
+    color: var(--md-sys-color-on-primary-container);
+    font-size: 4rem;
+    line-height: 1.4;
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  .site-search-panel-filter-actions,
+  .site-search-panel-filter-limit,
+  .site-search-panel-filters,
+  .site-search-panel-progress {
+    display: none;
+  }
 }
 
 .site-search-panel-filter-limit {

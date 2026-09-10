@@ -16,6 +16,9 @@ async function loadContentEnhancements() {
   if (!prose) return;
 
   const modules = [];
+  if (prose.querySelector("[data-video-player]")) {
+    modules.push(import("@/assets/js/app/video-player-loader.js"));
+  }
   if (prose.querySelector("pre > code")) {
     modules.push(import("@/assets/js/app/code-block-enhancer.js"));
   }

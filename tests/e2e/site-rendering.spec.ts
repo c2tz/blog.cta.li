@@ -13,6 +13,32 @@ import {
   waitForNativeEnhancement,
 } from "./site-fixture";
 
+test("enhances the Markdown video in French without preloading video data on page load", async ({
+  page,
+}) => {
+  const requests: string[] = [];
+  page.on("request", (request) => requests.push(request.url()));
+  await page.route("**/__video-preview/videos/test-mux/v1/poster.webp", (route) =>
+    route.fulfill({
+      contentType: "image/svg+xml",
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="9"></svg>',
+    }),
+  );
+  await gotoRoute(page, "/posts/bienvenue-sur-ct-blog");
+  await waitForAppReady(page);
+  expect(requests.some((url) => /video-player|mux-player/.test(url))).toBe(false);
+
+  await gotoRoute(page, "/posts/catalogue-redaction#vidéo-avec-choix-de-qualité");
+  const figure = page.locator("[data-video-player]");
+  await expect(figure).toHaveCount(1);
+  await expect(figure.locator(".site-video-start")).toHaveCount(0);
+  await expect(figure.locator("mux-player")).toHaveCount(1);
+  await expect(page.locator("pre code").filter({ hasText: '{{< video src="' })).toHaveCount(1);
+  expect(requests.some((url) => /\.(m3u8|m4s|mp4|ts)(?:\?|$)/.test(url))).toBe(false);
+  expect(requests.some((url) => /https:\/\/[^/]*(?:mux\.com|litix\.io)/.test(url))).toBe(false);
+  await expectNoPageOverflow(page);
+});
+
 test("switches all Material menus and search dialogs between normal and quick motion", async ({
   page,
 }) => {

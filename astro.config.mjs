@@ -18,6 +18,16 @@ import rehypeSlug from "rehype-slug";
 import { getFileGitDates } from "./src/lib/git-dates.mjs";
 import remarkHugoMaterialShortcodes from "./src/lib/remark-hugo-material-shortcodes.mjs";
 import rehypePostToc from "./src/lib/rehype-post-toc.mjs";
+import { BLOG_MEDIA_ORIGIN, VIDEO_PREVIEW_PREFIX } from "./src/lib/video-sources.mjs";
+
+// Local preview uses the public origin without widening the bucket's CORS policy.
+const videoPreviewProxy = {
+  [`^${VIDEO_PREVIEW_PREFIX}/videos/`]: {
+    target: BLOG_MEDIA_ORIGIN,
+    changeOrigin: true,
+    rewrite: (path) => path.slice(VIDEO_PREVIEW_PREFIX.length),
+  },
+};
 
 const IMAGE_GIT_DATES_CACHE = new Map();
 
@@ -137,8 +147,6 @@ export default defineConfig({
         "@material/web/chips/assist-chip.js",
         "@material/web/chips/chip-set.js",
         "@material/web/chips/filter-chip.js",
-        "@material/web/dialog/dialog.js",
-        "@material/web/divider/divider.js",
         "@material/web/fab/fab.js",
         "@material/web/icon/icon.js",
         "@material/web/iconbutton/filled-tonal-icon-button.js",
@@ -159,6 +167,7 @@ export default defineConfig({
     },
     server: {
       strictPort: true,
+      proxy: videoPreviewProxy,
       headers: {
         "Access-Control-Allow-Origin": "https://giscus.app",
         "Cross-Origin-Resource-Policy": "cross-origin",
@@ -166,6 +175,7 @@ export default defineConfig({
       },
     },
     preview: {
+      proxy: videoPreviewProxy,
       // The fixed headers above already define CORS. Vite's dynamic middleware
       // adds Vary: Origin, which prevents WebKit from reusing font preloads.
       cors: false,

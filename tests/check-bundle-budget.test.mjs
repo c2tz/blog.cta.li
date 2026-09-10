@@ -92,6 +92,12 @@ async function createDistFixture(
       'import"./material.P5q6.js";',
     ),
     writeFixture(distDirectory, "_astro/material.P5q6.js", "export const material=1;"),
+    writeFixture(
+      distDirectory,
+      "_astro/video-player.VideoHash.js",
+      'import("./video-engine.EngineHash.js");import"./shared.H7j8.js";',
+    ),
+    writeFixture(distDirectory, "_astro/video-engine.EngineHash.js", "export const video=1;"),
     writeFixture(distDirectory, "pagefind/pagefind.js", "p".repeat(16)),
     writeFixture(distDirectory, "pagefind/wasm.fr.pagefind", "w".repeat(17)),
     writeFixture(distDirectory, "images/404-screen-dark-960.avif", "d".repeat(18)),
@@ -137,12 +143,48 @@ test("mesure raw, gzip et Brotli par route avec le HTML et sans dépendre des ha
     imagePreview: "image-preview.PreviewHash.js",
     konachan: "home-konachan-background.HomeHash.js",
     search: "site-search.SearchHash.js",
+    video: "video-player.VideoHash.js",
   });
   assert.deepEqual(
     stats.deferredJourneys.search.files.map(({ path }) => path),
     ["_astro/search-dependency.K1l2.js", "_astro/site-search.SearchHash.js"],
   );
   assert.equal(stats.initialKonachanImage, "konachan-backgrounds/42-960.webp");
+});
+
+test("le lecteur différé a son budget et ses dépendances partagées restent dans celui du blog", async (t) => {
+  const { distDirectory } = await createDistFixture(t);
+  await writeFixture(distDirectory, "_astro/video-engine.EngineHash.js", "v".repeat(300_000));
+  const stats = await checkBundleBudget({ distDirectory });
+  assert.ok(stats.deferredJourneys.video.rawBytes > 300_000);
+  assert.ok(stats.coreJavaScript.files.some(({ path }) => path === "_astro/shared.H7j8.js"));
+  assert.ok(
+    !stats.coreJavaScript.files.some(({ path }) => path === "_astro/video-engine.EngineHash.js"),
+  );
+  assert.ok(stats.totalJavaScript.rawBytes > stats.coreJavaScript.rawBytes + 300_000);
+
+  await writeFixture(
+    distDirectory,
+    "_astro/shared.H7j8.js",
+    'import"./video-engine.EngineHash.js";',
+  );
+  await assert.rejects(
+    () => checkBundleBudget({ distDirectory }),
+    /bundle JavaScript .*video-engine.*dépasse/s,
+  );
+});
+
+test("une régression du poids du moteur vidéo dépasse son budget propre", async (t) => {
+  const { distDirectory } = await createDistFixture(t);
+  await writeFixture(
+    distDirectory,
+    "_astro/video-engine.EngineHash.js",
+    Buffer.alloc(BUNDLE_BUDGETS.deferredJourneys.video.rawBytes + 1),
+  );
+  await assert.rejects(
+    () => checkBundleBudget({ distDirectory }),
+    /parcours différé vidéo \(raw\).*dépasse/,
+  );
 });
 
 test("sépare Pagefind, les parcours différés et l'image 404 AVIF déterministe", async (t) => {

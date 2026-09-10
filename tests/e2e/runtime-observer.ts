@@ -39,6 +39,18 @@ export async function observePageRuntime(page: Page, issues: string[]) {
   page.on("console", (message) => {
     if (message.type() === "error" || message.type() === "warning") {
       const text = message.text();
+      // macOS Playwright WebKit also emits these missing native icon messages
+      // for a plain <video controls preload="none">, without Mux or site code.
+      if (
+        process.platform === "darwin" &&
+        page.context().browser()?.browserType().name() === "webkit" &&
+        message.location().url === "" &&
+        /^Button failed to load, iconName = (?:invalid|pip|airplay)-placard, layoutTraits = \[MacOSLayoutTraits Inline\], src = blob:http:\/\/127\.0\.0\.1:\d+\/[\da-f-]+$/.test(
+          text,
+        )
+      ) {
+        return;
+      }
       if (
         message.type() === "warning" &&
         EXPECTED_CONSOLE_WARNING_PATTERNS.some((pattern) => pattern.test(text))

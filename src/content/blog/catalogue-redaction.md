@@ -15,6 +15,29 @@ bloc correspondant, collez-le dans votre article et remplacez le texte. Conserve
 les lignes vides. Les aperçus sont de vrais éléments du site : vous pouvez les ouvrir, les trier
 ou changer d’onglet.
 
+## Vidéo avec choix de qualité
+
+Ce lecteur fonctionne directement dans un fichier **`.md`**. Il affiche les commandes en français
+et propose **Auto, 1080p, 720p et 480p** lorsque ces variantes existent dans la playlist HLS.
+
+**À copier :**
+
+```md
+{{< video src="https://ct-blog-media.fsn1.your-objectstorage.com/videos/test-mux/v1/master.m3u8" poster="https://ct-blog-media.fsn1.your-objectstorage.com/videos/test-mux/v1/poster.webp" title="Mire vidéo — choix de qualité" />}}
+```
+
+**Rendu :**
+
+{{< video src="https://ct-blog-media.fsn1.your-objectstorage.com/videos/test-mux/v1/master.m3u8" poster="https://ct-blog-media.fsn1.your-objectstorage.com/videos/test-mux/v1/poster.webp" title="Mire vidéo — choix de qualité" />}}
+
+Cette mire silencieuse dure 24 secondes. Lancez-la, puis ouvrez **Qualité** dans les commandes.
+Le lecteur peut conserver quelques secondes de la qualité précédente déjà chargées en mémoire.
+
+Remplacez `src` par l’URL de votre playlist `master.m3u8`, `poster` par celle de l’affiche et
+`title` par le titre de la vidéo. L’affiche est facultative. Une URL `.mp4` fonctionne également,
+mais un seul fichier MP4 ne fournit pas plusieurs qualités. Aucun import Astro ou MDX n’est
+nécessaire dans l’article.
+
 ## Créer un article
 
 Depuis la racine du dépôt, cette commande crée un fichier `.md` prêt à remplir :

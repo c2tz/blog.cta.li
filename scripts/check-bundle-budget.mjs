@@ -31,6 +31,7 @@ const DEFERRED_ENTRY_STEMS = Object.freeze({
   imagePreview: "image-preview",
   konachan: "home-konachan-background",
   search: "site-search",
+  video: "video-player",
 });
 
 function sizeBudget(rawKib, gzipKib, brotliKib) {
@@ -60,6 +61,9 @@ export const BUNDLE_BUDGETS = Object.freeze({
     search: sizeBudget(320, 88, 76),
     imagePreview: sizeBudget(160, 48, 42),
     konachan: sizeBudget(384, 112, 100),
+    // Mux + its HLS engine load only near a video. Keep the rest of the site's
+    // existing JavaScript limits and cap this optional journey independently.
+    video: sizeBudget(1120, 312, 264),
   }),
 });
 
@@ -215,13 +219,14 @@ function localModuleReferences(source, importer) {
   return references;
 }
 
-async function collectModuleGraph(astroDirectory, entryPath, knownAssets) {
+async function collectModuleGraph(astroDirectory, entryPath, knownAssets, boundaries = new Set()) {
   const pending = [entryPath];
   const visited = new Set();
 
   while (pending.length > 0) {
     const path = pending.pop();
     if (!path || visited.has(path)) continue;
+    if (path !== entryPath && boundaries.has(path)) continue;
     if (!knownAssets.has(path)) {
       throw new Error(`Generated module ${path} referenced by ${entryPath} is missing.`);
     }
@@ -365,12 +370,37 @@ export async function collectBundleStats({ distDirectory = DEFAULT_DIST_DIRECTOR
       ]),
     ),
   );
+  const videoPaths = new Set(deferredGraphs.video);
+  const coreRoots = new Set(
+    [...javascriptAssets.filter(({ path }) => !videoPaths.has(path)), ...initialFiles]
+      .map(({ path }) => path)
+      .filter((path) => path.startsWith(`${ASTRO_DIRECTORY}/`) && /\.m?js$/.test(path)),
+  );
+  const corePaths = new Set(
+    (
+      await Promise.all(
+        [...coreRoots].map((path) =>
+          collectModuleGraph(
+            astroDirectory,
+            path.slice(ASTRO_DIRECTORY.length + 1),
+            knownAssets,
+            new Set([deferredEntries.video]),
+          ),
+        ),
+      )
+    ).flat(),
+  );
+  // Shared dependencies still count against the original site-wide budget.
+  const coreJavaScriptFiles = javascriptAssets.filter(
+    ({ path }) => !videoPaths.has(path) || corePaths.has(path),
+  );
   const initialKonachanImage =
     initialKonachanImagePath(homeHtml) ??
     runtimeKonachanImagePath(
       await readFile(resolve(distDirectory, "konachan-backgrounds.runtime.json"), "utf8"),
     );
   const deferredJourneys = {
+    video: await measureFiles(distDirectory, deferredGraphs.video, measurementCache),
     search: await measureFiles(distDirectory, deferredGraphs.search, measurementCache),
     imagePreview: await measureFiles(distDirectory, deferredGraphs.imagePreview, measurementCache),
     konachan: await measureFiles(
@@ -420,6 +450,7 @@ export async function collectBundleStats({ distDirectory = DEFAULT_DIST_DIRECTOR
     },
     largestJavaScript: largestFile(javascriptAssets),
     totalJavaScript: { ...sumMeasurements(javascriptAssets), files: javascriptAssets },
+    coreJavaScript: { ...sumMeasurements(coreJavaScriptFiles), files: coreJavaScriptFiles },
     totalStylesheet: { ...sumMeasurements(stylesheetAssets), files: stylesheetAssets },
     totalFonts,
     pagefind,
@@ -456,11 +487,16 @@ export async function checkBundleBudget({
     ["route article, HTML inclus", stats.routes.article, budgets.routes.article],
     ["route cookies, HTML inclus", stats.routes.cookies, budgets.routes.cookies],
     ["route 404, HTML inclus", stats.routes.notFound, budgets.routes.notFound],
-    ["total JavaScript applicatif", stats.totalJavaScript, budgets.totalJavaScript],
+    [
+      "total JavaScript applicatif hors lecteur vidéo",
+      stats.coreJavaScript,
+      budgets.totalJavaScript,
+    ],
     ["total CSS", stats.totalStylesheet, budgets.totalStylesheet],
     ["polices locales", stats.totalFonts, budgets.totalFonts],
     ["moteur Pagefind", stats.pagefindRuntime, budgets.pagefindRuntime],
     ["parcours différé recherche", stats.deferredJourneys.search, budgets.deferredJourneys.search],
+    ["parcours différé vidéo", stats.deferredJourneys.video, budgets.deferredJourneys.video],
     [
       "parcours différé aperçu d’image",
       stats.deferredJourneys.imagePreview,
@@ -474,7 +510,7 @@ export async function checkBundleBudget({
   ];
   const failures = [
     ...checks.flatMap(([label, actual, budget]) => collectBudgetFailures(label, actual, budget)),
-    ...stats.totalJavaScript.files.flatMap((file) =>
+    ...stats.coreJavaScript.files.flatMap((file) =>
       collectBudgetFailures(`bundle JavaScript ${file.path}`, file, budgets.largestJavaScript),
     ),
     ...stats.notFoundImages.flatMap((file) =>
@@ -507,6 +543,8 @@ async function main() {
   console.log(
     [
       `Budgets de bundles vérifiés : JS ${formatMeasurement(stats.totalJavaScript)};`,
+      `JS hors lecteur vidéo ${formatMeasurement(stats.coreJavaScript)};`,
+      `lecteur vidéo différé ${formatMeasurement(stats.deferredJourneys.video)};`,
       `CSS ${formatMeasurement(stats.totalStylesheet)};`,
       `polices ${formatMeasurement(stats.totalFonts)};`,
       `moteur Pagefind ${formatMeasurement(stats.pagefindRuntime)};`,

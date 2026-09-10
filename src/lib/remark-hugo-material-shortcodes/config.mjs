@@ -61,6 +61,7 @@ export const KNOWN_SHORTCODES = Object.freeze([
   "rich-tooltip-ref",
   "tab",
   "tabs",
+  "video",
 ]);
 
 export const ADMONITION_TYPES = Object.freeze(

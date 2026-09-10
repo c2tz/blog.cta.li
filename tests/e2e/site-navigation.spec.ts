@@ -328,6 +328,53 @@ test("keyboard page shortcuts preserve search editing and the modal boundary", a
   await expectKeyboardRing(page.locator("[data-search-open]"));
 });
 
+test("unavailable dynamic color stays dimmed throughout menu opening", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("home-detail-view-v1", "true");
+    localStorage.removeItem("site-material-dynamic-color-palette-v1");
+  });
+  await gotoRoute(page, "/posts/bienvenue-sur-ct-blog");
+  await waitForNativeEnhancement(page, "[data-theme-switcher]");
+  const trigger = page.locator(".site-theme-trigger");
+  const row = page.locator("[data-dynamic-color-option]");
+  await expect(row).toHaveAttribute("disabled", "");
+  await expect(row).not.toHaveAttribute("hidden", "");
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    // Sample every frame from the opening event, including Material's fade-in.
+    const openingSamples = page.evaluate(
+      () =>
+        new Promise<number[]>((resolve) => {
+          const menu = document.querySelector(".site-theme-menu")!;
+          const option = document.querySelector("[data-dynamic-color-option]")!;
+          const copy = option.querySelector(".site-theme-dynamic-color-copy")!;
+          menu.addEventListener(
+            "opening",
+            () => {
+              const start = performance.now();
+              const samples: number[] = [];
+              const sample = () => {
+                samples.push(
+                  Number(getComputedStyle(option).opacity) * Number(getComputedStyle(copy).opacity),
+                );
+                if (performance.now() - start < 600) requestAnimationFrame(sample);
+                else resolve(samples);
+              };
+              requestAnimationFrame(sample);
+            },
+            { once: true },
+          );
+        }),
+    );
+    await trigger.click();
+    const samples = await openingSamples;
+    expect(samples.length).toBeGreaterThan(2);
+    expect(Math.max(...samples)).toBeLessThanOrEqual(0.31);
+    await page.keyboard.press("Escape");
+    await expect(page.locator(".site-theme-menu")).toBeHidden();
+  }
+});
+
 test("keyboard theme navigation includes dynamic color and restores focus", async ({ page }) => {
   await gotoRoute(page, "/");
   await waitForAppReady(page);

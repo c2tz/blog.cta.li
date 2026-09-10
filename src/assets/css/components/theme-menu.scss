@@ -22,8 +22,21 @@
 
 .site-theme-dynamic-color-row {
   --md-menu-item-label-text-color: var(--md-sys-color-on-surface);
+  --md-menu-item-disabled-opacity: 1;
 
   min-height: 3.5rem;
+}
+
+// Material animates the row's opacity to 1 when opening. Keep the disabled
+// appearance on its contents so that animation cannot briefly enable the color.
+.site-theme-dynamic-color-row[disabled] > [slot] {
+  opacity: 0.3;
+}
+
+@media (forced-colors: active) {
+  .site-theme-dynamic-color-row[disabled] > [slot] {
+    opacity: 1;
+  }
 }
 
 .site-theme-dynamic-color-copy {

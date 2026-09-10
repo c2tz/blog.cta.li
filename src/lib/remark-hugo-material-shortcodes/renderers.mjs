@@ -295,6 +295,43 @@ function createMaterialTable(shortcode, children) {
   );
 }
 
+function createVideo(shortcode, file) {
+  const mediaUrl = (value, name) => {
+    const source = safeUrl(value, "video", name, file);
+    const parsed = new URL(source, "https://shortcode.local/");
+    if (
+      parsed.protocol !== "https:" ||
+      parsed.username ||
+      parsed.password ||
+      source.startsWith("//")
+    ) {
+      file.fail(`video.${name} doit être une URL HTTPS sans identifiants ou un chemin local.`);
+    }
+    return source;
+  };
+  const src = mediaUrl(parameter(shortcode, "src", 0, undefined), "src");
+  const poster = shortcode.named.poster ? mediaUrl(shortcode.named.poster, "poster") : undefined;
+  const title = String(shortcode.named.title ?? "Vidéo").trim() || "Vidéo";
+  return elementNode(
+    "figure",
+    {
+      className: ["site-video", "not-prose"],
+      dataVideoPlayer: "",
+      dataVideoSrc: src,
+      ...(poster ? { dataVideoPoster: poster } : {}),
+      dataVideoTitle: title,
+    },
+    [
+      elementNode("div", { className: ["site-video-stage"], dataVideoStage: "" }),
+      elementNode("figcaption", {}, [textNode(title)]),
+      elementNode("p", { className: ["site-video-status"], role: "status", hidden: true }),
+      elementNode("noscript", {}, [
+        elementNode("a", { href: src }, [textNode(`Ouvrir la vidéo : ${title}`)]),
+      ]),
+    ],
+  );
+}
+
 export function renderShortcode(shortcode, children, file) {
   switch (shortcode.name) {
     case "admonition":
@@ -315,6 +352,8 @@ export function renderShortcode(shortcode, children, file) {
       return createTab(shortcode, children);
     case "tabs":
       return createTabs(shortcode, children);
+    case "video":
+      return createVideo(shortcode, file);
     default:
       file.fail(
         `Shortcode Hugo inconnu : ${shortcode.name}. Shortcodes disponibles : ${optionList(KNOWN_SHORTCODES)}.`,

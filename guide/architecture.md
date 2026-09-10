@@ -87,6 +87,22 @@ between `listed` and RSS/sitemap/Pagefind, a leaked/misconfigured Pagefind place
   elevated buttons only when separation from a prominent background is needed, and sentence-case
   labels of one to three words when possible.
 
+## Video in Markdown
+
+The `video` shortcode accepts `src`, an optional `poster`, and a `title`. The working example is
+in `src/content/blog/catalogue-redaction.md`. It renders semantic HTML at build time; the player
+uses the standard Mux web component, without an Astro framework wrapper or MDX imports.
+`video-player-loader.js` loads the runtime near the viewport. Media Chrome's French dictionary
+is registered before Mux initializes, and HLS data starts loading only on playback.
+
+Production media comes directly from the public `ct-blog-media.fsn1.your-objectstorage.com`
+origin permitted by the CSP. There are no S3 credentials, Mux analytics or player preference
+cookies in this integration. The `/__video-preview/videos/` relay exists only in Astro dev and
+preview, allowing localhost playback without expanding Hetzner's production CORS policy.
+
+Mux and its HLS engine have a separate deferred bundle budget. The original JavaScript limits
+still cover the rest of the blog, including any dependency shared with the video runtime.
+
 ## Shared styles
 
 - `src/assets/css/base/_typography.scss` defines the heading scale used by the native element

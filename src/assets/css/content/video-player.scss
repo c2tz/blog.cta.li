@@ -1,0 +1,38 @@
+.site-video {
+  margin: 1.5rem 0;
+  width: 100%;
+  min-width: 0;
+}
+
+.site-video-stage {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--code-radius);
+  background: #000;
+  color: #fff;
+}
+
+.site-video mux-player {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  --seek-backward-button: none;
+  --seek-forward-button: none;
+  --pip-button: none;
+  --playback-rate-button: none;
+  --media-accent-color: var(--md-sys-color-primary);
+}
+
+.site-video figcaption {
+  margin-top: 0.5rem;
+  color: var(--site-muted);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.site-video-status {
+  color: var(--md-sys-color-error);
+}

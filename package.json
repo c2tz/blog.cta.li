@@ -91,7 +91,7 @@
     "globals": "^17.11.0",
     "html-minifier-terser": "^7.2.0",
     "husky": "^9.1.7",
-    "knip": "6.34.0",
+    "knip": "6.35.1",
     "lint-staged": "^17.3.0",
     "material-symbols": "^0.46.0",
     "pagefind": "^1.5.2",
